@@ -16,7 +16,7 @@ const FormBasicsModal = ({
     control,
     handleSubmit,
     reset,
-    formState: { errors },
+    // formState: { errors }, // Removed unused errors
   } = useForm({
     defaultValues: {
       title: '',
@@ -67,11 +67,11 @@ const FormBasicsModal = ({
           name="title"
           control={control}
           rules={{ required: 'Form title is required' }}
-          render={({ field, fieldState }) => (
+          render={({ field, fieldState }) => ( // fieldState might still be needed for validation status
             <Form.Item
               label="Form Title"
-              validateStatus={fieldState.error ? 'error' : ''}
-              help={fieldState.error ? fieldState.error.message : ''}
+              validateStatus={fieldState?.error ? 'error' : ''} // Use optional chaining
+              help={fieldState?.error?.message} // Use optional chaining
             >
               <Input {...field} placeholder="Enter form title" />
             </Form.Item>
@@ -96,11 +96,11 @@ const FormBasicsModal = ({
           name="service_id"
           control={control}
           rules={{ required: 'Please select a service' }}
-          render={({ field, fieldState }) => (
+          render={({ field, fieldState }) => ( // fieldState might still be needed for validation status
             <Form.Item
               label="Associated Service"
-              validateStatus={fieldState.error ? 'error' : ''}
-              help={fieldState.error ? fieldState.error.message : ''}
+              validateStatus={fieldState?.error ? 'error' : ''} // Use optional chaining
+              help={fieldState?.error?.message} // Use optional chaining
             >
               <Select {...field} placeholder="Select a service">
                 {services.map((service) => (

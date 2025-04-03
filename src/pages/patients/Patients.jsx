@@ -13,7 +13,9 @@ import {
   ChevronRight,
 } from 'lucide-react';
 import PatientModal from './PatientModal';
-import apiService from '../../utils/apiService';
+// import apiService from '../../utils/apiService'; // Removed direct apiService import
+import { usePatients } from '../../apis/patients/hooks'; // Import the hook, removed unused mutation hooks
+import { useTags } from '../../apis/tags/hooks'; // Import the hook
 
 const StatusBadge = ({ status }) => {
   if (status === 'active') {
@@ -62,27 +64,6 @@ const AffiliateTag = ({ isAffiliate }) => {
 };
 
 const Patients = () => {
-  // State management
-  const [patients, setPatients] = useState([]);
-  const [tags, setTags] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-
-  // Pagination state
-  const [paginationLinks, setPaginationLinks] = useState({
-    first: null,
-    last: null,
-    next: null,
-    prev: null,
-  });
-
-  const [paginationMeta, setPaginationMeta] = useState({
-    count: 0,
-    total_count: 0,
-    total_pages: 1,
-    current_page: 1,
-  });
-
   // Filter and search state
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -92,86 +73,49 @@ const Patients = () => {
   const [searchType, setSearchType] = useState('name'); // name, email, phone, order
   const [currentPage, setCurrentPage] = useState(1);
 
+  // --- Use React Query Hooks ---
+  const filters = {
+    search: searchTerm || undefined,
+    search_by: searchTerm ? searchType : undefined,
+    status: statusFilter !== 'all' ? statusFilter : undefined,
+    tag_id: tagFilter !== 'all' ? tagFilter : undefined,
+    is_affiliate: affiliateFilter !== 'all' ? affiliateFilter === 'yes' : undefined,
+  };
+
+  const {
+    data: patientsData,
+    isLoading: loading, // Use isLoading from the hook
+    error, // Use error from the hook
+    refetch: fetchPatients, // Use refetch from the hook
+  } = usePatients(currentPage, filters);
+
+  const { data: tagsData } = useTags(); // Fetch tags using the hook
+
+  // Extract data from hook responses
+  const patients = patientsData?.data || [];
+  const paginationMeta = patientsData?.meta || {
+    count: 0,
+    total_count: 0,
+    total_pages: 1,
+    current_page: 1,
+  };
+  // TODO: Adapt paginationLinks if the API/hook provides them
+  const paginationLinks = patientsData?.links || {
+    first: null,
+    last: null,
+    next: null,
+    prev: null,
+  };
+  const tags = tagsData?.data || [];
+  // --- End Hook Usage ---
+
   // Selected patients and modals
   const [selectedPatients, setSelectedPatients] = useState([]);
   const [showBulkActions, setShowBulkActions] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
-
-  // Fetch patients data from API
-  const fetchPatients = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-
-      // Build query parameters
-      const params = {
-        page: currentPage,
-      };
-
-      // Add filters if they are set
-      if (searchTerm) {
-        params.search = searchTerm;
-        params.search_by = searchType;
-      }
-
-      if (statusFilter !== 'all') {
-        params.status = statusFilter;
-      }
-
-      if (tagFilter !== 'all') {
-        params.tag_id = tagFilter;
-      }
-
-      if (affiliateFilter !== 'all') {
-        params.is_affiliate = affiliateFilter === 'yes';
-      }
-
-      // Call API
-      const result = await apiService.patients.getAll(params);
-
-      // Update state with response data
-      setPatients(result.data || []);
-      setPaginationLinks(result.links || {});
-      setPaginationMeta({
-        count: result.meta?.count || 0,
-        total_count: result.meta?.total_count || 0,
-        total_pages: result.meta?.total_pages || 1,
-        current_page: currentPage,
-      });
-    } catch (err) {
-      console.error('Error fetching patients:', err);
-      setError(err.message || 'Failed to load patients');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Fetch tags for filtering
-  const fetchTags = async () => {
-    try {
-      const result = await apiService.tags.getAll();
-      setTags(result.data || []);
-    } catch (err) {
-      console.error('Error fetching tags:', err);
-    }
-  };
-
-  // Load data on component mount and when filters/pagination change
-  useEffect(() => {
-    fetchPatients();
-  }, [
-    currentPage,
-    searchTerm,
-    statusFilter,
-    tagFilter,
-    affiliateFilter,
-    searchType,
-  ]);
-
-  // Load tags once on component mount
-  useEffect(() => {
-    fetchTags();
-  }, []);
+  // Note: We might need a separate modal state for editing if PatientModal doesn't handle it internally
+  // const [editingPatient, setEditingPatient] = useState(null);
+  // const [showEditModal, setShowEditModal] = useState(false);
 
   // Effect to show/hide bulk actions based on selection
   useEffect(() => {
@@ -232,7 +176,7 @@ const Patients = () => {
     setAffiliateFilter('all');
     setTagFilter('all');
     setSearchType('name');
-    setCurrentPage(1);
+    setCurrentPage(1); // Resetting page triggers refetch via useEffect in usePatients
   };
 
   // Generate pagination controls
@@ -534,7 +478,7 @@ const Patients = () => {
                     colSpan="7"
                     className="px-6 py-4 text-center text-red-500"
                   >
-                    Error loading patients: {error}
+                    Error loading patients: {error.message || 'Unknown error'}
                   </td>
                 </tr>
               ) : patients.length > 0 ? (
@@ -552,7 +496,7 @@ const Patients = () => {
                       <div className="flex items-center">
                         <div>
                           <div className="text-sm font-medium text-gray-900">
-                            {patient.full_name}
+                            {patient.full_name || `${patient.firstName} ${patient.lastName}`} {/* Added fallback */}
                             {patient.isAffiliate && (
                               <AffiliateTag isAffiliate={patient.isAffiliate} />
                             )}
@@ -641,9 +585,9 @@ const Patients = () => {
               <p className="text-sm text-gray-700">
                 Showing{' '}
                 <span className="font-medium">
-                  {paginationMeta.count > 0 ? 1 : 0}
+                  {paginationMeta.count > 0 ? ((paginationMeta.current_page - 1) * paginationMeta.per_page) + 1 : 0} {/* Corrected start index */}
                 </span>{' '}
-                to <span className="font-medium">{paginationMeta.count}</span>{' '}
+                to <span className="font-medium">{Math.min(paginationMeta.current_page * paginationMeta.per_page, paginationMeta.total_count)}</span>{' '} {/* Corrected end index */}
                 of{' '}
                 <span className="font-medium">
                   {paginationMeta.total_count}
@@ -668,7 +612,7 @@ const Patients = () => {
           isOpen={showAddModal}
           onClose={() => setShowAddModal(false)}
           onSuccess={() => {
-            // Refresh the patients list
+            // Refresh the patients list using the hook's refetch function
             fetchPatients();
           }}
         />

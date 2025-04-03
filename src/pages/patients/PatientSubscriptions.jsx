@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Clock,
+  // Clock, // Removed unused import
   Calendar,
   Pill,
-  CheckCircle,
-  X,
-  Edit,
-  Package,
-  FileText,
+  // CheckCircle, // Removed unused import
+  // X, // Removed unused import
+  // Edit, // Removed unused import
+  // Package, // Removed unused import
+  // FileText, // Removed unused import
   CreditCard,
   AlertCircle,
   Plus,

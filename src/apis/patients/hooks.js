@@ -1,8 +1,4 @@
-import {
-  useMutation,
-  useQuery,
-  useQueryClient
-} from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 // import { // Commented out as functions are unused due to mocking/apiService usage below
 //   getPatients,
 //   getPatientById,
@@ -10,36 +6,71 @@ import {
 //   updatePatient,
 //   deletePatient
 // } from './api';
-import apiService from '../../utils/apiService'; // Import the central apiService
+// import apiService from '../../utils/apiService'; // Removed unused import
 import auditLogService from '../../utils/auditLogService'; // Import the audit log service
 
 // --- Mock Data ---
 const samplePatientsData = [
-  { id: 'p001', firstName: 'John', lastName: 'Smith', email: 'john.smith@example.com', status: 'Active', tags: ['vip'] },
-  { id: 'p002', firstName: 'Emily', lastName: 'Davis', email: 'emily.davis@example.com', status: 'Active', tags: [] },
-  { id: 'p003', firstName: 'Robert', lastName: 'Wilson', email: 'robert.wilson@example.com', status: 'Inactive', tags: ['follow-up'] },
+  {
+    id: 'p001',
+    firstName: 'John',
+    lastName: 'Smith',
+    email: 'john.smith@example.com',
+    status: 'Active',
+    tags: ['vip'],
+  },
+  {
+    id: 'p002',
+    firstName: 'Emily',
+    lastName: 'Davis',
+    email: 'emily.davis@example.com',
+    status: 'Active',
+    tags: [],
+  },
+  {
+    id: 'p003',
+    firstName: 'Robert',
+    lastName: 'Wilson',
+    email: 'robert.wilson@example.com',
+    status: 'Inactive',
+    tags: ['follow-up'],
+  },
 ];
 // --- End Mock Data ---
 
 // Get patients hook (Mocked)
 export const usePatients = (currentPage, filters) => {
-  console.log("Using mock patients data in usePatients hook");
+  console.log('Using mock patients data in usePatients hook');
   return useQuery({
     queryKey: ['patients', currentPage, filters],
     // queryFn: () => getPatients(currentPage, filters), // Original API call
     // queryFn: () => apiService.patients.getAll({ page: currentPage, ...filters }), // Alternative using apiService
-    queryFn: () => Promise.resolve({ data: samplePatientsData, meta: { total: samplePatientsData.length, per_page: 10, current_page: currentPage } }), // Return mock data with pagination structure
+    queryFn: () =>
+      Promise.resolve({
+        data: samplePatientsData,
+        meta: {
+          total: samplePatientsData.length,
+          per_page: 10,
+          current_page: currentPage,
+        },
+      }), // Return mock data with pagination structure
     staleTime: Infinity,
   });
 };
 
 // Get patient by ID hook
+// Get patient by ID hook (Mocked)
 export const usePatientById = (id, options = {}) => {
+  console.log(`Using mock patient data for ID: ${id} in usePatientById hook`);
   return useQuery({
     queryKey: ['patient', id],
-    queryFn: () => apiService.patients.getById(id), // Use apiService
+    queryFn: () =>
+      Promise.resolve(
+        samplePatientsData.find((p) => p.id === id) || samplePatientsData[0]
+      ), // Find mock patient or return first as fallback
     enabled: !!id,
-    ...options
+    staleTime: Infinity, // Keep mock data fresh
+    ...options,
   });
 };
 
@@ -48,7 +79,21 @@ export const useCreatePatient = (options = {}) => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (patientData) => apiService.patients.create(patientData), // Use apiService
+    // mutationFn: (patientData) => apiService.patients.create(patientData), // Original API call
+    mutationFn: async (patientData) => {
+      // Simulate API call for creating patient
+      console.log('Mock Creating patient:', patientData);
+      await new Promise((resolve) => setTimeout(resolve, 300)); // Simulate delay
+      const newPatient = {
+        id: `p${Date.now()}`, // Generate a mock ID
+        ...patientData,
+        status: patientData.status || 'active', // Ensure status default
+        tags: [], // Default tags
+      };
+      // Note: This doesn't actually add to the samplePatientsData array in this context
+      // In a more complex mock, you might manage a mutable mock store
+      return newPatient; // Return the mock created patient
+    },
     onSuccess: (data, variables, context) => {
       // Ensure parameters are available if needed
       queryClient.invalidateQueries({ queryKey: ['patients'] });
@@ -66,7 +111,7 @@ export const useCreatePatient = (options = {}) => {
 
       // Call original onSuccess if provided
       options.onSuccess && options.onSuccess(data, variables, context);
-    }
+    },
   });
 };
 
@@ -75,24 +120,52 @@ export const useUpdatePatient = (options = {}) => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, patientData }) => apiService.patients.update(id, patientData), // Use apiService
-    onSuccess: () => {
+    // mutationFn: ({ id, patientData }) => apiService.patients.update(id, patientData), // Original API call
+    mutationFn: async ({ id, patientData }) => {
+      // Simulate API call for updating patient
+      console.log(`Mock Updating patient ${id}:`, patientData);
+      await new Promise((resolve) => setTimeout(resolve, 300)); // Simulate delay
+      // Return the updated data structure expected by the component
+      return { id, ...patientData };
+    },
+    onSuccess: (data, variables) => { // Add variables to access id
       queryClient.invalidateQueries({ queryKey: ['patients'] });
-      queryClient.invalidateQueries({ queryKey: ['patient'] });
-      options.onSuccess && options.onSuccess();
-    }
+      // Invalidate the specific patient query as well
+      queryClient.invalidateQueries({ queryKey: ['patient', variables.id] });
+      options.onSuccess && options.onSuccess(data, variables); // Pass data and variables
+    },
   });
 };
 
-// Delete patient hook
+// Delete patient hook (Mocked)
 export const useDeletePatient = (options = {}) => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (id) => apiService.patients.delete(id), // Use apiService
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['patients'] });
+    // mutationFn: (id) => apiService.patients.delete(id), // Original API call
+    mutationFn: async (id) => {
+      // Simulate API call for deleting patient
+      console.log(`Mock Deleting patient ${id}`);
+      await new Promise((resolve) => setTimeout(resolve, 300)); // Simulate delay
+      // Return a success indicator or empty object
+      return { success: true };
+    },
+    onSuccess: (data, variables) => { // Add variables to access id
+      queryClient.invalidateQueries({ queryKey: ['patient'] });
       options.onSuccess && options.onSuccess();
-    }
+    },
   });
 };
+
+// Delete patient hook (Original removed, keeping mocked version above)
+// export const useDeletePatient = (options = {}) => {
+//   const queryClient = useQueryClient();
+//
+//   return useMutation({
+//     mutationFn: (id) => apiService.patients.delete(id), // Use apiService
+//     onSuccess: () => {
+//       queryClient.invalidateQueries({ queryKey: ['patients'] });
+//       options.onSuccess && options.onSuccess();
+//     },
+//   });
+// };

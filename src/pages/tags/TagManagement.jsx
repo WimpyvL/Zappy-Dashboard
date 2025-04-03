@@ -1,9 +1,9 @@
 import React, { useMemo, useState } from 'react';
-import { Plus, Edit, Trash2, Search, X, Info, Loader } from 'lucide-react';
+import { Plus, Edit, Trash2, Search, X, Loader } from 'lucide-react'; // Removed unused Info import
 import Tag from '../common/Tag';
 import {
   useTags,
-  useTagById,
+  // useTagById, // Removed unused hook
   useCreateTag,
   useUpdateTag,
   useDeleteTag,
@@ -73,13 +73,13 @@ const TagManagement = () => {
   const handleDeleteTagConfirmation = (tag) => {
     setCurrentTag(tag);
     setShowDeleteModal(true);
-  };
+  }; // Added missing closing brace
 
   // Handle opening tag usage modal
-  const handleShowUsage = (tag) => {
-    setCurrentTag(tag);
-    setShowUsageModal(true);
-  };
+  // const handleShowUsage = (tag) => { // Removed unused function
+  //   setCurrentTag(tag);
+  //   setShowUsageModal(true);
+  // };
 
   // Handle form input changes
   const handleInputChange = (e) => {

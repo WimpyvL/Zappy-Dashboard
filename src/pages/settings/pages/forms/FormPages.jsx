@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Tabs, Button, Space, Input, Tooltip, Popconfirm } from 'antd';
 import {
-  PlusOutlined,
+  // PlusOutlined, // Removed unused import
   EditOutlined,
   DeleteOutlined,
   SaveOutlined,

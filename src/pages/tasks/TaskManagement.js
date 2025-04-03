@@ -6,8 +6,8 @@ import {
   CheckCircle,
   Clock,
   X,
-  FileText,
-  Calendar,
+  // FileText, // Removed unused import
+  // Calendar, // Removed unused import
   ChevronDown,
   ChevronUp,
   AlertTriangle,
@@ -85,11 +85,10 @@ const TaskManagement = () => {
   const totalTasks = tasksData?.meta?.total_count || 0;
 
   // Use the assignees query hook
-  const { data: assigneesData, isLoading: assigneesLoading } = useAssignees();
+  const { data: assigneesData } = useAssignees(); // Removed unused assigneesLoading
 
   // Use the patients query hook
-  const { data: patientsData, isLoading: patientsLoading } =
-    useTaskablePatients();
+  const { data: patientsData } = useTaskablePatients(); // Removed unused patientsLoading
 
   // Format assignees and patients data
   const assignees = assigneesData?.data

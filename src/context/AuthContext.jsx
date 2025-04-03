@@ -1,5 +1,5 @@
 // context/AuthContext.js
-import React, { createContext, useState, useEffect, useContext } from 'react';
+import React, { createContext, useState, useContext } from 'react'; // Removed unused useEffect
 import apiService from '../utils/apiService';
 import errorHandling from '../utils/errorHandling';
 
@@ -11,8 +11,8 @@ export const AuthProvider = ({ children }) => {
   // Initialize loading to false, as we are not checking localStorage anymore
   // Auth status will be determined by API calls or login actions.
   const [loading, setLoading] = useState(false);
-  // isAuthenticated is now derived directly from currentUser state
-  const isAuthenticated = !!currentUser;
+  // isAuthenticated is now derived directly from currentUser state (Removed unused variable declaration)
+  // const isAuthenticated = !!currentUser;
   const [error, setError] = useState(null);
 
   // Removed useEffect checking localStorage on initial load.
@@ -35,15 +35,16 @@ export const AuthProvider = ({ children }) => {
   };
 
   // Logout function
-  const logout = async () => { // Make async if calling API logout
+  const logout = async () => {
+    // Make async if calling API logout
     console.log('AuthContext: Logging out');
 
     // Optional: Call API logout endpoint
     try {
-        await apiService.auth.logout(); // Assuming this exists and handles server-side session invalidation
+      await apiService.auth.logout(); // Assuming this exists and handles server-side session invalidation
     } catch (logoutError) {
-        console.error("Logout API call failed:", logoutError);
-        // Decide if you want to proceed with client-side logout anyway
+      console.error('Logout API call failed:', logoutError);
+      // Decide if you want to proceed with client-side logout anyway
     }
 
     // Clear sensitive data from state and refreshToken from localStorage

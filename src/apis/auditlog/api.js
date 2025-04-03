@@ -1,6 +1,6 @@
 // TODO: Determine which api client setup to use (apiService.js or utils2/api.js)
 // Assuming utils2/api.js for now based on other features in src/apis/*
-import { request } from '../../utils2/api'; // Adjust path if needed
+// import { request } from '../../utils2/api'; // Adjust path if needed - Removed unused import
 
 /**
  * Fetches audit logs from the backend.

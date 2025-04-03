@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react'; // Added useMemo
 import { Modal, Select, Input, Button, message } from 'antd';
 // import { useAppContext } from '../../../context/AppContext'; // To get users/patients
 // import apiService from '../../../utils/apiService'; // To send message
 
 const { TextArea } = Input;
-const { Option } = Select;
+// const { Option } = Select; // Removed unused Option
 
 const NewConversationModal = ({ visible, onClose, onSubmitSuccess }) => {
   // const { patients, users } = useAppContext(); // Assuming users/team members are also in context or fetched separately
@@ -15,14 +15,20 @@ const NewConversationModal = ({ visible, onClose, onSubmitSuccess }) => {
 
   // --- Mock Data & Fetching Simulation ---
   // Replace with actual data fetching and user/patient lists from context/API
-  const mockUsers = [
-    { id: 'user_1', name: 'Dr. Bob (Team)', type: 'team' },
-    { id: 'user_2', name: 'Admin Sarah', type: 'team' },
-  ];
-  const mockPatients = [
-    { id: 'pat_1', name: 'Patient Alice', type: 'patient' },
-    { id: 'pat_3', name: 'Patient Charlie', type: 'patient' },
-  ];
+  const mockUsers = useMemo(
+    () => [
+      { id: 'user_1', name: 'Dr. Bob (Team)', type: 'team' },
+      { id: 'user_2', name: 'Admin Sarah', type: 'team' },
+    ],
+    []
+  ); // Wrapped in useMemo
+  const mockPatients = useMemo(
+    () => [
+      { id: 'pat_1', name: 'Patient Alice', type: 'patient' },
+      { id: 'pat_3', name: 'Patient Charlie', type: 'patient' },
+    ],
+    []
+  ); // Wrapped in useMemo
 
   useEffect(() => {
     if (visible) {
@@ -42,7 +48,7 @@ const NewConversationModal = ({ visible, onClose, onSubmitSuccess }) => {
       setRecipients([]);
       setMessageBody('');
     }
-  }, [visible]); // Rerun when modal visibility changes
+  }, [visible, mockPatients, mockUsers]); // Dependencies are now stable
 
   const handleRecipientChange = (value) => {
     setRecipients(value);

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react'; // Removed unused useEffect
 import { Link } from 'react-router-dom';
 // Removed useAppContext import
 import { usePatients } from '../../apis/patients/hooks'; // Assuming hook exists
@@ -15,7 +15,7 @@ import {
   Clock,
   CheckCircle,
   AlertTriangle,
-  FileText,
+  // FileText, // Removed unused import
   User,
   X,
   Mail,
@@ -64,7 +64,7 @@ const StatusBadge = ({ status }) => {
 
 const FormCompletedBadge = ({ completed }) => {
   // ... (FormCompletedBadge implementation remains the same)
-   if (completed) {
+  if (completed) {
     return (
       <span className="flex items-center px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">
         <CheckCircle className="h-3 w-3 mr-1" />
@@ -81,7 +81,6 @@ const FormCompletedBadge = ({ completed }) => {
   }
 };
 
-
 const InitialConsultations = () => {
   // Local state for UI controls
   const [searchTerm, setSearchTerm] = useState('');
@@ -89,7 +88,8 @@ const InitialConsultations = () => {
   const [selectedPatient, setSelectedPatient] = useState(null);
   const [selectedConsultation, setSelectedConsultation] = useState(null);
   const [showConsultationModal, setShowConsultationModal] = useState(false);
-  const [showNewConsultationModal, setShowNewConsultationModal] = useState(false);
+  const [showNewConsultationModal, setShowNewConsultationModal] =
+    useState(false);
   const [showEmailModal, setShowEmailModal] = useState(false);
   const [emailContent, setEmailContent] = useState('');
   const [showActionDropdown, setShowActionDropdown] = useState(null); // Tracks which dropdown is open
@@ -109,7 +109,7 @@ const InitialConsultations = () => {
   // Mutation hooks
   const updateStatusMutation = useUpdateConsultationStatus({
     onSuccess: () => setShowActionDropdown(null), // Close dropdown on success
-    onError: (error) => console.error("Error updating status:", error),
+    onError: (error) => console.error('Error updating status:', error),
   });
   // const archiveMutation = useArchiveConsultation({ // Assuming this hook exists
   //   onSuccess: () => setShowActionDropdown(null),
@@ -200,12 +200,18 @@ const InitialConsultations = () => {
   const handleArchiveConsultation = (consultation) => {
     // archiveMutation.mutate(consultation.id); // Assuming hook takes ID
     // For now, simulate with status update:
-    updateStatusMutation.mutate({ consultationId: consultation.id, status: 'archived' });
+    updateStatusMutation.mutate({
+      consultationId: consultation.id,
+      status: 'archived',
+    });
   };
 
   // Handle updating consultation status using mutation
   const handleUpdateStatus = (consultation, newStatus) => {
-    updateStatusMutation.mutate({ consultationId: consultation.id, status: newStatus });
+    updateStatusMutation.mutate({
+      consultationId: consultation.id,
+      status: newStatus,
+    });
   };
 
   // Format date function
@@ -495,68 +501,73 @@ const InitialConsultations = () => {
 
       {/* Select Patient Modal for New Consultation */}
       {showNewConsultationModal && !selectedPatient && (
-         <div className="fixed inset-0 bg-gray-600 bg-opacity-75 flex items-center justify-center z-50 p-4">
-           <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full">
-             <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
-               <h3 className="text-lg font-medium text-gray-900">
-                 Select Patient for Consultation
-               </h3>
-               <button
-                 className="text-gray-400 hover:text-gray-500"
-                 onClick={handleCloseConsultationModal}
-               >
-                 <X className="h-5 w-5" />
-               </button>
-             </div>
-             <div className="px-6 py-4 max-h-96 overflow-y-auto">
-               <div className="mb-4">
-                 <input
-                   type="text"
-                   placeholder="Search patients..."
-                   className="block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                   // Use a separate search term for this modal if needed, or reuse main one
-                   // value={patientSearchTerm}
-                   // onChange={(e) => setPatientSearchTerm(e.target.value)}
-                 />
-               </div>
-               <div className="divide-y divide-gray-200">
-                 {isLoadingPatients ? (
-                   <div className="text-center p-4"><Loader2 className="h-6 w-6 animate-spin inline-block"/></div>
-                 ) : (
-                   patients
-                     // .filter((patient) =>
-                     //   patient.name?.toLowerCase().includes(patientSearchTerm?.toLowerCase())
-                     // )
-                     .map((patient) => (
-                       <div
-                         key={patient.id}
-                         className="py-3 flex items-center hover:bg-gray-50 cursor-pointer"
-                         onClick={() => handleSelectPatientForNewConsultation(patient)}
-                       >
-                         <div className="flex-shrink-0 h-10 w-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-500">
-                           <User className="h-6 w-6" />
-                         </div>
-                         <div className="ml-4">
-                           <div className="text-sm font-medium text-gray-900">
-                             {patient.name}
-                           </div>
-                           <div className="text-sm text-gray-500">
-                             {patient.email}
-                           </div>
-                         </div>
-                         {/* Optional: Indicate if patient already has consultations */}
-                       </div>
-                     ))
-                 )}
-                 {!isLoadingPatients && patients.length === 0 && (
-                    <p className="text-center text-gray-500 py-4">No patients found.</p>
-                 )}
-               </div>
-             </div>
-           </div>
-         </div>
-       )}
-
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-75 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full">
+            <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+              <h3 className="text-lg font-medium text-gray-900">
+                Select Patient for Consultation
+              </h3>
+              <button
+                className="text-gray-400 hover:text-gray-500"
+                onClick={handleCloseConsultationModal}
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <div className="px-6 py-4 max-h-96 overflow-y-auto">
+              <div className="mb-4">
+                <input
+                  type="text"
+                  placeholder="Search patients..."
+                  className="block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                  // Use a separate search term for this modal if needed, or reuse main one
+                  // value={patientSearchTerm}
+                  // onChange={(e) => setPatientSearchTerm(e.target.value)}
+                />
+              </div>
+              <div className="divide-y divide-gray-200">
+                {isLoadingPatients ? (
+                  <div className="text-center p-4">
+                    <Loader2 className="h-6 w-6 animate-spin inline-block" />
+                  </div>
+                ) : (
+                  patients
+                    // .filter((patient) =>
+                    //   patient.name?.toLowerCase().includes(patientSearchTerm?.toLowerCase())
+                    // )
+                    .map((patient) => (
+                      <div
+                        key={patient.id}
+                        className="py-3 flex items-center hover:bg-gray-50 cursor-pointer"
+                        onClick={() =>
+                          handleSelectPatientForNewConsultation(patient)
+                        }
+                      >
+                        <div className="flex-shrink-0 h-10 w-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-500">
+                          <User className="h-6 w-6" />
+                        </div>
+                        <div className="ml-4">
+                          <div className="text-sm font-medium text-gray-900">
+                            {patient.name}
+                          </div>
+                          <div className="text-sm text-gray-500">
+                            {patient.email}
+                          </div>
+                        </div>
+                        {/* Optional: Indicate if patient already has consultations */}
+                      </div>
+                    ))
+                )}
+                {!isLoadingPatients && patients.length === 0 && (
+                  <p className="text-center text-gray-500 py-4">
+                    No patients found.
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Consultation Notes Modal (View/Edit Existing) */}
       {showConsultationModal && selectedPatient && selectedConsultation && (
@@ -589,7 +600,6 @@ const InitialConsultations = () => {
           </div>
         </div>
       )}
-
 
       {/* Email Modal */}
       {showEmailModal && selectedConsultation && (

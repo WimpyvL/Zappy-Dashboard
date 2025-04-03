@@ -4,7 +4,7 @@ import {
   User,
   Mail,
   Phone,
-  MapPin,
+  // MapPin, // Removed unused import
   Calendar,
   Tag,
   Building,

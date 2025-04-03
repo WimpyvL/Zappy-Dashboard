@@ -363,19 +363,21 @@ const Signup = () => {
                   className="ml-2 block text-sm text-gray-700"
                 >
                   I agree to the{' '}
-                  <a
-                    href="#"
-                    className="font-medium text-indigo-600 hover:text-indigo-500"
+                  <button
+                    type="button"
+                    className="font-medium text-indigo-600 hover:text-indigo-500 underline bg-transparent border-none p-0 cursor-pointer"
+                    onClick={() => alert('Navigate to Terms of Service (Placeholder)')} // Placeholder action
                   >
                     Terms of Service
-                  </a>{' '}
+                  </button>{' '}
                   and{' '}
-                  <a
-                    href="#"
-                    className="font-medium text-indigo-600 hover:text-indigo-500"
+                  <button
+                    type="button"
+                    className="font-medium text-indigo-600 hover:text-indigo-500 underline bg-transparent border-none p-0 cursor-pointer"
+                    onClick={() => alert('Navigate to Privacy Policy (Placeholder)')} // Placeholder action
                   >
                     Privacy Policy
-                  </a>
+                  </button>
                 </label>
               </div>
             </div>

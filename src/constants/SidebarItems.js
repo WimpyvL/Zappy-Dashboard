@@ -10,7 +10,7 @@ import {
   Settings,
   LogOut,
   ClipboardList,
-  Layers,
+  // Layers, // Removed unused import
   Tag,
   Percent,
   Hash,

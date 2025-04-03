@@ -6,7 +6,7 @@ import {
   Search,
   Filter,
   Plus,
-  Calendar,
+  // Calendar, // Removed unused import
   CheckCircle,
   Clock,
   XCircle,
@@ -58,7 +58,9 @@ const CategoryBadge = ({ category }) => {
   };
 
   const style = categoryStyles[category] || 'bg-gray-100 text-gray-800';
-  const displayCategory = category ? category.charAt(0).toUpperCase() + category.slice(1) : 'Unknown';
+  const displayCategory = category
+    ? category.charAt(0).toUpperCase() + category.slice(1)
+    : 'Unknown';
 
   return (
     <span className={`px-2 py-1 text-xs font-medium rounded-full ${style}`}>
@@ -139,7 +141,7 @@ const Sessions = () => {
           endDate.setHours(23, 59, 59, 999); // Inclusive end date
           matchesDateRange = sessionDate >= startDate && sessionDate <= endDate;
         } catch (e) {
-          console.error("Error parsing date for filtering:", e);
+          console.error('Error parsing date for filtering:', e);
           matchesDateRange = false; // Exclude if date is invalid
         }
       }
@@ -398,12 +400,19 @@ const Sessions = () => {
                   }
                   const isToday = sessionDate?.toDateString() === today;
                   const isPast =
-                    sessionDate && sessionDate < new Date() && session.status === 'scheduled';
+                    sessionDate &&
+                    sessionDate < new Date() &&
+                    session.status === 'scheduled';
                   const isCompleting =
                     updateSessionStatusMutation.isLoading &&
-                    updateSessionStatusMutation.variables?.sessionId === session.id &&
-                    updateSessionStatusMutation.variables?.status === 'completed';
-                  const isMutating = updateSessionStatusMutation.isLoading && updateSessionStatusMutation.variables?.sessionId === session.id;
+                    updateSessionStatusMutation.variables?.sessionId ===
+                      session.id &&
+                    updateSessionStatusMutation.variables?.status ===
+                      'completed';
+                  const isMutating =
+                    updateSessionStatusMutation.isLoading &&
+                    updateSessionStatusMutation.variables?.sessionId ===
+                      session.id;
 
                   return (
                     <tr
@@ -419,10 +428,17 @@ const Sessions = () => {
                           <span
                             className={`text-sm ${isToday ? 'font-bold text-blue-700' : 'text-gray-500'}`}
                           >
-                            {sessionDate ? sessionDate.toLocaleDateString() : 'Invalid Date'}
+                            {sessionDate
+                              ? sessionDate.toLocaleDateString()
+                              : 'Invalid Date'}
                           </span>
                           <span className="text-xs text-gray-400">
-                            {sessionDate ? sessionDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
+                            {sessionDate
+                              ? sessionDate.toLocaleTimeString([], {
+                                  hour: '2-digit',
+                                  minute: '2-digit',
+                                })
+                              : ''}
                           </span>
                         </div>
                       </td>
@@ -437,9 +453,7 @@ const Sessions = () => {
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <CategoryBadge
-                          category={session.type || 'unknown'}
-                        />
+                        <CategoryBadge category={session.type || 'unknown'} />
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex flex-col space-y-1">
@@ -463,24 +477,29 @@ const Sessions = () => {
                             className={`text-green-600 hover:text-green-900 ${isCompleting ? 'opacity-50 cursor-not-allowed' : ''}`}
                             disabled={isMutating}
                           >
-                            {isCompleting ? <Loader2 className="h-4 w-4 animate-spin inline mr-1" /> : null}
+                            {isCompleting ? (
+                              <Loader2 className="h-4 w-4 animate-spin inline mr-1" />
+                            ) : null}
                             Complete
                           </button>
                         )}
                         {session.status === 'missed' && (
                           <button className="text-indigo-600 hover:text-indigo-900">
-                            Reschedule {/* TODO: Implement Reschedule Modal/Logic */}
+                            Reschedule{' '}
+                            {/* TODO: Implement Reschedule Modal/Logic */}
                           </button>
                         )}
                         {session.status === 'completed' &&
                           session.followUpNeeded && (
                             <button className="text-indigo-600 hover:text-indigo-900">
-                              Schedule Follow-Up {/* TODO: Implement Follow-up Logic */}
+                              Schedule Follow-Up{' '}
+                              {/* TODO: Implement Follow-up Logic */}
                             </button>
                           )}
                         {/* Always show Review Note button? Adjust logic as needed */}
                         <button className="text-gray-600 hover:text-gray-900">
-                          Review Note {/* TODO: Link to note or implement review logic */}
+                          Review Note{' '}
+                          {/* TODO: Link to note or implement review logic */}
                         </button>
                       </td>
                     </tr>

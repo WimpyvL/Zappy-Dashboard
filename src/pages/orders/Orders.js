@@ -7,7 +7,7 @@ import {
   Search,
   Filter,
   Plus,
-  Package,
+  // Package, // Removed unused import
   AlertTriangle,
   CheckCircle,
   Clock,
@@ -119,9 +119,9 @@ const Orders = () => {
   const shippedOrders = filteredOrders.filter(
     (order) => order.status === 'shipped'
   );
-  const cancelledOrders = filteredOrders.filter(
-    (order) => order.status === 'cancelled'
-  );
+  // const cancelledOrders = filteredOrders.filter( // Removed unused variable
+  //   (order) => order.status === 'cancelled'
+  // );
 
   // Function to get the linked session for an order
   const getLinkedSession = (sessionId) => {
@@ -277,13 +277,19 @@ const Orders = () => {
                     );
                     const isProcessing =
                       updateOrderStatusMutation.isLoading &&
-                      updateOrderStatusMutation.variables?.orderId === order.id &&
-                      updateOrderStatusMutation.variables?.status === 'processing';
+                      updateOrderStatusMutation.variables?.orderId ===
+                        order.id &&
+                      updateOrderStatusMutation.variables?.status ===
+                        'processing';
                     const isCancelling =
                       updateOrderStatusMutation.isLoading &&
-                      updateOrderStatusMutation.variables?.orderId === order.id &&
-                      updateOrderStatusMutation.variables?.status === 'cancelled';
-                    const isMutating = updateOrderStatusMutation.isLoading && updateOrderStatusMutation.variables?.orderId === order.id;
+                      updateOrderStatusMutation.variables?.orderId ===
+                        order.id &&
+                      updateOrderStatusMutation.variables?.status ===
+                        'cancelled';
+                    const isMutating =
+                      updateOrderStatusMutation.isLoading &&
+                      updateOrderStatusMutation.variables?.orderId === order.id;
 
                     return (
                       <tr key={order.id} className="hover:bg-gray-50">
@@ -318,8 +324,8 @@ const Orders = () => {
                                   linkedSession.status === 'completed'
                                     ? 'text-green-600'
                                     : linkedSession.status === 'scheduled'
-                                    ? 'text-blue-600'
-                                    : 'text-red-600'
+                                      ? 'text-blue-600'
+                                      : 'text-red-600'
                                 }`}
                               >
                                 {new Date(
@@ -344,7 +350,9 @@ const Orders = () => {
                               handleStatusUpdate(order.id, 'processing')
                             }
                             className={`text-indigo-600 hover:text-indigo-900 mr-3 ${
-                              isProcessing ? 'opacity-50 cursor-not-allowed' : ''
+                              isProcessing
+                                ? 'opacity-50 cursor-not-allowed'
+                                : ''
                             }`}
                             disabled={
                               order.holdReason ===
@@ -361,7 +369,9 @@ const Orders = () => {
                               handleStatusUpdate(order.id, 'cancelled')
                             }
                             className={`text-red-600 hover:text-red-900 ${
-                              isCancelling ? 'opacity-50 cursor-not-allowed' : ''
+                              isCancelling
+                                ? 'opacity-50 cursor-not-allowed'
+                                : ''
                             }`}
                             disabled={isMutating}
                           >
@@ -428,13 +438,18 @@ const Orders = () => {
                   .map((order) => {
                     const isShipping =
                       updateOrderStatusMutation.isLoading &&
-                      updateOrderStatusMutation.variables?.orderId === order.id &&
+                      updateOrderStatusMutation.variables?.orderId ===
+                        order.id &&
                       updateOrderStatusMutation.variables?.status === 'shipped';
                     const isCancelling =
                       updateOrderStatusMutation.isLoading &&
-                      updateOrderStatusMutation.variables?.orderId === order.id &&
-                      updateOrderStatusMutation.variables?.status === 'cancelled';
-                    const isMutating = updateOrderStatusMutation.isLoading && updateOrderStatusMutation.variables?.orderId === order.id;
+                      updateOrderStatusMutation.variables?.orderId ===
+                        order.id &&
+                      updateOrderStatusMutation.variables?.status ===
+                        'cancelled';
+                    const isMutating =
+                      updateOrderStatusMutation.isLoading &&
+                      updateOrderStatusMutation.variables?.orderId === order.id;
 
                     return (
                       <tr key={order.id} className="hover:bg-gray-50">
@@ -483,7 +498,9 @@ const Orders = () => {
                               handleStatusUpdate(order.id, 'cancelled')
                             }
                             className={`text-red-600 hover:text-red-900 ${
-                              isCancelling ? 'opacity-50 cursor-not-allowed' : ''
+                              isCancelling
+                                ? 'opacity-50 cursor-not-allowed'
+                                : ''
                             }`}
                             disabled={isMutating}
                           >

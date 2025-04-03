@@ -1,8 +1,8 @@
 // PatientDetail.jsx
 import React, { useEffect, useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams } from 'react-router-dom'; // Removed unused Link import
 import { toast } from 'react-toastify';
-import { ArrowLeft, Calendar, Plus } from 'lucide-react';
+// Removed unused ArrowLeft, Calendar, Plus imports
 import apiService from '../../utils/apiService';
 import LoadingSpinner from './patientDetails/common/LoadingSpinner';
 import PatientNotFound from './patientDetails/common/PatientNotFound';
@@ -33,12 +33,12 @@ const PatientDetail = () => {
 
   // Data states
   const [patient, setPatient] = useState(null);
-  const [patientSessions, setPatientSessions] = useState([]);
-  const [patientOrders, setPatientOrders] = useState([]);
-  const [patientNotes, setPatientNotes] = useState([]);
+  const [patientSessions] = useState([]); // Removed unused setPatientSessions
+  const [patientOrders] = useState([]); // Removed unused setPatientOrders
+  const [patientNotes] = useState([]); // Removed unused setPatientNotes
   const [patientDocuments, setPatientDocuments] = useState([]);
-  const [patientForms, setPatientForms] = useState([]);
-  const [patientInvoices, setPatientInvoices] = useState([]);
+  const [patientForms] = useState([]); // Removed unused setPatientForms
+  const [patientInvoices] = useState([]); // Removed unused setPatientInvoices
 
   // UI states
   const [activeTab, setActiveTab] = useState('info');
@@ -73,47 +73,10 @@ const PatientDetail = () => {
     }
   }, [patientId]);
 
-  // Data fetching functions
-  const fetchPatientSessions = async (id) => {
-    try {
-      setLoading((prev) => ({ ...prev, sessions: true }));
-      const response = await apiService.get(
-        `/api/v1/admin/patients/${id}/sessions`
-      );
-      setPatientSessions(response.data || []);
-    } catch (error) {
-      console.error('Error fetching patient sessions:', error);
-    } finally {
-      setLoading((prev) => ({ ...prev, sessions: false }));
-    }
-  };
-
-  const fetchPatientOrders = async (id) => {
-    try {
-      setLoading((prev) => ({ ...prev, orders: true }));
-      const response = await apiService.orders.getAll({ patient_id: id });
-      setPatientOrders(response.data || []);
-    } catch (error) {
-      console.error('Error fetching patient orders:', error);
-    } finally {
-      setLoading((prev) => ({ ...prev, orders: false }));
-    }
-  };
-
-  const fetchPatientNotes = async (id) => {
-    try {
-      setLoading((prev) => ({ ...prev, notes: true }));
-      const response = await apiService.get(
-        `/api/v1/admin/patients/${id}/notes`
-      );
-      setPatientNotes(response.data || []);
-    } catch (error) {
-      console.error('Error fetching patient notes:', error);
-    } finally {
-      setLoading((prev) => ({ ...prev, notes: false }));
-    }
-  };
-
+  // Data fetching functions (Removed unused fetchPatientSessions, fetchPatientOrders, fetchPatientNotes, fetchPatientForms, fetchPatientInvoices)
+  // const fetchPatientSessions = async (id) => { ... };
+  // const fetchPatientOrders = async (id) => { ... };
+  // const fetchPatientNotes = async (id) => { ... };
   const fetchPatientDocuments = async (id) => {
     try {
       setLoading((prev) => ({ ...prev, documents: true }));
@@ -127,34 +90,9 @@ const PatientDetail = () => {
       setLoading((prev) => ({ ...prev, documents: false }));
     }
   };
+  // const fetchPatientForms = async (id) => { ... };
+  // const fetchPatientInvoices = async (id) => { ... };
 
-  const fetchPatientForms = async (id) => {
-    try {
-      setLoading((prev) => ({ ...prev, forms: true }));
-      const response = await apiService.get(
-        `/api/v1/admin/patients/${id}/forms`
-      );
-      setPatientForms(response.data || []);
-    } catch (error) {
-      console.error('Error fetching patient forms:', error);
-    } finally {
-      setLoading((prev) => ({ ...prev, forms: false }));
-    }
-  };
-
-  const fetchPatientInvoices = async (id) => {
-    try {
-      setLoading((prev) => ({ ...prev, invoices: true }));
-      const response = await apiService.get(
-        `/api/v1/admin/patients/${id}/invoices`
-      );
-      setPatientInvoices(response.data || []);
-    } catch (error) {
-      console.error('Error fetching patient invoices:', error);
-    } finally {
-      setLoading((prev) => ({ ...prev, invoices: false }));
-    }
-  };
 
   // Event handlers
   const handleOpenFollowupNotes = (session = null) => {

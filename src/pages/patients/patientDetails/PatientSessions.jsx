@@ -1,7 +1,7 @@
 // components/patients/components/PatientSessions.jsx
 import React from 'react';
 import { Plus, Clock, CheckCircle, XCircle } from 'lucide-react';
-import { Link } from 'react-router-dom';
+// import { Link } from 'react-router-dom'; // Removed unused import
 import LoadingSpinner from './common/LoadingSpinner';
 
 const SessionTypeTag = ({ type }) => {

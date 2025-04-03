@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
 import {
   Search,
-  Plus,
+  // Plus, // Removed unused import
   Edit,
   Trash2,
   Check,
   X,
-  Save,
-  MapPin,
+  // Save, // Removed unused import
+  // MapPin, // Removed unused import
   Filter,
   UserPlus,
 } from 'lucide-react';

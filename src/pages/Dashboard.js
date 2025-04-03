@@ -304,14 +304,14 @@ const Dashboard = () => {
                           task.priority === 'high'
                             ? 'bg-red-100'
                             : task.priority === 'medium'
-                            ? 'bg-yellow-100'
-                            : 'bg-green-100'
+                              ? 'bg-yellow-100'
+                              : 'bg-green-100'
                         } flex items-center justify-center ${
                           task.priority === 'high'
                             ? 'text-red-500'
                             : task.priority === 'medium'
-                            ? 'text-yellow-500'
-                            : 'text-green-500'
+                              ? 'text-yellow-500'
+                              : 'text-green-500'
                         }`}
                       >
                         <Clock className="h-3 w-3" />

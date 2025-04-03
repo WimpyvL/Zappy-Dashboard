@@ -25,7 +25,11 @@ const TagField = ({
   placeholder = 'Add a tag...',
 }) => {
   // Fetch all available tags
-  const { data: tagsData, isLoading: isLoadingTags, error: errorTags } = useTags();
+  const {
+    data: tagsData,
+    isLoading: isLoadingTags,
+    error: errorTags,
+  } = useTags();
   const allTags = tagsData?.data || tagsData || []; // Adapt based on API response
 
   // Mutation hook for creating a new tag
@@ -142,9 +146,12 @@ const TagField = ({
         removable={true}
         // Disable remove button while a remove mutation is pending for this tag
         disabled={
-          (removePatientTagMutation.isLoading && removePatientTagMutation.variables?.tagId === tag.id) ||
-          (removeSessionTagMutation.isLoading && removeSessionTagMutation.variables?.tagId === tag.id) ||
-          (removeOrderTagMutation.isLoading && removeOrderTagMutation.variables?.tagId === tag.id)
+          (removePatientTagMutation.isLoading &&
+            removePatientTagMutation.variables?.tagId === tag.id) ||
+          (removeSessionTagMutation.isLoading &&
+            removeSessionTagMutation.variables?.tagId === tag.id) ||
+          (removeOrderTagMutation.isLoading &&
+            removeOrderTagMutation.variables?.tagId === tag.id)
           // TODO: Add checks for other entity types
         }
         onRemove={() => handleRemoveTag(tag.id)}
@@ -222,28 +229,43 @@ const TagField = ({
             </ul>
           ) : null}
           {/* Option to create new tag */}
-          {inputValue.trim() && !availableTags.some(tag => tag.name.toLowerCase() === inputValue.trim().toLowerCase()) && (
-             <div
-               className="px-3 py-2 hover:bg-gray-100 cursor-pointer border-t border-gray-100"
-               onClick={handleCreateTag}
-             >
-               {createTagMutation.isLoading ? (
-                 <span className="flex items-center text-gray-500">
-                   <Loader2 className="h-4 w-4 animate-spin mr-2" /> Creating...
-                 </span>
-               ) : (
-                 <>
-                   Create tag: <span className="font-medium">{inputValue}</span>
-                 </>
-               )}
-             </div>
-           )}
-           {/* Show 'No matching tags' only if input is empty or no results and not creating */}
-           {!availableTags.length && !inputValue.trim() && (
-             <div className="px-3 py-2 text-gray-500">Type to search or create tags</div>
-           )}
-            {!availableTags.length && inputValue.trim() && availableTags.some(tag => tag.name.toLowerCase() === inputValue.trim().toLowerCase()) && (
-             <div className="px-3 py-2 text-gray-500">No matching tags found</div>
+          {inputValue.trim() &&
+            !availableTags.some(
+              (tag) =>
+                tag.name.toLowerCase() === inputValue.trim().toLowerCase()
+            ) && (
+              <div
+                className="px-3 py-2 hover:bg-gray-100 cursor-pointer border-t border-gray-100"
+                onClick={handleCreateTag}
+              >
+                {createTagMutation.isLoading ? (
+                  <span className="flex items-center text-gray-500">
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />{' '}
+                    Creating...
+                  </span>
+                ) : (
+                  <>
+                    Create tag:{' '}
+                    <span className="font-medium">{inputValue}</span>
+                  </>
+                )}
+              </div>
+            )}
+          {/* Show 'No matching tags' only if input is empty or no results and not creating */}
+          {!availableTags.length && !inputValue.trim() && (
+            <div className="px-3 py-2 text-gray-500">
+              Type to search or create tags
+            </div>
+          )}
+          {!availableTags.length &&
+            inputValue.trim() &&
+            availableTags.some(
+              (tag) =>
+                tag.name.toLowerCase() === inputValue.trim().toLowerCase()
+            ) && (
+              <div className="px-3 py-2 text-gray-500">
+                No matching tags found
+              </div>
             )}
         </div>
       )}

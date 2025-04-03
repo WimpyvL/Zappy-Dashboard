@@ -6,7 +6,7 @@ import {
   Collapse,
   Button,
   Tooltip,
-  Divider,
+  // Divider, // Removed unused import
 } from 'antd';
 import {
   FormOutlined,
@@ -27,7 +27,7 @@ import {
   SafetyCertificateOutlined,
 } from '@ant-design/icons';
 
-const { Title, Text } = Typography;
+const { Text } = Typography; // Removed unused Title
 const { TabPane } = Tabs;
 const { Panel } = Collapse;
 

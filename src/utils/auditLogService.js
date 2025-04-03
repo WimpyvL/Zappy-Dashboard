@@ -5,7 +5,7 @@
 // TODO: Decide whether to call the API directly or use the mutation hook.
 // Using the API directly might be simpler here if we don't need mutation state (isLoading, etc.)
 // in the place where the log is triggered.
-import { createAuditLog } from '../apis/auditlog/api';
+// import { createAuditLog } from '../apis/auditlog/api'; // Commented out direct API import
 import errorHandling from './errorHandling'; // Assuming errorHandling utility exists
 
 // Get user info (example - adapt based on actual AuthContext structure)
@@ -37,17 +37,18 @@ const logAuditEvent = async (action, details = {}, userId = null) => {
   //   return;
   // }
 
-  const logData = {
-    action: action,
-    details: JSON.stringify(details), // Send details as a JSON string or structured object based on backend expectation
-    user: userId || getCurrentUserEmail(), // Get user identifier
-    timestamp: new Date().toISOString(), // Timestamp can also be set by backend
-  };
+  // const logData = { // Removed unused variable
+  //   action: action,
+  //   details: JSON.stringify(details), // Send details as a JSON string or structured object based on backend expectation
+  //   user: userId || getCurrentUserEmail(), // Get user identifier
+  //   timestamp: new Date().toISOString(), // Timestamp can also be set by backend
+  // };
 
   try {
     // Call the API function directly
     // We might not need the full mutation hook state management here
-    await createAuditLog(logData);
+    // await createAuditLog(logData); // Commented out direct API call
+    console.log(`[Mock Audit Log] Action: ${action}`, details); // Simulate logging
     console.log(`Audit event logged: ${action}`, details); // Log success locally for debugging
   } catch (error) {
     errorHandling.logError(error, `AuditLogService (${action})`);

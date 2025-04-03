@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react'; // Removed unused useEffect
 import {
   Search,
   Plus,
@@ -6,8 +6,8 @@ import {
   Trash2,
   Check,
   X,
-  Tag,
-  Layers,
+  // Tag, // Removed unused import
+  // Layers, // Removed unused import
   Calendar,
   Loader2, // Added for loading state
   AlertTriangle, // Added for error state
@@ -172,7 +172,7 @@ const ServiceManagement = () => {
         if (planConfig.planId === planId) {
           const newValue =
             field === 'requiresSubscription'
-              ? value.target?.checked ?? value // Handle checkbox event or direct boolean
+              ? (value.target?.checked ?? value) // Handle checkbox event or direct boolean
               : value;
           return { ...planConfig, [field]: newValue };
         }
@@ -222,88 +222,89 @@ const ServiceManagement = () => {
         {!isLoadingPlans && allPlans.length === 0 && (
           <p className="text-xs text-gray-500 p-2">No plans available.</p>
         )}
-        {!isLoadingPlans && allPlans.map((plan) => {
-          const planConfig = formData.availablePlans.find(
-            (p) => p.planId === plan.id
-          );
-          const isSelected = !!planConfig;
+        {!isLoadingPlans &&
+          allPlans.map((plan) => {
+            const planConfig = formData.availablePlans.find(
+              (p) => p.planId === plan.id
+            );
+            const isSelected = !!planConfig;
 
-          return (
-            <div
-              key={plan.id}
-              className={`p-2 rounded ${isSelected ? 'bg-indigo-50 border border-indigo-200' : ''}`}
-            >
+            return (
               <div
-                className={`flex items-center cursor-pointer ${isSelected ? '' : 'hover:bg-gray-100'}`}
-                onClick={() => handlePlanSelection(plan.id)}
+                key={plan.id}
+                className={`p-2 rounded ${isSelected ? 'bg-indigo-50 border border-indigo-200' : ''}`}
               >
                 <div
-                  className={`w-5 h-5 flex items-center justify-center rounded-full border mr-2 flex-shrink-0 ${
-                    isSelected
-                      ? 'bg-indigo-600 border-indigo-600'
-                      : 'border-gray-300'
-                  }`}
+                  className={`flex items-center cursor-pointer ${isSelected ? '' : 'hover:bg-gray-100'}`}
+                  onClick={() => handlePlanSelection(plan.id)}
                 >
-                  {isSelected && <Check className="h-3 w-3 text-white" />}
+                  <div
+                    className={`w-5 h-5 flex items-center justify-center rounded-full border mr-2 flex-shrink-0 ${
+                      isSelected
+                        ? 'bg-indigo-600 border-indigo-600'
+                        : 'border-gray-300'
+                    }`}
+                  >
+                    {isSelected && <Check className="h-3 w-3 text-white" />}
+                  </div>
+                  <Calendar className="h-4 w-4 text-gray-400 mr-1 flex-shrink-0" />
+                  <div
+                    className="text-sm font-medium flex-grow truncate"
+                    title={plan.name}
+                  >
+                    {plan.name}
+                  </div>
                 </div>
-                <Calendar className="h-4 w-4 text-gray-400 mr-1 flex-shrink-0" />
-                <div
-                  className="text-sm font-medium flex-grow truncate"
-                  title={plan.name}
-                >
-                  {plan.name}
-                </div>
+                {isSelected && planConfig && (
+                  <div className="mt-2 pl-7 space-y-2">
+                    <div>
+                      <label
+                        htmlFor={`duration-${plan.id}`}
+                        className="block text-xs font-medium text-gray-600 mb-0.5"
+                      >
+                        Duration
+                      </label>
+                      <input
+                        type="text"
+                        id={`duration-${plan.id}`}
+                        value={planConfig.duration}
+                        onChange={(e) =>
+                          handlePlanConfigChange(
+                            plan.id,
+                            'duration',
+                            e.target.value
+                          )
+                        }
+                        placeholder="e.g., 1 month, 90 days"
+                        className="block w-full px-2 py-1 text-xs border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 rounded-md"
+                      />
+                    </div>
+                    <div className="flex items-center mt-1">
+                      <input
+                        type="checkbox"
+                        id={`requiresSubscription-${plan.id}`}
+                        checked={planConfig.requiresSubscription}
+                        onChange={(e) =>
+                          handlePlanConfigChange(
+                            plan.id,
+                            'requiresSubscription',
+                            e // Pass event directly
+                          )
+                        }
+                        className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded mr-2"
+                      />
+                      <label
+                        htmlFor={`requiresSubscription-${plan.id}`}
+                        className="text-xs text-gray-700"
+                      >
+                        Subscription Required
+                      </label>
+                    </div>
+                  </div>
+                )}
               </div>
-              {isSelected && planConfig && (
-                <div className="mt-2 pl-7 space-y-2">
-                  <div>
-                    <label
-                      htmlFor={`duration-${plan.id}`}
-                      className="block text-xs font-medium text-gray-600 mb-0.5"
-                    >
-                      Duration
-                    </label>
-                    <input
-                      type="text"
-                      id={`duration-${plan.id}`}
-                      value={planConfig.duration}
-                      onChange={(e) =>
-                        handlePlanConfigChange(
-                          plan.id,
-                          'duration',
-                          e.target.value
-                        )
-                      }
-                      placeholder="e.g., 1 month, 90 days"
-                      className="block w-full px-2 py-1 text-xs border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 rounded-md"
-                    />
-                  </div>
-                  <div className="flex items-center mt-1">
-                    <input
-                      type="checkbox"
-                      id={`requiresSubscription-${plan.id}`}
-                      checked={planConfig.requiresSubscription}
-                      onChange={(e) =>
-                        handlePlanConfigChange(
-                          plan.id,
-                          'requiresSubscription',
-                          e // Pass event directly
-                        )
-                      }
-                      className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded mr-2"
-                    />
-                    <label
-                      htmlFor={`requiresSubscription-${plan.id}`}
-                      className="text-xs text-gray-700"
-                    >
-                      Subscription Required
-                    </label>
-                  </div>
-                </div>
-              )}
-            </div>
-          );
-        })}
+            );
+          })}
       </div>
       <p className="mt-1 text-xs text-gray-500">
         {formData.availablePlans.length} plans selected
@@ -321,37 +322,38 @@ const ServiceManagement = () => {
         {!isLoadingProducts && allProducts.length === 0 && (
           <p className="text-xs text-gray-500 p-2">No products available.</p>
         )}
-        {!isLoadingProducts && allProducts.map((product) => (
-          <div
-            key={product.id}
-            className={`flex items-center p-2 rounded cursor-pointer ${
-              formData.associatedProducts.includes(product.id)
-                ? 'bg-indigo-100'
-                : 'hover:bg-gray-100'
-            }`}
-            onClick={() => handleProductSelection(product.id)}
-          >
+        {!isLoadingProducts &&
+          allProducts.map((product) => (
             <div
-              className={`w-5 h-5 flex items-center justify-center rounded-full border mr-2 flex-shrink-0 ${
+              key={product.id}
+              className={`flex items-center p-2 rounded cursor-pointer ${
                 formData.associatedProducts.includes(product.id)
-                  ? 'bg-indigo-600 border-indigo-600'
-                  : 'border-gray-300'
+                  ? 'bg-indigo-100'
+                  : 'hover:bg-gray-100'
               }`}
+              onClick={() => handleProductSelection(product.id)}
             >
-              {formData.associatedProducts.includes(product.id) && (
-                <Check className="h-3 w-3 text-white" />
-              )}
-            </div>
-            <div className="ml-2">
               <div
-                className="text-sm font-medium truncate"
-                title={product.name}
+                className={`w-5 h-5 flex items-center justify-center rounded-full border mr-2 flex-shrink-0 ${
+                  formData.associatedProducts.includes(product.id)
+                    ? 'bg-indigo-600 border-indigo-600'
+                    : 'border-gray-300'
+                }`}
               >
-                {product.name}
+                {formData.associatedProducts.includes(product.id) && (
+                  <Check className="h-3 w-3 text-white" />
+                )}
+              </div>
+              <div className="ml-2">
+                <div
+                  className="text-sm font-medium truncate"
+                  title={product.name}
+                >
+                  {product.name}
+                </div>
               </div>
             </div>
-          </div>
-        ))}
+          ))}
       </div>
       <p className="mt-1 text-xs text-gray-500">
         {formData.associatedProducts.length} products selected
@@ -382,7 +384,10 @@ const ServiceManagement = () => {
     );
   }
 
-  const isMutating = addServiceMutation.isLoading || updateServiceMutation.isLoading || deleteServiceMutation.isLoading;
+  const isMutating =
+    addServiceMutation.isLoading ||
+    updateServiceMutation.isLoading ||
+    deleteServiceMutation.isLoading;
 
   return (
     <div>
@@ -506,12 +511,16 @@ const ServiceManagement = () => {
                       className="text-red-600 hover:text-red-900 disabled:opacity-50"
                       onClick={() => handleDeleteService(service.id)}
                       title="Delete Service"
-                      disabled={isMutating || deleteServiceMutation.variables === service.id}
+                      disabled={
+                        isMutating ||
+                        deleteServiceMutation.variables === service.id
+                      }
                     >
-                      {deleteServiceMutation.isLoading && deleteServiceMutation.variables === service.id ? (
-                         <Loader2 className="h-5 w-5 animate-spin" />
+                      {deleteServiceMutation.isLoading &&
+                      deleteServiceMutation.variables === service.id ? (
+                        <Loader2 className="h-5 w-5 animate-spin" />
                       ) : (
-                         <Trash2 className="h-5 w-5" />
+                        <Trash2 className="h-5 w-5" />
                       )}
                     </button>
                   </td>
@@ -628,9 +637,14 @@ const ServiceManagement = () => {
                 type="button"
                 className="px-4 py-2 bg-indigo-600 rounded-md text-sm font-medium text-white hover:bg-indigo-700 flex items-center justify-center disabled:opacity-50"
                 onClick={handleSubmit}
-                disabled={!formData.name || addServiceMutation.isLoading || updateServiceMutation.isLoading}
+                disabled={
+                  !formData.name ||
+                  addServiceMutation.isLoading ||
+                  updateServiceMutation.isLoading
+                }
               >
-                {(addServiceMutation.isLoading || updateServiceMutation.isLoading) && (
+                {(addServiceMutation.isLoading ||
+                  updateServiceMutation.isLoading) && (
                   <Loader2 className="h-4 w-4 animate-spin mr-2" />
                 )}
                 {showAddModal ? 'Add Service' : 'Save Changes'}

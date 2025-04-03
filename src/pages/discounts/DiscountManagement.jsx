@@ -45,7 +45,7 @@ const DiscountManagement = () => {
   });
 
   // Use TanStack Query hooks
-  const { data, isLoading, isError, error } = useDiscounts();
+  const { data, isLoading, error } = useDiscounts(); // Removed unused isError
   const createDiscount = useCreateDiscount();
   const updateDiscount = useUpdateDiscount();
   const deleteDiscount = useDeleteDiscount();

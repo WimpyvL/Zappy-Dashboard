@@ -31,40 +31,40 @@ export const getNoteById = async (noteId, patientId) => {
 
 // Example: Create a note for a specific patient
 export const createPatientNote = async (patientId, noteData) => {
-   if (!patientId) throw new Error('Patient ID is required to create a note.');
-   const data = await request({
-     url: `/api/v1/admin/patients/${patientId}/notes`, // Example endpoint
-     method: 'POST',
-     data: noteData, // Should include title, content, category, createdBy, data, etc.
-   });
-   return data;
+  if (!patientId) throw new Error('Patient ID is required to create a note.');
+  const data = await request({
+    url: `/api/v1/admin/patients/${patientId}/notes`, // Example endpoint
+    method: 'POST',
+    data: noteData, // Should include title, content, category, createdBy, data, etc.
+  });
+  return data;
 };
 
 // Example: Update a specific note
 export const updatePatientNote = async (noteId, noteData, patientId) => {
   if (!noteId) throw new Error('Note ID is required for update.');
-   // Adjust URL if patientId is needed
-   const url = patientId
-     ? `/api/v1/admin/patients/${patientId}/notes/${noteId}`
-     : `/api/v1/admin/notes/${noteId}`;
-   const data = await request({
-     url: url,
-     method: 'PUT', // Or PATCH
-     data: noteData,
-   });
-   return data;
+  // Adjust URL if patientId is needed
+  const url = patientId
+    ? `/api/v1/admin/patients/${patientId}/notes/${noteId}`
+    : `/api/v1/admin/notes/${noteId}`;
+  const data = await request({
+    url: url,
+    method: 'PUT', // Or PATCH
+    data: noteData,
+  });
+  return data;
 };
 
 // Example: Delete a specific note
 export const deletePatientNote = async (noteId, patientId) => {
-   if (!noteId) throw new Error('Note ID is required for deletion.');
-    // Adjust URL if patientId is needed
-    const url = patientId
-      ? `/api/v1/admin/patients/${patientId}/notes/${noteId}`
-      : `/api/v1/admin/notes/${noteId}`;
-   const data = await request({
-     url: url,
-     method: 'DELETE',
-   });
-   return data;
+  if (!noteId) throw new Error('Note ID is required for deletion.');
+  // Adjust URL if patientId is needed
+  const url = patientId
+    ? `/api/v1/admin/patients/${patientId}/notes/${noteId}`
+    : `/api/v1/admin/notes/${noteId}`;
+  const data = await request({
+    url: url,
+    method: 'DELETE',
+  });
+  return data;
 };

@@ -1,6 +1,6 @@
 import axios from 'axios';
 import { toast } from 'react-toastify';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+// Removed unused imports: useQuery, useMutation, useQueryClient
 import 'react-toastify/dist/ReactToastify.css';
 
 // Create axios instance with default config
@@ -149,7 +149,9 @@ const apiService = {
   // Consultation related endpoints (NEW)
   consultations: {
     getAll: async (params) => {
-      const response = await apiClient.get('/api/v1/admin/consultations', { params });
+      const response = await apiClient.get('/api/v1/admin/consultations', {
+        params,
+      });
       return response.data;
     },
     getById: async (id) => {
@@ -157,7 +159,10 @@ const apiService = {
       return response.data;
     },
     updateStatus: async (id, status) => {
-      const response = await apiClient.patch(`/api/v1/admin/consultations/${id}/status`, { status }); // Assuming PATCH for status update
+      const response = await apiClient.patch(
+        `/api/v1/admin/consultations/${id}/status`,
+        { status }
+      ); // Assuming PATCH for status update
       return response.data;
     },
     // Add create, update, delete if needed
@@ -220,34 +225,48 @@ const apiService = {
 
   // Note related endpoints (NEW - Assuming nested under patients)
   notes: {
-     getPatientNotes: async (patientId, params) => {
-       if (!patientId) throw new Error('Patient ID is required to fetch notes.');
-       const response = await apiClient.get(`/api/v1/admin/patients/${patientId}/notes`, { params });
-       return response.data;
-     },
-     getNoteById: async (noteId, patientId) => { // patientId might be optional depending on API
-       if (!noteId) throw new Error('Note ID is required.');
-       const url = patientId ? `/api/v1/admin/patients/${patientId}/notes/${noteId}` : `/api/v1/admin/notes/${noteId}`;
-       const response = await apiClient.get(url);
-       return response.data;
-     },
-     createPatientNote: async (patientId, noteData) => {
-        if (!patientId) throw new Error('Patient ID is required to create a note.');
-        const response = await apiClient.post(`/api/v1/admin/patients/${patientId}/notes`, noteData);
-        return response.data;
-     },
-     updatePatientNote: async (noteId, noteData, patientId) => {
-       if (!noteId) throw new Error('Note ID is required for update.');
-       const url = patientId ? `/api/v1/admin/patients/${patientId}/notes/${noteId}` : `/api/v1/admin/notes/${noteId}`;
-       const response = await apiClient.put(url, noteData); // Assuming PUT for update
-       return response.data;
-     },
-     deletePatientNote: async (noteId, patientId) => {
-        if (!noteId) throw new Error('Note ID is required for deletion.');
-         const url = patientId ? `/api/v1/admin/patients/${patientId}/notes/${noteId}` : `/api/v1/admin/notes/${noteId}`;
-        const response = await apiClient.delete(url);
-        return response.data;
-     },
+    getPatientNotes: async (patientId, params) => {
+      if (!patientId) throw new Error('Patient ID is required to fetch notes.');
+      const response = await apiClient.get(
+        `/api/v1/admin/patients/${patientId}/notes`,
+        { params }
+      );
+      return response.data;
+    },
+    getNoteById: async (noteId, patientId) => {
+      // patientId might be optional depending on API
+      if (!noteId) throw new Error('Note ID is required.');
+      const url = patientId
+        ? `/api/v1/admin/patients/${patientId}/notes/${noteId}`
+        : `/api/v1/admin/notes/${noteId}`;
+      const response = await apiClient.get(url);
+      return response.data;
+    },
+    createPatientNote: async (patientId, noteData) => {
+      if (!patientId)
+        throw new Error('Patient ID is required to create a note.');
+      const response = await apiClient.post(
+        `/api/v1/admin/patients/${patientId}/notes`,
+        noteData
+      );
+      return response.data;
+    },
+    updatePatientNote: async (noteId, noteData, patientId) => {
+      if (!noteId) throw new Error('Note ID is required for update.');
+      const url = patientId
+        ? `/api/v1/admin/patients/${patientId}/notes/${noteId}`
+        : `/api/v1/admin/notes/${noteId}`;
+      const response = await apiClient.put(url, noteData); // Assuming PUT for update
+      return response.data;
+    },
+    deletePatientNote: async (noteId, patientId) => {
+      if (!noteId) throw new Error('Note ID is required for deletion.');
+      const url = patientId
+        ? `/api/v1/admin/patients/${patientId}/notes/${noteId}`
+        : `/api/v1/admin/notes/${noteId}`;
+      const response = await apiClient.delete(url);
+      return response.data;
+    },
   },
 
   // Task related endpoints
@@ -429,36 +448,47 @@ const apiService = {
     },
   },
 
-   // Session related endpoints (NEW)
-   sessions: {
-     getAll: async (params) => {
-       const response = await apiClient.get('/api/v1/admin/sessions', { params });
-       return response.data;
-     },
-     getById: async (id) => {
-       const response = await apiClient.get(`/api/v1/admin/sessions/${id}`);
-       return response.data;
-     },
-     create: async (sessionData) => {
-       const response = await apiClient.post('/api/v1/admin/sessions', sessionData);
-       return response.data;
-     },
-     update: async (id, sessionData) => {
-       const response = await apiClient.put(`/api/v1/admin/sessions/${id}`, sessionData);
-       return response.data;
-     },
-     updateStatus: async (id, status) => {
-       const response = await apiClient.patch(`/api/v1/admin/sessions/${id}/status`, { status }); // Assuming PATCH for status update
-       return response.data;
-     },
-     delete: async (id) => {
-       const response = await apiClient.delete(`/api/v1/admin/sessions/${id}`);
-       return response.data;
-     },
-     // Add tag/untag functions if API exists
-     // addTag: async (sessionId, tagId) => { ... }
-     // removeTag: async (sessionId, tagId) => { ... }
-   },
+  // Session related endpoints (NEW)
+  sessions: {
+    getAll: async (params) => {
+      const response = await apiClient.get('/api/v1/admin/sessions', {
+        params,
+      });
+      return response.data;
+    },
+    getById: async (id) => {
+      const response = await apiClient.get(`/api/v1/admin/sessions/${id}`);
+      return response.data;
+    },
+    create: async (sessionData) => {
+      const response = await apiClient.post(
+        '/api/v1/admin/sessions',
+        sessionData
+      );
+      return response.data;
+    },
+    update: async (id, sessionData) => {
+      const response = await apiClient.put(
+        `/api/v1/admin/sessions/${id}`,
+        sessionData
+      );
+      return response.data;
+    },
+    updateStatus: async (id, status) => {
+      const response = await apiClient.patch(
+        `/api/v1/admin/sessions/${id}/status`,
+        { status }
+      ); // Assuming PATCH for status update
+      return response.data;
+    },
+    delete: async (id) => {
+      const response = await apiClient.delete(`/api/v1/admin/sessions/${id}`);
+      return response.data;
+    },
+    // Add tag/untag functions if API exists
+    // addTag: async (sessionId, tagId) => { ... }
+    // removeTag: async (sessionId, tagId) => { ... }
+  },
 
   // Product-Service Links endpoints
   productServiceLinks: {

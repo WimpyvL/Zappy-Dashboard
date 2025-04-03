@@ -7,7 +7,7 @@ import {
   Form,
   Input,
   Select,
-  Divider,
+  Divider, // Added back Divider
   Typography,
   Tooltip,
   Tag,
@@ -29,24 +29,25 @@ import {
   MoreOutlined,
   SearchOutlined,
 } from '@ant-design/icons';
-import { useForm, Controller } from 'react-hook-form';
+import { useForm } from 'react-hook-form'; // Removed Controller as it's in FormBasicsModal
 
 // Import components and hooks
 import FormElementSidebar from './FormElementSidebar';
 import FormBuilderElements from './FormBuilderElements';
 import FormPages from './FormPages';
 import FormConditionals from './FormConditionals';
+import FormTable from './FormTable'; // Import the new table component
+import FormBasicsModal from './FormBasicsModal'; // Import the new modal component
 import {
   useForms,
-  useFormById,
+  // useFormById, // Removed unused import
   useCreateForm,
   useUpdateForm,
   useDeleteForm,
 } from '../../../../apis/forms/hooks';
 
-const { Title, Text } = Typography;
+const { Title, Text } = Typography; // Added back Title
 const { TabPane } = Tabs;
-const { Option } = Select;
 
 // Generate unique ID helper function
 function generateRandomId() {
@@ -56,28 +57,38 @@ function generateRandomId() {
 // Main Forms Management Component
 const FormsManagement = () => {
   // API integration with react-query hooks
-  const { data: formsData, isLoading: formsLoading } = useForms();
+  const { data: formsData, isLoading: formsLoading, refetch: refetchForms } = useForms();
   const createFormMutation = useCreateForm({
     onSuccess: () => {
       setFormBuilderVisible(false);
       setCurrentForm(null);
-      resetFormBasics();
+      resetFormBasics(); // Use reset from react-hook-form
       setFormPages([]);
       setFormConditionals([]);
       message.success('Form created successfully');
+      refetchForms(); // Refetch after creation
     },
   });
   const updateFormMutation = useUpdateForm({
     onSuccess: () => {
       setFormBuilderVisible(false);
       setCurrentForm(null);
-      resetFormBasics();
+      resetFormBasics(); // Use reset from react-hook-form
       setFormPages([]);
       setFormConditionals([]);
       message.success('Form updated successfully');
+      refetchForms(); // Refetch after update
     },
   });
-  const deleteFormMutation = useDeleteForm();
+  const deleteFormMutation = useDeleteForm({
+    onSuccess: () => {
+      message.success('Form deleted successfully');
+      refetchForms(); // Refetch after deletion
+    },
+    onError: (error) => {
+      message.error(`Error deleting form: ${error.message || 'Unknown error'}`);
+    },
+  });
 
   // Local state
   const [activeService, setActiveService] = useState('all');
@@ -92,25 +103,15 @@ const FormsManagement = () => {
   const [formConditionals, setFormConditionals] = useState([]);
   const [activeBuilderTab, setActiveBuilderTab] = useState('pages');
   const [currentPageIndex, setCurrentPageIndex] = useState(0);
-  const [services, setServices] = useState([
+  // Mock services data (can be fetched if needed)
+  const [services] = useState([ // Removed unused setServices
     { id: 1, name: 'Consultation', category: 'Medical' },
     { id: 2, name: 'Weight Management', category: 'Medical' },
     { id: 4, name: 'Insurance Verification', category: 'Administrative' },
   ]);
 
-  const {
-    control: formBasicsControl,
-    handleSubmit: handleFormBasicsSubmit,
-    reset: resetFormBasics,
-  } = useForm({
-    defaultValues: {
-      title: '',
-      description: '',
-      service_id: null,
-      form_type: '',
-      status: true,
-    },
-  });
+  // Use react-hook-form for the basics modal (though the modal itself handles it now)
+  const { reset: resetFormBasics } = useForm();
 
   // Normalize form data from API to component state
   const forms = formsData?.data || [];
@@ -118,19 +119,17 @@ const FormsManagement = () => {
   // Transform API response to match component data structure
   const transformedForms = forms.map((form) => {
     const formData = form;
-    let formPages = [];
-    let formConditionals = [];
+    let formPagesData = [];
+    let formConditionalsData = [];
 
     try {
       if (formData.structure) {
         const structure = JSON.parse(formData.structure);
-        // Check if it's new multi-page format or legacy single-page format
         if (structure.pages && Array.isArray(structure.pages)) {
-          formPages = structure.pages;
-          formConditionals = structure.conditionals || [];
+          formPagesData = structure.pages;
+          formConditionalsData = structure.conditionals || [];
         } else if (Array.isArray(structure)) {
-          // Legacy format - convert to multi-page
-          formPages = [
+          formPagesData = [
             {
               id: generateRandomId(),
               title: 'Page 1',
@@ -141,7 +140,7 @@ const FormsManagement = () => {
       }
     } catch (e) {
       console.error('Error parsing form structure:', e);
-      formPages = [
+      formPagesData = [
         {
           id: generateRandomId(),
           title: 'Page 1',
@@ -150,7 +149,7 @@ const FormsManagement = () => {
       ];
     }
 
-    const totalElements = formPages.reduce(
+    const totalElements = formPagesData.reduce(
       (count, page) => count + (page.elements ? page.elements.length : 0),
       0
     );
@@ -165,27 +164,18 @@ const FormsManagement = () => {
       form_type: formData.form_type,
       createdAt: new Date(formData.created_at).toLocaleDateString(),
       updatedAt: new Date(formData.updated_at).toLocaleDateString(),
-      pages: formPages,
-      conditionals: formConditionals,
+      pages: formPagesData,
+      conditionals: formConditionalsData,
       elementCount: totalElements,
-      pageCount: formPages.length,
+      pageCount: formPagesData.length,
       shareLink: formData.slug,
-      submissions: 0, // Placeholder, would come from API in real app
+      submissions: 0, // Placeholder
     };
   });
 
-  // Initialize form pages and conditionals when form is loaded
+  // Initialize form pages and conditionals when opening the builder for editing
   useEffect(() => {
-    if (currentForm && formActionType === 'edit') {
-      resetFormBasics({
-        title: currentForm.title,
-        description: currentForm.description,
-        service_id: currentForm.serviceId,
-        form_type: currentForm.form_type || '',
-        status: currentForm.status === 'active',
-      });
-
-      // Load the form pages if they exist
+    if (currentForm && formBuilderVisible) {
       if (currentForm.pages && currentForm.pages.length > 0) {
         setFormPages(currentForm.pages);
       } else {
@@ -197,88 +187,53 @@ const FormsManagement = () => {
           },
         ]);
       }
-
-      // Load conditionals
-      if (currentForm.conditionals && currentForm.conditionals.length > 0) {
-        setFormConditionals(currentForm.conditionals);
-      } else {
-        setFormConditionals([]);
-      }
-    } else {
-      // Initialize with one empty page for new forms
-      setFormPages([
-        {
-          id: generateRandomId(),
-          title: 'Page 1',
-          elements: [],
-        },
-      ]);
-      setFormConditionals([]);
+      setFormConditionals(currentForm.conditionals || []);
+      setCurrentPageIndex(0); // Start at the first page
     }
-
-    // Always start with the first page
-    setCurrentPageIndex(0);
-  }, [currentForm, formActionType, resetFormBasics]);
+  }, [currentForm, formBuilderVisible]);
 
   // Filter forms based on selected service and search text
   const filteredForms = transformedForms.filter((form) => {
     const matchesService =
       activeService === 'all' || form.serviceId === parseInt(activeService);
     const matchesSearch =
-      form.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      form.description.toLowerCase().includes(searchTerm.toLowerCase());
+      (form.title || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (form.description || '').toLowerCase().includes(searchTerm.toLowerCase());
     return matchesService && matchesSearch;
   });
 
-  // Handle form basics submission (first step of form creation/editing)
-  const onFormBasicsSubmit = (data) => {
-    if (formActionType === 'create') {
-      // Create a new form object
-      const newForm = {
-        id: generateRandomId(),
-        title: data.title,
-        description: data.description,
-        serviceId: data.service_id,
-        form_type: data.form_type,
-        status: data.status ? 'active' : 'inactive',
-        createdAt: new Date().toISOString().split('T')[0],
-        updatedAt: new Date().toISOString().split('T')[0],
-        pages: [
-          {
-            id: generateRandomId(),
-            title: 'Page 1',
-            elements: [],
-          },
-        ],
-        conditionals: [],
-        shareLink: data.title.toLowerCase().replace(/\s+/g, '-'),
-        submissions: 0,
-        elementCount: 0,
-        pageCount: 1,
-      };
-      setCurrentForm(newForm);
-    } else {
-      // Update the existing form with new data
-      const updatedForm = {
-        ...currentForm,
-        title: data.title,
-        description: data.description,
-        serviceId: data.service_id,
-        form_type: data.form_type,
-        status: data.status ? 'active' : 'inactive',
-        updatedAt: new Date().toISOString().split('T')[0],
-      };
-      setCurrentForm(updatedForm);
-    }
-
-    // Move to form builder step
-    setFormModalVisible(false);
-    setFormBuilderVisible(true);
+  // Handle opening the add/edit modal
+  const openFormBasicsModal = (action, form = null) => {
+    setFormActionType(action);
+    setCurrentForm(form); // Set the form being edited, or null for create
+    setFormModalVisible(true);
   };
 
-  // Handle form builder submission (second step of form creation/editing)
+  // Handle form basics submission (from modal)
+  const onFormBasicsSubmit = (data) => {
+    const baseFormDetails = {
+      title: data.title,
+      description: data.description,
+      serviceId: data.service_id,
+      form_type: data.form_type,
+      status: data.status ? 'active' : 'inactive',
+      // Keep existing pages/conditionals if editing, initialize if creating
+      pages: formActionType === 'edit' && currentForm ? currentForm.pages : [{ id: generateRandomId(), title: 'Page 1', elements: [] }],
+      conditionals: formActionType === 'edit' && currentForm ? currentForm.conditionals : [],
+      // Add other necessary fields
+      id: formActionType === 'edit' ? currentForm.id : generateRandomId(),
+      shareLink: data.title.toLowerCase().replace(/\s+/g, '-'), // Simple slug generation
+    };
+
+    setCurrentForm(baseFormDetails);
+    setFormModalVisible(false);
+    setFormBuilderVisible(true); // Open the builder
+  };
+
+  // Handle form builder submission
   const handleFormBuilderSubmit = () => {
-    // Prepare form data for API
+    if (!currentForm) return;
+
     const formData = {
       title: currentForm.title,
       description: currentForm.description,
@@ -292,10 +247,8 @@ const FormsManagement = () => {
     };
 
     if (formActionType === 'create') {
-      // Call API to create new form
       createFormMutation.mutate(formData);
     } else {
-      // Call API to update existing form
       updateFormMutation.mutate({
         id: currentForm.id,
         formData: formData,
@@ -303,189 +256,100 @@ const FormsManagement = () => {
     }
   };
 
-  // Create a new page
+  // --- Page Management Handlers ---
   const handleAddPage = () => {
     const newPage = {
       id: generateRandomId(),
       title: `Page ${formPages.length + 1}`,
       elements: [],
     };
-
     setFormPages([...formPages, newPage]);
-    // Switch to the new page
     setCurrentPageIndex(formPages.length);
   };
 
-  // Delete a page
   const handleDeletePage = (pageIndex) => {
     if (formPages.length <= 1) {
-      message.error(
-        'Cannot delete the only page. Forms must have at least one page.'
-      );
+      message.error('Forms must have at least one page.');
       return;
     }
-
-    const updatedPages = [...formPages];
-    updatedPages.splice(pageIndex, 1);
+    const updatedPages = formPages.filter((_, index) => index !== pageIndex);
     setFormPages(updatedPages);
-
-    // If we deleted the current page, switch to the previous page
-    if (pageIndex <= currentPageIndex) {
-      setCurrentPageIndex(Math.max(0, currentPageIndex - 1));
-    }
-
-    // Also update conditionals that might reference the deleted page
-    const updatedConditionals = formConditionals
-      .filter((condition) => condition.thenGoToPage !== pageIndex)
-      .map((condition) => ({
-        ...condition,
-        // Adjust page references that are after the deleted page
-        thenGoToPage:
-          condition.thenGoToPage > pageIndex
-            ? condition.thenGoToPage - 1
-            : condition.thenGoToPage,
-      }));
-
-    setFormConditionals(updatedConditionals);
+    setCurrentPageIndex(Math.max(0, currentPageIndex - 1));
+    // TODO: Update conditionals referencing deleted/shifted pages
   };
 
-  // Update page title
   const handleUpdatePageTitle = (pageIndex, newTitle) => {
-    const updatedPages = [...formPages];
-    updatedPages[pageIndex] = {
-      ...updatedPages[pageIndex],
-      title: newTitle,
-    };
+    const updatedPages = formPages.map((page, index) =>
+      index === pageIndex ? { ...page, title: newTitle } : page
+    );
     setFormPages(updatedPages);
   };
 
-  // Handle adding a form element type to the current page
-  const handleAddFormElement = (type) => {
-    // Create new element based on type
+  // --- Element Management Handlers ---
+  const handleAddFormElement = (type, templateData = {}) => {
     const newElement = {
       id: generateRandomId(),
       type,
-      label: `New ${type.replace('_', ' ')} field`,
-      placeholder: `Enter ${type.replace('_', ' ')}`,
-      required: false,
+      label: templateData.label || `New ${type.replace('_', ' ')} field`,
+      placeholder: templateData.placeholder || '',
+      required: templateData.required || false,
+      options: templateData.options || (['multiple_choice', 'checkboxes', 'dropdown'].includes(type)
+        ? [{ id: generateRandomId(), value: 'Option 1' }]
+        : undefined),
     };
-
-    // Add options if the element type needs them
-    if (['multiple_choice', 'checkboxes', 'dropdown'].includes(type)) {
-      newElement.options = [
-        { id: generateRandomId(), value: 'Option 1' },
-        { id: generateRandomId(), value: 'Option 2' },
-        { id: generateRandomId(), value: 'Option 3' },
-      ];
-    }
-
-    // Add element to current page
     const updatedPages = [...formPages];
     updatedPages[currentPageIndex].elements = [
       ...(updatedPages[currentPageIndex].elements || []),
       newElement,
     ];
-
     setFormPages(updatedPages);
   };
 
-  // Handle updating a form element
   const handleUpdateFormElement = (elementIndex, updatedElement) => {
     const updatedPages = [...formPages];
-    const currentPage = updatedPages[currentPageIndex];
-
-    const updatedElements = [...currentPage.elements];
-    updatedElements[elementIndex] = updatedElement;
-
-    updatedPages[currentPageIndex] = {
-      ...currentPage,
-      elements: updatedElements,
-    };
-
+    updatedPages[currentPageIndex].elements[elementIndex] = updatedElement;
     setFormPages(updatedPages);
   };
 
-  // Handle deleting a form element
   const handleDeleteFormElement = (elementIndex) => {
+    const elementIdToDelete = formPages[currentPageIndex].elements[elementIndex].id;
     const updatedPages = [...formPages];
-    const currentPage = updatedPages[currentPageIndex];
-
-    const updatedElements = [...currentPage.elements];
-    updatedElements.splice(elementIndex, 1);
-
-    updatedPages[currentPageIndex] = {
-      ...currentPage,
-      elements: updatedElements,
-    };
-
+    updatedPages[currentPageIndex].elements.splice(elementIndex, 1);
     setFormPages(updatedPages);
-
-    // Update conditionals that reference this element
-    const elementId = currentPage.elements[elementIndex].id;
-    const updatedConditionals = formConditionals.filter(
-      (condition) => condition.elementId !== elementId
-    );
-
-    if (updatedConditionals.length !== formConditionals.length) {
-      setFormConditionals(updatedConditionals);
-    }
+    // Remove conditionals targeting the deleted element
+    setFormConditionals(prev => prev.filter(cond => cond.thenShowElementId !== elementIdToDelete && cond.elementId !== elementIdToDelete));
   };
 
-  // Handle moving a form element (after drag and drop)
   const handleMoveFormElement = (oldIndex, newIndex) => {
     const updatedPages = [...formPages];
-    const currentPage = updatedPages[currentPageIndex];
-
-    const updatedElements = [...currentPage.elements];
-    const [removedElement] = updatedElements.splice(oldIndex, 1);
-    updatedElements.splice(newIndex, 0, removedElement);
-
-    updatedPages[currentPageIndex] = {
-      ...currentPage,
-      elements: updatedElements,
-    };
-
+    const currentPageElements = [...updatedPages[currentPageIndex].elements];
+    const [movedElement] = currentPageElements.splice(oldIndex, 1);
+    currentPageElements.splice(newIndex, 0, movedElement);
+    updatedPages[currentPageIndex].elements = currentPageElements;
     setFormPages(updatedPages);
   };
 
-  // Add a conditional logic rule
+  // --- Conditional Management Handlers ---
   const handleAddConditional = (newConditional) => {
-    setFormConditionals([
-      ...formConditionals,
-      {
-        id: generateRandomId(),
-        ...newConditional,
-      },
-    ]);
+    setFormConditionals([...formConditionals, { id: generateRandomId(), ...newConditional }]);
   };
 
-  // Update a conditional logic rule
-  const handleUpdateConditional = (conditionalIndex, updatedConditional) => {
-    const updatedConditionals = [...formConditionals];
-    updatedConditionals[conditionalIndex] = {
-      ...updatedConditionals[conditionalIndex],
-      ...updatedConditional,
-    };
-    setFormConditionals(updatedConditionals);
+  const handleUpdateConditional = (index, updatedConditional) => {
+    const updated = [...formConditionals];
+    updated[index] = { ...updated[index], ...updatedConditional };
+    setFormConditionals(updated);
   };
 
-  // Delete a conditional logic rule
-  const handleDeleteConditional = (conditionalIndex) => {
-    const updatedConditionals = [...formConditionals];
-    updatedConditionals.splice(conditionalIndex, 1);
-    setFormConditionals(updatedConditionals);
+  const handleDeleteConditional = (index) => {
+    setFormConditionals(formConditionals.filter((_, i) => i !== index));
   };
 
-  // Handle form deletion
+  // --- Other Action Handlers ---
   const handleDeleteForm = (formId) => {
-    debugger;
-    // Call API to delete form
     deleteFormMutation.mutate(formId);
   };
 
-  // Handle form duplication
   const handleDuplicateForm = (form) => {
-    // Create a copy of the form
     const formData = {
       title: `${form.title} (Copy)`,
       description: form.description,
@@ -497,202 +361,30 @@ const FormsManagement = () => {
       }),
       status: form.status === 'active',
     };
-
-    // Call API to create a new form with the duplicated data
     createFormMutation.mutate(formData);
-    message.success('Form duplicated successfully');
   };
 
-  // Handle form sharing
   const handleShareForm = (form) => {
-    // Generate a shareable link
     const baseUrl = window.location.origin;
-    const link = `${baseUrl}/forms/${form.shareLink}`;
+    const link = `${baseUrl}/forms/${form.shareLink || form.id}`; // Use slug or ID
     setShareLink(link);
     setShareModalVisible(true);
   };
 
-  // Toggle form status (active/inactive)
   const toggleFormStatus = (formId, currentStatus) => {
-    const form = transformedForms.find((f) => f.id === formId);
-    if (!form) return;
-
-    const newStatus = currentStatus === 'active' ? 'inactive' : 'active';
-
-    // Call API to update form status
-    updateFormMutation.mutate({
-      id: formId,
-      formData: {
-        status: newStatus === 'active',
-      },
-    });
-
-    message.success(
-      `Form ${
-        newStatus === 'active' ? 'activated' : 'deactivated'
-      } successfully`
-    );
+    const newStatus = currentStatus === 'active' ? false : true;
+    updateFormMutation.mutate({ id: formId, formData: { status: newStatus } });
   };
 
-  // Copy to clipboard
   const copyToClipboard = () => {
-    navigator.clipboard
-      .writeText(shareLink)
-      .then(() => {
-        message.success('Link copied to clipboard');
-      })
-      .catch(() => {
-        message.error('Failed to copy link');
-      });
+    navigator.clipboard.writeText(shareLink)
+      .then(() => message.success('Link copied to clipboard'))
+      .catch(() => message.error('Failed to copy link'));
   };
 
-  // Get service name by ID
-  const getServiceName = (serviceId) => {
-    const service = services.find((s) => s.id === serviceId);
-    return service ? service.name : '-';
-  };
-
-  // Handle preview form
   const handlePreviewForm = (form) => {
-    // Open the form in a new tab
-    window.open(`/forms/${form.shareLink}`, '_blank');
+    window.open(`/forms/${form.shareLink || form.id}`, '_blank');
   };
-
-  // Table columns configuration
-  const columns = [
-    {
-      title: 'Form Name',
-      dataIndex: 'title',
-      key: 'title',
-      render: (text, record) => (
-        <div>
-          <Text strong>{text}</Text>
-          <div>
-            <Text type="secondary" style={{ fontSize: '12px' }}>
-              {record.description}
-            </Text>
-          </div>
-        </div>
-      ),
-    },
-    {
-      title: 'Service',
-      dataIndex: 'serviceName',
-      key: 'serviceName',
-    },
-    {
-      title: 'Type',
-      dataIndex: 'form_type',
-      key: 'form_type',
-      render: (type) =>
-        type?.replace(/_/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase()) ||
-        '-',
-    },
-    {
-      title: 'Status',
-      dataIndex: 'status',
-      key: 'status',
-      render: (status, record) => (
-        <Popconfirm
-          title={`Are you sure you want to ${
-            status === 'active' ? 'deactivate' : 'activate'
-          } this form?`}
-          onConfirm={() => toggleFormStatus(record.id, status)}
-          okText="Yes"
-          cancelText="No"
-        >
-          <Tag
-            color={status === 'active' ? 'green' : 'red'}
-            style={{ cursor: 'pointer' }}
-          >
-            {status.charAt(0).toUpperCase() + status.slice(1)}
-          </Tag>
-        </Popconfirm>
-      ),
-    },
-    {
-      title: 'Pages',
-      dataIndex: 'pageCount',
-      key: 'pageCount',
-      sorter: (a, b) => a.pageCount - b.pageCount,
-    },
-    {
-      title: 'Fields',
-      dataIndex: 'elementCount',
-      key: 'elementCount',
-      sorter: (a, b) => a.elementCount - b.elementCount,
-    },
-    {
-      title: 'Created',
-      dataIndex: 'createdAt',
-      key: 'createdAt',
-      sorter: (a, b) => new Date(a.createdAt) - new Date(b.createdAt),
-    },
-    {
-      title: 'Last Updated',
-      dataIndex: 'updatedAt',
-      key: 'updatedAt',
-      sorter: (a, b) => new Date(a.updatedAt) - new Date(b.updatedAt),
-    },
-    {
-      title: 'Actions',
-      key: 'actions',
-      render: (_, record) => (
-        <Space>
-          <Tooltip title="Edit Form">
-            <Button
-              icon={<EditOutlined />}
-              onClick={() => {
-                setCurrentForm(record);
-                setFormActionType('edit');
-                setFormModalVisible(true);
-              }}
-            />
-          </Tooltip>
-
-          <Dropdown
-            overlay={
-              <Menu>
-                <Menu.Item
-                  key="duplicate"
-                  icon={<CopyOutlined />}
-                  onClick={() => handleDuplicateForm(record)}
-                >
-                  Duplicate
-                </Menu.Item>
-                <Menu.Item
-                  key="share"
-                  icon={<ShareAltOutlined />}
-                  onClick={() => handleShareForm(record)}
-                >
-                  Share
-                </Menu.Item>
-                <Menu.Item
-                  key="preview"
-                  icon={<EyeOutlined />}
-                  onClick={() => handlePreviewForm(record)}
-                >
-                  Preview
-                </Menu.Item>
-                <Menu.Divider />
-                <Menu.Item
-                  key="delete"
-                  icon={<DeleteOutlined />}
-                  danger
-                  onClick={() => handleDeleteForm(record.id)}
-                >
-                  Delete
-                </Menu.Item>
-              </Menu>
-            }
-            trigger={['click']}
-          >
-            <Button icon={<MoreOutlined />} />
-          </Dropdown>
-        </Space>
-      ),
-    },
-  ];
 
   return (
     <div className="forms-management-container">
@@ -718,163 +410,34 @@ const FormsManagement = () => {
           <Button
             type="primary"
             icon={<PlusOutlined />}
-            onClick={() => {
-              setCurrentForm(null);
-              setFormActionType('create');
-              resetFormBasics();
-              setFormPages([]);
-              setFormConditionals([]);
-              setFormModalVisible(true);
-            }}
+            onClick={() => openFormBasicsModal('create')}
           >
             Create New Form
           </Button>
         </Space>
       </div>
 
-      <Table
-        columns={columns}
-        dataSource={filteredForms}
-        rowKey="id"
-        pagination={{ pageSize: 10 }}
+      <FormTable
+        forms={filteredForms}
         loading={formsLoading}
-        locale={{
-          emptyText: (
-            <Empty
-              image={Empty.PRESENTED_IMAGE_SIMPLE}
-              description={
-                <span>
-                  No forms found.{' '}
-                  <Button
-                    type="link"
-                    onClick={() => {
-                      setCurrentForm(null);
-                      setFormActionType('create');
-                      resetFormBasics();
-                      setFormPages([]);
-                      setFormModalVisible(true);
-                    }}
-                  >
-                    Create your first form
-                  </Button>
-                </span>
-              }
-            />
-          ),
-        }}
+        onEdit={(form) => openFormBasicsModal('edit', form)}
+        onDelete={handleDeleteForm}
+        onDuplicate={handleDuplicateForm}
+        onShare={handleShareForm}
+        onPreview={handlePreviewForm}
+        onToggleStatus={toggleFormStatus}
+        onAdd={() => openFormBasicsModal('create')}
       />
 
       {/* Form Basics Modal */}
-      <Modal
-        title={formActionType === 'create' ? 'Create New Form' : 'Edit Form'}
+      <FormBasicsModal
         visible={formModalVisible}
         onCancel={() => setFormModalVisible(false)}
-        footer={[
-          <Button key="back" onClick={() => setFormModalVisible(false)}>
-            Cancel
-          </Button>,
-          <Button
-            key="submit"
-            type="primary"
-            onClick={handleFormBasicsSubmit(onFormBasicsSubmit)}
-          >
-            {formActionType === 'create'
-              ? 'Proceed to Form Builder'
-              : 'Save Changes & Edit Form'}
-          </Button>,
-        ]}
-        width={600}
-      >
-        <Form layout="vertical">
-          <Controller
-            name="title"
-            control={formBasicsControl}
-            rules={{ required: 'Form title is required' }}
-            render={({ field, fieldState }) => (
-              <Form.Item
-                label="Form Title"
-                validateStatus={fieldState.error ? 'error' : ''}
-                help={fieldState.error ? fieldState.error.message : ''}
-              >
-                <Input {...field} placeholder="Enter form title" />
-              </Form.Item>
-            )}
-          />
-
-          <Controller
-            name="description"
-            control={formBasicsControl}
-            render={({ field }) => (
-              <Form.Item label="Description">
-                <Input.TextArea
-                  {...field}
-                  placeholder="Enter form description"
-                  rows={4}
-                />
-              </Form.Item>
-            )}
-          />
-
-          <Controller
-            name="service_id"
-            control={formBasicsControl}
-            rules={{ required: 'Please select a service' }}
-            render={({ field, fieldState }) => (
-              <Form.Item
-                label="Associated Service"
-                validateStatus={fieldState.error ? 'error' : ''}
-                help={fieldState.error ? fieldState.error.message : ''}
-              >
-                <Select {...field} placeholder="Select a service">
-                  {services.map((service) => (
-                    <Option key={service.id} value={service.id}>
-                      {service.name}
-                    </Option>
-                  ))}
-                </Select>
-              </Form.Item>
-            )}
-          />
-
-          <Controller
-            name="form_type"
-            control={formBasicsControl}
-            render={({ field }) => (
-              <Form.Item label="Form Type">
-                <Select {...field} placeholder="Select form type">
-                  <Option value="initial_consultation">
-                    Initial Consultation
-                  </Option>
-                  <Option value="follow_up">Follow-up</Option>
-                  <Option value="insurance_verification">
-                    Insurance Verification
-                  </Option>
-                  <Option value="medication_refill">Medication Refill</Option>
-                  <Option value="feedback">Feedback</Option>
-                  <Option value="general">General</Option>
-                </Select>
-              </Form.Item>
-            )}
-          />
-
-          <Controller
-            name="status"
-            control={formBasicsControl}
-            render={({ field }) => (
-              <Form.Item label="Status">
-                <Select
-                  {...field}
-                  value={field.value}
-                  onChange={(value) => field.onChange(value)}
-                >
-                  <Option value={true}>Active</Option>
-                  <Option value={false}>Inactive</Option>
-                </Select>
-              </Form.Item>
-            )}
-          />
-        </Form>
-      </Modal>
+        onSubmit={onFormBasicsSubmit}
+        initialData={currentForm}
+        services={services}
+        actionType={formActionType}
+      />
 
       {/* Form Builder Drawer */}
       <Drawer
@@ -890,7 +453,7 @@ const FormsManagement = () => {
         width="90%"
         onClose={() => {
           setFormBuilderVisible(false);
-          setCurrentForm(null);
+          setCurrentForm(null); // Clear current form when closing builder
         }}
         visible={formBuilderVisible}
         extra={
@@ -909,69 +472,62 @@ const FormsManagement = () => {
         }
         bodyStyle={{ padding: 0 }}
       >
-        <div className="form-builder-container">
-          {/* Builder Tabs */}
-          <Tabs
-            activeKey={activeBuilderTab}
-            onChange={setActiveBuilderTab}
-            tabPosition="top"
-            style={{ width: '100%' }}
-          >
-            <TabPane tab="Pages & Fields" key="pages">
-              <div className="form-builder-content">
-                {/* Form Elements Sidebar */}
-                <FormElementSidebar onAddElement={handleAddFormElement} />
-
-                {/* Form Pages and Preview */}
-                <div className="form-pages-preview">
-                  <FormPages
-                    pages={formPages}
-                    currentPageIndex={currentPageIndex}
-                    onChangePage={setCurrentPageIndex}
-                    onAddPage={handleAddPage}
-                    onDeletePage={handleDeletePage}
-                    onUpdatePageTitle={handleUpdatePageTitle}
-                  />
-
-                  <div className="form-preview">
-                    <div className="form-preview-header">
-                      <div>
-                        <Title level={4}>
-                          {formPages[currentPageIndex]?.title || 'Page'}
-                        </Title>
-                        {currentForm?.description && (
-                          <Text type="secondary">
-                            {currentForm.description}
-                          </Text>
-                        )}
-                      </div>
-                    </div>
-
-                    <Divider />
-
-                    {/* Form Elements Container */}
-                    <FormBuilderElements
-                      elements={formPages[currentPageIndex]?.elements || []}
-                      onUpdateElement={handleUpdateFormElement}
-                      onDeleteElement={handleDeleteFormElement}
-                      onMoveElement={handleMoveFormElement}
+        {currentForm && ( // Only render builder content if currentForm is set
+          <div className="form-builder-container">
+            <Tabs
+              activeKey={activeBuilderTab}
+              onChange={setActiveBuilderTab}
+              tabPosition="top"
+              style={{ width: '100%' }}
+            >
+              <TabPane tab="Pages & Fields" key="pages">
+                <div className="form-builder-content">
+                  <FormElementSidebar onAddElement={handleAddFormElement} />
+                  <div className="form-pages-preview">
+                    <FormPages
+                      pages={formPages}
+                      currentPageIndex={currentPageIndex}
+                      onChangePage={setCurrentPageIndex}
+                      onAddPage={handleAddPage}
+                      onDeletePage={handleDeletePage}
+                      onUpdatePageTitle={handleUpdatePageTitle}
                     />
+                    <div className="form-preview">
+                      <div className="form-preview-header">
+                        <div>
+                          <Title level={4}>
+                            {formPages[currentPageIndex]?.title || 'Page'}
+                          </Title>
+                          {currentForm?.description && (
+                            <Text type="secondary">
+                              {currentForm.description}
+                            </Text>
+                          )}
+                        </div>
+                      </div>
+                      <Divider />
+                      <FormBuilderElements
+                        elements={formPages[currentPageIndex]?.elements || []}
+                        onUpdateElement={handleUpdateFormElement}
+                        onDeleteElement={handleDeleteFormElement}
+                        onMoveElement={handleMoveFormElement}
+                      />
+                    </div>
                   </div>
                 </div>
-              </div>
-            </TabPane>
-
-            <TabPane tab="Conditionals & Logic" key="conditionals">
-              <FormConditionals
-                conditionals={formConditionals}
-                pages={formPages}
-                onAddConditional={handleAddConditional}
-                onUpdateConditional={handleUpdateConditional}
-                onDeleteConditional={handleDeleteConditional}
-              />
-            </TabPane>
-          </Tabs>
-        </div>
+              </TabPane>
+              <TabPane tab="Conditionals & Logic" key="conditionals">
+                <FormConditionals
+                  conditionals={formConditionals}
+                  pages={formPages}
+                  onAddConditional={handleAddConditional}
+                  onUpdateConditional={handleUpdateConditional}
+                  onDeleteConditional={handleDeleteConditional}
+                />
+              </TabPane>
+            </Tabs>
+          </div>
+        )}
       </Drawer>
 
       {/* Share Modal */}
@@ -1013,53 +569,45 @@ const FormsManagement = () => {
         .forms-management-container {
           padding: 0;
         }
-
         .service-tabs {
           margin-bottom: 20px;
           background: white;
           border-radius: 4px;
         }
-
         .action-bar {
           display: flex;
           justify-content: space-between;
           margin-bottom: 16px;
         }
-
         .form-builder-container {
           display: flex;
           flex-direction: column;
-          height: calc(100vh - 130px);
+          height: calc(100vh - 130px); /* Adjust based on Drawer header/footer */
         }
-
         .form-builder-content {
           display: flex;
           flex: 1;
-          height: calc(100vh - 180px);
+          height: calc(100% - 48px); /* Adjust based on Tabs height */
           overflow: hidden;
         }
-
         .form-pages-preview {
           display: flex;
           flex-direction: column;
           flex: 1;
           overflow: hidden;
         }
-
         .form-preview {
           flex: 1;
           padding: 20px;
           overflow-y: auto;
           background: white;
         }
-
         .form-preview-header {
           display: flex;
           align-items: center;
           justify-content: space-between;
           margin-bottom: 16px;
         }
-
         .form-builder-header {
           display: flex;
           align-items: center;

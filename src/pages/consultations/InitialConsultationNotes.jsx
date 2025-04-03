@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useServices } from '../../apis/services/hooks';
 import { useSubscriptionPlans } from '../../apis/subscriptionPlans/hooks';
 import { useProducts } from '../../apis/products/hooks';
-import { Check, User, Loader2, AlertTriangle } from 'lucide-react'; // Import Check and User icons
+import { User, Loader2, AlertTriangle } from 'lucide-react'; // Removed unused Check import
 
 const InitialConsultationNotes = ({
   patient,
@@ -18,9 +18,21 @@ const InitialConsultationNotes = ({
   console.log('Refining product/dose selection state');
 
   // Fetch necessary data using React Query hooks
-  const { data: servicesData, isLoading: isLoadingServices, error: errorServices } = useServices();
-  const { data: plansData, isLoading: isLoadingPlans, error: errorPlans } = useSubscriptionPlans();
-  const { data: productsData, isLoading: isLoadingProducts, error: errorProducts } = useProducts();
+  const {
+    data: servicesData,
+    isLoading: isLoadingServices,
+    error: errorServices,
+  } = useServices();
+  const {
+    data: plansData,
+    isLoading: isLoadingPlans,
+    error: errorPlans,
+  } = useSubscriptionPlans();
+  const {
+    data: productsData,
+    isLoading: isLoadingProducts,
+    error: errorProducts,
+  } = useProducts();
 
   // Process fetched data
   const allServices = servicesData?.data || servicesData || [];
@@ -53,23 +65,21 @@ const InitialConsultationNotes = ({
   // --- Derived Data & Effects ---
 
   // Replace context functions with direct data manipulation
-  const getServiceById = (id) => allServices.find(s => s.id === id);
+  const getServiceById = (id) => allServices.find((s) => s.id === id);
   const getServicePlans = (serviceId) => {
-      const service = getServiceById(serviceId);
-      // Assuming service.availablePlans holds plan configurations { planId, duration, requiresSubscription }
-      return Array.isArray(service?.availablePlans) ? service.availablePlans : [];
+    const service = getServiceById(serviceId);
+    // Assuming service.availablePlans holds plan configurations { planId, duration, requiresSubscription }
+    return Array.isArray(service?.availablePlans) ? service.availablePlans : [];
   };
 
-  const selectedService = getServiceById(selectedServiceId);
+  // const selectedService = getServiceById(selectedServiceId); // Removed unused variable
   const plansForSelectedService = getServicePlans(selectedServiceId);
 
   // Filter available medication products
   const availableMedications = allProducts.filter(
     (p) =>
-      p.type === 'medication' &&
-      Array.isArray(p.doses) &&
-      p.doses.length > 0
-      // TODO: Add filtering based on selectedServiceId if needed
+      p.type === 'medication' && Array.isArray(p.doses) && p.doses.length > 0
+    // TODO: Add filtering based on selectedServiceId if needed
   );
 
   useEffect(() => {
@@ -111,7 +121,8 @@ const InitialConsultationNotes = ({
         consultationData.communication?.followUpPlan || followUpPlan
       );
     }
-  }, [patient, consultationData]); // Dependencies remain similar
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [patient, consultationData]); // Dependencies are intentionally limited for initialization
 
   // --- Event Handlers --- (Remain largely the same, but rely on fetched data)
   const handleServiceChange = (e) => {
@@ -120,15 +131,31 @@ const InitialConsultationNotes = ({
   };
 
   const handleMedicationSelectionChange = (product) => {
-    if (readOnly || !product || !Array.isArray(product.doses) || product.doses.length === 0) return;
+    if (
+      readOnly ||
+      !product ||
+      !Array.isArray(product.doses) ||
+      product.doses.length === 0
+    )
+      return;
     setSelectedMedications((prevSelected) => {
       const isSelected = prevSelected.some((m) => m.productId === product.id);
       if (isSelected) {
         return prevSelected.filter((m) => m.productId !== product.id);
       } else {
         const defaultDoseId = product.doses[0].id;
-        const defaultPlanId = plansForSelectedService.length > 0 ? plansForSelectedService[0].planId : null;
-        return [...prevSelected, { productId: product.id, doseId: defaultDoseId, planId: defaultPlanId }];
+        const defaultPlanId =
+          plansForSelectedService.length > 0
+            ? plansForSelectedService[0].planId
+            : null;
+        return [
+          ...prevSelected,
+          {
+            productId: product.id,
+            doseId: defaultDoseId,
+            planId: defaultPlanId,
+          },
+        ];
       }
     });
   };
@@ -178,25 +205,25 @@ const InitialConsultationNotes = ({
   };
 
   const handleSubmit = () => {
-     const submitData = {
-       consultationId: consultationId, // Pass ID if editing/submitting existing
-       patientId: patient?.id,
-       patientInfo: { hpi, pmh, contraindications },
-       medicationOrder: {
-         serviceId: selectedServiceId,
-         treatmentApproach,
-         selectedMedications: selectedMedications,
-       },
-       communication: { messageToPatient, assessmentPlan, followUpPlan },
-       // Add any other fields needed for submission
-     };
+    const submitData = {
+      consultationId: consultationId, // Pass ID if editing/submitting existing
+      patientId: patient?.id,
+      patientInfo: { hpi, pmh, contraindications },
+      medicationOrder: {
+        serviceId: selectedServiceId,
+        treatmentApproach,
+        selectedMedications: selectedMedications,
+      },
+      communication: { messageToPatient, assessmentPlan, followUpPlan },
+      // Add any other fields needed for submission
+    };
     console.log('Submitting consultation with data:', submitData);
 
     // --- Group items by fulfillment source --- (Logic remains similar, uses fetched products)
     const retailItems = [];
     const compoundedItems = [];
     const supplementItems = [];
-    let pharmacySelectionNeeded = false;
+    // let pharmacySelectionNeeded = false; // Removed unused variable
 
     selectedMedications.forEach((med) => {
       const productDetail = allProducts.find((p) => p.id === med.productId);
@@ -204,25 +231,46 @@ const InitialConsultationNotes = ({
       const doseDetail = productDetail.doses?.find((d) => d.id === med.doseId);
       if (!doseDetail) return;
 
-      const item = { /* ... item details ... */ };
-      switch (productDetail.fulfillmentSource) {
-        case 'retail_pharmacy': retailItems.push(item); pharmacySelectionNeeded = true; break;
-        case 'compounding_pharmacy': compoundedItems.push(item); pharmacySelectionNeeded = true; break;
-        case 'internal_supplement': supplementItems.push(item); break;
-        default: console.warn(`Unknown source: ${productDetail.fulfillmentSource}`);
+      const item = {
+        /* ... item details ... */
+      };
+        switch (productDetail.fulfillmentSource) {
+          case 'retail_pharmacy':
+            retailItems.push(item);
+            // pharmacySelectionNeeded = true; // Assignment removed
+            break;
+          case 'compounding_pharmacy':
+            compoundedItems.push(item);
+            // pharmacySelectionNeeded = true; // Assignment removed
+            break;
+          case 'internal_supplement':
+          supplementItems.push(item);
+          break;
+        default:
+          console.warn(`Unknown source: ${productDetail.fulfillmentSource}`);
       }
     });
 
     // --- Determine Billing Actions --- (Logic remains similar)
-    const subscriptionItems = selectedMedications.filter((med) => med.planId !== null);
-    const oneTimeItemsRaw = selectedMedications.filter((med) => med.planId === null);
-    const uniquePlanIds = [...new Set(subscriptionItems.map((item) => item.planId))];
+    const subscriptionItems = selectedMedications.filter(
+      (med) => med.planId !== null
+    );
+    const oneTimeItemsRaw = selectedMedications.filter(
+      (med) => med.planId === null
+    );
+    const uniquePlanIds = [
+      ...new Set(subscriptionItems.map((item) => item.planId)),
+    ];
 
     let subscriptionPayload = null;
     let oneTimeOrderPayloadItems = [];
 
-    if (uniquePlanIds.length > 0) { /* ... create subscriptionPayload ... */ }
-    oneTimeItemsRaw.forEach((item) => { /* ... check eligibility and add to oneTimeOrderPayloadItems ... */ });
+    if (uniquePlanIds.length > 0) {
+      /* ... create subscriptionPayload ... */
+    }
+    oneTimeItemsRaw.forEach((item) => {
+      /* ... check eligibility and add to oneTimeOrderPayloadItems ... */
+    });
 
     console.log('Subscription Payload:', subscriptionPayload);
     console.log('Eligible One-Time Order Items:', oneTimeOrderPayloadItems);
@@ -240,48 +288,61 @@ const InitialConsultationNotes = ({
   };
 
   // --- Styles & Render ---
-  const fullScreenStyles = { /* ... styles ... */ };
-  const getPlanName = (planId) => allPlans.find((p) => p.id === planId)?.name || `Plan ID ${planId}`;
+  const fullScreenStyles = {
+    /* ... styles ... */
+  };
+  const getPlanName = (planId) =>
+    allPlans.find((p) => p.id === planId)?.name || `Plan ID ${planId}`;
 
   // Handle combined loading state
   if (isLoadingServices || isLoadingPlans || isLoadingProducts) {
-     return (
-       <div style={fullScreenStyles} className="bg-white flex items-center justify-center">
-         <Loader2 className="h-16 w-16 animate-spin text-indigo-600" />
-       </div>
-     );
-   }
+    return (
+      <div
+        style={fullScreenStyles}
+        className="bg-white flex items-center justify-center"
+      >
+        <Loader2 className="h-16 w-16 animate-spin text-indigo-600" />
+      </div>
+    );
+  }
 
-   // Handle combined error state
-   if (errorServices || errorPlans || errorProducts) {
-     return (
-       <div style={fullScreenStyles} className="bg-white flex flex-col items-center justify-center text-red-600 p-8">
-         <AlertTriangle className="h-12 w-12 mx-auto mb-4" />
-         <p>Error loading necessary data for consultation notes.</p>
-         <button onClick={onClose} className="mt-4 px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50">Close</button>
-       </div>
-     );
-   }
-
+  // Handle combined error state
+  if (errorServices || errorPlans || errorProducts) {
+    return (
+      <div
+        style={fullScreenStyles}
+        className="bg-white flex flex-col items-center justify-center text-red-600 p-8"
+      >
+        <AlertTriangle className="h-12 w-12 mx-auto mb-4" />
+        <p>Error loading necessary data for consultation notes.</p>
+        <button
+          onClick={onClose}
+          className="mt-4 px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
+        >
+          Close
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div style={fullScreenStyles} className="bg-white">
       {/* Header */}
       <div className="bg-indigo-700 px-6 py-4 text-white flex-shrink-0">
         {/* ... Header content ... */}
-         <div className="flex items-center">
-           <div className="flex-shrink-0 h-10 w-10 rounded-full bg-indigo-500 flex items-center justify-center mr-3">
-             <User className="h-6 w-6 text-white" />
-           </div>
-           <div>
-             <h2 className="text-xl font-bold">
-               {patient?.name || 'Patient Name'} - Initial Consultation
-             </h2>
-             <div className="text-sm opacity-80">
-               DOB: {patient?.dob || 'YYYY-MM-DD'}
-             </div>
-           </div>
-         </div>
+        <div className="flex items-center">
+          <div className="flex-shrink-0 h-10 w-10 rounded-full bg-indigo-500 flex items-center justify-center mr-3">
+            <User className="h-6 w-6 text-white" />
+          </div>
+          <div>
+            <h2 className="text-xl font-bold">
+              {patient?.name || 'Patient Name'} - Initial Consultation
+            </h2>
+            <div className="text-sm opacity-80">
+              DOB: {patient?.dob || 'YYYY-MM-DD'}
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Main content */}
@@ -290,55 +351,55 @@ const InitialConsultationNotes = ({
           {/* Left Panel - Patient Information */}
           <div className="md:w-2/5 p-6 border-r border-gray-200 overflow-y-auto">
             {/* ... Patient Info form fields (HPI, PMH, Contraindications) ... */}
-             <div className="border border-gray-200 rounded-lg overflow-hidden mb-4">
-               <div className="bg-gray-50 px-4 py-3 border-b border-gray-200 flex justify-between">
-                 <h3 className="font-medium">Patient Information</h3>
-                 <span className="inline-block bg-blue-100 text-blue-800 text-xs px-2 py-0.5 rounded-full">
-                   Patient-reported
-                 </span>
-               </div>
-               <div className="p-4 space-y-4">
-                 <div>
-                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                     HPI
-                   </label>
-                   <textarea
-                     className="w-full border border-gray-300 rounded-md p-2 text-sm"
-                     rows={4}
-                     value={hpi}
-                     onChange={(e) => setHpi(e.target.value)}
-                     disabled={readOnly}
-                   ></textarea>
-                 </div>
-                 <div>
-                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                     PMH
-                   </label>
-                   <textarea
-                     className="w-full border border-gray-300 rounded-md p-2 text-sm"
-                     rows={3}
-                     value={pmh}
-                     onChange={(e) => setPmh(e.target.value)}
-                     disabled={readOnly}
-                   ></textarea>
-                 </div>
-                 <div>
-                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                     Contra-indications{' '}
-                     <span className="ml-2 inline-block bg-red-100 text-red-800 text-xs px-2 py-0.5 rounded-full">
-                       Important
-                     </span>
-                   </label>
-                   <textarea
-                     className="w-full border border-gray-300 rounded-md p-2 text-sm"
-                     rows={3}
-                     value={contraindications}
-                     onChange={(e) => setContraindications(e.target.value)}
-                     disabled={readOnly}
-                   ></textarea>
-                 </div>
-               </div>
-             </div>
+            <div className="border border-gray-200 rounded-lg overflow-hidden mb-4">
+              <div className="bg-gray-50 px-4 py-3 border-b border-gray-200 flex justify-between">
+                <h3 className="font-medium">Patient Information</h3>
+                <span className="inline-block bg-blue-100 text-blue-800 text-xs px-2 py-0.5 rounded-full">
+                  Patient-reported
+                </span>
+              </div>
+              <div className="p-4 space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    HPI
+                  </label>
+                  <textarea
+                    className="w-full border border-gray-300 rounded-md p-2 text-sm"
+                    rows={4}
+                    value={hpi}
+                    onChange={(e) => setHpi(e.target.value)}
+                    disabled={readOnly}
+                  ></textarea>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    PMH
+                  </label>
+                  <textarea
+                    className="w-full border border-gray-300 rounded-md p-2 text-sm"
+                    rows={3}
+                    value={pmh}
+                    onChange={(e) => setPmh(e.target.value)}
+                    disabled={readOnly}
+                  ></textarea>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Contra-indications{' '}
+                    <span className="ml-2 inline-block bg-red-100 text-red-800 text-xs px-2 py-0.5 rounded-full">
+                      Important
+                    </span>
+                  </label>
+                  <textarea
+                    className="w-full border border-gray-300 rounded-md p-2 text-sm"
+                    rows={3}
+                    value={contraindications}
+                    onChange={(e) => setContraindications(e.target.value)}
+                    disabled={readOnly}
+                  ></textarea>
+                </div>
+              </div>
+            </div>
           </div>
 
           {/* Right Panel - Service & Medication Order */}
@@ -355,267 +416,267 @@ const InitialConsultationNotes = ({
               </div>
               <div className="p-4 space-y-4">
                 {/* Service Type, Treatment Approach */}
-                 <div
-                   style={{
-                     display: 'grid',
-                     gridTemplateColumns: 'repeat(3, 1fr)',
-                     gap: '8px',
-                   }}
-                 >
-                   <div>
-                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                       Service Type
-                     </label>
-                     <select
-                       className="w-full border border-gray-300 rounded-md p-2 text-sm"
-                       value={selectedServiceId}
-                       onChange={handleServiceChange}
-                       disabled={readOnly}
-                     >
-                       {allServices.map((service) => (
-                         <option key={service.id} value={service.id}>
-                           {service.name}
-                         </option>
-                       ))}
-                     </select>
-                   </div>
-                   <div>
-                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                       Treatment Approach
-                     </label>
-                     <select
-                       className="w-full border border-gray-300 rounded-md p-2 text-sm"
-                       value={treatmentApproach}
-                       onChange={(e) => setTreatmentApproach(e.target.value)}
-                       disabled={readOnly}
-                     >
-                       <option value="Maintenance">Maintenance</option>
-                       <option value="Escalation">Escalation</option>
-                     </select>
-                   </div>
-                 </div>
+                <div
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(3, 1fr)',
+                    gap: '8px',
+                  }}
+                >
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Service Type
+                    </label>
+                    <select
+                      className="w-full border border-gray-300 rounded-md p-2 text-sm"
+                      value={selectedServiceId}
+                      onChange={handleServiceChange}
+                      disabled={readOnly}
+                    >
+                      {allServices.map((service) => (
+                        <option key={service.id} value={service.id}>
+                          {service.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Treatment Approach
+                    </label>
+                    <select
+                      className="w-full border border-gray-300 rounded-md p-2 text-sm"
+                      value={treatmentApproach}
+                      onChange={(e) => setTreatmentApproach(e.target.value)}
+                      disabled={readOnly}
+                    >
+                      <option value="Maintenance">Maintenance</option>
+                      <option value="Escalation">Escalation</option>
+                    </select>
+                  </div>
+                </div>
 
                 {/* Medication Selection */}
-                 <div>
-                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                     Select Medications for Order
-                   </label>
-                   <div className="border border-gray-200 rounded-md p-2 space-y-1 max-h-40 overflow-y-auto">
-                     {availableMedications.map((product) => (
-                       <div key={product.id} className="flex items-center">
-                         <input
-                           type="checkbox"
-                           id={`med-${product.id}`}
-                           checked={selectedMedications.some(
-                             (m) => m.productId === product.id
-                           )}
-                           onChange={() =>
-                             handleMedicationSelectionChange(product)
-                           }
-                           disabled={readOnly}
-                           className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
-                         />
-                         <label
-                           htmlFor={`med-${product.id}`}
-                           className="ml-2 text-sm text-gray-700"
-                         >
-                           {product.name}
-                         </label>
-                       </div>
-                     ))}
-                     {availableMedications.length === 0 && (
-                       <p className="text-xs text-gray-500">
-                         No medications available.
-                       </p>
-                     )}
-                   </div>
-                 </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Select Medications for Order
+                  </label>
+                  <div className="border border-gray-200 rounded-md p-2 space-y-1 max-h-40 overflow-y-auto">
+                    {availableMedications.map((product) => (
+                      <div key={product.id} className="flex items-center">
+                        <input
+                          type="checkbox"
+                          id={`med-${product.id}`}
+                          checked={selectedMedications.some(
+                            (m) => m.productId === product.id
+                          )}
+                          onChange={() =>
+                            handleMedicationSelectionChange(product)
+                          }
+                          disabled={readOnly}
+                          className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                        />
+                        <label
+                          htmlFor={`med-${product.id}`}
+                          className="ml-2 text-sm text-gray-700"
+                        >
+                          {product.name}
+                        </label>
+                      </div>
+                    ))}
+                    {availableMedications.length === 0 && (
+                      <p className="text-xs text-gray-500">
+                        No medications available.
+                      </p>
+                    )}
+                  </div>
+                </div>
 
                 {/* Dosage & Plan Configuration */}
-                 {selectedMedications.length > 0 && (
-                   <div>
-                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                       Configure Selected Medications
-                     </label>
-                     <div className="border border-gray-200 rounded-md p-3 space-y-3">
-                       {selectedMedications.map((selectedMed) => {
-                         const productDetail = availableMedications.find(
-                           (p) => p.id === selectedMed.productId
-                         );
-                         if (!productDetail) return null;
+                {selectedMedications.length > 0 && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Configure Selected Medications
+                    </label>
+                    <div className="border border-gray-200 rounded-md p-3 space-y-3">
+                      {selectedMedications.map((selectedMed) => {
+                        const productDetail = availableMedications.find(
+                          (p) => p.id === selectedMed.productId
+                        );
+                        if (!productDetail) return null;
 
-                         return (
-                           <div
-                             key={selectedMed.productId}
-                             className="grid grid-cols-3 gap-2 items-end"
-                           >
-                             <span className="text-sm font-medium text-gray-800 col-span-3">
-                               {productDetail.name}:
-                             </span>
-                             <div className="col-span-1">
-                               <label
-                                 htmlFor={`dosage-${selectedMed.productId}`}
-                                 className="block text-xs font-medium text-gray-600 mb-0.5"
-                               >
-                                 Dosage
-                               </label>
-                               <select
-                                 id={`dosage-${selectedMed.productId}`}
-                                 value={selectedMed.doseId}
-                                 onChange={(e) =>
-                                   handleDosageChange(
-                                     selectedMed.productId,
-                                     e.target.value
-                                   )
-                                 }
-                                 disabled={readOnly}
-                                 className="block w-full px-2 py-1 text-xs border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 rounded-md bg-white"
-                               >
-                                 {productDetail.doses.map((d) => (
-                                   <option key={d.id} value={d.id}>
-                                     {d.value}
-                                   </option>
-                                 ))}
-                               </select>
-                             </div>
-                             <div className="col-span-2">
-                               <label
-                                 htmlFor={`plan-${selectedMed.productId}`}
-                                 className="block text-xs font-medium text-gray-600 mb-0.5"
-                               >
-                                 Plan
-                               </label>
-                               <select
-                                 id={`plan-${selectedMed.productId}`}
-                                 value={selectedMed.planId || ''}
-                                 onChange={(e) =>
-                                   handlePlanChangeForMedication(
-                                     selectedMed.productId,
-                                     e.target.value
-                                   )
-                                 }
-                                 disabled={
-                                   readOnly ||
-                                   plansForSelectedService.length === 0
-                                 }
-                                 className="block w-full px-2 py-1 text-xs border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 rounded-md bg-white"
-                               >
-                                 <option value="">One-Time Purchase</option>
-                                 {plansForSelectedService.map((planConfig) => (
-                                   <option
-                                     key={planConfig.planId}
-                                     value={planConfig.planId}
-                                   >
-                                     {getPlanName(planConfig.planId)} (
-                                     {planConfig.duration || 'N/A'})
-                                   </option>
-                                 ))}
-                               </select>
-                             </div>
-                           </div>
-                         );
-                       })}
-                     </div>
-                   </div>
-                 )}
+                        return (
+                          <div
+                            key={selectedMed.productId}
+                            className="grid grid-cols-3 gap-2 items-end"
+                          >
+                            <span className="text-sm font-medium text-gray-800 col-span-3">
+                              {productDetail.name}:
+                            </span>
+                            <div className="col-span-1">
+                              <label
+                                htmlFor={`dosage-${selectedMed.productId}`}
+                                className="block text-xs font-medium text-gray-600 mb-0.5"
+                              >
+                                Dosage
+                              </label>
+                              <select
+                                id={`dosage-${selectedMed.productId}`}
+                                value={selectedMed.doseId}
+                                onChange={(e) =>
+                                  handleDosageChange(
+                                    selectedMed.productId,
+                                    e.target.value
+                                  )
+                                }
+                                disabled={readOnly}
+                                className="block w-full px-2 py-1 text-xs border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 rounded-md bg-white"
+                              >
+                                {productDetail.doses.map((d) => (
+                                  <option key={d.id} value={d.id}>
+                                    {d.value}
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
+                            <div className="col-span-2">
+                              <label
+                                htmlFor={`plan-${selectedMed.productId}`}
+                                className="block text-xs font-medium text-gray-600 mb-0.5"
+                              >
+                                Plan
+                              </label>
+                              <select
+                                id={`plan-${selectedMed.productId}`}
+                                value={selectedMed.planId || ''}
+                                onChange={(e) =>
+                                  handlePlanChangeForMedication(
+                                    selectedMed.productId,
+                                    e.target.value
+                                  )
+                                }
+                                disabled={
+                                  readOnly ||
+                                  plansForSelectedService.length === 0
+                                }
+                                className="block w-full px-2 py-1 text-xs border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 rounded-md bg-white"
+                              >
+                                <option value="">One-Time Purchase</option>
+                                {plansForSelectedService.map((planConfig) => (
+                                  <option
+                                    key={planConfig.planId}
+                                    value={planConfig.planId}
+                                  >
+                                    {getPlanName(planConfig.planId)} (
+                                    {planConfig.duration || 'N/A'})
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 
             {/* Message to Patient Section */}
             <div className="border border-blue-200 rounded-xl overflow-hidden mb-4 bg-blue-50">
-               {/* ... Message fields ... */}
-                <div className="bg-blue-100 px-4 py-3 border-b border-blue-200 flex justify-between items-center">
-                  <h3 className="text-base font-medium text-blue-800">
-                    Message to Patient
-                  </h3>
-                  <span className="inline-block bg-blue-100 text-blue-800 text-xs px-2 py-0.5 rounded-full">
-                    Communication
-                  </span>
-                </div>
-                <div className="p-4">
-                  <div className="flex mb-2">
-                    <input
-                      type="text"
-                      className="flex-1 border border-blue-300 rounded-l-md p-2 text-sm"
-                      value={messageToPatient}
-                      onChange={(e) => setMessageToPatient(e.target.value)}
-                      disabled={readOnly}
-                    />
-                    <button
-                      className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-r-md text-xs font-medium"
-                      disabled={readOnly}
-                    >
-                      Expand
-                    </button>
-                  </div>
-                  <textarea
-                    className="w-full bg-white p-3 border border-blue-300 rounded-md text-sm italic min-h-32"
-                    value={expandedMessage}
-                    onChange={(e) => setExpandedMessage(e.target.value)}
+              {/* ... Message fields ... */}
+              <div className="bg-blue-100 px-4 py-3 border-b border-blue-200 flex justify-between items-center">
+                <h3 className="text-base font-medium text-blue-800">
+                  Message to Patient
+                </h3>
+                <span className="inline-block bg-blue-100 text-blue-800 text-xs px-2 py-0.5 rounded-full">
+                  Communication
+                </span>
+              </div>
+              <div className="p-4">
+                <div className="flex mb-2">
+                  <input
+                    type="text"
+                    className="flex-1 border border-blue-300 rounded-l-md p-2 text-sm"
+                    value={messageToPatient}
+                    onChange={(e) => setMessageToPatient(e.target.value)}
                     disabled={readOnly}
-                  ></textarea>
+                  />
+                  <button
+                    className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-r-md text-xs font-medium"
+                    disabled={readOnly}
+                  >
+                    Expand
+                  </button>
                 </div>
+                <textarea
+                  className="w-full bg-white p-3 border border-blue-300 rounded-md text-sm italic min-h-32"
+                  value={expandedMessage}
+                  onChange={(e) => setExpandedMessage(e.target.value)}
+                  disabled={readOnly}
+                ></textarea>
+              </div>
             </div>
 
             {/* Assessment & Plan Section */}
             <div className="border border-green-200 rounded-xl overflow-hidden mb-4 bg-green-50">
-               {/* ... Assessment fields ... */}
-                <div className="bg-green-100 px-4 py-3 border-b border-green-200 flex justify-between items-center">
-                  <h3 className="text-base font-medium text-green-800">
-                    Assessment & Plan
-                  </h3>
-                  <span className="inline-block bg-green-100 text-green-800 text-xs px-2 py-0.5 rounded-full">
-                    Clinical Notes
-                  </span>
-                </div>
-                <div className="p-4">
-                  <div className="flex mb-2">
-                    <input
-                      type="text"
-                      className="flex-1 border border-green-300 rounded-l-md p-2 text-sm"
-                      value={assessmentPlan}
-                      onChange={(e) => setAssessmentPlan(e.target.value)}
-                      placeholder="Enter brief assessment and plan..."
-                      disabled={readOnly}
-                    />
-                    <button
-                      className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded-r-md text-xs font-medium"
-                      disabled={readOnly}
-                    >
-                      Expand
-                    </button>
-                  </div>
-                  <textarea
-                    className="w-full bg-white p-3 border border-green-300 rounded-md text-sm italic min-h-32"
-                    value={expandedAssessment}
-                    onChange={(e) => setExpandedAssessment(e.target.value)}
+              {/* ... Assessment fields ... */}
+              <div className="bg-green-100 px-4 py-3 border-b border-green-200 flex justify-between items-center">
+                <h3 className="text-base font-medium text-green-800">
+                  Assessment & Plan
+                </h3>
+                <span className="inline-block bg-green-100 text-green-800 text-xs px-2 py-0.5 rounded-full">
+                  Clinical Notes
+                </span>
+              </div>
+              <div className="p-4">
+                <div className="flex mb-2">
+                  <input
+                    type="text"
+                    className="flex-1 border border-green-300 rounded-l-md p-2 text-sm"
+                    value={assessmentPlan}
+                    onChange={(e) => setAssessmentPlan(e.target.value)}
+                    placeholder="Enter brief assessment and plan..."
                     disabled={readOnly}
-                  ></textarea>
+                  />
+                  <button
+                    className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded-r-md text-xs font-medium"
+                    disabled={readOnly}
+                  >
+                    Expand
+                  </button>
                 </div>
+                <textarea
+                  className="w-full bg-white p-3 border border-green-300 rounded-md text-sm italic min-h-32"
+                  value={expandedAssessment}
+                  onChange={(e) => setExpandedAssessment(e.target.value)}
+                  disabled={readOnly}
+                ></textarea>
+              </div>
             </div>
 
             {/* Follow-up Plan Section */}
             <div className="border border-purple-200 rounded-xl overflow-hidden mb-4 bg-purple-50">
-               {/* ... Follow-up field ... */}
-                <div className="bg-purple-100 px-4 py-3 border-b border-purple-200">
-                  <h3 className="text-base font-medium text-purple-800">
-                    Follow-up Plan
-                  </h3>
-                </div>
-                <div className="p-4">
-                  <select
-                    className="w-full border border-purple-300 rounded-md p-2 text-sm"
-                    value={followUpPlan}
-                    onChange={(e) => setFollowUpPlan(e.target.value)}
-                    disabled={readOnly}
-                  >
-                    <option value="2_weeks">2 weeks</option>
-                    <option value="4_weeks">4 weeks</option>
-                    <option value="Monthly">Monthly</option>
-                    <option value="8_weeks">8 weeks</option>
-                    <option value="12_weeks">12 weeks</option>
-                  </select>
-                </div>
+              {/* ... Follow-up field ... */}
+              <div className="bg-purple-100 px-4 py-3 border-b border-purple-200">
+                <h3 className="text-base font-medium text-purple-800">
+                  Follow-up Plan
+                </h3>
+              </div>
+              <div className="p-4">
+                <select
+                  className="w-full border border-purple-300 rounded-md p-2 text-sm"
+                  value={followUpPlan}
+                  onChange={(e) => setFollowUpPlan(e.target.value)}
+                  disabled={readOnly}
+                >
+                  <option value="2_weeks">2 weeks</option>
+                  <option value="4_weeks">4 weeks</option>
+                  <option value="Monthly">Monthly</option>
+                  <option value="8_weeks">8 weeks</option>
+                  <option value="12_weeks">12 weeks</option>
+                </select>
+              </div>
             </div>
           </div>
         </div>

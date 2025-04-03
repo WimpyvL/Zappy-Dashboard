@@ -14,7 +14,7 @@ import {
   Divider,
   Spin,
   Result,
-  Steps,
+  // Steps, // Removed unused import
   message,
   Progress,
   Space,
@@ -27,8 +27,8 @@ import {
   SendOutlined,
   LeftOutlined,
   RightOutlined,
-  SaveOutlined,
-  FormOutlined,
+  // SaveOutlined, // Removed unused import
+  // FormOutlined, // Removed unused import
 } from '@ant-design/icons';
 import { useForm, Controller } from 'react-hook-form';
 import { useFormById } from '../../../../apis/forms/hooks';
@@ -36,7 +36,7 @@ import { useFormById } from '../../../../apis/forms/hooks';
 
 const { Title, Paragraph, Text } = Typography;
 const { Option } = Select;
-const { Step } = Steps;
+// const { Step } = Steps; // Removed unused variable
 
 const FormViewer = () => {
   const { formId } = useParams();
@@ -55,7 +55,7 @@ const FormViewer = () => {
     handleSubmit,
     watch,
     formState: { errors },
-    setValue,
+    // setValue, // Removed unused variable
     trigger,
   } = useForm();
 
@@ -199,7 +199,8 @@ const FormViewer = () => {
 
     // Update the hidden fields state
     setHiddenFields(Array.from(fieldsToHide));
-  }, [formValues, formConditionals]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [formValues, formConditionals, hiddenFields]); // Added hiddenFields dependency
 
   // Function to check if a field should be hidden
   const isFieldHidden = (elementId) => {

@@ -157,6 +157,7 @@ const ReferralSettings = () => {
     } else {
       fetchAllReferrals();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAdmin]);
 
   const copyToClipboard = () => {

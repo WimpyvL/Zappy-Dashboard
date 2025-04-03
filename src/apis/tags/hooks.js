@@ -4,14 +4,16 @@ import {
   useMutation,
   useQueryClient
 } from '@tanstack/react-query';
-import {
-  getTags,
-  getTagById,
-  createTag,
-  updateTag,
-  deleteTag,
-  getTagUsage // Removed duplicate
-} from './api'; // Keep imports for other hooks
+// Commented out direct API imports as we use apiService or mock data
+// import {
+//   getTags,
+//   getTagById,
+//   createTag,
+//   updateTag,
+//   deleteTag,
+//   getTagUsage
+// } from './api';
+import apiService from '../../utils/apiService'; // Import the central apiService
 import { toast } from 'react-toastify';
 
 // --- Mock Data ---
@@ -28,7 +30,8 @@ export const useTags = (params = {}) => {
   console.log("Using mock tags data in useTags hook");
   return useQuery({
     queryKey: ['tags', params],
-    // queryFn: () => getTags(params), // Original API call
+    // queryFn: () => getTags(params), // Original direct API call
+    // queryFn: () => apiService.tags.getAll(params), // Original apiService call
     queryFn: () => Promise.resolve({ data: sampleTagsData }), // Return mock data
     staleTime: Infinity, // Prevent refetching for mock data
   });
@@ -38,7 +41,7 @@ export const useTags = (params = {}) => {
 export const useTagById = (id, options = {}) => {
   return useQuery({
     queryKey: ['tag', id],
-    queryFn: () => getTagById(id),
+    queryFn: () => apiService.tags.getById(id), // Use apiService
     enabled: !!id,
     ...options
   });
@@ -49,16 +52,17 @@ export const useCreateTag = (options = {}) => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (tagData) => createTag(tagData),
-    onSuccess: () => {
+    mutationFn: (tagData) => apiService.tags.create(tagData), // Use apiService
+    onSuccess: (data, variables, context) => { // Added params
       queryClient.invalidateQueries({ queryKey: ['tags'] });
       toast.success('Tag created successfully');
-      options.onSuccess && options.onSuccess();
+      options.onSuccess?.(data, variables, context); // Pass params
     },
-    onError: (error) => {
+    onError: (error, variables, context) => { // Added params
       toast.error(error.message || 'An error occurred while creating the tag.');
-      options.onError && options.onError(error);
-    }
+      options.onError?.(error, variables, context); // Pass params
+    },
+    onSettled: options.onSettled, // Pass through onSettled
   });
 };
 
@@ -67,17 +71,18 @@ export const useUpdateTag = (options = {}) => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, tagData }) => updateTag(id, tagData),
-    onSuccess: (data, variables) => {
+    mutationFn: ({ id, tagData }) => apiService.tags.update(id, tagData), // Use apiService
+    onSuccess: (data, variables, context) => { // Added params
       queryClient.invalidateQueries({ queryKey: ['tags'] });
       queryClient.invalidateQueries({ queryKey: ['tag', variables.id] });
       toast.success('Tag updated successfully');
-      options.onSuccess && options.onSuccess();
+      options.onSuccess?.(data, variables, context); // Pass params
     },
-    onError: (error) => {
+    onError: (error, variables, context) => { // Added params
       toast.error(error.message || 'An error occurred while updating the tag.');
-      options.onError && options.onError(error);
-    }
+      options.onError?.(error, variables, context); // Pass params
+    },
+    onSettled: options.onSettled, // Pass through onSettled
   });
 };
 
@@ -86,16 +91,17 @@ export const useDeleteTag = (options = {}) => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (id) => deleteTag(id),
-    onSuccess: () => {
+    mutationFn: (id) => apiService.tags.delete(id), // Use apiService
+    onSuccess: (data, variables, context) => { // Added params
       queryClient.invalidateQueries({ queryKey: ['tags'] });
       toast.success('Tag deleted successfully');
-      options.onSuccess && options.onSuccess();
+      options.onSuccess?.(data, variables, context); // Pass params
     },
-    onError: (error) => {
+    onError: (error, variables, context) => { // Added params
       toast.error(error.message || 'An error occurred while deleting the tag.');
-      options.onError && options.onError(error);
-    }
+      options.onError?.(error, variables, context); // Pass params
+    },
+    onSettled: options.onSettled, // Pass through onSettled
   });
 };
 
@@ -103,7 +109,7 @@ export const useDeleteTag = (options = {}) => {
 export const useTagUsage = (id, options = {}) => {
   return useQuery({
     queryKey: ['tagUsage', id],
-    queryFn: () => getTagUsage(id),
+    queryFn: () => apiService.tags.getUsage(id), // Use apiService
     enabled: !!id,
     ...options
   });

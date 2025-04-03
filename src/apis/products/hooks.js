@@ -1,21 +1,11 @@
-import {
-  useMutation,
-  useQuery,
-  useQueryClient
-} from '@tanstack/react-query';
-import {
-  getProducts,
-  getProductById,
-  createProduct,
-  updateProduct,
-  deleteProduct
-} from './api';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import apiService from '../../utils/apiService'; // Import the central apiService
 
 // Get products hook
 export const useProducts = (filters) => {
   return useQuery({
     queryKey: ['products', filters],
-    queryFn: () => getProducts(filters)
+    queryFn: () => apiService.products.getAll(filters), // Use apiService
   });
 };
 
@@ -23,9 +13,9 @@ export const useProducts = (filters) => {
 export const useProductById = (id, options = {}) => {
   return useQuery({
     queryKey: ['product', id],
-    queryFn: () => getProductById(id),
+    queryFn: () => apiService.products.getById(id), // Use apiService
     enabled: !!id,
-    ...options
+    ...options,
   });
 };
 
@@ -34,11 +24,13 @@ export const useCreateProduct = (options = {}) => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (productData) => createProduct(productData),
-    onSuccess: () => {
+    mutationFn: (productData) => apiService.products.create(productData), // Use apiService
+    onSuccess: (data, variables, context) => { // Added params
       queryClient.invalidateQueries({ queryKey: ['products'] });
-      options.onSuccess && options.onSuccess();
-    }
+      options.onSuccess?.(data, variables, context); // Pass params
+    },
+     onError: options.onError, // Pass through onError
+     onSettled: options.onSettled, // Pass through onSettled
   });
 };
 
@@ -47,12 +39,14 @@ export const useUpdateProduct = (options = {}) => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, productData }) => updateProduct(id, productData),
-    onSuccess: () => {
+    mutationFn: ({ id, productData }) => apiService.products.update(id, productData), // Use apiService
+    onSuccess: (data, variables, context) => { // Added params
       queryClient.invalidateQueries({ queryKey: ['products'] });
-      queryClient.invalidateQueries({ queryKey: ['product'] });
-      options.onSuccess && options.onSuccess();
-    }
+      queryClient.invalidateQueries({ queryKey: ['product', variables.id] }); // Use variables.id
+      options.onSuccess?.(data, variables, context); // Pass params
+    },
+     onError: options.onError, // Pass through onError
+     onSettled: options.onSettled, // Pass through onSettled
   });
 };
 
@@ -61,10 +55,13 @@ export const useDeleteProduct = (options = {}) => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (id) => deleteProduct(id),
-    onSuccess: () => {
+    mutationFn: (id) => apiService.products.delete(id), // Use apiService
+    onSuccess: (data, variables, context) => { // Added params
       queryClient.invalidateQueries({ queryKey: ['products'] });
-      options.onSuccess && options.onSuccess();
-    }
+      // Optionally remove detail query: queryClient.removeQueries({ queryKey: ['product', variables] });
+      options.onSuccess?.(data, variables, context); // Pass params
+    },
+     onError: options.onError, // Pass through onError
+     onSettled: options.onSettled, // Pass through onSettled
   });
 };

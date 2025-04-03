@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState } from 'react';
 import {
   Search,
   Plus,
@@ -7,16 +7,16 @@ import {
   Check,
   X,
   AlertTriangle,
-} from "lucide-react";
+} from 'lucide-react';
 import {
   usePharmacies,
   useCreatePharmacy,
   useUpdatePharmacy,
   useDeletePharmacy,
   useTogglePharmacyActive,
-} from "../../apis/pharmacies/hooks";
-import { US_STATES } from "../../constants/countryStates";
-import { PHARMACY_TYPES } from "../../constants/pharmacies";
+} from '../../apis/pharmacies/hooks';
+import { US_STATES } from '../../constants/countryStates';
+import { PHARMACY_TYPES } from '../../constants/pharmacies';
 
 // Internal Components
 const ErrorAlert = ({ message }) => (
@@ -41,19 +41,19 @@ const LoadingSpinner = () => (
 const StatusBadge = ({ active }) => (
   <span
     className={`px-2 py-1 text-xs font-medium rounded-full ${
-      active ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"
+      active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
     }`}
   >
-    {active ? "Active" : "Inactive"}
+    {active ? 'Active' : 'Inactive'}
   </span>
 );
 
 const TypeBadge = ({ type }) => {
   const getBgColor = (pharmacyType) => {
     const lowerType = pharmacyType.toLowerCase();
-    if (lowerType === "compounding") return "bg-purple-100 text-purple-800";
-    if (lowerType === "retail") return "bg-blue-100 text-blue-800";
-    return "bg-green-100 text-green-800";
+    if (lowerType === 'compounding') return 'bg-purple-100 text-purple-800';
+    if (lowerType === 'retail') return 'bg-blue-100 text-blue-800';
+    return 'bg-green-100 text-green-800';
   };
 
   return (
@@ -184,18 +184,18 @@ const PharmacyFormModal = ({
   isSubmitting,
 }) => {
   const INITIAL_FORM_DATA = {
-    name: "",
-    pharmacy_type: "Compounding",
-    contact_name: "",
-    contact_email: "",
-    contact_phone: "",
+    name: '',
+    pharmacy_type: 'Compounding',
+    contact_name: '',
+    contact_email: '',
+    contact_phone: '',
     active: true,
     served_state_codes: [],
   };
 
   const [formData, setFormData] = useState(initialData || INITIAL_FORM_DATA);
-  const [stateSearchTerm, setStateSearchTerm] = useState("");
-  const [validationError, setValidationError] = useState("");
+  const [stateSearchTerm, setStateSearchTerm] = useState('');
+  const [validationError, setValidationError] = useState('');
 
   // Filter states based on search term
   const filteredStates = US_STATES.filter(
@@ -209,9 +209,9 @@ const PharmacyFormModal = ({
     const { name, value, type, checked } = e.target;
     setFormData({
       ...formData,
-      [name]: type === "checkbox" ? checked : value,
+      [name]: type === 'checkbox' ? checked : value,
     });
-    setValidationError("");
+    setValidationError('');
   };
 
   // Handle state selection
@@ -237,7 +237,7 @@ const PharmacyFormModal = ({
 
     // Basic validation
     if (!formData.name.trim()) {
-      setValidationError("Pharmacy name is required");
+      setValidationError('Pharmacy name is required');
       return;
     }
 
@@ -393,16 +393,16 @@ const PharmacyFormModal = ({
                       key={state.code}
                       className={`flex items-center p-2 rounded cursor-pointer ${
                         formData.served_state_codes.includes(state.code)
-                          ? "bg-indigo-100"
-                          : "hover:bg-gray-100"
+                          ? 'bg-indigo-100'
+                          : 'hover:bg-gray-100'
                       }`}
                       onClick={() => handleStateSelection(state.code)}
                     >
                       <div
                         className={`w-5 h-5 flex items-center justify-center rounded-full border ${
                           formData.served_state_codes.includes(state.code)
-                            ? "bg-indigo-600 border-indigo-600"
-                            : "border-gray-300"
+                            ? 'bg-indigo-600 border-indigo-600'
+                            : 'border-gray-300'
                         }`}
                       >
                         {formData.served_state_codes.includes(state.code) && (
@@ -436,7 +436,7 @@ const PharmacyFormModal = ({
               className="cursor-pointer px-4 py-2 bg-indigo-600 rounded-md text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
               disabled={isSubmitting || !formData.name}
             >
-              {isSubmitting ? "Saving..." : submitText}
+              {isSubmitting ? 'Saving...' : submitText}
             </button>
           </div>
         </form>
@@ -447,8 +447,8 @@ const PharmacyFormModal = ({
 
 // Main PharmacyManagement component
 const PharmacyManagement = () => {
-  const [searchTerm, setSearchTerm] = useState("");
-  const [typeFilter, setTypeFilter] = useState("all");
+  const [searchTerm, setSearchTerm] = useState('');
+  const [typeFilter, setTypeFilter] = useState('all');
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [currentPharmacy, setCurrentPharmacy] = useState(null);
@@ -482,7 +482,7 @@ const PharmacyManagement = () => {
       (pharmacy.contact_name &&
         pharmacy.contact_name.toLowerCase().includes(searchTerm.toLowerCase()));
     const matchesType =
-      typeFilter === "all" ||
+      typeFilter === 'all' ||
       pharmacy.pharmacy_type.toLowerCase() === typeFilter.toLowerCase();
 
     return matchesSearch && matchesType;
@@ -505,7 +505,7 @@ const PharmacyManagement = () => {
       await createPharmacy.mutateAsync(formData);
       return true;
     } catch (err) {
-      console.error("Error creating pharmacy:", err);
+      console.error('Error creating pharmacy:', err);
       return false;
     }
   };
@@ -519,18 +519,18 @@ const PharmacyManagement = () => {
       });
       return true;
     } catch (err) {
-      console.error("Error updating pharmacy:", err);
+      console.error('Error updating pharmacy:', err);
       return false;
     }
   };
 
   // Handle deleting pharmacy
   const handleDeletePharmacy = async (id) => {
-    if (window.confirm("Are you sure you want to delete this pharmacy?")) {
+    if (window.confirm('Are you sure you want to delete this pharmacy?')) {
       try {
         await deletePharmacy.mutateAsync(id);
       } catch (err) {
-        console.error("Error deleting pharmacy:", err);
+        console.error('Error deleting pharmacy:', err);
       }
     }
   };
@@ -540,7 +540,7 @@ const PharmacyManagement = () => {
     try {
       await togglePharmacyActive.mutateAsync({ id, active });
     } catch (err) {
-      console.error("Error toggling pharmacy active status:", err);
+      console.error('Error toggling pharmacy active status:', err);
     }
   };
 
@@ -572,7 +572,7 @@ const PharmacyManagement = () => {
             updatePharmacy.error?.message ||
             deletePharmacy.error?.message ||
             togglePharmacyActive.error?.message ||
-            "An error occurred"
+            'An error occurred'
           }
         />
       )}

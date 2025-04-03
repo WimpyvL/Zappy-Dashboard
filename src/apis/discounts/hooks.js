@@ -1,15 +1,11 @@
-import {
-  useQuery,
-  useMutation,
-  useQueryClient
-} from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   getDiscounts,
   getDiscountById,
   createDiscount,
   updateDiscount,
   deleteDiscount,
-  toggleDiscountActive
+  toggleDiscountActive,
 } from './api';
 import { toast } from 'react-toastify';
 
@@ -17,7 +13,7 @@ import { toast } from 'react-toastify';
 export const useDiscounts = (params = {}) => {
   return useQuery({
     queryKey: ['discounts', params],
-    queryFn: () => getDiscounts(params)
+    queryFn: () => getDiscounts(params),
   });
 };
 
@@ -27,7 +23,7 @@ export const useDiscountById = (id, options = {}) => {
     queryKey: ['discount', id],
     queryFn: () => getDiscountById(id),
     enabled: !!id,
-    ...options
+    ...options,
   });
 };
 
@@ -43,9 +39,11 @@ export const useCreateDiscount = (options = {}) => {
       options.onSuccess && options.onSuccess();
     },
     onError: (error) => {
-      toast.error(error.message || 'An error occurred while creating the discount.');
+      toast.error(
+        error.message || 'An error occurred while creating the discount.'
+      );
       options.onError && options.onError(error);
-    }
+    },
   });
 };
 
@@ -62,9 +60,11 @@ export const useUpdateDiscount = (options = {}) => {
       options.onSuccess && options.onSuccess();
     },
     onError: (error) => {
-      toast.error(error.message || 'An error occurred while updating the discount.');
+      toast.error(
+        error.message || 'An error occurred while updating the discount.'
+      );
       options.onError && options.onError(error);
-    }
+    },
   });
 };
 
@@ -80,9 +80,11 @@ export const useDeleteDiscount = (options = {}) => {
       options.onSuccess && options.onSuccess();
     },
     onError: (error) => {
-      toast.error(error.message || 'An error occurred while deleting the discount.');
+      toast.error(
+        error.message || 'An error occurred while deleting the discount.'
+      );
       options.onError && options.onError(error);
-    }
+    },
   });
 };
 
@@ -95,12 +97,16 @@ export const useToggleDiscountActive = (options = {}) => {
     onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['discounts'] });
       queryClient.invalidateQueries({ queryKey: ['discount', variables.id] });
-      toast.success(`Discount ${variables.active ? 'activated' : 'deactivated'} successfully`);
+      toast.success(
+        `Discount ${variables.active ? 'activated' : 'deactivated'} successfully`
+      );
       options.onSuccess && options.onSuccess();
     },
     onError: (error) => {
-      toast.error(error.message || 'An error occurred while updating the discount status.');
+      toast.error(
+        error.message || 'An error occurred while updating the discount status.'
+      );
       options.onError && options.onError(error);
-    }
+    },
   });
 };

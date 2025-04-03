@@ -8,7 +8,7 @@ const apiClient = axios.create({
   baseURL: process.env.REACT_APP_API_URL,
   headers: {
     'Content-Type': 'application/json',
-    'ngrok-skip-browser-warning':true
+    'ngrok-skip-browser-warning': true,
   },
   timeout: 30000, // 30 seconds timeout
 });
@@ -45,14 +45,21 @@ apiClient.interceptors.response.use(
       originalRequest.url.includes('/register');
 
     // Handle token expiration/401 errors, but not for auth requests
-    if (error.response && error.response.status === 401 && !originalRequest._retry && !isAuthRequest) {
+    if (
+      error.response &&
+      error.response.status === 401 &&
+      !originalRequest._retry &&
+      !isAuthRequest
+    ) {
       originalRequest._retry = true;
 
       // If a refresh token exists, try to get a new access token
       const refreshToken = localStorage.getItem('refreshToken');
       if (refreshToken) {
         try {
-          const res = await apiClient.post('/auth/refresh-token', { refreshToken });
+          const res = await apiClient.post('/auth/refresh-token', {
+            refreshToken,
+          });
           const { token } = res.data;
 
           localStorage.setItem('token', token);
@@ -82,10 +89,13 @@ apiClient.interceptors.response.use(
 
     // Handle errors and show error messages using React Toastify
     if (error.response) {
-      const errorMessage = error.response.data.error || 'An error occurred. Please try again.';
+      const errorMessage =
+        error.response.data.error || 'An error occurred. Please try again.';
       toast.error(errorMessage);
     } else {
-      toast.error('An error occurred. Please check your network connection and try again.');
+      toast.error(
+        'An error occurred. Please check your network connection and try again.'
+      );
     }
 
     return Promise.reject(error);
@@ -108,7 +118,7 @@ export const request = async ({ url, method, data, params, headers }) => {
       method,
       data,
       params,
-      headers
+      headers,
     });
     return response.data;
   } catch (error) {

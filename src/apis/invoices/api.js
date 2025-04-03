@@ -5,7 +5,7 @@ export const getInvoices = async (params) => {
   const data = await request({
     url: '/api/v1/admin/invoices',
     method: 'GET',
-    params
+    params,
   });
   return data;
 };
@@ -14,7 +14,7 @@ export const getInvoices = async (params) => {
 export const getInvoiceById = async (id) => {
   const data = await request({
     url: `/api/v1/admin/invoices/${id}`,
-    method: 'GET'
+    method: 'GET',
   });
   return data;
 };
@@ -24,7 +24,7 @@ export const createInvoice = async (invoiceData) => {
   const data = await request({
     url: '/api/v1/admin/invoices',
     method: 'POST',
-    data: { invoice: invoiceData }
+    data: { invoice: invoiceData },
   });
   return data;
 };
@@ -34,7 +34,7 @@ export const updateInvoice = async (id, invoiceData) => {
   const data = await request({
     url: `/api/v1/admin/invoices/${id}`,
     method: 'PUT',
-    data: { invoice: invoiceData }
+    data: { invoice: invoiceData },
   });
   return data;
 };
@@ -43,7 +43,7 @@ export const updateInvoice = async (id, invoiceData) => {
 export const deleteInvoice = async (id) => {
   const data = await request({
     url: `/api/v1/admin/invoices/${id}`,
-    method: 'DELETE'
+    method: 'DELETE',
   });
   return data;
 };
@@ -52,7 +52,7 @@ export const deleteInvoice = async (id) => {
 export const markInvoiceAsPaid = async (id) => {
   const data = await request({
     url: `/api/v1/admin/invoices/${id}/mark_as_paid`,
-    method: 'PUT'
+    method: 'PUT',
   });
   return data;
 };
@@ -61,7 +61,7 @@ export const markInvoiceAsPaid = async (id) => {
 export const sendInvoice = async (id) => {
   const data = await request({
     url: `/api/v1/admin/invoices/${id}/send`,
-    method: 'POST'
+    method: 'POST',
   });
   return data;
 };

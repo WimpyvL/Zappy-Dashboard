@@ -5,7 +5,7 @@ export const getForms = async (params) => {
   const data = await request({
     url: '/api/v1/admin/forms',
     method: 'GET',
-    params
+    params,
   });
   return data;
 };
@@ -14,7 +14,7 @@ export const getForms = async (params) => {
 export const getFormById = async (id) => {
   const data = await request({
     url: `/api/v1/admin/forms/${id}`,
-    method: 'GET'
+    method: 'GET',
   });
   return data;
 };
@@ -24,7 +24,7 @@ export const createForm = async (formData) => {
   const data = await request({
     url: '/api/v1/admin/forms',
     method: 'POST',
-    data: { form: formData }
+    data: { form: formData },
   });
   return data;
 };
@@ -34,7 +34,7 @@ export const updateForm = async (id, formData) => {
   const data = await request({
     url: `/api/v1/admin/forms/${id}`,
     method: 'PUT',
-    data: { form: formData }
+    data: { form: formData },
   });
   return data;
 };
@@ -43,7 +43,7 @@ export const updateForm = async (id, formData) => {
 export const deleteForm = async (id) => {
   const data = await request({
     url: `/api/v1/admin/forms/${id}`,
-    method: 'DELETE'
+    method: 'DELETE',
   });
   return data;
 };

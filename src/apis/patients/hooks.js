@@ -3,13 +3,14 @@ import {
   useQuery,
   useQueryClient
 } from '@tanstack/react-query';
-import {
-  getPatients,
-  getPatientById,
-  createPatient,
-  updatePatient,
-  deletePatient
-} from './api';
+// import { // Commented out as functions are unused due to mocking/apiService usage below
+//   getPatients,
+//   getPatientById,
+//   createPatient,
+//   updatePatient,
+//   deletePatient
+// } from './api';
+import apiService from '../../utils/apiService'; // Import the central apiService
 import auditLogService from '../../utils/auditLogService'; // Import the audit log service
 
 // --- Mock Data ---
@@ -26,6 +27,7 @@ export const usePatients = (currentPage, filters) => {
   return useQuery({
     queryKey: ['patients', currentPage, filters],
     // queryFn: () => getPatients(currentPage, filters), // Original API call
+    // queryFn: () => apiService.patients.getAll({ page: currentPage, ...filters }), // Alternative using apiService
     queryFn: () => Promise.resolve({ data: samplePatientsData, meta: { total: samplePatientsData.length, per_page: 10, current_page: currentPage } }), // Return mock data with pagination structure
     staleTime: Infinity,
   });
@@ -35,7 +37,7 @@ export const usePatients = (currentPage, filters) => {
 export const usePatientById = (id, options = {}) => {
   return useQuery({
     queryKey: ['patient', id],
-    queryFn: () => getPatientById(id),
+    queryFn: () => apiService.patients.getById(id), // Use apiService
     enabled: !!id,
     ...options
   });
@@ -46,15 +48,21 @@ export const useCreatePatient = (options = {}) => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (patientData) => createPatient(patientData),
-    onSuccess: (data, variables, context) => { // Ensure parameters are available if needed
+    mutationFn: (patientData) => apiService.patients.create(patientData), // Use apiService
+    onSuccess: (data, variables, context) => {
+      // Ensure parameters are available if needed
       queryClient.invalidateQueries({ queryKey: ['patients'] });
 
       // Log the audit event
       // Assuming 'data' contains the created patient details, including an ID
       const patientId = data?.id || variables?.id || 'unknown'; // Get ID from response or input variables
-      const patientName = variables?.firstName ? `${variables.firstName} ${variables.lastName}` : 'Unknown Name'; // Get name from input variables
-      auditLogService.log('Patient Created', { patientId: patientId, name: patientName });
+      const patientName = variables?.firstName
+        ? `${variables.firstName} ${variables.lastName}`
+        : 'Unknown Name'; // Get name from input variables
+      auditLogService.log('Patient Created', {
+        patientId: patientId,
+        name: patientName,
+      });
 
       // Call original onSuccess if provided
       options.onSuccess && options.onSuccess(data, variables, context);
@@ -67,7 +75,7 @@ export const useUpdatePatient = (options = {}) => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, patientData }) => updatePatient(id, patientData),
+    mutationFn: ({ id, patientData }) => apiService.patients.update(id, patientData), // Use apiService
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['patients'] });
       queryClient.invalidateQueries({ queryKey: ['patient'] });
@@ -81,7 +89,7 @@ export const useDeletePatient = (options = {}) => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (id) => deletePatient(id),
+    mutationFn: (id) => apiService.patients.delete(id), // Use apiService
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['patients'] });
       options.onSuccess && options.onSuccess();

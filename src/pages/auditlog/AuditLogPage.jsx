@@ -54,13 +54,27 @@ const AuditLogPage = () => {
   ];
 
   // Handle loading state
-  if (isLoading && !data) { // Show initial loading spinner
-    return <Spin tip="Loading audit logs..." size="large" className="flex justify-center items-center h-64" />;
+  if (isLoading && !data) {
+    // Show initial loading spinner
+    return (
+      <Spin
+        tip="Loading audit logs..."
+        size="large"
+        className="flex justify-center items-center h-64"
+      />
+    );
   }
 
   // Handle error state
   if (error) {
-    return <Alert message="Error Loading Audit Logs" description={errorHandling.getErrorMessage(error)} type="error" showIcon />;
+    return (
+      <Alert
+        message="Error Loading Audit Logs"
+        description={errorHandling.getErrorMessage(error)}
+        type="error"
+        showIcon
+      />
+    );
   }
 
   // Handle table pagination changes
@@ -71,7 +85,9 @@ const AuditLogPage = () => {
 
   return (
     <div>
-      <Title level={2} className="mb-4">Audit Log</Title>
+      <Title level={2} className="mb-4">
+        Audit Log
+      </Title>
       <Table
         columns={columns}
         dataSource={auditLogs}

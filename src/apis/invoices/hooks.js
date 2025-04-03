@@ -1,8 +1,4 @@
-import {
-  useQuery,
-  useMutation,
-  useQueryClient
-} from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   getInvoices,
   getInvoiceById,
@@ -10,14 +6,14 @@ import {
   updateInvoice,
   deleteInvoice,
   markInvoiceAsPaid,
-  sendInvoice
+  sendInvoice,
 } from './api';
 
 // Hook to fetch all invoices
 export const useInvoices = (params = {}) => {
   return useQuery({
     queryKey: ['invoices', params],
-    queryFn: () => getInvoices(params)
+    queryFn: () => getInvoices(params),
   });
 };
 
@@ -27,7 +23,7 @@ export const useInvoiceById = (id, options = {}) => {
     queryKey: ['invoice', id],
     queryFn: () => getInvoiceById(id),
     enabled: !!id,
-    ...options
+    ...options,
   });
 };
 
@@ -43,7 +39,7 @@ export const useCreateInvoice = (options = {}) => {
     },
     onError: (error) => {
       options.onError && options.onError(error);
-    }
+    },
   });
 };
 
@@ -60,7 +56,7 @@ export const useUpdateInvoice = (options = {}) => {
     },
     onError: (error) => {
       options.onError && options.onError(error);
-    }
+    },
   });
 };
 
@@ -76,7 +72,7 @@ export const useDeleteInvoice = (options = {}) => {
     },
     onError: (error) => {
       options.onError && options.onError(error);
-    }
+    },
   });
 };
 
@@ -93,7 +89,7 @@ export const useMarkInvoiceAsPaid = (options = {}) => {
     },
     onError: (error) => {
       options.onError && options.onError(error);
-    }
+    },
   });
 };
 
@@ -110,6 +106,6 @@ export const useSendInvoice = (options = {}) => {
     },
     onError: (error) => {
       options.onError && options.onError(error);
-    }
+    },
   });
 };

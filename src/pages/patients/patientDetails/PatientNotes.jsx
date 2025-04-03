@@ -1,7 +1,7 @@
 // components/patients/components/PatientNotes.jsx
-import React, { useState } from "react";
-import { Plus } from "lucide-react";
-import LoadingSpinner from "./common/LoadingSpinner";
+import React, { useState } from 'react';
+import { Plus } from 'lucide-react';
+import LoadingSpinner from './common/LoadingSpinner';
 
 const NoteCard = ({ note, onOpenFollowupNotes }) => {
   const date = new Date(note.createdAt).toLocaleDateString();
@@ -14,12 +14,12 @@ const NoteCard = ({ note, onOpenFollowupNotes }) => {
           <span className="text-xs text-gray-500 mr-2">{date}</span>
           <span
             className={`px-2 py-1 text-xs font-medium rounded-full ${
-              note.category === "follow-up"
-                ? "bg-indigo-100 text-indigo-800"
-                : "bg-gray-100 text-gray-800"
+              note.category === 'follow-up'
+                ? 'bg-indigo-100 text-indigo-800'
+                : 'bg-gray-100 text-gray-800'
             }`}
           >
-            {note.category === "follow-up" ? "Follow-up" : note.category}
+            {note.category === 'follow-up' ? 'Follow-up' : note.category}
           </span>
         </div>
       </div>
@@ -28,7 +28,7 @@ const NoteCard = ({ note, onOpenFollowupNotes }) => {
       </p>
       <div className="mt-2 flex justify-between items-center">
         <div className="text-xs text-gray-500">By: {note.createdBy}</div>
-        {note.category === "follow-up" && (
+        {note.category === 'follow-up' && (
           <button
             className="text-indigo-600 text-sm font-medium"
             onClick={() => onOpenFollowupNotes()}
@@ -42,21 +42,21 @@ const NoteCard = ({ note, onOpenFollowupNotes }) => {
 };
 
 const PatientNotes = ({ patientId, notes, loading, onOpenFollowupNotes }) => {
-  const [noteType, setNoteType] = useState("all");
+  const [noteType, setNoteType] = useState('all');
 
   // Filter notes based on selected type
   const filteredNotes =
-    noteType === "all"
+    noteType === 'all'
       ? notes
       : notes.filter((note) => note.category === noteType);
 
   // Separate follow-up notes for special section
   const standardNotes = filteredNotes.filter(
-    (note) => note.category !== "follow-up"
+    (note) => note.category !== 'follow-up'
   );
   const followupNotes =
-    noteType === "follow-up" || noteType === "all"
-      ? filteredNotes.filter((note) => note.category === "follow-up")
+    noteType === 'follow-up' || noteType === 'all'
+      ? filteredNotes.filter((note) => note.category === 'follow-up')
       : [];
 
   return (
@@ -124,8 +124,8 @@ const PatientNotes = ({ patientId, notes, loading, onOpenFollowupNotes }) => {
         </div>
       ) : (
         <div className="text-center py-8 text-gray-500">
-          {noteType === "all"
-            ? "No medical notes found for this patient."
+          {noteType === 'all'
+            ? 'No medical notes found for this patient.'
             : `No ${noteType} notes found for this patient.`}
         </div>
       )}

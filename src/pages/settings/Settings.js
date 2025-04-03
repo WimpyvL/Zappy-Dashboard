@@ -35,7 +35,9 @@ const Settings = () => {
     <Layout className="min-h-screen bg-gray-100">
       <Content className="px-6">
         <div className="sticky top-[-2rem] z-10 bg-gray-100 pt-4 pb-2">
-          <Title level={3} className="mb-4">Settings</Title>
+          <Title level={3} className="mb-4">
+            Settings
+          </Title>
           <Tabs
             activeKey={getActiveTab()}
             onChange={handleTabChange}
@@ -75,7 +77,10 @@ const Settings = () => {
         <div className="bg-white p-6 rounded shadow-sm min-h-[600px] mt-4">
           <Routes>
             <Route path="/forms" element={<FormsManagement />} />
-            <Route path="/account" element={<div>Account Settings (Coming Soon)</div>} />
+            <Route
+              path="/account"
+              element={<div>Account Settings (Coming Soon)</div>}
+            />
             {/* Use ReferralSettings component */}
             <Route path="/referrals" element={<ReferralSettings />} />
             {/* Update default route or add redirect if needed */}

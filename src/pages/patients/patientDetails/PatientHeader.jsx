@@ -1,14 +1,14 @@
 // components/patients/components/PatientHeader.jsx
-import React, { useState } from "react";
-import { Link } from "react-router-dom";
-import { ArrowLeft, Edit, Calendar } from "lucide-react";
-import PatientModal from "../PatientModal";
+import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
+import { ArrowLeft, Edit, Calendar } from 'lucide-react';
+import PatientModal from '../PatientModal';
 
 const PatientHeader = ({ patient, patientId }) => {
-    const [showAddModal, setShowAddModal] = useState(false);
+  const [showAddModal, setShowAddModal] = useState(false);
   // Calculate patient age from DOB
   const calculateAge = (dob) => {
-    if (!dob) return "Unknown";
+    if (!dob) return 'Unknown';
     const birthDate = new Date(dob);
     const today = new Date();
     let age = today.getFullYear() - birthDate.getFullYear();
@@ -30,7 +30,7 @@ const PatientHeader = ({ patient, patientId }) => {
           Back to Patients
         </Link>
         <h1 className="text-2xl font-bold text-gray-800 mt-1">
-          {patient.name}{" "}
+          {patient.name}{' '}
           <span className="text-lg font-normal text-gray-500">
             ({calculateAge(patient.dob)} years)
           </span>

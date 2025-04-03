@@ -1,26 +1,26 @@
 // components/patients/components/PatientForms.jsx
-import React, { useState } from "react";
-import { Plus, CheckCircle, Clock, XCircle } from "lucide-react";
-import { toast } from "react-toastify";
-import apiService from "../../../utils/apiService";
-import LoadingSpinner from "./common/LoadingSpinner";
+import React, { useState } from 'react';
+import { Plus, CheckCircle, Clock, XCircle } from 'lucide-react';
+import { toast } from 'react-toastify';
+import apiService from '../../../utils/apiService';
+import LoadingSpinner from './common/LoadingSpinner';
 
 const FormStatusBadge = ({ status }) => {
   return (
     <span
       className={`flex items-center px-2 py-1 text-xs font-medium rounded-full ${
-        status === "completed"
-          ? "bg-green-100 text-green-800"
-          : status === "pending"
-          ? "bg-yellow-100 text-yellow-800"
-          : status === "expired"
-          ? "bg-red-100 text-red-800"
-          : "bg-gray-100 text-gray-800"
+        status === 'completed'
+          ? 'bg-green-100 text-green-800'
+          : status === 'pending'
+            ? 'bg-yellow-100 text-yellow-800'
+            : status === 'expired'
+              ? 'bg-red-100 text-red-800'
+              : 'bg-gray-100 text-gray-800'
       }`}
     >
-      {status === "completed" ? (
+      {status === 'completed' ? (
         <CheckCircle className="h-3 w-3 mr-1" />
-      ) : status === "pending" ? (
+      ) : status === 'pending' ? (
         <Clock className="h-3 w-3 mr-1" />
       ) : (
         <XCircle className="h-3 w-3 mr-1" />
@@ -31,22 +31,22 @@ const FormStatusBadge = ({ status }) => {
 };
 
 const PatientForms = ({ patientId, forms, loading }) => {
-  const [formFilter, setFormFilter] = useState("all");
+  const [formFilter, setFormFilter] = useState('all');
 
   // Format date for display
   const formatDate = (dateString) => {
-    if (!dateString) return "Not available";
+    if (!dateString) return 'Not available';
     const date = new Date(dateString);
-    return new Intl.DateTimeFormat("en-US", {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
+    return new Intl.DateTimeFormat('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
     }).format(date);
   };
 
   // Filter forms based on status
   const filteredForms =
-    formFilter === "all"
+    formFilter === 'all'
       ? forms
       : forms.filter((form) => form.status === formFilter);
 
@@ -56,10 +56,10 @@ const PatientForms = ({ patientId, forms, loading }) => {
       await apiService.post(
         `/api/v1/admin/patients/${patientId}/forms/${formId}/send_reminder`
       );
-      toast.success("Reminder sent successfully");
+      toast.success('Reminder sent successfully');
     } catch (error) {
-      console.error("Error sending form reminder:", error);
-      toast.error("Failed to send reminder");
+      console.error('Error sending form reminder:', error);
+      toast.error('Failed to send reminder');
     }
   };
 
@@ -69,10 +69,10 @@ const PatientForms = ({ patientId, forms, loading }) => {
       await apiService.post(
         `/api/v1/admin/patients/${patientId}/forms/${formId}/resend`
       );
-      toast.success("Form resent successfully");
+      toast.success('Form resent successfully');
     } catch (error) {
-      console.error("Failed to resend form:", error);
-      toast.error("Failed to resend form");
+      console.error('Failed to resend form:', error);
+      toast.error('Failed to resend form');
     }
   };
 
@@ -146,10 +146,10 @@ const PatientForms = ({ patientId, forms, loading }) => {
                     <FormStatusBadge status={form.status} />
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {form.completedDate ? formatDate(form.completedDate) : "-"}
+                    {form.completedDate ? formatDate(form.completedDate) : '-'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                    {form.status === "completed" ? (
+                    {form.status === 'completed' ? (
                       <button className="text-indigo-600 hover:text-indigo-900 mr-3">
                         View Responses
                       </button>
@@ -175,8 +175,8 @@ const PatientForms = ({ patientId, forms, loading }) => {
         </div>
       ) : (
         <div className="text-center py-8 text-gray-500">
-          {formFilter === "all"
-            ? "No forms have been sent to this patient."
+          {formFilter === 'all'
+            ? 'No forms have been sent to this patient.'
             : `No ${formFilter} forms found for this patient.`}
         </div>
       )}

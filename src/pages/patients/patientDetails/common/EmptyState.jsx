@@ -1,9 +1,9 @@
-import React from "react";
+import React from 'react';
 
 const EmptyState = ({
   icon,
-  title = "No data found",
-  message = "There are no items to display at this time.",
+  title = 'No data found',
+  message = 'There are no items to display at this time.',
   actionText,
   onAction,
 }) => {

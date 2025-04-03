@@ -18,11 +18,10 @@ const getCurrentUserEmail = () => {
       return user?.email || 'unknown@example.com'; // Adjust property name if needed
     }
   } catch (e) {
-    console.error("Failed to get user for audit log:", e);
+    console.error('Failed to get user for audit log:', e);
   }
   return 'unknown@system.com';
 };
-
 
 /**
  * Records an audit log event by sending it to the backend.

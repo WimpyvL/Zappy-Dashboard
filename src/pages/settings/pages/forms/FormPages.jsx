@@ -1,12 +1,12 @@
-import React, { useState } from "react";
-import { Tabs, Button, Space, Input, Tooltip, Popconfirm } from "antd";
+import React, { useState } from 'react';
+import { Tabs, Button, Space, Input, Tooltip, Popconfirm } from 'antd';
 import {
   PlusOutlined,
   EditOutlined,
   DeleteOutlined,
   SaveOutlined,
   CloseOutlined,
-} from "@ant-design/icons";
+} from '@ant-design/icons';
 
 const { TabPane } = Tabs;
 
@@ -20,7 +20,7 @@ const FormPages = ({
   onUpdatePageTitle,
 }) => {
   const [editingPageIndex, setEditingPageIndex] = useState(null);
-  const [editingTitle, setEditingTitle] = useState("");
+  const [editingTitle, setEditingTitle] = useState('');
 
   // Start editing a page title
   const startEditingTitle = (index, title) => {
@@ -43,7 +43,7 @@ const FormPages = ({
 
   // Handle key press in the title input (save on Enter)
   const handleKeyPress = (e) => {
-    if (e.key === "Enter") {
+    if (e.key === 'Enter') {
       savePageTitle();
     }
   };
@@ -129,7 +129,7 @@ const FormPages = ({
         onChange={(key) => onChangePage(parseInt(key))}
         type="editable-card"
         onEdit={(targetKey, action) => {
-          if (action === "add") {
+          if (action === 'add') {
             onAddPage();
           }
         }}

@@ -1,22 +1,18 @@
-import {
-  useMutation,
-  useQuery,
-  useQueryClient
-} from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   getPharmacies,
   getPharmacyById,
   createPharmacy,
   updatePharmacy,
   deletePharmacy,
-  togglePharmacyActive
+  togglePharmacyActive,
 } from './api';
 
 // Get pharmacies hook
 export const usePharmacies = (filters) => {
   return useQuery({
     queryKey: ['pharmacies', filters],
-    queryFn: () => getPharmacies(filters)
+    queryFn: () => getPharmacies(filters),
   });
 };
 
@@ -26,7 +22,7 @@ export const usePharmacyById = (id, options = {}) => {
     queryKey: ['pharmacy', id],
     queryFn: () => getPharmacyById(id),
     enabled: !!id,
-    ...options
+    ...options,
   });
 };
 
@@ -39,7 +35,7 @@ export const useCreatePharmacy = (options = {}) => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['pharmacies'] });
       options.onSuccess && options.onSuccess();
-    }
+    },
   });
 };
 
@@ -53,7 +49,7 @@ export const useUpdatePharmacy = (options = {}) => {
       queryClient.invalidateQueries({ queryKey: ['pharmacies'] });
       queryClient.invalidateQueries({ queryKey: ['pharmacy'] });
       options.onSuccess && options.onSuccess();
-    }
+    },
   });
 };
 
@@ -66,7 +62,7 @@ export const useDeletePharmacy = (options = {}) => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['pharmacies'] });
       options.onSuccess && options.onSuccess();
-    }
+    },
   });
 };
 
@@ -80,6 +76,6 @@ export const useTogglePharmacyActive = (options = {}) => {
       queryClient.invalidateQueries({ queryKey: ['pharmacies'] });
       queryClient.invalidateQueries({ queryKey: ['pharmacy'] });
       options.onSuccess && options.onSuccess();
-    }
+    },
   });
 };

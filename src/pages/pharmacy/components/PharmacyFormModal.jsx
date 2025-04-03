@@ -1,14 +1,14 @@
-import React, { useState, useEffect } from "react";
-import { X, Check } from "lucide-react";
-import { US_STATES } from "../../constants/states";
-import { PHARMACY_TYPES } from "../../constants/pharmacy";
+import React, { useState, useEffect } from 'react';
+import { X, Check } from 'lucide-react';
+import { US_STATES } from '../../constants/states';
+import { PHARMACY_TYPES } from '../../constants/pharmacy';
 
 const INITIAL_FORM_DATA = {
-  name: "",
-  pharmacy_type: "Compounding",
-  contact_name: "",
-  contact_email: "",
-  contact_phone: "",
+  name: '',
+  pharmacy_type: 'Compounding',
+  contact_name: '',
+  contact_email: '',
+  contact_phone: '',
   active: true,
   served_state_codes: [],
 };
@@ -21,19 +21,19 @@ const PharmacyFormModal = ({
   initialData = null,
 }) => {
   const [formData, setFormData] = useState(INITIAL_FORM_DATA);
-  const [stateSearchTerm, setStateSearchTerm] = useState("");
+  const [stateSearchTerm, setStateSearchTerm] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [validationError, setValidationError] = useState("");
+  const [validationError, setValidationError] = useState('');
 
   // Initialize form data with initial data if provided
   useEffect(() => {
     if (initialData) {
       setFormData({
-        name: initialData.name || "",
-        pharmacy_type: initialData.pharmacy_type || "Compounding",
-        contact_name: initialData.contact_name || "",
-        contact_email: initialData.contact_email || "",
-        contact_phone: initialData.contact_phone || "",
+        name: initialData.name || '',
+        pharmacy_type: initialData.pharmacy_type || 'Compounding',
+        contact_name: initialData.contact_name || '',
+        contact_email: initialData.contact_email || '',
+        contact_phone: initialData.contact_phone || '',
         active: initialData.active !== undefined ? initialData.active : true,
         served_state_codes: initialData.served_state_codes
           ? [...initialData.served_state_codes]
@@ -54,9 +54,9 @@ const PharmacyFormModal = ({
     const { name, value, type, checked } = e.target;
     setFormData({
       ...formData,
-      [name]: type === "checkbox" ? checked : value,
+      [name]: type === 'checkbox' ? checked : value,
     });
-    setValidationError("");
+    setValidationError('');
   };
 
   // Handle state selection
@@ -82,7 +82,7 @@ const PharmacyFormModal = ({
 
     // Basic validation
     if (!formData.name.trim()) {
-      setValidationError("Pharmacy name is required");
+      setValidationError('Pharmacy name is required');
       return;
     }
 
@@ -246,16 +246,16 @@ const PharmacyFormModal = ({
                       key={state.code}
                       className={`flex items-center p-2 rounded cursor-pointer ${
                         formData.served_state_codes.includes(state.code)
-                          ? "bg-indigo-100"
-                          : "hover:bg-gray-100"
+                          ? 'bg-indigo-100'
+                          : 'hover:bg-gray-100'
                       }`}
                       onClick={() => handleStateSelection(state.code)}
                     >
                       <div
                         className={`w-5 h-5 flex items-center justify-center rounded-full border ${
                           formData.served_state_codes.includes(state.code)
-                            ? "bg-indigo-600 border-indigo-600"
-                            : "border-gray-300"
+                            ? 'bg-indigo-600 border-indigo-600'
+                            : 'border-gray-300'
                         }`}
                       >
                         {formData.served_state_codes.includes(state.code) && (
@@ -289,7 +289,7 @@ const PharmacyFormModal = ({
               className="cursor-pointer px-4 py-2 bg-indigo-600 rounded-md text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
               disabled={isSubmitting || !formData.name}
             >
-              {isSubmitting ? "Saving..." : submitText}
+              {isSubmitting ? 'Saving...' : submitText}
             </button>
           </div>
         </form>

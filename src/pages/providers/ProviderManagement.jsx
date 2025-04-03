@@ -1,15 +1,15 @@
 import React, { useState } from 'react';
-import { 
-  Search, 
-  Plus, 
-  Edit, 
-  Trash2, 
-  Check, 
-  X, 
+import {
+  Search,
+  Plus,
+  Edit,
+  Trash2,
+  Check,
+  X,
   Save,
   MapPin,
   Filter,
-  UserPlus
+  UserPlus,
 } from 'lucide-react';
 
 // Sample data - in a real application, this would come from an API
@@ -21,7 +21,7 @@ const initialProviders = [
     email: 'sarah.johnson@example.com',
     phone: '(555) 123-7890',
     active: true,
-    authorizedStates: ['CA', 'NY', 'FL', 'TX', 'WA']
+    authorizedStates: ['CA', 'NY', 'FL', 'TX', 'WA'],
   },
   {
     id: 2,
@@ -30,7 +30,7 @@ const initialProviders = [
     email: 'michael.chen@example.com',
     phone: '(555) 456-7890',
     active: true,
-    authorizedStates: ['CA', 'OR', 'WA']
+    authorizedStates: ['CA', 'OR', 'WA'],
   },
   {
     id: 3,
@@ -39,7 +39,7 @@ const initialProviders = [
     email: 'emily.parker@example.com',
     phone: '(555) 789-1234',
     active: true,
-    authorizedStates: ['TX', 'AZ', 'NM', 'OK']
+    authorizedStates: ['TX', 'AZ', 'NM', 'OK'],
   },
   {
     id: 4,
@@ -48,8 +48,8 @@ const initialProviders = [
     email: 'lisa.wong@example.com',
     phone: '(555) 234-5678',
     active: true,
-    authorizedStates: ['CA', 'NY', 'MA', 'IL']
-  }
+    authorizedStates: ['CA', 'NY', 'MA', 'IL'],
+  },
 ];
 
 // List of US states
@@ -103,7 +103,7 @@ const states = [
   { code: 'WA', name: 'Washington' },
   { code: 'WV', name: 'West Virginia' },
   { code: 'WI', name: 'Wisconsin' },
-  { code: 'WY', name: 'Wyoming' }
+  { code: 'WY', name: 'Wyoming' },
 ];
 
 const ProviderManagement = () => {
@@ -120,27 +120,32 @@ const ProviderManagement = () => {
     email: '',
     phone: '',
     active: true,
-    authorizedStates: []
+    authorizedStates: [],
   });
-  
+
   // Filter providers based on search and specialty
-  const filteredProviders = providers.filter(provider => {
-    const matchesSearch = provider.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                        provider.email.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesSpecialty = specialtyFilter === 'all' || provider.specialty === specialtyFilter;
-    
+  const filteredProviders = providers.filter((provider) => {
+    const matchesSearch =
+      provider.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      provider.email.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSpecialty =
+      specialtyFilter === 'all' || provider.specialty === specialtyFilter;
+
     return matchesSearch && matchesSpecialty;
   });
-  
+
   // Get unique specialties for filter dropdown
-  const specialties = [...new Set(providers.map(provider => provider.specialty))];
-  
+  const specialties = [
+    ...new Set(providers.map((provider) => provider.specialty)),
+  ];
+
   // Filter states based on search term
-  const filteredStates = states.filter(state => 
-    state.name.toLowerCase().includes(stateSearchTerm.toLowerCase()) ||
-    state.code.toLowerCase().includes(stateSearchTerm.toLowerCase())
+  const filteredStates = states.filter(
+    (state) =>
+      state.name.toLowerCase().includes(stateSearchTerm.toLowerCase()) ||
+      state.code.toLowerCase().includes(stateSearchTerm.toLowerCase())
   );
-  
+
   // Handle adding new provider
   const handleAddProvider = () => {
     setFormData({
@@ -149,11 +154,11 @@ const ProviderManagement = () => {
       email: '',
       phone: '',
       active: true,
-      authorizedStates: []
+      authorizedStates: [],
     });
     setShowAddModal(true);
   };
-  
+
   // Handle editing provider
   const handleEditProvider = (provider) => {
     setCurrentProvider(provider);
@@ -163,48 +168,50 @@ const ProviderManagement = () => {
       email: provider.email,
       phone: provider.phone,
       active: provider.active,
-      authorizedStates: [...provider.authorizedStates]
+      authorizedStates: [...provider.authorizedStates],
     });
     setShowEditModal(true);
   };
-  
+
   // Handle form input changes
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
     setFormData({
       ...formData,
-      [name]: type === 'checkbox' ? checked : value
+      [name]: type === 'checkbox' ? checked : value,
     });
   };
-  
+
   // Handle state selection
   const handleStateSelection = (stateCode) => {
     if (formData.authorizedStates.includes(stateCode)) {
       setFormData({
         ...formData,
-        authorizedStates: formData.authorizedStates.filter(code => code !== stateCode)
+        authorizedStates: formData.authorizedStates.filter(
+          (code) => code !== stateCode
+        ),
       });
     } else {
       setFormData({
         ...formData,
-        authorizedStates: [...formData.authorizedStates, stateCode]
+        authorizedStates: [...formData.authorizedStates, stateCode],
       });
     }
   };
-  
+
   // Handle form submission
   const handleSubmit = () => {
     if (showAddModal) {
       // Add new provider
       const newProvider = {
         id: providers.length + 1,
-        ...formData
+        ...formData,
       };
       setProviders([...providers, newProvider]);
       setShowAddModal(false);
     } else if (showEditModal) {
       // Update existing provider
-      const updatedProviders = providers.map(provider => {
+      const updatedProviders = providers.map((provider) => {
         if (provider.id === currentProvider.id) {
           return { ...provider, ...formData };
         }
@@ -214,18 +221,20 @@ const ProviderManagement = () => {
       setShowEditModal(false);
     }
   };
-  
+
   // Handle deleting provider
   const handleDeleteProvider = (id) => {
-    const updatedProviders = providers.filter(provider => provider.id !== id);
+    const updatedProviders = providers.filter((provider) => provider.id !== id);
     setProviders(updatedProviders);
   };
-  
+
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-gray-800">Provider Management</h1>
-        <button 
+        <h1 className="text-2xl font-bold text-gray-800">
+          Provider Management
+        </h1>
+        <button
           className="px-4 py-2 bg-indigo-600 text-white rounded-md flex items-center hover:bg-indigo-700"
           onClick={handleAddProvider}
         >
@@ -233,7 +242,7 @@ const ProviderManagement = () => {
           Add Provider
         </button>
       </div>
-      
+
       {/* Search and filters */}
       <div className="bg-white p-4 rounded-lg shadow mb-6 flex flex-col md:flex-row md:items-center space-y-4 md:space-y-0 md:space-x-4">
         <div className="flex-1 relative">
@@ -248,7 +257,7 @@ const ProviderManagement = () => {
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
-        
+
         <div className="flex items-center space-x-2">
           <Filter className="h-5 w-5 text-gray-400" />
           <select
@@ -257,13 +266,15 @@ const ProviderManagement = () => {
             onChange={(e) => setSpecialtyFilter(e.target.value)}
           >
             <option value="all">All Specialties</option>
-            {specialties.map(specialty => (
-              <option key={specialty} value={specialty}>{specialty}</option>
+            {specialties.map((specialty) => (
+              <option key={specialty} value={specialty}>
+                {specialty}
+              </option>
             ))}
           </select>
         </div>
       </div>
-      
+
       {/* Providers list */}
       <div className="bg-white shadow overflow-hidden rounded-lg">
         <table className="min-w-full divide-y divide-gray-200">
@@ -294,7 +305,9 @@ const ProviderManagement = () => {
               filteredProviders.map((provider) => (
                 <tr key={provider.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-gray-900">{provider.name}</div>
+                    <div className="text-sm font-medium text-gray-900">
+                      {provider.name}
+                    </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className="px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800">
@@ -302,33 +315,44 @@ const ProviderManagement = () => {
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900">{provider.email}</div>
-                    <div className="text-sm text-gray-500">{provider.phone}</div>
+                    <div className="text-sm text-gray-900">
+                      {provider.email}
+                    </div>
+                    <div className="text-sm text-gray-500">
+                      {provider.phone}
+                    </div>
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex flex-wrap gap-1 max-w-xs">
                       {provider.authorizedStates.map((state) => (
-                        <span key={state} className="px-2 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-800">
+                        <span
+                          key={state}
+                          className="px-2 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-800"
+                        >
                           {state}
                         </span>
                       ))}
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                      provider.active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                    }`}>
+                    <span
+                      className={`px-2 py-1 text-xs font-medium rounded-full ${
+                        provider.active
+                          ? 'bg-green-100 text-green-800'
+                          : 'bg-red-100 text-red-800'
+                      }`}
+                    >
                       {provider.active ? 'Active' : 'Inactive'}
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                    <button 
+                    <button
                       className="text-indigo-600 hover:text-indigo-900 mr-3"
                       onClick={() => handleEditProvider(provider)}
                     >
                       <Edit className="h-5 w-5" />
                     </button>
-                    <button 
+                    <button
                       className="text-red-600 hover:text-red-900"
                       onClick={() => handleDeleteProvider(provider.id)}
                     >
@@ -347,21 +371,23 @@ const ProviderManagement = () => {
           </tbody>
         </table>
       </div>
-      
+
       {/* Add Provider Modal */}
       {showAddModal && (
         <div className="fixed inset-0 bg-[#00000066] bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full">
             <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
-              <h3 className="text-lg font-medium text-gray-900">Add New Provider</h3>
-              <button 
+              <h3 className="text-lg font-medium text-gray-900">
+                Add New Provider
+              </h3>
+              <button
                 className="text-gray-400 hover:text-gray-500"
                 onClick={() => setShowAddModal(false)}
               >
                 <X className="h-5 w-5" />
               </button>
             </div>
-            
+
             <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <div className="mb-4">
@@ -377,7 +403,7 @@ const ProviderManagement = () => {
                     required
                   />
                 </div>
-                
+
                 <div className="mb-4">
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Specialty
@@ -390,7 +416,7 @@ const ProviderManagement = () => {
                     onChange={handleInputChange}
                   />
                 </div>
-                
+
                 <div className="mb-4">
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Email
@@ -403,7 +429,7 @@ const ProviderManagement = () => {
                     onChange={handleInputChange}
                   />
                 </div>
-                
+
                 <div className="mb-4">
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Phone
@@ -416,7 +442,7 @@ const ProviderManagement = () => {
                     onChange={handleInputChange}
                   />
                 </div>
-                
+
                 <div className="mb-4">
                   <label className="flex items-center">
                     <input
@@ -430,7 +456,7 @@ const ProviderManagement = () => {
                   </label>
                 </div>
               </div>
-              
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   States Authorized
@@ -447,23 +473,29 @@ const ProviderManagement = () => {
                   </div>
                   <div className="grid grid-cols-2 gap-1">
                     {filteredStates.map((state) => (
-                      <div 
-                        key={state.code} 
+                      <div
+                        key={state.code}
                         className={`flex items-center p-2 rounded cursor-pointer ${
-                          formData.authorizedStates.includes(state.code) ? 'bg-indigo-100' : 'hover:bg-gray-100'
+                          formData.authorizedStates.includes(state.code)
+                            ? 'bg-indigo-100'
+                            : 'hover:bg-gray-100'
                         }`}
                         onClick={() => handleStateSelection(state.code)}
                       >
-                        <div className={`w-5 h-5 flex items-center justify-center rounded-full border ${
-                          formData.authorizedStates.includes(state.code) 
-                            ? 'bg-indigo-600 border-indigo-600' 
-                            : 'border-gray-300'
-                        }`}>
+                        <div
+                          className={`w-5 h-5 flex items-center justify-center rounded-full border ${
+                            formData.authorizedStates.includes(state.code)
+                              ? 'bg-indigo-600 border-indigo-600'
+                              : 'border-gray-300'
+                          }`}
+                        >
                           {formData.authorizedStates.includes(state.code) && (
                             <Check className="h-3 w-3 text-white" />
                           )}
                         </div>
-                        <span className="ml-2 text-sm">{state.code} - {state.name}</span>
+                        <span className="ml-2 text-sm">
+                          {state.code} - {state.name}
+                        </span>
                       </div>
                     ))}
                   </div>
@@ -473,7 +505,7 @@ const ProviderManagement = () => {
                 </p>
               </div>
             </div>
-            
+
             <div className="px-6 py-4 border-t border-gray-200 flex justify-end space-x-3">
               <button
                 className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
@@ -492,21 +524,23 @@ const ProviderManagement = () => {
           </div>
         </div>
       )}
-      
+
       {/* Edit Provider Modal */}
       {showEditModal && (
         <div className="fixed inset-0 bg-[#00000066] bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full">
             <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
-              <h3 className="text-lg font-medium text-gray-900">Edit Provider</h3>
-              <button 
+              <h3 className="text-lg font-medium text-gray-900">
+                Edit Provider
+              </h3>
+              <button
                 className="text-gray-400 hover:text-gray-500"
                 onClick={() => setShowEditModal(false)}
               >
                 <X className="h-5 w-5" />
               </button>
             </div>
-            
+
             <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <div className="mb-4">
@@ -522,7 +556,7 @@ const ProviderManagement = () => {
                     required
                   />
                 </div>
-                
+
                 <div className="mb-4">
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Specialty
@@ -535,7 +569,7 @@ const ProviderManagement = () => {
                     onChange={handleInputChange}
                   />
                 </div>
-                
+
                 <div className="mb-4">
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Email
@@ -548,7 +582,7 @@ const ProviderManagement = () => {
                     onChange={handleInputChange}
                   />
                 </div>
-                
+
                 <div className="mb-4">
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Phone
@@ -561,7 +595,7 @@ const ProviderManagement = () => {
                     onChange={handleInputChange}
                   />
                 </div>
-                
+
                 <div className="mb-4">
                   <label className="flex items-center">
                     <input
@@ -575,7 +609,7 @@ const ProviderManagement = () => {
                   </label>
                 </div>
               </div>
-              
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   States Authorized
@@ -592,23 +626,29 @@ const ProviderManagement = () => {
                   </div>
                   <div className="grid grid-cols-2 gap-1">
                     {filteredStates.map((state) => (
-                      <div 
-                        key={state.code} 
+                      <div
+                        key={state.code}
                         className={`flex items-center p-2 rounded cursor-pointer ${
-                          formData.authorizedStates.includes(state.code) ? 'bg-indigo-100' : 'hover:bg-gray-100'
+                          formData.authorizedStates.includes(state.code)
+                            ? 'bg-indigo-100'
+                            : 'hover:bg-gray-100'
                         }`}
                         onClick={() => handleStateSelection(state.code)}
                       >
-                        <div className={`w-5 h-5 flex items-center justify-center rounded-full border ${
-                          formData.authorizedStates.includes(state.code) 
-                            ? 'bg-indigo-600 border-indigo-600' 
-                            : 'border-gray-300'
-                        }`}>
+                        <div
+                          className={`w-5 h-5 flex items-center justify-center rounded-full border ${
+                            formData.authorizedStates.includes(state.code)
+                              ? 'bg-indigo-600 border-indigo-600'
+                              : 'border-gray-300'
+                          }`}
+                        >
                           {formData.authorizedStates.includes(state.code) && (
                             <Check className="h-3 w-3 text-white" />
                           )}
                         </div>
-                        <span className="ml-2 text-sm">{state.code} - {state.name}</span>
+                        <span className="ml-2 text-sm">
+                          {state.code} - {state.name}
+                        </span>
                       </div>
                     ))}
                   </div>
@@ -618,7 +658,7 @@ const ProviderManagement = () => {
                 </p>
               </div>
             </div>
-            
+
             <div className="px-6 py-4 border-t border-gray-200 flex justify-end space-x-3">
               <button
                 className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"

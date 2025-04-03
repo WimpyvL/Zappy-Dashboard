@@ -1,5 +1,5 @@
-import React from "react";
-import { Empty } from "antd";
+import React from 'react';
+import { Empty } from 'antd';
 import {
   DndContext,
   closestCenter,
@@ -7,13 +7,13 @@ import {
   PointerSensor,
   useSensor,
   useSensors,
-} from "@dnd-kit/core";
+} from '@dnd-kit/core';
 import {
   SortableContext,
   verticalListSortingStrategy,
-} from "@dnd-kit/sortable";
+} from '@dnd-kit/sortable';
 
-import SortableFormElement from "./SortableFormElement";
+import SortableFormElement from './SortableFormElement';
 
 const FormBuilderElements = ({
   elements,

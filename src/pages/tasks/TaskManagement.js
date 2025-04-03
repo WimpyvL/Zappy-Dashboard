@@ -10,7 +10,7 @@ import {
   Calendar,
   ChevronDown,
   ChevronUp,
-  AlertTriangle
+  AlertTriangle,
 } from 'lucide-react';
 import TaskModal from './TaskModal';
 import { format, parseISO, isAfter } from 'date-fns';
@@ -23,7 +23,7 @@ import {
   useUpdateTask,
   useDeleteTask,
   useAssignees,
-  useTaskablePatients
+  useTaskablePatients,
 } from '../../apis/tasks/hooks';
 
 const TaskManagement = () => {
@@ -64,12 +64,12 @@ const TaskManagement = () => {
     assignee_id: assigneeFilter || undefined,
     due_date: dueDateFilter || undefined,
     priority: priorityFilter || undefined,
-    per_page: itemsPerPage
+    per_page: itemsPerPage,
   };
 
   const sortingDetails = {
     sort_by: sortField,
-    sort_direction: sortDirection
+    sort_direction: sortDirection,
   };
 
   // Use the tasks query hook
@@ -77,7 +77,7 @@ const TaskManagement = () => {
     data: tasksData,
     isLoading: loading,
     error: queryError,
-    refetch: refetchTasks
+    refetch: refetchTasks,
   } = useTasks(currentPage, filtersAndSorting, sortingDetails);
 
   // Extract tasks and total count from the response
@@ -85,38 +85,37 @@ const TaskManagement = () => {
   const totalTasks = tasksData?.meta?.total_count || 0;
 
   // Use the assignees query hook
-  const {
-    data: assigneesData,
-    isLoading: assigneesLoading
-  } = useAssignees();
+  const { data: assigneesData, isLoading: assigneesLoading } = useAssignees();
 
   // Use the patients query hook
-  const {
-    data: patientsData,
-    isLoading: patientsLoading
-  } = useTaskablePatients();
+  const { data: patientsData, isLoading: patientsLoading } =
+    useTaskablePatients();
 
   // Format assignees and patients data
-  const assignees = assigneesData?.data ? assigneesData.data.map(user => ({
-    id: user.id,
-    full_name: user.full_name || user.name,
-    email: user.email,
-    type: 'user'
-  })) : [];
+  const assignees = assigneesData?.data
+    ? assigneesData.data.map((user) => ({
+        id: user.id,
+        full_name: user.full_name || user.name,
+        email: user.email,
+        type: 'user',
+      }))
+    : [];
 
-  const patients = patientsData?.data ? patientsData.data.map(patient => ({
-    id: patient.id,
-    full_name: patient.full_name,
-    email: patient.email,
-    type: 'patient'
-  })) : [];
+  const patients = patientsData?.data
+    ? patientsData.data.map((patient) => ({
+        id: patient.id,
+        full_name: patient.full_name,
+        email: patient.email,
+        type: 'patient',
+      }))
+    : [];
 
   // Use mutation hooks
   const markTaskCompleted = useMarkTaskCompleted({
     onSuccess: () => {
       toast.success('Task marked as completed');
       refetchTasks();
-    }
+    },
   });
 
   const createTask = useCreateTask({
@@ -124,7 +123,7 @@ const TaskManagement = () => {
       toast.success('Task created successfully');
       setIsModalOpen(false);
       refetchTasks();
-    }
+    },
   });
 
   const updateTask = useUpdateTask({
@@ -132,14 +131,14 @@ const TaskManagement = () => {
       toast.success('Task updated successfully');
       setIsModalOpen(false);
       refetchTasks();
-    }
+    },
   });
 
   const deleteTask = useDeleteTask({
     onSuccess: () => {
       toast.success('Task deleted successfully');
       refetchTasks();
-    }
+    },
   });
 
   // Effect to show/hide bulk actions based on selection
@@ -177,21 +176,22 @@ const TaskManagement = () => {
   // Handle task selection for bulk actions
   const handleTaskSelection = (taskId) => {
     if (selectedTasks.includes(taskId)) {
-      setSelectedTasks(selectedTasks.filter(id => id !== taskId));
+      setSelectedTasks(selectedTasks.filter((id) => id !== taskId));
     } else {
       setSelectedTasks([...selectedTasks, taskId]);
     }
   };
 
   // Check if all tasks are selected
-  const allSelected = tasks.length > 0 && tasks.every(task => selectedTasks.includes(task.id));
+  const allSelected =
+    tasks.length > 0 && tasks.every((task) => selectedTasks.includes(task.id));
 
   // Toggle select all
   const toggleSelectAll = () => {
     if (allSelected) {
       setSelectedTasks([]);
     } else {
-      setSelectedTasks(tasks.map(task => task.id));
+      setSelectedTasks(tasks.map((task) => task.id));
     }
   };
 
@@ -208,7 +208,7 @@ const TaskManagement = () => {
   const handleMarkComplete = async () => {
     try {
       // Mark each selected task as complete
-      const markPromises = selectedTasks.map(taskId =>
+      const markPromises = selectedTasks.map((taskId) =>
         markTaskCompleted.mutateAsync(taskId)
       );
 
@@ -226,7 +226,7 @@ const TaskManagement = () => {
   };
 
   const openEditTaskModal = (taskId) => {
-    const taskToEdit = tasks.find(task => task.id === taskId);
+    const taskToEdit = tasks.find((task) => task.id === taskId);
     setEditingTask(taskToEdit);
     setIsModalOpen(true);
   };
@@ -262,9 +262,11 @@ const TaskManagement = () => {
   // Render sort indicator
   const renderSortIndicator = (field) => {
     if (sortField === field) {
-      return sortDirection === 'asc' ?
-        <ChevronUp className="inline h-4 w-4" /> :
-        <ChevronDown className="inline h-4 w-4" />;
+      return sortDirection === 'asc' ? (
+        <ChevronUp className="inline h-4 w-4" />
+      ) : (
+        <ChevronDown className="inline h-4 w-4" />
+      );
     }
     return null;
   };
@@ -292,7 +294,10 @@ const TaskManagement = () => {
   // Format task status for display
   const formatStatus = (status) => {
     if (!status) return 'Unknown';
-    return status.replace('_', ' ').charAt(0).toUpperCase() + status.replace('_', ' ').slice(1);
+    return (
+      status.replace('_', ' ').charAt(0).toUpperCase() +
+      status.replace('_', ' ').slice(1)
+    );
   };
 
   // Display error from React Query
@@ -373,7 +378,7 @@ const TaskManagement = () => {
               onChange={(e) => setTaskableFilter(e.target.value)}
             >
               <option value="">All Patients</option>
-              {patients.map(patient => (
+              {patients.map((patient) => (
                 <option key={patient.id} value={patient.id}>
                   {patient.full_name || `Patient #${patient.id}`}
                 </option>
@@ -389,7 +394,7 @@ const TaskManagement = () => {
               onChange={(e) => setStatusFilter(e.target.value)}
             >
               <option value="">All Statuses</option>
-              {statusOptions.map(status => (
+              {statusOptions.map((status) => (
                 <option key={status} value={status}>
                   {formatStatus(status)}
                 </option>
@@ -401,7 +406,7 @@ const TaskManagement = () => {
             className="text-indigo-600 hover:text-indigo-900 text-sm font-medium"
             onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
           >
-            {showAdvancedFilters ? "Hide Filters" : "Advanced Filters"}
+            {showAdvancedFilters ? 'Hide Filters' : 'Advanced Filters'}
           </button>
         </div>
 
@@ -415,9 +420,11 @@ const TaskManagement = () => {
                 onChange={(e) => setAssigneeFilter(e.target.value)}
               >
                 <option value="">All Assignees</option>
-                {assignees.map(assignee => (
+                {assignees.map((assignee) => (
                   <option key={assignee.id} value={assignee.id}>
-                    {assignee.full_name || assignee.email || `User #${assignee.id}`}
+                    {assignee.full_name ||
+                      assignee.email ||
+                      `User #${assignee.id}`}
                   </option>
                 ))}
               </select>
@@ -431,7 +438,7 @@ const TaskManagement = () => {
                 onChange={(e) => setPriorityFilter(e.target.value)}
               >
                 <option value="">All Priorities</option>
-                {priorityOptions.map(priority => (
+                {priorityOptions.map((priority) => (
                   <option key={priority} value={priority}>
                     {priority.charAt(0).toUpperCase() + priority.slice(1)}
                   </option>
@@ -473,7 +480,10 @@ const TaskManagement = () => {
           <table className="min-w-full" style={{ minWidth: '1200px' }}>
             <thead className="bg-gray-50">
               <tr>
-                <th scope="col" className="py-3 pl-4 pr-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-10">
+                <th
+                  scope="col"
+                  className="py-3 pl-4 pr-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-10"
+                >
                   <div className="flex items-center">
                     <input
                       type="checkbox"
@@ -483,31 +493,61 @@ const TaskManagement = () => {
                     />
                   </div>
                 </th>
-                <th scope="col" onClick={() => handleSort('created_at')} className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer w-32">
+                <th
+                  scope="col"
+                  onClick={() => handleSort('created_at')}
+                  className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer w-32"
+                >
                   Created At {renderSortIndicator('created_at')}
                 </th>
-                <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-48">
+                <th
+                  scope="col"
+                  className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-48"
+                >
                   Title
                 </th>
-                <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-48">
+                <th
+                  scope="col"
+                  className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-48"
+                >
                   Patient
                 </th>
-                <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-32">
+                <th
+                  scope="col"
+                  className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-32"
+                >
                   Assignee
                 </th>
-                <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-28">
+                <th
+                  scope="col"
+                  className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-28"
+                >
                   Status
                 </th>
-                <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-28">
+                <th
+                  scope="col"
+                  className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-28"
+                >
                   Priority
                 </th>
-                <th scope="col" onClick={() => handleSort('due_date')} className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer w-32">
+                <th
+                  scope="col"
+                  onClick={() => handleSort('due_date')}
+                  className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer w-32"
+                >
                   Due Date {renderSortIndicator('due_date')}
                 </th>
-                <th scope="col" onClick={() => handleSort('updated_at')} className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer w-32">
+                <th
+                  scope="col"
+                  onClick={() => handleSort('updated_at')}
+                  className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer w-32"
+                >
                   Updated At {renderSortIndicator('updated_at')}
                 </th>
-                <th scope="col" className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider w-32">
+                <th
+                  scope="col"
+                  className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider w-32"
+                >
                   Actions
                 </th>
               </tr>
@@ -515,13 +555,19 @@ const TaskManagement = () => {
             <tbody className="bg-white divide-y divide-gray-200">
               {loading ? (
                 <tr>
-                  <td colSpan="10" className="px-6 py-4 text-center text-gray-500">
+                  <td
+                    colSpan="10"
+                    className="px-6 py-4 text-center text-gray-500"
+                  >
                     Loading tasks...
                   </td>
                 </tr>
               ) : tasks.length === 0 ? (
                 <tr>
-                  <td colSpan="10" className="px-6 py-4 text-center text-gray-500">
+                  <td
+                    colSpan="10"
+                    className="px-6 py-4 text-center text-gray-500"
+                  >
                     No tasks found matching your search criteria.
                   </td>
                 </tr>
@@ -540,44 +586,67 @@ const TaskManagement = () => {
                       {formatDate(task.created_at)}
                     </td>
                     <td className="px-4 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">{task.title}</div>
+                      <div className="text-sm font-medium text-gray-900">
+                        {task.title}
+                      </div>
                     </td>
                     <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {task.taskable ?
-                        (task.taskable.patient?.full_name || task.taskable.type === 'patient' && `Patient #${task.taskable.id}` || `${task.taskable.type} #${task.taskable.id}`)
+                      {task.taskable
+                        ? task.taskable.patient?.full_name ||
+                          (task.taskable.type === 'patient' &&
+                            `Patient #${task.taskable.id}`) ||
+                          `${task.taskable.type} #${task.taskable.id}`
                         : 'None'}
                     </td>
                     <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {task.assignee ?
-                        (task.assignee.full_name || task.assignee.email || `User #${task.assignee.id}`)
+                      {task.assignee
+                        ? task.assignee.full_name ||
+                          task.assignee.email ||
+                          `User #${task.assignee.id}`
                         : 'Unassigned'}
                     </td>
                     <td className="px-4 py-4 whitespace-nowrap">
-                      <span className={`px-2 py-1 text-xs font-medium rounded-full ${task.status === 'completed' ? 'bg-green-100 text-green-800' :
-                        task.status === 'in_progress' ? 'bg-blue-100 text-blue-800' :
-                          task.status === 'cancelled' ? 'bg-gray-100 text-gray-800' :
-                            'bg-yellow-100 text-yellow-800'
-                        }`}>
+                      <span
+                        className={`px-2 py-1 text-xs font-medium rounded-full ${
+                          task.status === 'completed'
+                            ? 'bg-green-100 text-green-800'
+                            : task.status === 'in_progress'
+                              ? 'bg-blue-100 text-blue-800'
+                              : task.status === 'cancelled'
+                                ? 'bg-gray-100 text-gray-800'
+                                : 'bg-yellow-100 text-yellow-800'
+                        }`}
+                      >
                         {formatStatus(task.status)}
                       </span>
                     </td>
                     <td className="px-4 py-4 whitespace-nowrap">
-                      <span className={`px-2 py-1 text-xs font-medium rounded-full ${task.priority === 'high' ? 'bg-red-100 text-red-800' :
-                        task.priority === 'medium' ? 'bg-orange-100 text-orange-800' :
-                          task.priority === 'urgent' ? 'bg-purple-100 text-purple-800' :
-                            'bg-green-100 text-green-800'
-                        }`}>
-                        {task.priority.charAt(0).toUpperCase() + task.priority.slice(1)}
+                      <span
+                        className={`px-2 py-1 text-xs font-medium rounded-full ${
+                          task.priority === 'high'
+                            ? 'bg-red-100 text-red-800'
+                            : task.priority === 'medium'
+                              ? 'bg-orange-100 text-orange-800'
+                              : task.priority === 'urgent'
+                                ? 'bg-purple-100 text-purple-800'
+                                : 'bg-green-100 text-green-800'
+                        }`}
+                      >
+                        {task.priority.charAt(0).toUpperCase() +
+                          task.priority.slice(1)}
                       </span>
                     </td>
                     <td className="px-4 py-4 whitespace-nowrap text-sm">
-                      <div className={`${isOverdue(task.due_date) && task.status !== 'completed' ? 'text-red-600 font-medium' : 'text-gray-900'}`}>
+                      <div
+                        className={`${isOverdue(task.due_date) && task.status !== 'completed' ? 'text-red-600 font-medium' : 'text-gray-900'}`}
+                      >
                         {formatDate(task.due_date)}
-                        {isOverdue(task.due_date) && task.status !== 'completed' && (
-                          <span className="ml-1">
-                            <Clock className="inline h-3 w-3" />
-                          </span>
-                        )}
+                        {isOverdue(task.due_date) &&
+                          task.status !== 'completed' && (
+                            <span className="ml-1">
+                              <Clock className="inline h-3 w-3" />
+                            </span>
+                          )}
                       </div>
                     </td>
                     <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
@@ -627,24 +696,44 @@ const TaskManagement = () => {
         <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
           <div>
             <p className="text-sm text-gray-700">
-              Showing <span className="font-medium">{Math.min((currentPage - 1) * itemsPerPage + 1, totalTasks)}</span> to <span className="font-medium">{Math.min(currentPage * itemsPerPage, totalTasks)}</span> of{' '}
-              <span className="font-medium">{totalTasks}</span> results
+              Showing{' '}
+              <span className="font-medium">
+                {Math.min((currentPage - 1) * itemsPerPage + 1, totalTasks)}
+              </span>{' '}
+              to{' '}
+              <span className="font-medium">
+                {Math.min(currentPage * itemsPerPage, totalTasks)}
+              </span>{' '}
+              of <span className="font-medium">{totalTasks}</span> results
             </p>
           </div>
           <div>
-            <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+            <nav
+              className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px"
+              aria-label="Pagination"
+            >
               <button
                 className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
                 onClick={() => handlePageChange(currentPage - 1)}
                 disabled={currentPage === 1}
               >
                 <span className="sr-only">Previous</span>
-                <svg className="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                  <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
+                <svg
+                  className="h-5 w-5"
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
+                  aria-hidden="true"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z"
+                    clipRule="evenodd"
+                  />
                 </svg>
               </button>
 
-              {[...Array(Math.min(5, totalPages)).keys()].map(i => {
+              {[...Array(Math.min(5, totalPages)).keys()].map((i) => {
                 const pageNum = i + Math.max(1, currentPage - 2);
                 if (pageNum <= totalPages) {
                   return (
@@ -666,8 +755,18 @@ const TaskManagement = () => {
                 disabled={currentPage === totalPages}
               >
                 <span className="sr-only">Next</span>
-                <svg className="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                  <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
+                <svg
+                  className="h-5 w-5"
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
+                  aria-hidden="true"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
+                    clipRule="evenodd"
+                  />
                 </svg>
               </button>
             </nav>

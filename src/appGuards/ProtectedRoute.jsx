@@ -1,6 +1,6 @@
 // components/common/ProtectedRoute.jsx
-import React from "react";
-import { Navigate } from "react-router-dom";
+import React from 'react';
+import { Navigate } from 'react-router-dom';
 
 /**
  * A wrapper component that checks if user is authenticated
@@ -8,7 +8,7 @@ import { Navigate } from "react-router-dom";
  */
 const ProtectedRoute = ({ children }) => {
   // Check if user is authenticated
-  const isAuthenticated = localStorage.getItem("isAuthenticated") === "true";
+  const isAuthenticated = localStorage.getItem('isAuthenticated') === 'true';
 
   // If not authenticated, redirect to login
   if (!isAuthenticated) {

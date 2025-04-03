@@ -4,7 +4,7 @@ import {
   useQueryClient
 } from '@tanstack/react-query';
 import {
-  getInsuranceRecords,
+  // getInsuranceRecords, // Commented out as it's unused due to mocking
   getInsuranceRecordById,
   createInsuranceRecord,
   updateInsuranceRecord,

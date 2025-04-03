@@ -3,13 +3,39 @@ import ReactDOM from 'react-dom/client';
 import './index.css';
 import App from './App';
 import reportWebVitals from './reportWebVitals';
+import { BrowserRouter as Router } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { AuthProvider } from './context/AuthContext';
+import { AppProvider } from './context/AppContext';
+import { CartProvider } from './context/CartContext';
+
+// Instantiate QueryClient (moved from App.js)
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: false,
+      staleTime: 10000,
+      refetchOnMount: false,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   <React.StrictMode>
-    <App />
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <AppProvider>
+          <CartProvider>
+            <Router>
+              <App />
+            </Router>
+          </CartProvider>
+        </AppProvider>
+      </AuthProvider>
+    </QueryClientProvider>
   </React.StrictMode>
-  
 );
 
 // If you want to start measuring performance in your app, pass a function

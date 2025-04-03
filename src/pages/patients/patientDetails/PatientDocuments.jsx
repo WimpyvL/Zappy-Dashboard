@@ -1,12 +1,12 @@
 // components/patients/components/PatientDocuments.jsx
-import React, { useState } from "react";
-import { Upload, CheckCircle, Clock, XCircle } from "lucide-react";
-import { toast } from "react-toastify";
-import apiService from "../../../utils/apiService";
-import LoadingSpinner from "./common/LoadingSpinner";
+import React, { useState } from 'react';
+import { Upload, CheckCircle, Clock, XCircle } from 'lucide-react';
+import { toast } from 'react-toastify';
+import apiService from '../../../utils/apiService';
+import LoadingSpinner from './common/LoadingSpinner';
 
 const DocumentUploadForm = ({ patientId, onCancel, onSuccess }) => {
-  const [documentType, setDocumentType] = useState("id");
+  const [documentType, setDocumentType] = useState('id');
   const [documentFile, setDocumentFile] = useState(null);
   const [uploading, setUploading] = useState(false);
 
@@ -14,7 +14,7 @@ const DocumentUploadForm = ({ patientId, onCancel, onSuccess }) => {
     e.preventDefault();
 
     if (!documentFile) {
-      toast.error("Please select a file to upload");
+      toast.error('Please select a file to upload');
       return;
     }
 
@@ -23,8 +23,8 @@ const DocumentUploadForm = ({ patientId, onCancel, onSuccess }) => {
 
       // Create form data for file upload
       const formData = new FormData();
-      formData.append("file", documentFile);
-      formData.append("type", documentType);
+      formData.append('file', documentFile);
+      formData.append('type', documentType);
 
       // Upload document
       await apiService.post(
@@ -32,12 +32,12 @@ const DocumentUploadForm = ({ patientId, onCancel, onSuccess }) => {
         formData,
         {
           headers: {
-            "Content-Type": "multipart/form-data",
+            'Content-Type': 'multipart/form-data',
           },
         }
       );
 
-      toast.success("Document uploaded successfully");
+      toast.success('Document uploaded successfully');
 
       // Notify parent component of success
       onSuccess();
@@ -46,8 +46,8 @@ const DocumentUploadForm = ({ patientId, onCancel, onSuccess }) => {
       setDocumentFile(null);
       onCancel();
     } catch (error) {
-      console.error("Error uploading document:", error);
-      toast.error("Failed to upload document");
+      console.error('Error uploading document:', error);
+      toast.error('Failed to upload document');
     } finally {
       setUploading(false);
     }
@@ -110,7 +110,7 @@ const DocumentUploadForm = ({ patientId, onCancel, onSuccess }) => {
                 <span className="ml-1">Uploading...</span>
               </>
             ) : (
-              "Upload"
+              'Upload'
             )}
           </button>
         </div>
@@ -122,45 +122,45 @@ const DocumentUploadForm = ({ patientId, onCancel, onSuccess }) => {
 const DocumentTypeBadge = ({ type }) => {
   const typeConfig = {
     id: {
-      bgColor: "bg-blue-100",
-      textColor: "text-blue-800",
-      label: "Photo ID",
+      bgColor: 'bg-blue-100',
+      textColor: 'text-blue-800',
+      label: 'Photo ID',
     },
     address: {
-      bgColor: "bg-green-100",
-      textColor: "text-green-800",
-      label: "Proof of Address",
+      bgColor: 'bg-green-100',
+      textColor: 'text-green-800',
+      label: 'Proof of Address',
     },
     insurance: {
-      bgColor: "bg-purple-100",
-      textColor: "text-purple-800",
-      label: "Insurance Card",
+      bgColor: 'bg-purple-100',
+      textColor: 'text-purple-800',
+      label: 'Insurance Card',
     },
     lab: {
-      bgColor: "bg-yellow-100",
-      textColor: "text-yellow-800",
-      label: "Lab Results",
+      bgColor: 'bg-yellow-100',
+      textColor: 'text-yellow-800',
+      label: 'Lab Results',
     },
     prescription: {
-      bgColor: "bg-pink-100",
-      textColor: "text-pink-800",
-      label: "Prescription",
+      bgColor: 'bg-pink-100',
+      textColor: 'text-pink-800',
+      label: 'Prescription',
     },
     other: {
-      bgColor: "bg-gray-100",
-      textColor: "text-gray-800",
-      label: "Other",
+      bgColor: 'bg-gray-100',
+      textColor: 'text-gray-800',
+      label: 'Other',
     },
   };
 
   const config = typeConfig[type] || typeConfig.other;
   if (
-    type !== "id" &&
-    type !== "address" &&
-    type !== "insurance" &&
-    type !== "lab" &&
-    type !== "prescription" &&
-    type !== "other"
+    type !== 'id' &&
+    type !== 'address' &&
+    type !== 'insurance' &&
+    type !== 'lab' &&
+    type !== 'prescription' &&
+    type !== 'other'
   ) {
     config.label = type.charAt(0).toUpperCase() + type.slice(1);
   }
@@ -178,18 +178,18 @@ const DocumentStatusBadge = ({ status }) => {
   return (
     <span
       className={`flex items-center px-2 py-1 text-xs font-medium rounded-full ${
-        status === "verified"
-          ? "bg-green-100 text-green-800"
-          : status === "pending"
-          ? "bg-yellow-100 text-yellow-800"
-          : status === "rejected"
-          ? "bg-red-100 text-red-800"
-          : "bg-gray-100 text-gray-800"
+        status === 'verified'
+          ? 'bg-green-100 text-green-800'
+          : status === 'pending'
+            ? 'bg-yellow-100 text-yellow-800'
+            : status === 'rejected'
+              ? 'bg-red-100 text-red-800'
+              : 'bg-gray-100 text-gray-800'
       }`}
     >
-      {status === "verified" ? (
+      {status === 'verified' ? (
         <CheckCircle className="h-3 w-3 mr-1" />
-      ) : status === "pending" ? (
+      ) : status === 'pending' ? (
         <Clock className="h-3 w-3 mr-1" />
       ) : (
         <XCircle className="h-3 w-3 mr-1" />
@@ -208,12 +208,12 @@ const PatientDocuments = ({
   const [uploadingDocument, setUploadingDocument] = useState(false);
 
   const formatDate = (dateString) => {
-    if (!dateString) return "Not available";
+    if (!dateString) return 'Not available';
     const date = new Date(dateString);
-    return new Intl.DateTimeFormat("en-US", {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
+    return new Intl.DateTimeFormat('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
     }).format(date);
   };
 
@@ -222,11 +222,11 @@ const PatientDocuments = ({
       await apiService.delete(
         `/api/v1/admin/patients/${patientId}/documents/${docId}`
       );
-      toast.success("Document deleted successfully");
+      toast.success('Document deleted successfully');
       fetchDocuments(); // Refresh documents list
     } catch (error) {
-      console.error("Failed to delete document:", error);
-      toast.error("Failed to delete document");
+      console.error('Failed to delete document:', error);
+      toast.error('Failed to delete document');
     }
   };
 

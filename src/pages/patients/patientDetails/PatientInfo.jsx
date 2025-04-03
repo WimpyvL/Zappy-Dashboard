@@ -1,24 +1,24 @@
 // components/patients/components/PatientInfo.jsx
-import React from "react";
-import { Mail, Phone, MapPin } from "lucide-react";
-import PatientSubscriptions from "../PatientSubscriptions";
-import StatusBadge from "./common/StatusBadge";
+import React from 'react';
+import { Mail, Phone, MapPin } from 'lucide-react';
+import PatientSubscriptions from '../PatientSubscriptions';
+import StatusBadge from './common/StatusBadge';
 
 const PatientInfo = ({ patient }) => {
   // Format date for display
   const formatDate = (dateString) => {
-    if (!dateString) return "Not available";
+    if (!dateString) return 'Not available';
     const date = new Date(dateString);
-    return new Intl.DateTimeFormat("en-US", {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
+    return new Intl.DateTimeFormat('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
     }).format(date);
   };
 
   // Calculate patient age from DOB
   const calculateAge = (dob) => {
-    if (!dob) return "Unknown";
+    if (!dob) return 'Unknown';
     const birthDate = new Date(dob);
     const today = new Date();
     let age = today.getFullYear() - birthDate.getFullYear();
@@ -56,7 +56,7 @@ const PatientInfo = ({ patient }) => {
             <div>
               <p className="text-sm text-gray-500">Address</p>
               <p className="text-sm font-medium">
-                {patient.address || "No address on file"}
+                {patient.address || 'No address on file'}
               </p>
             </div>
           </div>
@@ -75,7 +75,7 @@ const PatientInfo = ({ patient }) => {
           <div>
             <p className="text-sm text-gray-500">Preferred Pharmacy</p>
             <p className="text-sm font-medium">
-              {patient.preferredPharmacy || "Not specified"}
+              {patient.preferredPharmacy || 'Not specified'}
             </p>
           </div>
         </div>
@@ -98,7 +98,7 @@ const PatientInfo = ({ patient }) => {
           <div>
             <p className="text-sm text-gray-500">Medical Notes</p>
             <p className="text-sm font-medium">
-              {patient.medicalNotes || "No notes available"}
+              {patient.medicalNotes || 'No notes available'}
             </p>
           </div>
           <div>
@@ -106,7 +106,7 @@ const PatientInfo = ({ patient }) => {
             <p className="text-sm font-medium">
               {patient.lastVisit
                 ? formatDate(patient.lastVisit)
-                : "No visits recorded"}
+                : 'No visits recorded'}
             </p>
           </div>
           <div>
@@ -114,7 +114,7 @@ const PatientInfo = ({ patient }) => {
             <p className="text-sm font-medium">
               {patient.nextAppointment
                 ? formatDate(patient.nextAppointment)
-                : "No appointment scheduled"}
+                : 'No appointment scheduled'}
             </p>
           </div>
         </div>

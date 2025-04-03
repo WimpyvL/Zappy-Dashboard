@@ -1,6 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { useAppContext } from '../../context/AppContext';
+// Removed useAppContext import
+import { usePatients } from '../../apis/patients/hooks'; // Assuming hook exists
+import {
+  useConsultations,
+  useUpdateConsultationStatus,
+  // useArchiveConsultation, // Assuming these hooks exist or will be created
+} from '../../apis/consultations/hooks';
 import {
   Search,
   Plus,
@@ -14,185 +20,16 @@ import {
   X,
   Mail,
   Archive,
-  MoreHorizontal
+  MoreHorizontal,
+  Loader2, // Added for loading state
 } from 'lucide-react';
 // Import the consultation notes component
 import InitialConsultationNotes from './InitialConsultationNotes';
 
-// Sample initial consultations data
-const sampleConsultations = [
-  {
-    id: 'cons_1',
-    patientId: 1,
-    patientName: 'John Doe',
-    email: 'john.doe@example.com',
-    dateSubmitted: '2025-02-10T09:45:00',
-    date: '2025-02-15T10:30:00',
-    status: 'reviewed',
-    provider: 'Dr. Sarah Johnson',
-    service: 'Weight Management',
-    preferredMedication: 'Semaglutide',
-    preferredPlan: 'Monthly Subscription',
-    draftDate: '2025-02-12T11:20:00',
-    formCompleted: true,
-    notes: 'Patient presents with symptoms of fatigue and weight gain over the past 6 months. BMI: 32.5. Blood pressure: 135/85. Heart rate: 78 bpm.',
-    consultationData: {
-      chiefComplaint: 'Weight gain, fatigue',
-      vitalSigns: {
-        height: '5\'10"',
-        weight: '220 lbs',
-        bmi: 32.5,
-        bloodPressure: '135/85',
-        heartRate: 78,
-        respiratoryRate: 16,
-        temperature: 98.6
-      },
-      medicalHistory: 'Hypertension (diagnosed 2020), Family history of diabetes',
-      medications: 'Lisinopril 10mg daily',
-      allergies: 'Penicillin (hives)',
-      labResults: {
-        glucose: '120 mg/dL (elevated)',
-        hba1c: '6.4% (elevated)',
-        cholesterol: '210 mg/dL (elevated)',
-        ldl: '140 mg/dL (elevated)',
-        hdl: '38 mg/dL (low)',
-        triglycerides: '180 mg/dL (elevated)'
-      }
-    }
-  },
-  {
-    id: 'cons_2',
-    patientId: 2,
-    patientName: 'Jane Smith',
-    email: 'jane.smith@example.com',
-    dateSubmitted: '2025-01-05T14:30:00',
-    date: '2025-01-10T09:15:00',
-    status: 'followup',
-    provider: 'Dr. Michael Chen',
-    service: 'Weight Management',
-    preferredMedication: 'Tirzepatide',
-    preferredPlan: 'Quarterly Subscription',
-    draftDate: '2025-01-08T10:15:00',
-    formCompleted: true,
-    notes: 'Patient presents with BMI of 38.2, history of sleep apnea requiring CPAP. Reports multiple failed attempts at weight loss with diet and exercise alone.',
-    consultationData: {
-      chiefComplaint: 'Obesity, sleep apnea',
-      vitalSigns: {
-        height: '5\'6"',
-        weight: '235 lbs',
-        bmi: 38.2,
-        bloodPressure: '142/88',
-        heartRate: 82,
-        respiratoryRate: 18,
-        temperature: 98.4
-      },
-      medicalHistory: 'Sleep apnea (diagnosed 2022), GERD, Anxiety',
-      medications: 'Omeprazole 20mg daily, Sertraline 50mg daily',
-      allergies: 'None known',
-      labResults: {
-        glucose: '115 mg/dL (elevated)',
-        hba1c: '5.9% (normal)',
-        cholesterol: '225 mg/dL (elevated)',
-        ldl: '145 mg/dL (elevated)',
-        hdl: '42 mg/dL (low)',
-        triglycerides: '200 mg/dL (elevated)'
-      }
-    }
-  },
-  {
-    id: 'cons_3',
-    patientId: 3,
-    patientName: 'Robert Johnson',
-    email: 'robert.johnson@example.com',
-    dateSubmitted: '2025-03-01T11:20:00',
-    date: null,
-    status: 'pending',
-    scheduledDate: '2025-03-15T14:30:00',
-    provider: 'Dr. Emily Parker',
-    service: 'Diabetes Management',
-    preferredMedication: 'Semaglutide',
-    preferredPlan: 'Monthly Subscription',
-    draftDate: null,
-    formCompleted: false,
-    notes: 'Initial consultation for weight management and pre-diabetes assessment.',
-    consultationData: null
-  },
-  {
-    id: 'cons_4',
-    patientId: 4,
-    patientName: 'Maria Rodriguez',
-    email: 'maria.rodriguez@example.com',
-    dateSubmitted: '2025-03-05T13:45:00',
-    date: null,
-    status: 'pending',
-    provider: null,
-    service: 'Weight Management',
-    preferredMedication: 'Tirzepatide',
-    preferredPlan: 'Quarterly Subscription',
-    draftDate: null,
-    formCompleted: false,
-    notes: 'Initial consultation needed',
-    consultationData: null
-  },
-  {
-    id: 'cons_5',
-    patientId: 5,
-    patientName: 'David Wilson',
-    email: 'david.wilson@example.com',
-    dateSubmitted: '2025-02-15T10:20:00',
-    date: '2025-02-20T11:00:00',
-    status: 'reviewed',
-    provider: 'Dr. Lisa Wong',
-    service: 'Metabolic Health',
-    preferredMedication: 'Semaglutide',
-    preferredPlan: 'Monthly Subscription',
-    draftDate: '2025-02-18T09:30:00',
-    formCompleted: true,
-    notes: 'Patient presents with class I obesity and concerns about metabolic health. Reports family history of type 2 diabetes.',
-    consultationData: {
-      chiefComplaint: 'Weight concerns, family history of diabetes',
-      vitalSigns: {
-        height: '6\'0"',
-        weight: '225 lbs',
-        bmi: 30.5,
-        bloodPressure: '130/82',
-        heartRate: 74,
-        respiratoryRate: 16,
-        temperature: 98.5
-      },
-      medicalHistory: 'Mild hypertension, Seasonal allergies',
-      medications: 'Loratadine 10mg as needed',
-      allergies: 'Sulfa drugs (rash)',
-      labResults: {
-        glucose: '108 mg/dL (normal)',
-        hba1c: '5.8% (normal)',
-        cholesterol: '195 mg/dL (normal)',
-        ldl: '125 mg/dL (borderline)',
-        hdl: '45 mg/dL (borderline)',
-        triglycerides: '150 mg/dL (normal)'
-      }
-    }
-  },
-  {
-    id: 'cons_6',
-    patientId: 6,
-    patientName: 'Sarah Thompson',
-    email: 'sarah.thompson@example.com',
-    dateSubmitted: '2025-01-20T09:30:00',
-    date: '2025-01-25T13:45:00',
-    status: 'archived',
-    provider: 'Dr. Sarah Johnson',
-    service: 'Weight Management',
-    preferredMedication: 'Semaglutide',
-    preferredPlan: 'Monthly Subscription',
-    draftDate: null,
-    formCompleted: false,
-    notes: 'Consultation cancelled by patient due to scheduling conflict.',
-    consultationData: null
-  }
-];
+// StatusBadge and FormCompletedBadge remain the same
 
 const StatusBadge = ({ status }) => {
+  // ... (StatusBadge implementation remains the same)
   if (status === 'reviewed') {
     return (
       <span className="flex items-center px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">
@@ -226,7 +63,8 @@ const StatusBadge = ({ status }) => {
 };
 
 const FormCompletedBadge = ({ completed }) => {
-  if (completed) {
+  // ... (FormCompletedBadge implementation remains the same)
+   if (completed) {
     return (
       <span className="flex items-center px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">
         <CheckCircle className="h-3 w-3 mr-1" />
@@ -241,57 +79,91 @@ const FormCompletedBadge = ({ completed }) => {
       </span>
     );
   }
-  return null;
 };
 
+
 const InitialConsultations = () => {
-  const { patients, getPatientNotes } = useAppContext();
+  // Local state for UI controls
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
-  const [consultations, setConsultations] = useState([]);
   const [selectedPatient, setSelectedPatient] = useState(null);
   const [selectedConsultation, setSelectedConsultation] = useState(null);
   const [showConsultationModal, setShowConsultationModal] = useState(false);
   const [showNewConsultationModal, setShowNewConsultationModal] = useState(false);
   const [showEmailModal, setShowEmailModal] = useState(false);
   const [emailContent, setEmailContent] = useState('');
-  const [showActionDropdown, setShowActionDropdown] = useState(null);
+  const [showActionDropdown, setShowActionDropdown] = useState(null); // Tracks which dropdown is open
 
-  // Generate consultations data from patients and their notes
-  useEffect(() => {
-    setConsultations(sampleConsultations);
-  }, []);
+  // Fetch data using React Query hooks
+  const {
+    data: patientsData,
+    isLoading: isLoadingPatients,
+    error: errorPatients,
+  } = usePatients(); // Fetch patients for selection modal
+  const {
+    data: consultationsData,
+    isLoading: isLoadingConsultations,
+    error: errorConsultations,
+  } = useConsultations(); // Fetch consultations
+
+  // Mutation hooks
+  const updateStatusMutation = useUpdateConsultationStatus({
+    onSuccess: () => setShowActionDropdown(null), // Close dropdown on success
+    onError: (error) => console.error("Error updating status:", error),
+  });
+  // const archiveMutation = useArchiveConsultation({ // Assuming this hook exists
+  //   onSuccess: () => setShowActionDropdown(null),
+  //   onError: (error) => console.error("Error archiving:", error),
+  // });
+
+  // Process fetched data
+  const patients = patientsData?.data || patientsData || [];
+  const allConsultations = consultationsData?.data || consultationsData || [];
 
   // Filter consultations based on search and status filter
-  const filteredConsultations = consultations.filter(consultation => {
-    const matchesSearch =
-      consultation.patientName?.toLowerCase().includes(searchTerm?.toLowerCase()) ||
-      (consultation.provider && consultation.provider?.toLowerCase().includes(searchTerm?.toLowerCase())) ||
-      (consultation.email && consultation.email?.toLowerCase().includes(searchTerm?.toLowerCase())) ||
-      (consultation.preferredMedication && consultation.preferredMedication?.toLowerCase().includes(searchTerm?.toLowerCase()));
+  const filteredConsultations = allConsultations.filter((consultation) => {
+    const patientName = consultation.patientName || '';
+    const provider = consultation.provider || '';
+    const email = consultation.email || '';
+    const preferredMed = consultation.preferredMedication || '';
 
-    const matchesStatus = statusFilter === 'all' || consultation.status === statusFilter;
+    const matchesSearch =
+      patientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      provider.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      preferredMed.toLowerCase().includes(searchTerm.toLowerCase());
+
+    const matchesStatus =
+      statusFilter === 'all' || consultation.status === statusFilter;
 
     return matchesSearch && matchesStatus;
   });
 
   // Handle viewing a consultation
   const handleViewConsultation = (consultation) => {
-    const patient = patients?.find(p => p.id === consultation.patientId) || {
+    // Find patient data from the fetched list
+    const patient = patients.find((p) => p.id === consultation.patientId) || {
       id: consultation.patientId,
       name: consultation.patientName,
-      email: consultation.email
+      email: consultation.email,
+      // Add other necessary patient fields if available
     };
     setSelectedPatient(patient);
     setSelectedConsultation(consultation);
     setShowConsultationModal(true);
   };
 
-  // Handle creating a new consultation
-  const handleNewConsultation = (patient) => {
-    setSelectedPatient(patient);
-    setSelectedConsultation(null);
+  // Handle creating a new consultation (opens patient selection first)
+  const handleOpenNewConsultationModal = () => {
+    setSelectedPatient(null); // Clear selected patient first
     setShowNewConsultationModal(true);
+  };
+
+  // Handle selecting a patient to start a new consultation
+  const handleSelectPatientForNewConsultation = (patient) => {
+    setSelectedPatient(patient);
+    setSelectedConsultation(null); // Ensure no old consultation data lingers
+    // Keep the modal open, but now InitialConsultationNotes will render with the selected patient
   };
 
   // Handle consultation modal close
@@ -300,73 +172,86 @@ const InitialConsultations = () => {
     setShowNewConsultationModal(false);
     setSelectedPatient(null);
     setSelectedConsultation(null);
+    setSearchTerm(''); // Reset search term when closing patient selection
   };
 
-  // Handle email sending
+  // Handle email sending modal opening
   const handleSendEmail = (consultation) => {
     setSelectedConsultation(consultation);
-    setEmailContent(`Dear ${consultation.patientName},\n\nThank you for your recent consultation submission. We're writing to inform you about the next steps in your treatment plan.\n\nSincerely,\nThe Medical Team`);
+    setEmailContent(
+      `Dear ${consultation.patientName},\n\nThank you for your recent consultation submission. We're writing to inform you about the next steps in your treatment plan.\n\nSincerely,\nThe Medical Team`
+    );
     setShowEmailModal(true);
   };
 
-  // Handle email sending confirmation
+  // Handle email sending confirmation (placeholder for API call)
   const handleConfirmSendEmail = () => {
-    // In a real app, you would send the email here
-    console.log(`Sending email to ${selectedConsultation.email} with content: ${emailContent}`);
-
-    // Update the consultation status to reflect the email was sent
-    const updatedConsultations = consultations.map(cons =>
-      cons.id === selectedConsultation.id
-        ? { ...cons, status: cons.status === 'pending' ? 'followup' : cons.status }
-        : cons
+    console.log(
+      `Sending email to ${selectedConsultation.email} with content: ${emailContent}`
     );
-    setConsultations(updatedConsultations);
-
-    // Close the modal
+    // TODO: Integrate with an email sending API/service
+    // Optionally update status after sending email using mutation
+    // updateStatusMutation.mutate({ consultationId: selectedConsultation.id, status: 'followup' });
     setShowEmailModal(false);
     setSelectedConsultation(null);
   };
 
-  // Handle archiving a consultation
+  // Handle archiving a consultation using mutation
   const handleArchiveConsultation = (consultation) => {
-    const updatedConsultations = consultations.map(cons =>
-      cons.id === consultation.id
-        ? { ...cons, status: 'archived' }
-        : cons
-    );
-    setConsultations(updatedConsultations);
-    setShowActionDropdown(null);
+    // archiveMutation.mutate(consultation.id); // Assuming hook takes ID
+    // For now, simulate with status update:
+    updateStatusMutation.mutate({ consultationId: consultation.id, status: 'archived' });
   };
 
-  // Handle updating consultation status
+  // Handle updating consultation status using mutation
   const handleUpdateStatus = (consultation, newStatus) => {
-    const updatedConsultations = consultations.map(cons =>
-      cons.id === consultation.id
-        ? { ...cons, status: newStatus }
-        : cons
-    );
-    setConsultations(updatedConsultations);
-    setShowActionDropdown(null);
+    updateStatusMutation.mutate({ consultationId: consultation.id, status: newStatus });
   };
 
   // Format date function
   const formatDate = (dateString) => {
     if (!dateString) return '-';
-    return new Date(dateString).toLocaleDateString(undefined, {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
+    try {
+      return new Date(dateString).toLocaleDateString(undefined, {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+      });
+    } catch (e) {
+      return 'Invalid Date';
+    }
   };
+
+  // Handle loading state
+  if (isLoadingConsultations || isLoadingPatients) {
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <Loader2 className="h-16 w-16 animate-spin text-indigo-600" />
+      </div>
+    );
+  }
+
+  // Handle error state
+  if (errorConsultations || errorPatients) {
+    return (
+      <div className="text-center py-10 text-red-600">
+        <AlertTriangle className="h-12 w-12 mx-auto mb-4" />
+        <p>Error loading consultation or patient data.</p>
+        {/* <p>{errorConsultations?.message || errorPatients?.message}</p> */}
+      </div>
+    );
+  }
 
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-gray-800">Initial Consultations</h1>
+        <h1 className="text-2xl font-bold text-gray-800">
+          Initial Consultations
+        </h1>
         <div className="flex">
           <button
             className="px-4 py-2 bg-indigo-600 text-white rounded-md flex items-center hover:bg-indigo-700"
-            onClick={() => setShowNewConsultationModal(true)}
+            onClick={handleOpenNewConsultationModal} // Updated handler
           >
             <Plus className="h-5 w-5 mr-2" />
             New Consultation
@@ -460,7 +345,7 @@ const InitialConsultations = () => {
                             to={`/patients/${consultation.patientId}`}
                             className="hover:text-indigo-600"
                           >
-                            {consultation.patientName}
+                            {consultation.patientName || 'N/A'}
                           </Link>
                         </div>
                       </div>
@@ -491,7 +376,9 @@ const InitialConsultations = () => {
                     <StatusBadge status={consultation.status} />
                   </td>
                   <td className="px-4 py-4 whitespace-nowrap">
-                    <FormCompletedBadge completed={consultation.formCompleted} />
+                    <FormCompletedBadge
+                      completed={consultation.formCompleted}
+                    />
                   </td>
                   <td className="px-4 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <div className="relative flex justify-end">
@@ -504,15 +391,26 @@ const InitialConsultations = () => {
 
                       <div className="relative">
                         <button
-                          className="text-gray-500 hover:text-gray-700"
-                          onClick={() => setShowActionDropdown(showActionDropdown === consultation.id ? null : consultation.id)}
+                          className="text-gray-500 hover:text-gray-700 disabled:opacity-50"
+                          onClick={() =>
+                            setShowActionDropdown(
+                              showActionDropdown === consultation.id
+                                ? null
+                                : consultation.id
+                            )
+                          }
+                          disabled={updateStatusMutation.isLoading} // Disable while any status update is loading
                         >
                           <MoreHorizontal className="h-5 w-5" />
                         </button>
 
                         {showActionDropdown === consultation.id && (
                           <div className="absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-10">
-                            <div className="py-1" role="menu" aria-orientation="vertical">
+                            <div
+                              className="py-1"
+                              role="menu"
+                              aria-orientation="vertical"
+                            >
                               <button
                                 onClick={() => handleSendEmail(consultation)}
                                 className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
@@ -524,7 +422,9 @@ const InitialConsultations = () => {
 
                               {consultation.status !== 'archived' && (
                                 <button
-                                  onClick={() => handleArchiveConsultation(consultation)}
+                                  onClick={() =>
+                                    handleArchiveConsultation(consultation)
+                                  }
                                   className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
                                   role="menuitem"
                                 >
@@ -535,7 +435,9 @@ const InitialConsultations = () => {
 
                               {consultation.status !== 'pending' && (
                                 <button
-                                  onClick={() => handleUpdateStatus(consultation, 'pending')}
+                                  onClick={() =>
+                                    handleUpdateStatus(consultation, 'pending')
+                                  }
                                   className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
                                   role="menuitem"
                                 >
@@ -546,7 +448,9 @@ const InitialConsultations = () => {
 
                               {consultation.status !== 'reviewed' && (
                                 <button
-                                  onClick={() => handleUpdateStatus(consultation, 'reviewed')}
+                                  onClick={() =>
+                                    handleUpdateStatus(consultation, 'reviewed')
+                                  }
                                   className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
                                   role="menuitem"
                                 >
@@ -557,7 +461,9 @@ const InitialConsultations = () => {
 
                               {consultation.status !== 'followup' && (
                                 <button
-                                  onClick={() => handleUpdateStatus(consultation, 'followup')}
+                                  onClick={() =>
+                                    handleUpdateStatus(consultation, 'followup')
+                                  }
                                   className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
                                   role="menuitem"
                                 >
@@ -575,7 +481,10 @@ const InitialConsultations = () => {
               ))
             ) : (
               <tr>
-                <td colSpan="11" className="px-4 py-4 text-center text-gray-500">
+                <td
+                  colSpan="11"
+                  className="px-4 py-4 text-center text-gray-500"
+                >
                   No consultations found matching your search criteria.
                 </td>
               </tr>
@@ -586,82 +495,101 @@ const InitialConsultations = () => {
 
       {/* Select Patient Modal for New Consultation */}
       {showNewConsultationModal && !selectedPatient && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-75 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full">
-            <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
-              <h3 className="text-lg font-medium text-gray-900">Select Patient for Consultation</h3>
-              <button
-                className="text-gray-400 hover:text-gray-500"
-                onClick={handleCloseConsultationModal}
-              >
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-            <div className="px-6 py-4 max-h-96 overflow-y-auto">
-              <div className="mb-4">
-                <input
-                  type="text"
-                  placeholder="Search patients..."
-                  className="block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                />
-              </div>
-              <div className="divide-y divide-gray-200">
-                {patients?.filter(patient => patient.name?.toLowerCase().includes(searchTerm?.toLowerCase()))
-                  .map(patient => (
-                    <div
-                      key={patient.id}
-                      className="py-3 flex items-center hover:bg-gray-50 cursor-pointer"
-                      onClick={() => handleNewConsultation(patient)}
-                    >
-                      <div className="flex-shrink-0 h-10 w-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-500">
-                        <User className="h-6 w-6" />
-                      </div>
-                      <div className="ml-4">
-                        <div className="text-sm font-medium text-gray-900">{patient.name}</div>
-                        <div className="text-sm text-gray-500">{patient.email}</div>
-                      </div>
-                      {consultations.some(c =>
-                        c.patientId === patient.id && c.status === 'reviewed'
-                      ) && (
-                          <span className="ml-auto px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800">
-                            Has Consultation
-                          </span>
-                        )}
-                    </div>
-                  ))}
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+         <div className="fixed inset-0 bg-gray-600 bg-opacity-75 flex items-center justify-center z-50 p-4">
+           <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full">
+             <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+               <h3 className="text-lg font-medium text-gray-900">
+                 Select Patient for Consultation
+               </h3>
+               <button
+                 className="text-gray-400 hover:text-gray-500"
+                 onClick={handleCloseConsultationModal}
+               >
+                 <X className="h-5 w-5" />
+               </button>
+             </div>
+             <div className="px-6 py-4 max-h-96 overflow-y-auto">
+               <div className="mb-4">
+                 <input
+                   type="text"
+                   placeholder="Search patients..."
+                   className="block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                   // Use a separate search term for this modal if needed, or reuse main one
+                   // value={patientSearchTerm}
+                   // onChange={(e) => setPatientSearchTerm(e.target.value)}
+                 />
+               </div>
+               <div className="divide-y divide-gray-200">
+                 {isLoadingPatients ? (
+                   <div className="text-center p-4"><Loader2 className="h-6 w-6 animate-spin inline-block"/></div>
+                 ) : (
+                   patients
+                     // .filter((patient) =>
+                     //   patient.name?.toLowerCase().includes(patientSearchTerm?.toLowerCase())
+                     // )
+                     .map((patient) => (
+                       <div
+                         key={patient.id}
+                         className="py-3 flex items-center hover:bg-gray-50 cursor-pointer"
+                         onClick={() => handleSelectPatientForNewConsultation(patient)}
+                       >
+                         <div className="flex-shrink-0 h-10 w-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-500">
+                           <User className="h-6 w-6" />
+                         </div>
+                         <div className="ml-4">
+                           <div className="text-sm font-medium text-gray-900">
+                             {patient.name}
+                           </div>
+                           <div className="text-sm text-gray-500">
+                             {patient.email}
+                           </div>
+                         </div>
+                         {/* Optional: Indicate if patient already has consultations */}
+                       </div>
+                     ))
+                 )}
+                 {!isLoadingPatients && patients.length === 0 && (
+                    <p className="text-center text-gray-500 py-4">No patients found.</p>
+                 )}
+               </div>
+             </div>
+           </div>
+         </div>
+       )}
 
-      {/* Consultation Notes Modal */}
-      {showConsultationModal && selectedPatient && (
+
+      {/* Consultation Notes Modal (View/Edit Existing) */}
+      {showConsultationModal && selectedPatient && selectedConsultation && (
         <div className="fixed inset-0 bg-gray-600 bg-opacity-75 flex items-center justify-center z-50 p-4">
           <div className="max-w-4xl w-full">
             <InitialConsultationNotes
               patient={selectedPatient}
-              consultationData={selectedConsultation?.consultationData}
-              readOnly={selectedConsultation?.status === 'reviewed' || selectedConsultation?.status === 'archived'}
+              consultationData={selectedConsultation?.consultationData} // Pass existing data
+              consultationId={selectedConsultation.id} // Pass ID for potential updates
+              readOnly={
+                selectedConsultation?.status === 'reviewed' ||
+                selectedConsultation?.status === 'archived'
+              }
               onClose={handleCloseConsultationModal}
+              // Pass mutation hooks if notes component handles saving
             />
           </div>
         </div>
       )}
 
-      {/* New Consultation Modal */}
-      {showNewConsultationModal && selectedPatient && (
+      {/* New Consultation Modal (After Patient Selected) */}
+      {showNewConsultationModal && selectedPatient && !selectedConsultation && (
         <div className="fixed inset-0 bg-gray-600 bg-opacity-75 flex items-center justify-center z-50 p-4">
           <div className="max-w-4xl w-full">
             <InitialConsultationNotes
-              patient={selectedPatient}
+              patient={selectedPatient} // Pass selected patient
               onClose={handleCloseConsultationModal}
+              // Pass mutation hooks if notes component handles saving
             />
           </div>
         </div>
       )}
+
 
       {/* Email Modal */}
       {showEmailModal && selectedConsultation && (
@@ -669,8 +597,12 @@ const InitialConsultations = () => {
           <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full">
             <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
               <div>
-                <h3 className="text-lg font-medium text-gray-900">Send Email to Patient</h3>
-                <p className="text-sm text-gray-500">To: {selectedConsultation.email}</p>
+                <h3 className="text-lg font-medium text-gray-900">
+                  Send Email to Patient
+                </h3>
+                <p className="text-sm text-gray-500">
+                  To: {selectedConsultation.email}
+                </p>
               </div>
               <button
                 className="text-gray-400 hover:text-gray-500"

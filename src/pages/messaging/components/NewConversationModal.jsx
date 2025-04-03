@@ -28,8 +28,14 @@ const NewConversationModal = ({ visible, onClose, onSubmitSuccess }) => {
     if (visible) {
       // Combine and format users and patients for the Select component
       const combinedOptions = [
-        ...mockUsers.map(u => ({ label: `${u.name} (Team)`, value: `team_${u.id}` })),
-        ...mockPatients.map(p => ({ label: `${p.name} (Patient)`, value: `patient_${p.id}` }))
+        ...mockUsers.map((u) => ({
+          label: `${u.name} (Team)`,
+          value: `team_${u.id}`,
+        })),
+        ...mockPatients.map((p) => ({
+          label: `${p.name} (Patient)`,
+          value: `patient_${p.id}`,
+        })),
       ];
       setSearchOptions(combinedOptions);
       // Reset form state when modal opens
@@ -59,16 +65,16 @@ const NewConversationModal = ({ visible, onClose, onSubmitSuccess }) => {
         recipientIds: recipients, // The values are like "team_1", "patient_3"
         message: messageBody,
       };
-      console.log("Sending new message payload:", payload);
+      console.log('Sending new message payload:', payload);
       // Placeholder for API call
       // await apiService.messaging.createConversation(payload);
-      await new Promise(res => setTimeout(res, 1000)); // Simulate API delay
+      await new Promise((res) => setTimeout(res, 1000)); // Simulate API delay
 
       message.success('Message sent successfully!');
       onSubmitSuccess(); // Callback to potentially refresh conversation list
       onClose(); // Close the modal
     } catch (error) {
-      console.error("Error sending message:", error);
+      console.error('Error sending message:', error);
       message.error('Failed to send message. Please try again.');
     } finally {
       setIsLoading(false);
@@ -84,7 +90,12 @@ const NewConversationModal = ({ visible, onClose, onSubmitSuccess }) => {
         <Button key="back" onClick={onClose} disabled={isLoading}>
           Cancel
         </Button>,
-        <Button key="submit" type="primary" loading={isLoading} onClick={handleSendMessage}>
+        <Button
+          key="submit"
+          type="primary"
+          loading={isLoading}
+          onClick={handleSendMessage}
+        >
           Send Message
         </Button>,
       ]}

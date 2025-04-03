@@ -1,19 +1,19 @@
 // components/patients/components/PatientSessions.jsx
-import React from "react";
-import { Plus, Clock, CheckCircle, XCircle } from "lucide-react";
-import { Link } from "react-router-dom";
-import LoadingSpinner from "./common/LoadingSpinner";
+import React from 'react';
+import { Plus, Clock, CheckCircle, XCircle } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import LoadingSpinner from './common/LoadingSpinner';
 
 const SessionTypeTag = ({ type }) => {
   return (
     <span
       className={`px-2 py-1 text-xs font-medium rounded-full ${
-        type === "medical"
-          ? "bg-blue-100 text-blue-800"
-          : "bg-purple-100 text-purple-800"
+        type === 'medical'
+          ? 'bg-blue-100 text-blue-800'
+          : 'bg-purple-100 text-purple-800'
       }`}
     >
-      {type === "medical" ? "Medical" : "Psych"}
+      {type === 'medical' ? 'Medical' : 'Psych'}
     </span>
   );
 };
@@ -22,18 +22,18 @@ const SessionStatusBadge = ({ status }) => {
   return (
     <span
       className={`flex items-center px-2 py-1 text-xs font-medium rounded-full ${
-        status === "completed"
-          ? "bg-green-100 text-green-800"
-          : status === "scheduled"
-          ? "bg-blue-100 text-blue-800"
-          : status === "missed"
-          ? "bg-red-100 text-red-800"
-          : "bg-gray-100 text-gray-800"
+        status === 'completed'
+          ? 'bg-green-100 text-green-800'
+          : status === 'scheduled'
+            ? 'bg-blue-100 text-blue-800'
+            : status === 'missed'
+              ? 'bg-red-100 text-red-800'
+              : 'bg-gray-100 text-gray-800'
       }`}
     >
-      {status === "completed" ? (
+      {status === 'completed' ? (
         <CheckCircle className="h-3 w-3 mr-1" />
-      ) : status === "scheduled" ? (
+      ) : status === 'scheduled' ? (
         <Clock className="h-3 w-3 mr-1" />
       ) : (
         <XCircle className="h-3 w-3 mr-1" />
@@ -107,16 +107,16 @@ const PatientSessions = ({
                     <SessionStatusBadge status={session.status} />
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 max-w-xs truncate">
-                    {session.notes || "No notes"}
+                    {session.notes || 'No notes'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <button
                       className="text-indigo-600 hover:text-indigo-900"
                       onClick={() => onOpenFollowupNotes(session)}
                     >
-                      {session.status === "completed"
-                        ? "Add Follow-up"
-                        : "View Details"}
+                      {session.status === 'completed'
+                        ? 'Add Follow-up'
+                        : 'View Details'}
                     </button>
                   </td>
                 </tr>

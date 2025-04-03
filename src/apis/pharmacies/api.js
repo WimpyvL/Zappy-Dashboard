@@ -5,7 +5,7 @@ export const getPharmacies = async (params) => {
   const data = await request({
     url: '/api/v1/admin/pharmacies',
     method: 'GET',
-    params
+    params,
   });
   return data;
 };
@@ -13,7 +13,7 @@ export const getPharmacies = async (params) => {
 export const getPharmacyById = async (id) => {
   const data = await request({
     url: `/api/v1/admin/pharmacies/${id}`,
-    method: 'GET'
+    method: 'GET',
   });
   return data;
 };
@@ -22,7 +22,7 @@ export const createPharmacy = async (pharmacyData) => {
   const data = await request({
     url: '/api/v1/admin/pharmacies',
     method: 'POST',
-    data: { pharmacy: pharmacyData }
+    data: { pharmacy: pharmacyData },
   });
   return data;
 };
@@ -31,7 +31,7 @@ export const updatePharmacy = async (id, pharmacyData) => {
   const data = await request({
     url: `/api/v1/admin/pharmacies/${id}`,
     method: 'PUT',
-    data: { pharmacy: pharmacyData }
+    data: { pharmacy: pharmacyData },
   });
   return data;
 };
@@ -39,7 +39,7 @@ export const updatePharmacy = async (id, pharmacyData) => {
 export const deletePharmacy = async (id) => {
   const data = await request({
     url: `/api/v1/admin/pharmacies/${id}`,
-    method: 'DELETE'
+    method: 'DELETE',
   });
   return data;
 };
@@ -48,7 +48,7 @@ export const togglePharmacyActive = async (id, active) => {
   const data = await request({
     url: `/api/v1/admin/pharmacies/${id}/toggle_active`,
     method: 'PUT',
-    data: { active }
+    data: { active },
   });
   return data;
 };

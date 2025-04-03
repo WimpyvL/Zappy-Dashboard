@@ -9,7 +9,10 @@ const PatientNotFound = ({ patientId }) => {
       <h2 className="text-xl font-bold text-red-600 mb-4">Patient Not Found</h2>
       <p>Patient ID: {patientId}</p>
       <div className="mt-4">
-        <Link to="/patients" className="flex items-center text-indigo-600 hover:text-indigo-800">
+        <Link
+          to="/patients"
+          className="flex items-center text-indigo-600 hover:text-indigo-800"
+        >
           <ArrowLeft className="h-4 w-4 mr-1" />
           Back to Patients List
         </Link>

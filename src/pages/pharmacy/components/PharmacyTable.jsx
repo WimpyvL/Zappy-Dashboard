@@ -1,7 +1,7 @@
-import React from "react";
-import { Edit, Trash2 } from "lucide-react";
-import StatusBadge from "../../common/StatusBadge";
-import TypeBadge from "./TypeBadge";
+import React from 'react';
+import { Edit, Trash2 } from 'lucide-react';
+import StatusBadge from '../../common/StatusBadge';
+import TypeBadge from './TypeBadge';
 
 const PharmacyTable = ({ pharmacies, onEdit, onDelete }) => {
   if (!pharmacies.length) {

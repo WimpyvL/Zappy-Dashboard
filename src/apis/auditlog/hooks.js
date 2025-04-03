@@ -17,7 +17,9 @@ export const useAuditLogs = (params = { page: 1, limit: 20 }, options = {}) => {
     keepPreviousData: true,
     onError: (error) => {
       // TODO: Use error handling utility
-      toast.error(`Error fetching audit logs: ${error.message || 'Unknown error'}`);
+      toast.error(
+        `Error fetching audit logs: ${error.message || 'Unknown error'}`
+      );
     },
     ...options, // Allow overriding query options
   });
@@ -43,7 +45,9 @@ export const useCreateAuditLog = (options = {}) => {
     },
     onError: (error, variables, context) => {
       // TODO: Use error handling utility
-      toast.error(`Error creating audit log: ${error.message || 'Unknown error'}`);
+      toast.error(
+        `Error creating audit log: ${error.message || 'Unknown error'}`
+      );
       // Allow chaining custom onError logic
       options.onError && options.onError(error, variables, context);
     },

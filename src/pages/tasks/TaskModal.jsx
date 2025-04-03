@@ -1,7 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { X, Calendar, Bell, Clock } from 'lucide-react';
 
-const TaskModal = ({ isOpen, onClose, task, onSave, assignees, patients, statusOptions, priorityOptions }) => {
+const TaskModal = ({
+  isOpen,
+  onClose,
+  task,
+  onSave,
+  assignees,
+  patients,
+  statusOptions,
+  priorityOptions,
+}) => {
   const [taskData, setTaskData] = useState({
     title: '',
     status: 'pending',
@@ -14,7 +23,7 @@ const TaskModal = ({ isOpen, onClose, task, onSave, assignees, patients, statusO
     assignable_type: 'User',
     assignable_id: '',
     taskable_type: 'Patient',
-    taskable_id: ''
+    taskable_id: '',
   });
 
   // Reset form when task changes
@@ -22,12 +31,12 @@ const TaskModal = ({ isOpen, onClose, task, onSave, assignees, patients, statusO
     if (task) {
       // Format dates for input fields
       const formattedTask = { ...task };
-      
+
       if (task.due_date) {
         const dueDate = new Date(task.due_date);
         formattedTask.due_date = dueDate.toISOString().slice(0, 16);
       }
-      
+
       if (task.reminder_date) {
         const reminderDate = new Date(task.reminder_date);
         formattedTask.reminder_date = reminderDate.toISOString().slice(0, 16);
@@ -35,13 +44,17 @@ const TaskModal = ({ isOpen, onClose, task, onSave, assignees, patients, statusO
 
       // Extract assignable info
       if (task.assignable) {
-        formattedTask.assignable_type = task.assignable.type.charAt(0).toUpperCase() + task.assignable.type.slice(1);
+        formattedTask.assignable_type =
+          task.assignable.type.charAt(0).toUpperCase() +
+          task.assignable.type.slice(1);
         formattedTask.assignable_id = task.assignable.user?.id || '';
       }
 
       // Extract taskable info
       if (task.taskable) {
-        formattedTask.taskable_type = task.taskable.type.charAt(0).toUpperCase() + task.taskable.type.slice(1);
+        formattedTask.taskable_type =
+          task.taskable.type.charAt(0).toUpperCase() +
+          task.taskable.type.slice(1);
         formattedTask.taskable_id = task.taskable.patient?.id || '';
       }
 
@@ -61,7 +74,7 @@ const TaskModal = ({ isOpen, onClose, task, onSave, assignees, patients, statusO
         assignable_type: 'User',
         assignable_id: '',
         taskable_type: 'Patient',
-        taskable_id: ''
+        taskable_id: '',
       });
     }
   }, [task]);
@@ -70,7 +83,7 @@ const TaskModal = ({ isOpen, onClose, task, onSave, assignees, patients, statusO
     const { name, value, type, checked } = e.target;
     setTaskData({
       ...taskData,
-      [name]: type === 'checkbox' ? checked : value
+      [name]: type === 'checkbox' ? checked : value,
     });
   };
 
@@ -100,7 +113,10 @@ const TaskModal = ({ isOpen, onClose, task, onSave, assignees, patients, statusO
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Title */}
             <div className="col-span-2">
-              <label htmlFor="title" className="block text-sm font-medium text-gray-700">
+              <label
+                htmlFor="title"
+                className="block text-sm font-medium text-gray-700"
+              >
                 Task Title *
               </label>
               <input
@@ -117,7 +133,10 @@ const TaskModal = ({ isOpen, onClose, task, onSave, assignees, patients, statusO
 
             {/* Patient */}
             <div>
-              <label htmlFor="taskable_id" className="block text-sm font-medium text-gray-700">
+              <label
+                htmlFor="taskable_id"
+                className="block text-sm font-medium text-gray-700"
+              >
                 Patient
               </label>
               <select
@@ -128,7 +147,7 @@ const TaskModal = ({ isOpen, onClose, task, onSave, assignees, patients, statusO
                 className="mt-1 block w-full bg-white border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
               >
                 <option value="">Select Patient</option>
-                {patients.map(patient => (
+                {patients.map((patient) => (
                   <option key={patient.id} value={patient.id}>
                     {patient.full_name || `Patient #${patient.id}`}
                   </option>
@@ -138,7 +157,10 @@ const TaskModal = ({ isOpen, onClose, task, onSave, assignees, patients, statusO
 
             {/* Status */}
             <div>
-              <label htmlFor="status" className="block text-sm font-medium text-gray-700">
+              <label
+                htmlFor="status"
+                className="block text-sm font-medium text-gray-700"
+              >
                 Status
               </label>
               <select
@@ -148,9 +170,10 @@ const TaskModal = ({ isOpen, onClose, task, onSave, assignees, patients, statusO
                 onChange={handleChange}
                 className="mt-1 block w-full bg-white border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
               >
-                {statusOptions.map(status => (
+                {statusOptions.map((status) => (
                   <option key={status} value={status}>
-                    {status.charAt(0).toUpperCase() + status.slice(1).replace('_', ' ')}
+                    {status.charAt(0).toUpperCase() +
+                      status.slice(1).replace('_', ' ')}
                   </option>
                 ))}
               </select>
@@ -158,7 +181,10 @@ const TaskModal = ({ isOpen, onClose, task, onSave, assignees, patients, statusO
 
             {/* Priority */}
             <div>
-              <label htmlFor="priority" className="block text-sm font-medium text-gray-700">
+              <label
+                htmlFor="priority"
+                className="block text-sm font-medium text-gray-700"
+              >
                 Priority
               </label>
               <select
@@ -168,7 +194,7 @@ const TaskModal = ({ isOpen, onClose, task, onSave, assignees, patients, statusO
                 onChange={handleChange}
                 className="mt-1 block w-full bg-white border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
               >
-                {priorityOptions.map(priority => (
+                {priorityOptions.map((priority) => (
                   <option key={priority} value={priority}>
                     {priority.charAt(0).toUpperCase() + priority.slice(1)}
                   </option>
@@ -178,7 +204,10 @@ const TaskModal = ({ isOpen, onClose, task, onSave, assignees, patients, statusO
 
             {/* Due Date */}
             <div>
-              <label htmlFor="due_date" className="block text-sm font-medium text-gray-700">
+              <label
+                htmlFor="due_date"
+                className="block text-sm font-medium text-gray-700"
+              >
                 Due Date
               </label>
               <div className="mt-1 relative rounded-md shadow-sm">
@@ -198,7 +227,10 @@ const TaskModal = ({ isOpen, onClose, task, onSave, assignees, patients, statusO
 
             {/* Reminder Date */}
             <div>
-              <label htmlFor="reminder_date" className="block text-sm font-medium text-gray-700">
+              <label
+                htmlFor="reminder_date"
+                className="block text-sm font-medium text-gray-700"
+              >
                 Reminder Date
               </label>
               <div className="mt-1 relative rounded-md shadow-sm">
@@ -218,7 +250,10 @@ const TaskModal = ({ isOpen, onClose, task, onSave, assignees, patients, statusO
 
             {/* Duration */}
             <div>
-              <label htmlFor="duration" className="block text-sm font-medium text-gray-700">
+              <label
+                htmlFor="duration"
+                className="block text-sm font-medium text-gray-700"
+              >
                 Duration (minutes)
               </label>
               <div className="mt-1 relative rounded-md shadow-sm">
@@ -247,14 +282,20 @@ const TaskModal = ({ isOpen, onClose, task, onSave, assignees, patients, statusO
                 onChange={handleChange}
                 className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
               />
-              <label htmlFor="notify_assignee" className="ml-2 block text-sm text-gray-900">
+              <label
+                htmlFor="notify_assignee"
+                className="ml-2 block text-sm text-gray-900"
+              >
                 Notify Assignee
               </label>
             </div>
 
             {/* Assignee */}
             <div className="col-span-2">
-              <label htmlFor="assignable_id" className="block text-sm font-medium text-gray-700">
+              <label
+                htmlFor="assignable_id"
+                className="block text-sm font-medium text-gray-700"
+              >
                 Assign To
               </label>
               <select
@@ -265,7 +306,7 @@ const TaskModal = ({ isOpen, onClose, task, onSave, assignees, patients, statusO
                 className="mt-1 block w-full bg-white border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
               >
                 <option value="">Select Assignee</option>
-                {assignees.map(assignee => (
+                {assignees.map((assignee) => (
                   <option key={assignee.id} value={assignee.id}>
                     {assignee.full_name || assignee.email}
                   </option>
@@ -275,7 +316,10 @@ const TaskModal = ({ isOpen, onClose, task, onSave, assignees, patients, statusO
 
             {/* Message/Notes */}
             <div className="col-span-2">
-              <label htmlFor="message" className="block text-sm font-medium text-gray-700">
+              <label
+                htmlFor="message"
+                className="block text-sm font-medium text-gray-700"
+              >
                 Notes/Message
               </label>
               <textarea

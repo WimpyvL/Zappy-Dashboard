@@ -224,9 +224,10 @@ export const AppProvider = ({ children }) => {
   // Initial data fetching
   useEffect(() => {
     fetchInitialData();
-  }, []);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Added eslint-disable to suppress warning about missing dependency, as it's intentional for mock setup
 
-  // --- Helper Functions (Keep existing ones) ---
+  // --- Helper Functions (Keep existing ones - these might need mocking too if used) ---
   const getPatientOrders = (patientId) => { /* ... */ };
   const getPatientSessions = (patientId) => { /* ... */ };
   const getPatientNotes = async (patientId) => { /* ... */ };
@@ -273,110 +274,107 @@ export const AppProvider = ({ children }) => {
   const getPatientConsultationNotes = async (patientId) => { /* ... */ };
 
   // --- Context Provider Value ---
+  const contextValue = {
+    // State
+    patients,
+    sessions,
+    orders,
+    products, // Added products
+    documents,
+    forms,
+    invoices,
+    tags,
+    services,
+    subscriptionPlans,
+    loading,
+    errors,
+
+    // Data access functions
+    getPatientOrders,
+    getPatientSessions,
+    getPatientNotes,
+    getPatientDocuments,
+    getPatientForms,
+    getPatientInvoices,
+
+    // Note management functions
+    addPatientNote,
+    updatePatientNote,
+    deletePatientNote,
+
+    // Status update functions
+    updateSessionStatus,
+    updateOrderStatus,
+
+    // Patient management functions
+    createPatient,
+    updatePatient,
+    deletePatient,
+    updatePatientWeight,
+
+    // Data fetching functions (now mostly point to mock setters)
+    fetchPatients,
+    fetchSessions,
+    fetchOrders,
+    fetchProducts, // Added fetchProducts
+    fetchServices,
+    fetchSubscriptionPlans,
+    fetchTags,
+    // TODO: Add fetchDocuments, fetchForms, fetchInvoices
+
+    // Tag management functions
+    addTag,
+    updateTag,
+    deleteTag,
+    getAllTags,
+    getTagById,
+
+    // Tag assignment functions
+    addPatientTag,
+    removePatientTag,
+    addSessionTag,
+    removeSessionTag,
+    addOrderTag,
+    removeOrderTag,
+    addDocumentTag,
+    removeDocumentTag,
+    addFormTag,
+    removeFormTag,
+    addInvoiceTag,
+    removeInvoiceTag,
+
+    // Tag filtering function
+    filterEntitiesByTag,
+
+    // Service management functions
+    getServiceById,
+    getServicePlans,
+    getAllPlans, // Keep this, it now returns state
+    addService,
+    updateService,
+    deleteService,
+
+    // Subscription plan management
+    addSubscriptionPlan,
+    updateSubscriptionPlan,
+    deleteSubscriptionPlan,
+
+    // Consultation note functions
+    saveInitialConsultationNote,
+    getPatientConsultationNotes,
+  };
+
   return (
-    <AppContext.Provider
-      value={{
-        // State
-        patients,
-        sessions,
-        orders,
-        products, // Added products
-        documents,
-        forms,
-        invoices,
-        tags,
-        services,
-        subscriptionPlans,
-        loading,
-        errors,
-
-        // Data access functions
-        getPatientOrders,
-        getPatientSessions,
-        getPatientNotes,
-        getPatientDocuments,
-        getPatientForms,
-        getPatientInvoices,
-
-        // Note management functions
-        addPatientNote,
-        updatePatientNote,
-        deletePatientNote,
-
-        // Status update functions
-        updateSessionStatus,
-        updateOrderStatus,
-
-        // Patient management functions
-        createPatient,
-        updatePatient,
-        deletePatient,
-        updatePatientWeight,
-
-        // Data fetching functions
-        fetchPatients,
-        fetchSessions,
-        fetchOrders,
-        fetchProducts, // Added fetchProducts
-        fetchServices,
-        fetchSubscriptionPlans,
-        fetchTags,
-        // TODO: Add fetchDocuments, fetchForms, fetchInvoices
-
-        // Tag management functions
-        addTag,
-        updateTag,
-        deleteTag,
-        getAllTags,
-        getTagById,
-
-        // Tag assignment functions
-        addPatientTag,
-        removePatientTag,
-        addSessionTag,
-        removeSessionTag,
-        addOrderTag,
-        removeOrderTag,
-        addDocumentTag,
-        removeDocumentTag,
-        addFormTag,
-        removeFormTag,
-        addInvoiceTag,
-        removeInvoiceTag,
-
-        // Tag filtering function
-        filterEntitiesByTag,
-
-        // Service management functions
-        getServiceById,
-        getServicePlans,
-        getAllPlans, // Keep this, it now returns state
-        addService,
-        updateService,
-        deleteService,
-
-        // Subscription plan management
-        addSubscriptionPlan,
-        updateSubscriptionPlan,
-        deleteSubscriptionPlan,
-
-        // Consultation note functions
-        saveInitialConsultationNote,
-        getPatientConsultationNotes,
-      }}
-    >
-      {children}
-    </AppContext.Provider>
+    <AppContext.Provider value={contextValue}>{children}</AppContext.Provider>
   );
 };
 
 // Custom hook to use the context
 export const useAppContext = () => {
   const context = useContext(AppContext);
-  if (!context) {
-    console.error("useAppContext must be used within an AppProvider");
-    // Optionally throw an error or return a default context value
-    // throw new Error("useAppContext must be used within an AppProvider");
+  if (context === undefined) {
+    // Changed error check to undefined, as an empty object is a valid context value
+    throw new Error('useAppContext must be used within an AppProvider');
   }
   return context;
 };

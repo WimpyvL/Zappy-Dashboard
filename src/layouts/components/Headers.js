@@ -2,9 +2,18 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useCart } from '../../context/CartContext'; // Import useCart
 import { useNavigate } from 'react-router-dom';
-import { Bell, Search, LogOut, Settings, User, ChevronDown, ShoppingCart } from 'lucide-react'; // Import ShoppingCart icon
+import {
+  Bell,
+  Search,
+  LogOut,
+  Settings,
+  User,
+  ChevronDown,
+  ShoppingCart,
+} from 'lucide-react'; // Import ShoppingCart icon
 
-const Header = ({ onToggleCart }) => { // Destructure onToggleCart from props
+const Header = ({ onToggleCart }) => {
+  // Destructure onToggleCart from props
   const { currentUser, logout } = useAuth();
   const { getCartItemCount } = useCart(); // Get cart item count function
   const navigate = useNavigate();
@@ -83,7 +92,7 @@ const Header = ({ onToggleCart }) => { // Destructure onToggleCart from props
               />
               <div className="ml-2">
                 <span className="text-sm font-medium text-gray-700">
-                  {currentUser?.firstName || "Admin"}
+                  {currentUser?.firstName || 'Admin'}
                 </span>
                 <ChevronDown className="h-4 w-4 inline-block ml-1 text-gray-500" />
               </div>

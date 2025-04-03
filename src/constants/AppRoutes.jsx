@@ -1,62 +1,62 @@
-import React from "react";
-import { Routes, Route, Navigate } from "react-router-dom";
+import React from 'react';
+import { Routes, Route, Navigate } from 'react-router-dom';
 
 // Layout wrapper
-import MainLayout from "../layouts/MainLayout.jsx";
+import MainLayout from '../layouts/MainLayout.jsx';
 // import ProtectedRoute from "../appGuards/ProtectedRoute.jsx"; // Temporarily commented out
 
 // Authentication pages
-import Login from "../pages/auth/Login.jsx";
-import Signup from "../pages/auth/Signup";
+import Login from '../pages/auth/Login.jsx';
+import Signup from '../pages/auth/Signup';
 
 // Dashboard
-import Dashboard from "../pages/Dashboard";
+import Dashboard from '../pages/Dashboard';
 
 // Patient components
-import Patients from "../pages/patients/Patients";
-import PatientDetail from "../pages/patients/PatientDetail";
+import Patients from '../pages/patients/Patients';
+import PatientDetail from '../pages/patients/PatientDetail';
 
 // Order components
-import Orders from "../pages/orders/Orders";
+import Orders from '../pages/orders/Orders';
 
 // Invoices components
-import Invoices from "../pages/invoices/InvoicePage";
+import Invoices from '../pages/invoices/InvoicePage';
 
 // Sessions
-import Sessions from "../pages/sessions/Sessions";
+import Sessions from '../pages/sessions/Sessions';
 
 // Consultations
-import InitialConsultations from "../pages/consultations/InitialConsultations";
+import InitialConsultations from '../pages/consultations/InitialConsultations';
 
 // Tasks
-import TaskManagement from "../pages/tasks/TaskManagement";
+import TaskManagement from '../pages/tasks/TaskManagement';
 
 // Insurance
-import InsuranceDocumentation from "../pages/insurance/InsuranceDocumentation";
+import InsuranceDocumentation from '../pages/insurance/InsuranceDocumentation';
 
 // Pharmacy
-import PharmacyManagement from "../pages/pharmacy/PharmacyManagement";
+import PharmacyManagement from '../pages/pharmacy/PharmacyManagement';
 
 // Products
-import ProductManagement from "../pages/products/ProductManagement";
+import ProductManagement from '../pages/products/ProductManagement';
 
 // Providers
-import ProviderManagement from "../pages/providers/ProviderManagement";
+import ProviderManagement from '../pages/providers/ProviderManagement';
 
 // Settings
-import Settings from "../pages/settings/Settings";
+import Settings from '../pages/settings/Settings';
 
 // Other components
-import ServiceManagement from "../pages/services/ServiceManagement";
-import DiscountManagement from "../pages/discounts/DiscountManagement";
-import TagManagement from "../pages/tags/TagManagement";
-import FormViewer from "../pages/settings/pages/forms/FormViewer.jsx";
-import ShopPage from "../pages/shop/ShopPage.jsx"; // Import the new ShopPage
-import MessagingPage from "../pages/messaging/MessagingPage.jsx"; // Import Messaging Page
-import AuditLogPage from "../pages/auditlog/AuditLogPage.jsx"; // Import Audit Log Page
+import ServiceManagement from '../pages/services/ServiceManagement';
+import DiscountManagement from '../pages/discounts/DiscountManagement';
+import TagManagement from '../pages/tags/TagManagement';
+import FormViewer from '../pages/settings/pages/forms/FormViewer.jsx';
+import ShopPage from '../pages/shop/ShopPage.jsx'; // Import the new ShopPage
+import MessagingPage from '../pages/messaging/MessagingPage.jsx'; // Import Messaging Page
+import AuditLogPage from '../pages/auditlog/AuditLogPage.jsx'; // Import Audit Log Page
 
 // Paths constants
-import { paths } from "./paths.js";
+import { paths } from './paths.js';
 const AppRoutes = () => {
   return (
     <Routes>

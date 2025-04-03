@@ -5,14 +5,14 @@ import { Search, Plus, Edit, Trash2, Check, X } from 'lucide-react';
 
 // Define badge styles as objects to avoid string interpolation in JSX
 const typeBadgeStyles = {
-  medication: "bg-blue-100 text-blue-800",
-  supplement: "bg-green-100 text-green-800",
-  service: "bg-purple-100 text-purple-800"
+  medication: 'bg-blue-100 text-blue-800',
+  supplement: 'bg-green-100 text-green-800',
+  service: 'bg-purple-100 text-purple-800',
 };
 
 const statusBadgeStyles = {
-  active: "bg-green-100 text-green-800",
-  inactive: "bg-red-100 text-red-800"
+  active: 'bg-green-100 text-green-800',
+  inactive: 'bg-red-100 text-red-800',
 };
 
 // Generic Badge component
@@ -28,8 +28,8 @@ export const TabButton = ({ isActive, onClick, children }) => (
     onClick={onClick}
     className={
       isActive
-        ? "py-4 px-6 text-sm font-medium border-b-2 border-indigo-500 text-indigo-600 cursor-pointer"
-        : "py-4 px-6 text-sm font-medium text-gray-500 hover:text-gray-700 hover:border-gray-300 cursor-pointer"
+        ? 'py-4 px-6 text-sm font-medium border-b-2 border-indigo-500 text-indigo-600 cursor-pointer'
+        : 'py-4 px-6 text-sm font-medium text-gray-500 hover:text-gray-700 hover:border-gray-300 cursor-pointer'
     }
   >
     {children}
@@ -37,7 +37,7 @@ export const TabButton = ({ isActive, onClick, children }) => (
 );
 
 // Page Header component
-export const PageHeader = ({ title, onAddClick, addButtonText = "Add" }) => (
+export const PageHeader = ({ title, onAddClick, addButtonText = 'Add' }) => (
   <div className="flex justify-between items-center mb-6">
     <h1 className="text-2xl font-bold text-gray-800">{title}</h1>
     {onAddClick && (
@@ -53,10 +53,10 @@ export const PageHeader = ({ title, onAddClick, addButtonText = "Add" }) => (
 );
 
 // Search and Filters component
-export const SearchAndFilters = ({ 
+export const SearchAndFilters = ({
   searchTerm,
   onSearchChange,
-  placeholder = "Search...",
+  placeholder = 'Search...',
   filters = [],
 }) => (
   <div className="bg-white p-4 rounded-lg shadow mb-6 flex flex-col md:flex-row md:items-center space-y-4 md:space-y-0 md:space-x-4">
@@ -72,7 +72,7 @@ export const SearchAndFilters = ({
         onChange={(e) => onSearchChange(e.target.value)}
       />
     </div>
-    
+
     {filters.map((filter, index) => (
       <div key={index} className="flex items-center space-x-2">
         {filter.icon && <filter.icon className="h-5 w-5 text-gray-400" />}
@@ -150,7 +150,7 @@ export const ProductTable = ({ products, onEdit, onDelete }) => (
                       : statusBadgeStyles.inactive
                   }
                 >
-                  {product.active ? "Active" : "Inactive"}
+                  {product.active ? 'Active' : 'Inactive'}
                 </Badge>
               </td>
               <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
@@ -250,7 +250,7 @@ export const SubscriptionPlansTable = ({
                       : statusBadgeStyles.inactive
                   }
                 >
-                  {plan.active ? "Active" : "Inactive"}
+                  {plan.active ? 'Active' : 'Inactive'}
                 </Badge>
               </td>
               <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
@@ -282,7 +282,15 @@ export const SubscriptionPlansTable = ({
 );
 
 // Form Input component
-export const FormInput = ({ label, name, type = "text", value, onChange, placeholder = "", required = false }) => (
+export const FormInput = ({
+  label,
+  name,
+  type = 'text',
+  value,
+  onChange,
+  placeholder = '',
+  required = false,
+}) => (
   <div className="mb-4">
     <label className="block text-sm font-medium text-gray-700 mb-1">
       {label} {required && <span className="text-red-500">*</span>}
@@ -300,7 +308,14 @@ export const FormInput = ({ label, name, type = "text", value, onChange, placeho
 );
 
 // Form Select component
-export const FormSelect = ({ label, name, value, onChange, options, required = false }) => (
+export const FormSelect = ({
+  label,
+  name,
+  value,
+  onChange,
+  options,
+  required = false,
+}) => (
   <div className="mb-4">
     <label className="block text-sm font-medium text-gray-700 mb-1">
       {label} {required && <span className="text-red-500">*</span>}
@@ -322,7 +337,15 @@ export const FormSelect = ({ label, name, value, onChange, options, required = f
 );
 
 // Form Textarea component
-export const FormTextarea = ({ label, name, value, onChange, rows = 3, placeholder = "", required = false }) => (
+export const FormTextarea = ({
+  label,
+  name,
+  value,
+  onChange,
+  rows = 3,
+  placeholder = '',
+  required = false,
+}) => (
   <div className="mb-4">
     <label className="block text-sm font-medium text-gray-700 mb-1">
       {label} {required && <span className="text-red-500">*</span>}
@@ -357,9 +380,16 @@ export const FormCheckbox = ({ label, name, checked, onChange }) => (
 );
 
 // Modal component
-export const Modal = ({ title, isOpen, onClose, onSubmit, submitText = "Submit", children }) => {
+export const Modal = ({
+  title,
+  isOpen,
+  onClose,
+  onSubmit,
+  submitText = 'Submit',
+  children,
+}) => {
   if (!isOpen) return null;
-  
+
   return (
     <div className="fixed inset-0 bg-[#00000066] bg-opacity-50 flex items-center justify-center p-4 z-50">
       {/* Changed max-w-md to max-w-2xl */}
@@ -373,11 +403,13 @@ export const Modal = ({ title, isOpen, onClose, onSubmit, submitText = "Submit",
             <X className="h-5 w-5" />
           </button>
         </div>
-        
-        <div className="p-6 overflow-y-auto max-h-[calc(100vh-12rem)]"> {/* Added overflow-y-auto and max-height */}
+
+        <div className="p-6 overflow-y-auto max-h-[calc(100vh-12rem)]">
+          {' '}
+          {/* Added overflow-y-auto and max-height */}
           {children}
         </div>
-        
+
         <div className="px-6 py-4 border-t border-gray-200 flex justify-end space-x-3 sticky bottom-0 bg-white z-10">
           <button
             className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 cursor-pointer"
@@ -401,14 +433,14 @@ export const Modal = ({ title, isOpen, onClose, onSubmit, submitText = "Submit",
 export const ProductSelectionItem = ({ product, isSelected, onSelect }) => (
   <div
     className={`flex items-center p-2 rounded cursor-pointer ${
-      isSelected ? "bg-indigo-100" : "hover:bg-gray-100"
+      isSelected ? 'bg-indigo-100' : 'hover:bg-gray-100'
     }`}
     onClick={onSelect}
   >
     <div className="flex items-center gap-x-2">
       <div
         className={`w-5 h-5 aspect-square flex items-center justify-center rounded-full border ${
-          isSelected ? "bg-indigo-600 border-indigo-600" : "border-gray-300"
+          isSelected ? 'bg-indigo-600 border-indigo-600' : 'border-gray-300'
         }`}
       >
         {isSelected && <Check className="h-3 w-3 text-white" />}

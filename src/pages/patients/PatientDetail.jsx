@@ -1,21 +1,21 @@
 // PatientDetail.jsx
-import React, { useEffect, useState } from "react";
-import { useParams, Link } from "react-router-dom";
-import { toast } from "react-toastify";
-import { ArrowLeft, Calendar, Plus } from "lucide-react";
-import apiService from "../../utils/apiService";
-import LoadingSpinner from "./patientDetails/common/LoadingSpinner";
-import PatientNotFound from "./patientDetails/common/PatientNotFound";
-import PatientHeader from "./patientDetails/PatientHeader";
-import PatientTabs from "./patientDetails/PatientTabs";
-import PatientInfo from "./patientDetails/PatientInfo";
-import PatientSessions from "./patientDetails/PatientSessions";
-import PatientOrders from "./patientDetails/PatientOrders";
-import PatientNotes from "./patientDetails/PatientNotes";
-import PatientForms from "./patientDetails/PatientForms";
-import PatientBilling from "./patientDetails/PatientBilling";
-import PatientFollowUpNotes from "./patientDetails/PatientFollowUpNotes";
-import PatientDocuments from "./patientDetails/PatientDocuments";
+import React, { useEffect, useState } from 'react';
+import { useParams, Link } from 'react-router-dom';
+import { toast } from 'react-toastify';
+import { ArrowLeft, Calendar, Plus } from 'lucide-react';
+import apiService from '../../utils/apiService';
+import LoadingSpinner from './patientDetails/common/LoadingSpinner';
+import PatientNotFound from './patientDetails/common/PatientNotFound';
+import PatientHeader from './patientDetails/PatientHeader';
+import PatientTabs from './patientDetails/PatientTabs';
+import PatientInfo from './patientDetails/PatientInfo';
+import PatientSessions from './patientDetails/PatientSessions';
+import PatientOrders from './patientDetails/PatientOrders';
+import PatientNotes from './patientDetails/PatientNotes';
+import PatientForms from './patientDetails/PatientForms';
+import PatientBilling from './patientDetails/PatientBilling';
+import PatientFollowUpNotes from './patientDetails/PatientFollowUpNotes';
+import PatientDocuments from './patientDetails/PatientDocuments';
 
 const PatientDetail = () => {
   const { patientId } = useParams();
@@ -41,7 +41,7 @@ const PatientDetail = () => {
   const [patientInvoices, setPatientInvoices] = useState([]);
 
   // UI states
-  const [activeTab, setActiveTab] = useState("info");
+  const [activeTab, setActiveTab] = useState('info');
   const [showFollowupNotes, setShowFollowupNotes] = useState(false);
   const [selectedSession, setSelectedSession] = useState(null);
 
@@ -61,8 +61,8 @@ const PatientDetail = () => {
         // fetchPatientForms(patientId);
         // fetchPatientInvoices(patientId);
       } catch (error) {
-        console.error("Error fetching patient data:", error);
-        toast.error("Failed to load patient information");
+        console.error('Error fetching patient data:', error);
+        toast.error('Failed to load patient information');
       } finally {
         setLoading((prev) => ({ ...prev, patient: false }));
       }
@@ -82,7 +82,7 @@ const PatientDetail = () => {
       );
       setPatientSessions(response.data || []);
     } catch (error) {
-      console.error("Error fetching patient sessions:", error);
+      console.error('Error fetching patient sessions:', error);
     } finally {
       setLoading((prev) => ({ ...prev, sessions: false }));
     }
@@ -94,7 +94,7 @@ const PatientDetail = () => {
       const response = await apiService.orders.getAll({ patient_id: id });
       setPatientOrders(response.data || []);
     } catch (error) {
-      console.error("Error fetching patient orders:", error);
+      console.error('Error fetching patient orders:', error);
     } finally {
       setLoading((prev) => ({ ...prev, orders: false }));
     }
@@ -108,7 +108,7 @@ const PatientDetail = () => {
       );
       setPatientNotes(response.data || []);
     } catch (error) {
-      console.error("Error fetching patient notes:", error);
+      console.error('Error fetching patient notes:', error);
     } finally {
       setLoading((prev) => ({ ...prev, notes: false }));
     }
@@ -122,7 +122,7 @@ const PatientDetail = () => {
       );
       setPatientDocuments(response.data || []);
     } catch (error) {
-      console.error("Error fetching patient documents:", error);
+      console.error('Error fetching patient documents:', error);
     } finally {
       setLoading((prev) => ({ ...prev, documents: false }));
     }
@@ -136,7 +136,7 @@ const PatientDetail = () => {
       );
       setPatientForms(response.data || []);
     } catch (error) {
-      console.error("Error fetching patient forms:", error);
+      console.error('Error fetching patient forms:', error);
     } finally {
       setLoading((prev) => ({ ...prev, forms: false }));
     }
@@ -150,7 +150,7 @@ const PatientDetail = () => {
       );
       setPatientInvoices(response.data || []);
     } catch (error) {
-      console.error("Error fetching patient invoices:", error);
+      console.error('Error fetching patient invoices:', error);
     } finally {
       setLoading((prev) => ({ ...prev, invoices: false }));
     }
@@ -194,9 +194,9 @@ const PatientDetail = () => {
       />
 
       {/* Content based on active tab */}
-      {activeTab === "info" && <PatientInfo patient={patient} />}
+      {activeTab === 'info' && <PatientInfo patient={patient} />}
 
-      {activeTab === "sessions" && (
+      {activeTab === 'sessions' && (
         <PatientSessions
           patientId={patientId}
           sessions={patientSessions}
@@ -205,7 +205,7 @@ const PatientDetail = () => {
         />
       )}
 
-      {activeTab === "orders" && (
+      {activeTab === 'orders' && (
         <PatientOrders
           patientId={patientId}
           orders={patientOrders}
@@ -213,7 +213,7 @@ const PatientDetail = () => {
         />
       )}
 
-      {activeTab === "notes" && (
+      {activeTab === 'notes' && (
         <PatientNotes
           patientId={patientId}
           notes={patientNotes}
@@ -222,7 +222,7 @@ const PatientDetail = () => {
         />
       )}
 
-      {activeTab === "documents" && (
+      {activeTab === 'documents' && (
         <PatientDocuments
           patientId={patientId}
           documents={patientDocuments}
@@ -231,7 +231,7 @@ const PatientDetail = () => {
         />
       )}
 
-      {activeTab === "forms" && (
+      {activeTab === 'forms' && (
         <PatientForms
           patientId={patientId}
           forms={patientForms}
@@ -239,19 +239,18 @@ const PatientDetail = () => {
         />
       )}
 
-      {activeTab === "billing" && (
+      {activeTab === 'billing' && (
         <PatientBilling
           patient={patient}
           invoices={patientInvoices}
           loading={loading.invoices}
           refreshPatient={async () => {
             try {
-              const patientResponse = await apiService.patients.getById(
-                patientId
-              );
+              const patientResponse =
+                await apiService.patients.getById(patientId);
               setPatient(patientResponse.data);
             } catch (error) {
-              console.error("Error refreshing patient data:", error);
+              console.error('Error refreshing patient data:', error);
             }
           }}
         />

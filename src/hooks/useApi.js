@@ -4,7 +4,7 @@ import errorHandling from '../utils/errorHandling';
 
 /**
  * Custom hook for handling API calls with loading state and error handling
- * 
+ *
  * @returns {Object} API methods and state
  */
 export const useApi = () => {
@@ -14,7 +14,7 @@ export const useApi = () => {
 
   /**
    * Execute an API call with error handling
-   * 
+   *
    * @param {Function} apiFunction - API function to call
    * @param {Array} args - Arguments to pass to the API function
    * @param {Object} options - Options for error handling
@@ -25,7 +25,7 @@ export const useApi = () => {
       errorMessage = 'An error occurred',
       resetData = false,
       showLoading = true,
-      context = 'API call'
+      context = 'API call',
     } = options;
 
     if (showLoading) {
@@ -55,7 +55,7 @@ export const useApi = () => {
       return {
         success: false,
         error: errorHandling.getErrorMessage(err) || errorMessage,
-        formErrors: errorHandling.getFormErrors(err)
+        formErrors: errorHandling.getFormErrors(err),
       };
     } finally {
       if (showLoading) {
@@ -94,13 +94,13 @@ export const useApi = () => {
     execute,
     clearError,
     clearData,
-    reset
+    reset,
   };
 };
 
 /**
  * Custom hook for CRUD operations on a resource
- * 
+ *
  * @param {Object} apiResource - API resource object (e.g., apiService.patients)
  * @param {String} resourceName - Name of the resource for error messages
  * @returns {Object} CRUD methods and states
@@ -119,110 +119,123 @@ export const useCrud = (apiResource, resourceName = 'resource') => {
     return {
       success: false,
       error: errorMsg,
-      formErrors: errorHandling.getFormErrors(err)
+      formErrors: errorHandling.getFormErrors(err),
     };
   };
 
   // Fetch all items
-  const fetchAll = useCallback(async (params = {}) => {
-    setLoading(true);
-    setError(null);
+  const fetchAll = useCallback(
+    async (params = {}) => {
+      setLoading(true);
+      setError(null);
 
-    try {
-      const data = await apiResource.getAll(params);
-      setList(data);
-      return { success: true, data };
-    } catch (err) {
-      return handleError(err, `${resourceName}.fetchAll`);
-    } finally {
-      setLoading(false);
-    }
-  }, [apiResource, resourceName]);
+      try {
+        const data = await apiResource.getAll(params);
+        setList(data);
+        return { success: true, data };
+      } catch (err) {
+        return handleError(err, `${resourceName}.fetchAll`);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [apiResource, resourceName]
+  );
 
   // Fetch a single item by ID
-  const fetchById = useCallback(async (id) => {
-    setLoading(true);
-    setError(null);
+  const fetchById = useCallback(
+    async (id) => {
+      setLoading(true);
+      setError(null);
 
-    try {
-      const data = await apiResource.getById(id);
-      setItem(data);
-      return { success: true, data };
-    } catch (err) {
-      return handleError(err, `${resourceName}.fetchById`);
-    } finally {
-      setLoading(false);
-    }
-  }, [apiResource, resourceName]);
+      try {
+        const data = await apiResource.getById(id);
+        setItem(data);
+        return { success: true, data };
+      } catch (err) {
+        return handleError(err, `${resourceName}.fetchById`);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [apiResource, resourceName]
+  );
 
   // Create a new item
-  const create = useCallback(async (itemData) => {
-    setLoading(true);
-    setError(null);
+  const create = useCallback(
+    async (itemData) => {
+      setLoading(true);
+      setError(null);
 
-    try {
-      const data = await apiResource.create(itemData);
-      setList(prevList => [...prevList, data]);
-      setItem(data);
-      return { success: true, data };
-    } catch (err) {
-      return handleError(err, `${resourceName}.create`);
-    } finally {
-      setLoading(false);
-    }
-  }, [apiResource, resourceName]);
+      try {
+        const data = await apiResource.create(itemData);
+        setList((prevList) => [...prevList, data]);
+        setItem(data);
+        return { success: true, data };
+      } catch (err) {
+        return handleError(err, `${resourceName}.create`);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [apiResource, resourceName]
+  );
 
   // Update an existing item
-  const update = useCallback(async (id, itemData) => {
-    setLoading(true);
-    setError(null);
+  const update = useCallback(
+    async (id, itemData) => {
+      setLoading(true);
+      setError(null);
 
-    try {
-      const data = await apiResource.update(id, itemData);
+      try {
+        const data = await apiResource.update(id, itemData);
 
-      // Update list if it exists
-      setList(prevList =>
-        prevList.map(item => item.id === id ? data : item)
-      );
+        // Update list if it exists
+        setList((prevList) =>
+          prevList.map((item) => (item.id === id ? data : item))
+        );
 
-      // Update current item if it matches
-      if (item && item.id === id) {
-        setItem(data);
+        // Update current item if it matches
+        if (item && item.id === id) {
+          setItem(data);
+        }
+
+        return { success: true, data };
+      } catch (err) {
+        return handleError(err, `${resourceName}.update`);
+      } finally {
+        setLoading(false);
       }
-
-      return { success: true, data };
-    } catch (err) {
-      return handleError(err, `${resourceName}.update`);
-    } finally {
-      setLoading(false);
-    }
-  }, [apiResource, resourceName, item]);
+    },
+    [apiResource, resourceName, item]
+  );
 
   // Delete an item
-  const remove = useCallback(async (id) => {
-    setLoading(true);
-    setError(null);
+  const remove = useCallback(
+    async (id) => {
+      setLoading(true);
+      setError(null);
 
-    try {
-      await apiResource.delete(id);
+      try {
+        await apiResource.delete(id);
 
-      // Remove from list if it exists
-      setList(prevList =>
-        prevList.filter(item => item.id !== id)
-      );
+        // Remove from list if it exists
+        setList((prevList) => prevList.filter((item) => item.id !== id));
 
-      // Clear current item if it matches
-      if (item && item.id === id) {
-        setItem(null);
+        // Clear current item if it matches
+        if (item && item.id === id) {
+          setItem(null);
+        }
+
+        return { success: true };
+      } catch (err) {
+        return handleError(err, `${resourceName}.delete`);
+      } finally {
+        setLoading(false);
       }
-
-      return { success: true };
-    } catch (err) {
-      return handleError(err, `${resourceName}.delete`);
-    } finally {
-      setLoading(false);
-    }
-  }, [apiResource, resourceName, item]);
+    },
+    [apiResource, resourceName, item]
+  );
 
   // Clear the current error
   const clearError = useCallback(() => {
@@ -239,7 +252,7 @@ export const useCrud = (apiResource, resourceName = 'resource') => {
     create,
     update,
     remove,
-    clearError
+    clearError,
   };
 };
 

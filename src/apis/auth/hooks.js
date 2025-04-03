@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from "react";
-import { Link, useNavigate, useLocation } from "react-router-dom";
-import { Eye, EyeOff, AlertCircle, CheckCircle } from "lucide-react";
-import { useForm } from "react-hook-form";
-import { useAuth } from "../../context/AuthContext";
-import { useLogin } from "../../apis/auth/hooks"
+import React, { useState, useEffect } from 'react';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { Eye, EyeOff, AlertCircle, CheckCircle } from 'lucide-react';
+import { useForm } from 'react-hook-form';
+import { useAuth } from '../../context/AuthContext';
+import { useLogin } from '../../apis/auth/hooks';
 
 const Login = () => {
   const navigate = useNavigate();
@@ -11,9 +11,9 @@ const Login = () => {
   const { setUser, error: authError, isAuthenticated, clearError } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   const [successMessage, setSuccessMessage] = useState(
-    location.state?.message || ""
+    location.state?.message || ''
   );
-  const [apiError, setApiError] = useState("");
+  const [apiError, setApiError] = useState('');
 
   const {
     register,
@@ -21,7 +21,7 @@ const Login = () => {
     formState: { errors },
     reset,
   } = useForm({
-    defaultValues: { email: "", password: "", rememberMe: false },
+    defaultValues: { email: '', password: '', rememberMe: false },
   });
 
   // Use the custom useLogin hook
@@ -34,8 +34,8 @@ const Login = () => {
         id: response.data?.id,
       };
 
-      localStorage.setItem("isAuthenticated", "true");
-      localStorage.setItem("user", JSON.stringify(userData));
+      localStorage.setItem('isAuthenticated', 'true');
+      localStorage.setItem('user', JSON.stringify(userData));
       setUser(userData);
       reset();
     },
@@ -48,15 +48,15 @@ const Login = () => {
 
   useEffect(() => {
     if (isAuthenticated) {
-      navigate(location.state?.from?.pathname || "/", { replace: true });
+      navigate(location.state?.from?.pathname || '/', { replace: true });
     }
   }, [isAuthenticated, navigate, location.state]);
 
   const togglePasswordVisibility = () => setShowPassword((prev) => !prev);
 
   const onSubmit = (data) => {
-    setSuccessMessage("");
-    setApiError("");
+    setSuccessMessage('');
+    setApiError('');
     mutation.mutate(data);
   };
 
@@ -64,7 +64,8 @@ const Login = () => {
   useEffect(() => {
     if (mutation.error) {
       setApiError(
-        mutation.error?.response?.data || "An unexpected error occurred. Please try again."
+        mutation.error?.response?.data ||
+          'An unexpected error occurred. Please try again.'
       );
     }
   }, [mutation.error]);
@@ -96,12 +97,13 @@ const Login = () => {
             <input
               type="email"
               autoComplete="email"
-              className={`block w-full px-3 py-2 border ${errors.email ? "border-red-300" : "border-gray-300"
-                } rounded-md shadow-sm placeholder-gray-400 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm`}
+              className={`block w-full px-3 py-2 border ${
+                errors.email ? 'border-red-300' : 'border-gray-300'
+              } rounded-md shadow-sm placeholder-gray-400 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm`}
               placeholder="your.email@example.com"
-              {...register("email", {
-                required: "Email is required",
-                pattern: { value: /\S+@\S+\.\S+/, message: "Email is invalid" },
+              {...register('email', {
+                required: 'Email is required',
+                pattern: { value: /\S+@\S+\.\S+/, message: 'Email is invalid' },
               })}
             />
             {errors.email && (
@@ -117,12 +119,13 @@ const Login = () => {
             </label>
             <div className="relative">
               <input
-                type={showPassword ? "text" : "password"}
+                type={showPassword ? 'text' : 'password'}
                 autoComplete="current-password"
-                className={`block w-full px-3 py-2 border ${errors.password ? "border-red-300" : "border-gray-300"
-                  } rounded-md shadow-sm placeholder-gray-400 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm`}
+                className={`block w-full px-3 py-2 border ${
+                  errors.password ? 'border-red-300' : 'border-gray-300'
+                } rounded-md shadow-sm placeholder-gray-400 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm`}
                 placeholder="••••••••"
-                {...register("password", { required: "Password is required" })}
+                {...register('password', { required: 'Password is required' })}
               />
               <button
                 type="button"
@@ -148,7 +151,7 @@ const Login = () => {
               <input
                 type="checkbox"
                 className="h-4 w-4 text-indigo-600 border-gray-300 rounded"
-                {...register("rememberMe")}
+                {...register('rememberMe')}
               />
               <span className="ml-2">Remember me</span>
             </label>
@@ -163,16 +166,17 @@ const Login = () => {
           <button
             type="submit"
             disabled={mutation.isPending}
-            className={`w-full py-2 px-4 text-sm font-medium text-white rounded-md shadow-sm ${mutation.isPending
-                ? "bg-indigo-400"
-                : "bg-indigo-600 hover:bg-indigo-700"
-              } focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500`}
+            className={`w-full py-2 px-4 text-sm font-medium text-white rounded-md shadow-sm ${
+              mutation.isPending
+                ? 'bg-indigo-400'
+                : 'bg-indigo-600 hover:bg-indigo-700'
+            } focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500`}
           >
-            {mutation.isPending ? "Signing in..." : "Sign in"}
+            {mutation.isPending ? 'Signing in...' : 'Sign in'}
           </button>
 
           <p className="mt-6 text-center text-sm text-gray-600">
-            Don't have an account?{" "}
+            Don't have an account?{' '}
             <Link
               to="/signup"
               className="text-indigo-600 hover:text-indigo-500"

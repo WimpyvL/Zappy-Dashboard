@@ -1,7 +1,7 @@
-import React, { useState } from "react"; // Import useState
-import Header from "./components/Headers";
-import Sidebar from "./components/Sidebar";
-import ShoppingCart from "../pages/shop/components/ShoppingCart"; // Import ShoppingCart
+import React, { useState } from 'react'; // Import useState
+import Header from './components/Headers';
+import Sidebar from './components/Sidebar';
+import ShoppingCart from '../pages/shop/components/ShoppingCart'; // Import ShoppingCart
 
 /**
  * Main layout wrapper for authenticated pages
@@ -19,7 +19,7 @@ const MainLayout = ({ children }) => {
       <Sidebar />
       <div className="flex flex-col flex-1 overflow-hidden">
         {/* Pass toggleCart function to Header */}
-        <Header onToggleCart={toggleCart} /> 
+        <Header onToggleCart={toggleCart} />
         <main className="flex-1 overflow-y-auto bg-gray-100 p-6">
           {children}
         </main>

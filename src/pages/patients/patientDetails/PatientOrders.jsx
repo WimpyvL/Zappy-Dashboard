@@ -6,15 +6,24 @@ import LoadingSpinner from './common/LoadingSpinner';
 
 const OrderStatusBadge = ({ status }) => {
   return (
-    <span className={`flex items-center px-2 py-1 text-xs font-medium rounded-full ${
-      status === 'shipped' ? 'bg-green-100 text-green-800' :
-      status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-      status === 'processing' ? 'bg-blue-100 text-blue-800' :
-      'bg-gray-100 text-gray-800'
-    }`}>
-      {status === 'shipped' ? <CheckCircle className="h-3 w-3 mr-1" /> :
-       status === 'pending' ? <Clock className="h-3 w-3 mr-1" /> :
-       <XCircle className="h-3 w-3 mr-1" />}
+    <span
+      className={`flex items-center px-2 py-1 text-xs font-medium rounded-full ${
+        status === 'shipped'
+          ? 'bg-green-100 text-green-800'
+          : status === 'pending'
+            ? 'bg-yellow-100 text-yellow-800'
+            : status === 'processing'
+              ? 'bg-blue-100 text-blue-800'
+              : 'bg-gray-100 text-gray-800'
+      }`}
+    >
+      {status === 'shipped' ? (
+        <CheckCircle className="h-3 w-3 mr-1" />
+      ) : status === 'pending' ? (
+        <Clock className="h-3 w-3 mr-1" />
+      ) : (
+        <XCircle className="h-3 w-3 mr-1" />
+      )}
       {status.charAt(0).toUpperCase() + status.slice(1)}
     </span>
   );
@@ -22,12 +31,17 @@ const OrderStatusBadge = ({ status }) => {
 
 const PaymentStatusBadge = ({ status }) => {
   return (
-    <span className={`flex items-center px-2 py-1 text-xs font-medium rounded-full ${
-      status === 'paid' ? 'bg-green-100 text-green-800' :
-      status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-      status === 'failed' ? 'bg-red-100 text-red-800' :
-      'bg-gray-100 text-gray-800'
-    }`}>
+    <span
+      className={`flex items-center px-2 py-1 text-xs font-medium rounded-full ${
+        status === 'paid'
+          ? 'bg-green-100 text-green-800'
+          : status === 'pending'
+            ? 'bg-yellow-100 text-yellow-800'
+            : status === 'failed'
+              ? 'bg-red-100 text-red-800'
+              : 'bg-gray-100 text-gray-800'
+      }`}
+    >
       {status || 'Unknown'}
     </span>
   );

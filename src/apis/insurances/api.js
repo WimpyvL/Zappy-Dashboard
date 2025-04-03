@@ -5,7 +5,7 @@ export const getInsuranceRecords = async (params) => {
   const data = await request({
     url: '/api/v1/admin/insurance_records',
     method: 'GET',
-    params
+    params,
   });
   return data;
 };
@@ -13,7 +13,7 @@ export const getInsuranceRecords = async (params) => {
 export const getInsuranceRecordById = async (id) => {
   const data = await request({
     url: `/api/v1/admin/insurance_records/${id}`,
-    method: 'GET'
+    method: 'GET',
   });
   return data;
 };
@@ -22,7 +22,7 @@ export const createInsuranceRecord = async (recordData) => {
   const data = await request({
     url: '/api/v1/admin/insurance_records',
     method: 'POST',
-    data: recordData
+    data: recordData,
   });
   return data;
 };
@@ -31,7 +31,7 @@ export const updateInsuranceRecord = async (id, recordData) => {
   const data = await request({
     url: `/api/v1/admin/insurance_records/${id}`,
     method: 'PUT',
-    data: recordData
+    data: recordData,
   });
   return data;
 };
@@ -42,8 +42,8 @@ export const uploadInsuranceDocument = async (id, formData) => {
     method: 'POST',
     data: formData,
     headers: {
-      'Content-Type': 'multipart/form-data'
-    }
+      'Content-Type': 'multipart/form-data',
+    },
   });
   return data;
 };
@@ -51,7 +51,7 @@ export const uploadInsuranceDocument = async (id, formData) => {
 export const deleteInsuranceDocument = async (id, documentId) => {
   const data = await request({
     url: `/api/v1/admin/insurance_records/${id}/documents/${documentId}`,
-    method: 'DELETE'
+    method: 'DELETE',
   });
   return data;
 };

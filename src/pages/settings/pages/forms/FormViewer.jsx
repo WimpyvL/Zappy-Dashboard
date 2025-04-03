@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import React, { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import {
   Form,
   Input,
@@ -18,7 +18,7 @@ import {
   message,
   Progress,
   Space,
-} from "antd";
+} from 'antd';
 import {
   MailOutlined,
   PhoneOutlined,
@@ -29,9 +29,9 @@ import {
   RightOutlined,
   SaveOutlined,
   FormOutlined,
-} from "@ant-design/icons";
-import { useForm, Controller } from "react-hook-form";
-import { useFormById } from "../../../../apis/forms/hooks";
+} from '@ant-design/icons';
+import { useForm, Controller } from 'react-hook-form';
+import { useFormById } from '../../../../apis/forms/hooks';
 // import { getDynamicData } from "../../apis/forms/api";
 
 const { Title, Paragraph, Text } = Typography;
@@ -68,7 +68,7 @@ const FormViewer = () => {
 
     try {
       // Handle different structure formats
-      if (typeof form.structure === "string") {
+      if (typeof form.structure === 'string') {
         const parsed = JSON.parse(form.structure);
 
         // Check if it has pages property (new format) or is array (old format)
@@ -76,14 +76,14 @@ const FormViewer = () => {
           return [parsed.pages, parsed.conditionals || []];
         } else if (Array.isArray(parsed)) {
           // Legacy format - convert to single page
-          return [[{ id: "page1", title: "Page 1", elements: parsed }], []];
+          return [[{ id: 'page1', title: 'Page 1', elements: parsed }], []];
         }
       } else if (form.structure.pages) {
         // Already parsed object
         return [form.structure.pages, form.structure.conditionals || []];
       }
     } catch (e) {
-      console.error("Error parsing form structure:", e);
+      console.error('Error parsing form structure:', e);
     }
 
     // Default fallback
@@ -105,8 +105,8 @@ const FormViewer = () => {
         [elementId]: data,
       }));
     } catch (error) {
-      console.error("Error loading dynamic data:", error);
-      message.error("Failed to load dynamic data for form field");
+      console.error('Error loading dynamic data:', error);
+      message.error('Failed to load dynamic data for form field');
     } finally {
       setDynamicDataLoading(false);
     }
@@ -157,19 +157,19 @@ const FormViewer = () => {
 
         // Evaluate the condition
         switch (operator) {
-          case "equals":
+          case 'equals':
             conditionMet = formValues[elementId] === value;
             break;
-          case "not_equals":
+          case 'not_equals':
             conditionMet = formValues[elementId] !== value;
             break;
-          case "contains":
+          case 'contains':
             conditionMet = String(formValues[elementId]).includes(value);
             break;
-          case "greater_than":
+          case 'greater_than':
             conditionMet = Number(formValues[elementId]) > Number(value);
             break;
-          case "less_than":
+          case 'less_than':
             conditionMet = Number(formValues[elementId]) < Number(value);
             break;
           default:
@@ -222,19 +222,19 @@ const FormViewer = () => {
           let conditionMet = false;
 
           switch (operator) {
-            case "equals":
+            case 'equals':
               conditionMet = formValues[elementId] === value;
               break;
-            case "not_equals":
+            case 'not_equals':
               conditionMet = formValues[elementId] !== value;
               break;
-            case "contains":
+            case 'contains':
               conditionMet = String(formValues[elementId]).includes(value);
               break;
-            case "greater_than":
+            case 'greater_than':
               conditionMet = Number(formValues[elementId]) > Number(value);
               break;
-            case "less_than":
+            case 'less_than':
               conditionMet = Number(formValues[elementId]) < Number(value);
               break;
             default:
@@ -255,7 +255,7 @@ const FormViewer = () => {
   // Function to handle form submission
   const onSubmit = (data) => {
     // In a real app, you would submit this data to your backend
-    console.log("Form submitted with data:", data);
+    console.log('Form submitted with data:', data);
 
     // Show success message
     setSubmitted(true);
@@ -315,18 +315,18 @@ const FormViewer = () => {
 
     // Get field width class
     const widthClass =
-      element.width === "half"
-        ? "field-half-width"
-        : element.width === "third"
-        ? "field-third-width"
-        : "field-full-width";
+      element.width === 'half'
+        ? 'field-half-width'
+        : element.width === 'third'
+          ? 'field-third-width'
+          : 'field-full-width';
 
     // Determine if we should use dynamic data for this field
     const useDynamicData = dynamicData?.enabled && dynamicDataValues[id];
     const dynamicOptions = useDynamicData ? dynamicDataValues[id] : null;
 
     switch (type) {
-      case "short_text":
+      case 'short_text':
         return (
           <div className={`form-field ${widthClass}`}>
             <Controller
@@ -336,7 +336,7 @@ const FormViewer = () => {
               render={({ field }) => (
                 <Form.Item
                   label={label}
-                  validateStatus={errors[fieldName] ? "error" : ""}
+                  validateStatus={errors[fieldName] ? 'error' : ''}
                   help={errors[fieldName]?.message || helperText}
                 >
                   <Input
@@ -351,7 +351,7 @@ const FormViewer = () => {
           </div>
         );
 
-      case "paragraph":
+      case 'paragraph':
         return (
           <div className={`form-field ${widthClass}`}>
             <Controller
@@ -361,7 +361,7 @@ const FormViewer = () => {
               render={({ field }) => (
                 <Form.Item
                   label={label}
-                  validateStatus={errors[fieldName] ? "error" : ""}
+                  validateStatus={errors[fieldName] ? 'error' : ''}
                   help={errors[fieldName]?.message || helperText}
                 >
                   <Input.TextArea
@@ -377,7 +377,7 @@ const FormViewer = () => {
           </div>
         );
 
-      case "number":
+      case 'number':
         return (
           <div className={`form-field ${widthClass}`}>
             <Controller
@@ -387,13 +387,13 @@ const FormViewer = () => {
                 required: required ? `${label} is required` : false,
                 pattern: {
                   value: /^[0-9]*$/,
-                  message: "Please enter a valid number",
+                  message: 'Please enter a valid number',
                 },
               }}
               render={({ field }) => (
                 <Form.Item
                   label={label}
-                  validateStatus={errors[fieldName] ? "error" : ""}
+                  validateStatus={errors[fieldName] ? 'error' : ''}
                   help={errors[fieldName]?.message || helperText}
                 >
                   <Input
@@ -409,7 +409,7 @@ const FormViewer = () => {
           </div>
         );
 
-      case "multiple_choice":
+      case 'multiple_choice':
         return (
           <div className={`form-field ${widthClass}`}>
             <Controller
@@ -419,7 +419,7 @@ const FormViewer = () => {
               render={({ field }) => (
                 <Form.Item
                   label={label}
-                  validateStatus={errors[fieldName] ? "error" : ""}
+                  validateStatus={errors[fieldName] ? 'error' : ''}
                   help={errors[fieldName]?.message || helperText}
                 >
                   <Radio.Group
@@ -445,7 +445,7 @@ const FormViewer = () => {
           </div>
         );
 
-      case "checkboxes":
+      case 'checkboxes':
         return (
           <div className={`form-field ${widthClass}`}>
             <Controller
@@ -455,7 +455,7 @@ const FormViewer = () => {
               render={({ field }) => (
                 <Form.Item
                   label={label}
-                  validateStatus={errors[fieldName] ? "error" : ""}
+                  validateStatus={errors[fieldName] ? 'error' : ''}
                   help={errors[fieldName]?.message || helperText}
                 >
                   <Checkbox.Group {...field} className={element.cssClass}>
@@ -482,7 +482,7 @@ const FormViewer = () => {
           </div>
         );
 
-      case "dropdown":
+      case 'dropdown':
         return (
           <div className={`form-field ${widthClass}`}>
             <Controller
@@ -492,7 +492,7 @@ const FormViewer = () => {
               render={({ field }) => (
                 <Form.Item
                   label={label}
-                  validateStatus={errors[fieldName] ? "error" : ""}
+                  validateStatus={errors[fieldName] ? 'error' : ''}
                   help={errors[fieldName]?.message || helperText}
                 >
                   <Select
@@ -520,7 +520,7 @@ const FormViewer = () => {
           </div>
         );
 
-      case "date":
+      case 'date':
         return (
           <div className={`form-field ${widthClass}`}>
             <Controller
@@ -530,12 +530,12 @@ const FormViewer = () => {
               render={({ field }) => (
                 <Form.Item
                   label={label}
-                  validateStatus={errors[fieldName] ? "error" : ""}
+                  validateStatus={errors[fieldName] ? 'error' : ''}
                   help={errors[fieldName]?.message || helperText}
                 >
                   <DatePicker
                     {...field}
-                    style={{ width: "100%" }}
+                    style={{ width: '100%' }}
                     size={element.size}
                     className={element.cssClass}
                   />
@@ -545,7 +545,7 @@ const FormViewer = () => {
           </div>
         );
 
-      case "time":
+      case 'time':
         return (
           <div className={`form-field ${widthClass}`}>
             <Controller
@@ -555,13 +555,13 @@ const FormViewer = () => {
               render={({ field }) => (
                 <Form.Item
                   label={label}
-                  validateStatus={errors[fieldName] ? "error" : ""}
+                  validateStatus={errors[fieldName] ? 'error' : ''}
                   help={errors[fieldName]?.message || helperText}
                 >
                   <TimePicker
                     {...field}
                     format="HH:mm"
-                    style={{ width: "100%" }}
+                    style={{ width: '100%' }}
                     size={element.size}
                     className={element.cssClass}
                   />
@@ -571,7 +571,7 @@ const FormViewer = () => {
           </div>
         );
 
-      case "email":
+      case 'email':
         return (
           <div className={`form-field ${widthClass}`}>
             <Controller
@@ -581,19 +581,19 @@ const FormViewer = () => {
                 required: required ? `${label} is required` : false,
                 pattern: {
                   value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-                  message: "Please enter a valid email address",
+                  message: 'Please enter a valid email address',
                 },
               }}
               render={({ field }) => (
                 <Form.Item
                   label={label}
-                  validateStatus={errors[fieldName] ? "error" : ""}
+                  validateStatus={errors[fieldName] ? 'error' : ''}
                   help={errors[fieldName]?.message || helperText}
                 >
                   <Input
                     {...field}
                     prefix={<MailOutlined />}
-                    placeholder={placeholder || "Enter email address"}
+                    placeholder={placeholder || 'Enter email address'}
                     size={element.size}
                     className={element.cssClass}
                   />
@@ -603,7 +603,7 @@ const FormViewer = () => {
           </div>
         );
 
-      case "phone":
+      case 'phone':
         return (
           <div className={`form-field ${widthClass}`}>
             <Controller
@@ -613,19 +613,19 @@ const FormViewer = () => {
                 required: required ? `${label} is required` : false,
                 pattern: {
                   value: /^[0-9+-\s()]*$/,
-                  message: "Please enter a valid phone number",
+                  message: 'Please enter a valid phone number',
                 },
               }}
               render={({ field }) => (
                 <Form.Item
                   label={label}
-                  validateStatus={errors[fieldName] ? "error" : ""}
+                  validateStatus={errors[fieldName] ? 'error' : ''}
                   help={errors[fieldName]?.message || helperText}
                 >
                   <Input
                     {...field}
                     prefix={<PhoneOutlined />}
-                    placeholder={placeholder || "Enter phone number"}
+                    placeholder={placeholder || 'Enter phone number'}
                     size={element.size}
                     className={element.cssClass}
                   />
@@ -635,7 +635,7 @@ const FormViewer = () => {
           </div>
         );
 
-      case "name":
+      case 'name':
         return (
           <div className={`form-field ${widthClass}`}>
             <Controller
@@ -645,13 +645,13 @@ const FormViewer = () => {
               render={({ field }) => (
                 <Form.Item
                   label={label}
-                  validateStatus={errors[fieldName] ? "error" : ""}
+                  validateStatus={errors[fieldName] ? 'error' : ''}
                   help={errors[fieldName]?.message || helperText}
                 >
                   <Input
                     {...field}
                     prefix={<UserOutlined />}
-                    placeholder={placeholder || "Enter name"}
+                    placeholder={placeholder || 'Enter name'}
                     size={element.size}
                     className={element.cssClass}
                   />
@@ -661,7 +661,7 @@ const FormViewer = () => {
           </div>
         );
 
-      case "address":
+      case 'address':
         return (
           <div className={`form-field ${widthClass}`}>
             <Controller
@@ -671,13 +671,13 @@ const FormViewer = () => {
               render={({ field }) => (
                 <Form.Item
                   label={label}
-                  validateStatus={errors[fieldName] ? "error" : ""}
+                  validateStatus={errors[fieldName] ? 'error' : ''}
                   help={errors[fieldName]?.message || helperText}
                 >
                   <Input
                     {...field}
                     prefix={<HomeOutlined />}
-                    placeholder={placeholder || "Enter address"}
+                    placeholder={placeholder || 'Enter address'}
                     size={element.size}
                     className={element.cssClass}
                   />
@@ -715,9 +715,9 @@ const FormViewer = () => {
         <Result
           status="404"
           title="Form Not Found"
-          subTitle={error?.message || "The requested form could not be found."}
+          subTitle={error?.message || 'The requested form could not be found.'}
           extra={
-            <Button type="primary" onClick={() => navigate("/")}>
+            <Button type="primary" onClick={() => navigate('/')}>
               Back to Home
             </Button>
           }
@@ -735,7 +735,7 @@ const FormViewer = () => {
           title="Form Submitted Successfully!"
           subTitle="Thank you for your submission. We will process your information shortly."
           extra={[
-            <Button type="primary" key="console" onClick={() => navigate("/")}>
+            <Button type="primary" key="console" onClick={() => navigate('/')}>
               Back to Home
             </Button>,
             <Button

@@ -1,22 +1,18 @@
-import {
-  useMutation,
-  useQuery,
-  useQueryClient
-} from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   getInsuranceRecords,
   getInsuranceRecordById,
   createInsuranceRecord,
   updateInsuranceRecord,
   uploadInsuranceDocument,
-  deleteInsuranceDocument
+  deleteInsuranceDocument,
 } from './api';
 
 // Get insurance records hook
 export const useInsuranceRecords = (filters) => {
   return useQuery({
     queryKey: ['insuranceRecords', filters],
-    queryFn: () => getInsuranceRecords(filters)
+    queryFn: () => getInsuranceRecords(filters),
   });
 };
 
@@ -26,7 +22,7 @@ export const useInsuranceRecordById = (id, options = {}) => {
     queryKey: ['insuranceRecord', id],
     queryFn: () => getInsuranceRecordById(id),
     enabled: !!id,
-    ...options
+    ...options,
   });
 };
 
@@ -39,7 +35,7 @@ export const useCreateInsuranceRecord = (options = {}) => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['insuranceRecords'] });
       options.onSuccess && options.onSuccess();
-    }
+    },
   });
 };
 
@@ -53,7 +49,7 @@ export const useUpdateInsuranceRecord = (options = {}) => {
       queryClient.invalidateQueries({ queryKey: ['insuranceRecords'] });
       queryClient.invalidateQueries({ queryKey: ['insuranceRecord'] });
       options.onSuccess && options.onSuccess();
-    }
+    },
   });
 };
 
@@ -66,7 +62,7 @@ export const useUploadInsuranceDocument = (id, options = {}) => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['insuranceRecord', id] });
       options.onSuccess && options.onSuccess();
-    }
+    },
   });
 };
 
@@ -79,6 +75,6 @@ export const useDeleteInsuranceDocument = (id, options = {}) => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['insuranceRecord', id] });
       options.onSuccess && options.onSuccess();
-    }
+    },
   });
 };

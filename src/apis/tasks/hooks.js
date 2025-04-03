@@ -1,8 +1,4 @@
-import {
-  useMutation,
-  useQuery,
-  useQueryClient
-} from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   getTasks,
   getTaskById,
@@ -14,14 +10,15 @@ import {
   handleUpdateStatus,
   handleBulkSessionCreation,
   getAssignees,
-  getTaskablePatients
+  getTaskablePatients,
 } from './api';
 
 // Get tasks hook
 export const useTasks = (currentPage, tasksFilters, sortingDetails) => {
   return useQuery({
     queryKey: ['tasks', currentPage, tasksFilters, sortingDetails],
-    queryFn: () => getTasks(currentPage, tasksFilters, undefined, sortingDetails)
+    queryFn: () =>
+      getTasks(currentPage, tasksFilters, undefined, sortingDetails),
   });
 };
 
@@ -31,7 +28,7 @@ export const useTaskById = (id, options = {}) => {
     queryKey: ['task', id],
     queryFn: () => getTaskById(id),
     enabled: !!id,
-    ...options
+    ...options,
   });
 };
 
@@ -44,7 +41,7 @@ export const useCreateTask = (options = {}) => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
       options.onSuccess && options.onSuccess();
-    }
+    },
   });
 };
 
@@ -57,7 +54,7 @@ export const useUpdateTask = (options = {}) => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
       options.onSuccess && options.onSuccess();
-    }
+    },
   });
 };
 
@@ -70,7 +67,7 @@ export const useDeleteTask = (options = {}) => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
       options.onSuccess && options.onSuccess();
-    }
+    },
   });
 };
 
@@ -83,7 +80,7 @@ export const useMarkTaskCompleted = (options = {}) => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
       options.onSuccess && options.onSuccess();
-    }
+    },
   });
 };
 
@@ -97,7 +94,7 @@ export const useCreateSession = (options = {}) => {
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
       queryClient.refetchQueries({ queryKey: ['tasks'] });
       options.onSuccess && options.onSuccess();
-    }
+    },
   });
 };
 
@@ -111,7 +108,7 @@ export const useCreateBulkSessions = (selectedRows, options = {}) => {
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
       queryClient.refetchQueries({ queryKey: ['tasks'] });
       options.onSuccess && options.onSuccess();
-    }
+    },
   });
 };
 
@@ -125,7 +122,7 @@ export const useArchiveData = (selectedIds, options = {}) => {
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
       queryClient.refetchQueries({ queryKey: ['tasks'] });
       options.onSuccess && options.onSuccess();
-    }
+    },
   });
 };
 
@@ -134,7 +131,7 @@ export const useAssignees = (options = {}) => {
   return useQuery({
     queryKey: ['assignees'],
     queryFn: getAssignees,
-    ...options
+    ...options,
   });
 };
 
@@ -143,6 +140,6 @@ export const useTaskablePatients = (options = {}) => {
   return useQuery({
     queryKey: ['taskablePatients'],
     queryFn: getTaskablePatients,
-    ...options
+    ...options,
   });
 };

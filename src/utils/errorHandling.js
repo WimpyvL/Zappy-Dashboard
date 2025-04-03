@@ -23,15 +23,19 @@ export const getErrorMessage = (error) => {
       }
 
       // Multiple error messages may be returned as an array
-      if (error.response.data.errors && Array.isArray(error.response.data.errors)) {
+      if (
+        error.response.data.errors &&
+        Array.isArray(error.response.data.errors)
+      ) {
         return error.response.data.errors.join(', ');
       }
 
       // Sometimes errors are returned as an object with field names as keys
-      if (error.response.data.errors && typeof error.response.data.errors === 'object') {
-        return Object.values(error.response.data.errors)
-          .flat()
-          .join(', ');
+      if (
+        error.response.data.errors &&
+        typeof error.response.data.errors === 'object'
+      ) {
+        return Object.values(error.response.data.errors).flat().join(', ');
       }
     }
 
@@ -84,7 +88,10 @@ export const getFormErrors = (error) => {
   }
 
   // Handle Laravel/Symfony style validation errors
-  if (error.response.data.errors && typeof error.response.data.errors === 'object') {
+  if (
+    error.response.data.errors &&
+    typeof error.response.data.errors === 'object'
+  ) {
     // Convert array of errors for each field to a single string
     Object.entries(error.response.data.errors).forEach(([field, messages]) => {
       formErrors[field] = Array.isArray(messages) ? messages[0] : messages;
@@ -148,7 +155,7 @@ const errorHandling = {
   getErrorMessage,
   getFormErrors,
   logError,
-  handleSpecialErrors
+  handleSpecialErrors,
 };
 
 export default errorHandling;

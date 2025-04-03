@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import {
   Search,
   Filter,
@@ -11,36 +11,36 @@ import {
   UserCheck,
   ChevronLeft,
   ChevronRight,
-} from "lucide-react";
-import PatientModal from "./PatientModal";
-import apiService from "../../utils/apiService";
+} from 'lucide-react';
+import PatientModal from './PatientModal';
+import apiService from '../../utils/apiService';
 
 const StatusBadge = ({ status }) => {
-  if (status === "active") {
+  if (status === 'active') {
     return (
       <span className="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">
         Active
       </span>
     );
-  } else if (status === "inactive") {
+  } else if (status === 'inactive') {
     return (
       <span className="px-2 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-800">
         Inactive
       </span>
     );
-  } else if (status === "suspended") {
+  } else if (status === 'suspended') {
     return (
       <span className="px-2 py-1 text-xs font-medium rounded-full bg-red-100 text-red-800">
         Suspended
       </span>
     );
-  } else if (status === "pending") {
+  } else if (status === 'pending') {
     return (
       <span className="px-2 py-1 text-xs font-medium rounded-full bg-yellow-100 text-yellow-800">
         Pending
       </span>
     );
-  } else if (status === "blacklisted") {
+  } else if (status === 'blacklisted') {
     return (
       <span className="px-2 py-1 text-xs font-medium rounded-full bg-black text-white">
         Blacklisted
@@ -84,12 +84,12 @@ const Patients = () => {
   });
 
   // Filter and search state
-  const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
-  const [affiliateFilter, setAffiliateFilter] = useState("all");
-  const [tagFilter, setTagFilter] = useState("all");
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [affiliateFilter, setAffiliateFilter] = useState('all');
+  const [tagFilter, setTagFilter] = useState('all');
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
-  const [searchType, setSearchType] = useState("name"); // name, email, phone, order
+  const [searchType, setSearchType] = useState('name'); // name, email, phone, order
   const [currentPage, setCurrentPage] = useState(1);
 
   // Selected patients and modals
@@ -114,16 +114,16 @@ const Patients = () => {
         params.search_by = searchType;
       }
 
-      if (statusFilter !== "all") {
+      if (statusFilter !== 'all') {
         params.status = statusFilter;
       }
 
-      if (tagFilter !== "all") {
+      if (tagFilter !== 'all') {
         params.tag_id = tagFilter;
       }
 
-      if (affiliateFilter !== "all") {
-        params.is_affiliate = affiliateFilter === "yes";
+      if (affiliateFilter !== 'all') {
+        params.is_affiliate = affiliateFilter === 'yes';
       }
 
       // Call API
@@ -139,8 +139,8 @@ const Patients = () => {
         current_page: currentPage,
       });
     } catch (err) {
-      console.error("Error fetching patients:", err);
-      setError(err.message || "Failed to load patients");
+      console.error('Error fetching patients:', err);
+      setError(err.message || 'Failed to load patients');
     } finally {
       setLoading(false);
     }
@@ -152,7 +152,7 @@ const Patients = () => {
       const result = await apiService.tags.getAll();
       setTags(result.data || []);
     } catch (err) {
-      console.error("Error fetching tags:", err);
+      console.error('Error fetching tags:', err);
     }
   };
 
@@ -227,11 +227,11 @@ const Patients = () => {
 
   // Reset filters
   const resetFilters = () => {
-    setSearchTerm("");
-    setStatusFilter("all");
-    setAffiliateFilter("all");
-    setTagFilter("all");
-    setSearchType("name");
+    setSearchTerm('');
+    setStatusFilter('all');
+    setAffiliateFilter('all');
+    setTagFilter('all');
+    setSearchType('name');
     setCurrentPage(1);
   };
 
@@ -254,7 +254,7 @@ const Patients = () => {
 
       // Add ellipsis if needed
       if (currentPage > 3) {
-        pages.push("...");
+        pages.push('...');
       }
 
       // Add pages around current
@@ -268,7 +268,7 @@ const Patients = () => {
 
       // Add ellipsis if needed
       if (currentPage < totalPages - 2) {
-        pages.push("...");
+        pages.push('...');
       }
 
       // Add last page if not already included
@@ -280,12 +280,12 @@ const Patients = () => {
     return (
       <div className="flex items-center space-x-1">
         <button
-          onClick={() => goToLink("prev")}
+          onClick={() => goToLink('prev')}
           disabled={!paginationLinks.prev}
           className={`relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium ${
             paginationLinks.prev
-              ? "text-gray-500 hover:bg-gray-50"
-              : "text-gray-300 cursor-not-allowed"
+              ? 'text-gray-500 hover:bg-gray-50'
+              : 'text-gray-300 cursor-not-allowed'
           }`}
         >
           <span className="sr-only">Previous</span>
@@ -293,7 +293,7 @@ const Patients = () => {
         </button>
 
         {pages.map((page, index) =>
-          page === "..." ? (
+          page === '...' ? (
             <span
               key={`ellipsis-${index}`}
               className="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700"
@@ -306,8 +306,8 @@ const Patients = () => {
               onClick={() => handlePageChange(page)}
               className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
                 currentPage === page
-                  ? "z-10 bg-indigo-50 border-indigo-500 text-indigo-600"
-                  : "bg-white border-gray-300 text-gray-700 hover:bg-gray-50"
+                  ? 'z-10 bg-indigo-50 border-indigo-500 text-indigo-600'
+                  : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
               }`}
             >
               {page}
@@ -316,12 +316,12 @@ const Patients = () => {
         )}
 
         <button
-          onClick={() => goToLink("next")}
+          onClick={() => goToLink('next')}
           disabled={!paginationLinks.next}
           className={`relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium ${
             paginationLinks.next
-              ? "text-gray-500 hover:bg-gray-50"
-              : "text-gray-300 cursor-not-allowed"
+              ? 'text-gray-500 hover:bg-gray-50'
+              : 'text-gray-300 cursor-not-allowed'
           }`}
         >
           <span className="sr-only">Next</span>
@@ -420,7 +420,7 @@ const Patients = () => {
             className="text-indigo-600 hover:text-indigo-900 text-sm font-medium"
             onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
           >
-            {showAdvancedFilters ? "Hide Filters" : "Advanced Filters"}
+            {showAdvancedFilters ? 'Hide Filters' : 'Advanced Filters'}
           </button>
         </div>
 
@@ -571,7 +571,7 @@ const Patients = () => {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className="px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800">
-                        {patient.risk_level || "Unknown"}
+                        {patient.risk_level || 'Unknown'}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
@@ -579,10 +579,10 @@ const Patients = () => {
                         ? new Date(
                             patient.next_session_date
                           ).toLocaleDateString()
-                        : "None scheduled"}
+                        : 'None scheduled'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {patient.doctor || "Not assigned"}
+                      {patient.doctor || 'Not assigned'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <div className="flex items-center justify-end space-x-3">
@@ -618,18 +618,18 @@ const Patients = () => {
           <div className="flex-1 flex justify-between sm:hidden">
             <button
               className={`relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 ${
-                !paginationLinks.prev ? "opacity-50 cursor-not-allowed" : ""
+                !paginationLinks.prev ? 'opacity-50 cursor-not-allowed' : ''
               }`}
-              onClick={() => goToLink("prev")}
+              onClick={() => goToLink('prev')}
               disabled={!paginationLinks.prev}
             >
               Previous
             </button>
             <button
               className={`ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 ${
-                !paginationLinks.next ? "opacity-50 cursor-not-allowed" : ""
+                !paginationLinks.next ? 'opacity-50 cursor-not-allowed' : ''
               }`}
-              onClick={() => goToLink("next")}
+              onClick={() => goToLink('next')}
               disabled={!paginationLinks.next}
             >
               Next
@@ -639,15 +639,15 @@ const Patients = () => {
           <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
             <div>
               <p className="text-sm text-gray-700">
-                Showing{" "}
+                Showing{' '}
                 <span className="font-medium">
                   {paginationMeta.count > 0 ? 1 : 0}
-                </span>{" "}
-                to <span className="font-medium">{paginationMeta.count}</span>{" "}
-                of{" "}
+                </span>{' '}
+                to <span className="font-medium">{paginationMeta.count}</span>{' '}
+                of{' '}
                 <span className="font-medium">
                   {paginationMeta.total_count}
-                </span>{" "}
+                </span>{' '}
                 results
               </p>
             </div>

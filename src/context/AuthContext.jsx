@@ -1,89 +1,59 @@
 // context/AuthContext.js
-import React, { createContext, useState, useEffect, useContext } from "react";
-import apiService from "../utils/apiService";
-import errorHandling from "../utils/errorHandling";
+import React, { createContext, useState, useEffect, useContext } from 'react';
+import apiService from '../utils/apiService';
+import errorHandling from '../utils/errorHandling';
 
 // Create context
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
   const [currentUser, setCurrentUser] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  // Initialize loading to false, as we are not checking localStorage anymore
+  // Auth status will be determined by API calls or login actions.
+  const [loading, setLoading] = useState(false);
+  // isAuthenticated is now derived directly from currentUser state
+  const isAuthenticated = !!currentUser;
   const [error, setError] = useState(null);
 
-  useEffect(() => {
-    // Check if user is logged in from localStorage
-    const checkAuth = async () => {
-      try {
-        const storedAuth = localStorage.getItem("isAuthenticated");
-        const storedUser = localStorage.getItem("user");
-        const token = localStorage.getItem("token");
+  // Removed useEffect checking localStorage on initial load.
+  // Authentication state will be established via login or API calls
+  // triggering the interceptor (which uses refreshToken from localStorage).
 
-        if (storedAuth === "true" && storedUser && token) {
-          // Parse the stored user data
-          const userData = JSON.parse(storedUser);
-
-          // Set the current user and authenticated state
-          setCurrentUser(userData);
-          setIsAuthenticated(true);
-
-          // Optionally validate token with the server
-          // This is commented out to avoid unnecessary API calls on each render
-          // but can be enabled if needed
-          /*
-          try {
-            const userProfile = await apiService.users.getProfile();
-            setCurrentUser(userProfile);
-          } catch (error) {
-            // If token validation fails, clear auth data
-            localStorage.removeItem("token");
-            localStorage.removeItem("refreshToken");
-            localStorage.removeItem("isAuthenticated");
-            localStorage.removeItem("user");
-            setCurrentUser(null);
-            setIsAuthenticated(false);
-            setError("Your session has expired. Please log in again.");
-          }
-          */
-        } else {
-          // No stored auth data or invalid data
-          setCurrentUser(null);
-          setIsAuthenticated(false);
-        }
-      } catch (error) {
-        errorHandling.logError(error, "AuthContext.checkAuth");
-        setError("Failed to verify authentication status");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    checkAuth();
-  }, []);
-
-  // Function to set user data (called from Login component)
-  const setUser = (userData) => {
-    console.log("AuthContext: Setting user data", userData);
+  // Function to set user data (e.g., after login or profile fetch)
+  // This should also handle storing the refreshToken if applicable
+  const setUser = (userData, refreshToken) => {
+    console.log('AuthContext: Setting user data', userData);
     setCurrentUser(userData);
-    setIsAuthenticated(true);
+    // Store refreshToken securely (localStorage is used here based on existing interceptor)
+    if (refreshToken) {
+      localStorage.setItem('refreshToken', refreshToken);
+    } else {
+      // If no refresh token provided (e.g., profile update), don't clear existing one
+      // localStorage.removeItem('refreshToken'); // Decide if this should be cleared
+    }
+    // Removed setting localStorage for token, user, isAuthenticated
   };
 
   // Logout function
-  const logout = () => {
-    console.log("AuthContext: Logging out");
+  const logout = async () => { // Make async if calling API logout
+    console.log('AuthContext: Logging out');
 
-    // Clear auth data
-    localStorage.removeItem("token");
-    localStorage.removeItem("refreshToken");
-    localStorage.removeItem("isAuthenticated");
-    localStorage.removeItem("user");
+    // Optional: Call API logout endpoint
+    try {
+        await apiService.auth.logout(); // Assuming this exists and handles server-side session invalidation
+    } catch (logoutError) {
+        console.error("Logout API call failed:", logoutError);
+        // Decide if you want to proceed with client-side logout anyway
+    }
 
-    // Update state
+    // Clear sensitive data from state and refreshToken from localStorage
     setCurrentUser(null);
-    setIsAuthenticated(false);
+    localStorage.removeItem('refreshToken');
+    // Removed clearing token, user, isAuthenticated from localStorage
 
-    console.log("AuthContext: Logout completed");
+    console.log('AuthContext: Logout completed');
+    // Optionally redirect to login page
+    // window.location.href = '/login';
   };
 
   // Register function
@@ -95,7 +65,7 @@ export const AuthProvider = ({ children }) => {
       const response = await apiService.auth.register(userData);
       return { success: true, user: response.user };
     } catch (error) {
-      errorHandling.logError(error, "AuthContext.register");
+      errorHandling.logError(error, 'AuthContext.register');
       setError(errorHandling.getErrorMessage(error));
       return {
         success: false,
@@ -115,15 +85,12 @@ export const AuthProvider = ({ children }) => {
     try {
       const updatedUser = await apiService.users.updateProfile(userData);
 
-      // Update stored user data
-      localStorage.setItem("user", JSON.stringify(updatedUser));
-
-      // Update state
+      // Update state only, removed localStorage.setItem('user', ...)
       setCurrentUser(updatedUser);
 
       return { success: true, user: updatedUser };
     } catch (error) {
-      errorHandling.logError(error, "AuthContext.updateProfile");
+      errorHandling.logError(error, 'AuthContext.updateProfile');
       setError(errorHandling.getErrorMessage(error));
       return {
         success: false,
@@ -144,7 +111,7 @@ export const AuthProvider = ({ children }) => {
       await apiService.users.changePassword(currentPassword, newPassword);
       return { success: true };
     } catch (error) {
-      errorHandling.logError(error, "AuthContext.changePassword");
+      errorHandling.logError(error, 'AuthContext.changePassword');
       setError(errorHandling.getErrorMessage(error));
       return {
         success: false,
@@ -165,7 +132,7 @@ export const AuthProvider = ({ children }) => {
       await apiService.auth.forgotPassword(email);
       return { success: true };
     } catch (error) {
-      errorHandling.logError(error, "AuthContext.forgotPassword");
+      errorHandling.logError(error, 'AuthContext.forgotPassword');
       setError(errorHandling.getErrorMessage(error));
       return { success: false, error: errorHandling.getErrorMessage(error) };
     } finally {
@@ -182,7 +149,7 @@ export const AuthProvider = ({ children }) => {
       await apiService.auth.resetPassword(token, newPassword);
       return { success: true };
     } catch (error) {
-      errorHandling.logError(error, "AuthContext.resetPassword");
+      errorHandling.logError(error, 'AuthContext.resetPassword');
       setError(errorHandling.getErrorMessage(error));
       return {
         success: false,
@@ -199,9 +166,10 @@ export const AuthProvider = ({ children }) => {
     setError(null);
   };
 
+  // Derive isAuthenticated directly from currentUser state
   const value = {
     currentUser,
-    isAuthenticated,
+    isAuthenticated: !!currentUser, // Derived state
     loading,
     error,
     setUser,

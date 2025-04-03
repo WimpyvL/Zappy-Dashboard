@@ -1,13 +1,13 @@
 %%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#F8F9FA', 'primaryTextColor': '#212529', 'lineColor': '#6C757D', 'textColor': '#343A40', 'fontSize': '14px'}}}%%
 graph TD
-    subgraph User Interface (React Components)
-        UI_Pages["Pages (`src/pages/*`)"] -- Uses --> UI_Layouts["Layouts (`src/layouts/*`)"];
-        UI_Pages -- Uses --> UI_Components["Reusable Components"];
-        UI_Layouts -- Contains --> UI_Sidebar["Sidebar (`Sidebar.js`)"];
-        UI_Layouts -- Contains --> UI_Header["Header (`Headers.js`)"];
-        UI_Pages -- Uses --> RQ_Hooks["React Query Hooks (`src/apis/*/hooks.js`)"];
-        UI_Pages -- Uses --> Context_Hooks["Context Hooks (`useAuth`, `useCart`, etc.)"];
-    end
+subgraph User Interface (React Components)
+UI_Pages["Pages (`src/pages/*`)"] -- Uses --> UI_Layouts["Layouts (`src/layouts/*`)"];
+UI_Pages -- Uses --> UI_Components["Reusable Components"];
+UI_Layouts -- Contains --> UI_Sidebar["Sidebar (`Sidebar.js`)"];
+UI_Layouts -- Contains --> UI_Header["Header (`Headers.js`)"];
+UI_Pages -- Uses --> RQ_Hooks["React Query Hooks (`src/apis/*/hooks.js`)"];
+UI_Pages -- Uses --> Context_Hooks["Context Hooks (`useAuth`, `useCart`, etc.)"];
+end
 
     subgraph State Management
         RQ_Hooks -- Uses --> RQ_Core["TanStack Query (Core)"];
@@ -54,6 +54,7 @@ graph TD
 
     style AuthGuard fill:#f9f,stroke:#333,stroke-width:2px;
     style LocalStorage fill:#f9f,stroke:#333,stroke-width:2px;
+
 ```
 
 This Mermaid code provides a visual representation of the application's architecture, including:
@@ -63,3 +64,4 @@ This Mermaid code provides a visual representation of the application's architec
 *   Data Layer (Hooks, API functions, Axios, Interceptors)
 *   Key Utilities
 *   Highlights insecure localStorage usage and disabled Auth Guard.
+```

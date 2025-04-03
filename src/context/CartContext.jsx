@@ -17,10 +17,10 @@ export const CartProvider = ({ children }) => {
   }, [cartItems]);
 
   const addItem = (product, dose, quantity = 1) => {
-    setCartItems(prevItems => {
+    setCartItems((prevItems) => {
       // Check if the specific dose of the product is already in the cart
       const existingItemIndex = prevItems.findIndex(
-        item => item.productId === product.id && item.doseId === dose.id
+        (item) => item.productId === product.id && item.doseId === dose.id
       );
 
       if (existingItemIndex > -1) {
@@ -40,25 +40,29 @@ export const CartProvider = ({ children }) => {
             price: dose.price,
             quantity: quantity,
             // Add other relevant product details if needed, e.g., image
-          }
+          },
         ];
       }
     });
   };
 
   const removeItem = (doseId) => {
-    setCartItems(prevItems => prevItems.filter(item => item.doseId !== doseId));
+    setCartItems((prevItems) =>
+      prevItems.filter((item) => item.doseId !== doseId)
+    );
   };
 
   const updateQuantity = (doseId, newQuantity) => {
-    setCartItems(prevItems => {
-      return prevItems.map(item => {
-        if (item.doseId === doseId) {
-          // Ensure quantity doesn't go below 1
-          return { ...item, quantity: Math.max(1, newQuantity) };
-        }
-        return item;
-      }).filter(item => item.quantity > 0); // Remove item if quantity becomes 0 or less (optional)
+    setCartItems((prevItems) => {
+      return prevItems
+        .map((item) => {
+          if (item.doseId === doseId) {
+            // Ensure quantity doesn't go below 1
+            return { ...item, quantity: Math.max(1, newQuantity) };
+          }
+          return item;
+        })
+        .filter((item) => item.quantity > 0); // Remove item if quantity becomes 0 or less (optional)
     });
   };
 
@@ -67,7 +71,10 @@ export const CartProvider = ({ children }) => {
   };
 
   const getCartTotal = () => {
-    return cartItems.reduce((total, item) => total + item.price * item.quantity, 0);
+    return cartItems.reduce(
+      (total, item) => total + item.price * item.quantity,
+      0
+    );
   };
 
   const getCartItemCount = () => {

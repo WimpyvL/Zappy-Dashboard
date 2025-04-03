@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState } from 'react';
 import {
   Card,
   Button,
@@ -15,7 +15,7 @@ import {
   Form,
   Switch,
   Popconfirm,
-} from "antd";
+} from 'antd';
 import {
   PlusOutlined,
   EditOutlined,
@@ -23,7 +23,7 @@ import {
   BranchesOutlined,
   ArrowRightOutlined,
   QuestionCircleOutlined,
-} from "@ant-design/icons";
+} from '@ant-design/icons';
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -52,11 +52,11 @@ const FormConditionals = ({
   // Filter to just elements that can be used in conditionals (those with options/values)
   const conditionalSourceElements = allElements.filter((element) =>
     [
-      "multiple_choice",
-      "checkboxes",
-      "dropdown",
-      "short_text",
-      "number",
+      'multiple_choice',
+      'checkboxes',
+      'dropdown',
+      'short_text',
+      'number',
     ].includes(element.type)
   );
 
@@ -103,27 +103,27 @@ const FormConditionals = ({
         setModalVisible(false);
       })
       .catch((errorInfo) => {
-        console.log("Validate Failed:", errorInfo);
+        console.log('Validate Failed:', errorInfo);
       });
   };
 
   // Get display text for a condition
   const getConditionText = (conditional) => {
     const element = getElementById(conditional.elementId);
-    if (!element) return "Unknown element";
+    if (!element) return 'Unknown element';
 
     const operator =
-      conditional.operator === "equals"
-        ? "equals"
-        : conditional.operator === "not_equals"
-        ? "does not equal"
-        : conditional.operator === "contains"
-        ? "contains"
-        : conditional.operator === "greater_than"
-        ? "is greater than"
-        : conditional.operator === "less_than"
-        ? "is less than"
-        : conditional.operator;
+      conditional.operator === 'equals'
+        ? 'equals'
+        : conditional.operator === 'not_equals'
+          ? 'does not equal'
+          : conditional.operator === 'contains'
+            ? 'contains'
+            : conditional.operator === 'greater_than'
+              ? 'is greater than'
+              : conditional.operator === 'less_than'
+                ? 'is less than'
+                : conditional.operator;
 
     return `If "${element.label}" ${operator} "${conditional.value}"`;
   };
@@ -132,36 +132,36 @@ const FormConditionals = ({
   const getActionText = (conditional) => {
     if (conditional.thenGoToPage !== undefined) {
       const targetPage = pages[conditional.thenGoToPage];
-      return `Go to page: ${targetPage ? targetPage.title : "Unknown page"}`;
+      return `Go to page: ${targetPage ? targetPage.title : 'Unknown page'}`;
     }
 
     if (conditional.thenShowElementId) {
       const element = getElementById(conditional.thenShowElementId);
-      return `${conditional.showElement ? "Show" : "Hide"} field: ${
-        element ? element.label : "Unknown field"
+      return `${conditional.showElement ? 'Show' : 'Hide'} field: ${
+        element ? element.label : 'Unknown field'
       }`;
     }
 
-    return "No action specified";
+    return 'No action specified';
   };
 
   // Table columns
   const columns = [
     {
-      title: "Condition",
-      dataIndex: "elementId",
-      key: "condition",
+      title: 'Condition',
+      dataIndex: 'elementId',
+      key: 'condition',
       render: (_, record) => getConditionText(record),
     },
     {
-      title: "Then",
-      dataIndex: "action",
-      key: "action",
+      title: 'Then',
+      dataIndex: 'action',
+      key: 'action',
       render: (_, record) => getActionText(record),
     },
     {
-      title: "Actions",
-      key: "actions",
+      title: 'Actions',
+      key: 'actions',
       width: 120,
       render: (_, record, index) => (
         <Space>
@@ -198,7 +198,7 @@ const FormConditionals = ({
 
   // Render options based on selected element
   const renderValueOptions = () => {
-    const elementId = form.getFieldValue("elementId");
+    const elementId = form.getFieldValue('elementId');
     if (!elementId) return null;
 
     const element = getElementById(elementId);
@@ -206,7 +206,7 @@ const FormConditionals = ({
 
     // For elements with predefined options
     if (
-      ["multiple_choice", "checkboxes", "dropdown"].includes(element.type) &&
+      ['multiple_choice', 'checkboxes', 'dropdown'].includes(element.type) &&
       element.options
     ) {
       return (
@@ -226,14 +226,14 @@ const FormConditionals = ({
 
   // Render operator options based on selected element
   const renderOperatorOptions = () => {
-    const elementId = form.getFieldValue("elementId");
+    const elementId = form.getFieldValue('elementId');
     if (!elementId) return null;
 
     const element = getElementById(elementId);
     if (!element) return null;
 
     // Different operators based on element type
-    if (element.type === "number") {
+    if (element.type === 'number') {
       return (
         <>
           <Option value="equals">Equals</Option>
@@ -242,7 +242,7 @@ const FormConditionals = ({
           <Option value="less_than">Is less than</Option>
         </>
       );
-    } else if (element.type === "short_text") {
+    } else if (element.type === 'short_text') {
       return (
         <>
           <Option value="equals">Equals</Option>
@@ -271,12 +271,12 @@ const FormConditionals = ({
   // Handle action type change
   const handleActionTypeChange = (value) => {
     // Reset action-specific fields
-    if (value === "go_to_page") {
+    if (value === 'go_to_page') {
       form.setFieldsValue({
         thenShowElementId: undefined,
         showElement: undefined,
       });
-    } else if (value === "show_hide") {
+    } else if (value === 'show_hide') {
       form.setFieldsValue({
         thenGoToPage: undefined,
       });
@@ -342,16 +342,16 @@ const FormConditionals = ({
       <Modal
         title={
           <div className="modal-title">
-            <BranchesOutlined />{" "}
+            <BranchesOutlined />{' '}
             {editingIndex === null
-              ? "Add Conditional Rule"
-              : "Edit Conditional Rule"}
+              ? 'Add Conditional Rule'
+              : 'Edit Conditional Rule'}
           </div>
         }
         visible={modalVisible}
         onOk={handleFormSubmit}
         onCancel={() => setModalVisible(false)}
-        okText={editingIndex === null ? "Add Rule" : "Save Changes"}
+        okText={editingIndex === null ? 'Add Rule' : 'Save Changes'}
         width={700}
       >
         <Form form={form} layout="vertical">
@@ -359,7 +359,7 @@ const FormConditionals = ({
             <Form.Item
               name="elementId"
               label="When this field"
-              rules={[{ required: true, message: "Please select a field" }]}
+              rules={[{ required: true, message: 'Please select a field' }]}
             >
               <Select
                 placeholder="Select a field"
@@ -374,7 +374,7 @@ const FormConditionals = ({
             <Form.Item
               name="operator"
               label="Operator"
-              rules={[{ required: true, message: "Please select an operator" }]}
+              rules={[{ required: true, message: 'Please select an operator' }]}
             >
               <Select placeholder="Select operator">
                 {renderOperatorOptions()}
@@ -384,7 +384,7 @@ const FormConditionals = ({
             <Form.Item
               name="value"
               label="Value"
-              rules={[{ required: true, message: "Please enter a value" }]}
+              rules={[{ required: true, message: 'Please enter a value' }]}
             >
               {renderValueOptions()}
             </Form.Item>
@@ -413,14 +413,14 @@ const FormConditionals = ({
               }
             >
               {({ getFieldValue }) => {
-                const actionType = getFieldValue("actionType") || "go_to_page";
+                const actionType = getFieldValue('actionType') || 'go_to_page';
 
-                return actionType === "go_to_page" ? (
+                return actionType === 'go_to_page' ? (
                   <Form.Item
                     name="thenGoToPage"
                     label="Go to Page"
                     rules={[
-                      { required: true, message: "Please select a page" },
+                      { required: true, message: 'Please select a page' },
                     ]}
                   >
                     <Select placeholder="Select destination page">
@@ -437,13 +437,13 @@ const FormConditionals = ({
                       name="thenShowElementId"
                       label="Target Field"
                       rules={[
-                        { required: true, message: "Please select a field" },
+                        { required: true, message: 'Please select a field' },
                       ]}
                     >
                       <Select placeholder="Select field to show/hide">
                         {allElements.map((element) => (
                           <Option key={element.id} value={element.id}>
-                            {element.label}{" "}
+                            {element.label}{' '}
                             <Text type="secondary">
                               (Page: {element.pageName})
                             </Text>

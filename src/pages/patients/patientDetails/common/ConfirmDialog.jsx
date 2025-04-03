@@ -1,6 +1,14 @@
 import React from 'react';
 
-const ConfirmDialog = ({ isOpen, title, message, confirmText, cancelText, onConfirm, onCancel }) => {
+const ConfirmDialog = ({
+  isOpen,
+  title,
+  message,
+  confirmText,
+  cancelText,
+  onConfirm,
+  onCancel,
+}) => {
   if (!isOpen) return null;
 
   return (

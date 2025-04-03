@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from "react";
-import { createPortal } from "react-dom";
+import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import {
   Search,
   Plus,
@@ -13,8 +13,8 @@ import {
   Download,
   Info,
   Filter,
-} from "lucide-react";
-import { toast } from "react-toastify";
+} from 'lucide-react';
+import { toast } from 'react-toastify';
 
 // Import React Query hooks
 import {
@@ -24,10 +24,10 @@ import {
   useUpdateInsuranceRecord,
   useUploadInsuranceDocument,
   useDeleteInsuranceDocument,
-} from "../../apis/insurances/hooks";
+} from '../../apis/insurances/hooks';
 
 const StatusBadge = ({ status }) => {
-  if (status === "verified" || status === "prior_auth_approved") {
+  if (status === 'verified' || status === 'prior_auth_approved') {
     return (
       <span className="flex items-center px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">
         <CheckCircle className="h-3 w-3 mr-1" />
@@ -35,9 +35,9 @@ const StatusBadge = ({ status }) => {
       </span>
     );
   } else if (
-    status === "pending" ||
-    status === "initiated" ||
-    status === "prior_auth_initiated"
+    status === 'pending' ||
+    status === 'initiated' ||
+    status === 'prior_auth_initiated'
   ) {
     return (
       <span className="flex items-center px-2 py-1 text-xs font-medium rounded-full bg-yellow-100 text-yellow-800">
@@ -45,14 +45,14 @@ const StatusBadge = ({ status }) => {
         Pending
       </span>
     );
-  } else if (status === "denied" || status === "prior_auth_denied") {
+  } else if (status === 'denied' || status === 'prior_auth_denied') {
     return (
       <span className="flex items-center px-2 py-1 text-xs font-medium rounded-full bg-red-100 text-red-800">
         <X className="h-3 w-3 mr-1" />
         Denied
       </span>
     );
-  } else if (status === "not_applicable") {
+  } else if (status === 'not_applicable') {
     return (
       <span className="flex items-center px-2 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-800">
         <Info className="h-3 w-3 mr-1" />
@@ -64,34 +64,34 @@ const StatusBadge = ({ status }) => {
 };
 
 const InsuranceDocumentation = () => {
-  const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
   const [showRecordModal, setShowRecordModal] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
   const [selectedRecordId, setSelectedRecordId] = useState(null);
-  const [activeTab, setActiveTab] = useState("info");
+  const [activeTab, setActiveTab] = useState('info');
   const [formData, setFormData] = useState({
-    patient_id: "",
-    patientName: "", // For display purposes only
-    provider: "",
-    policy_number: "",
-    group_number: "",
-    verification_status: "pending",
-    coverage_type: "Medical",
-    coverage_details: "",
+    patient_id: '',
+    patientName: '', // For display purposes only
+    provider: '',
+    policy_number: '',
+    group_number: '',
+    verification_status: 'pending',
+    coverage_type: 'Medical',
+    coverage_details: '',
     prior_auth_status: null,
     prior_auth_expiry_date: null,
-    notes: "",
+    notes: '',
   });
   const [newLog, setNewLog] = useState({
-    status: "pending",
-    notes: "",
+    status: 'pending',
+    notes: '',
   });
 
   // Fetch insurance records with React Query
   const { data: insuranceRecordsData, isLoading } = useInsuranceRecords({
     search: searchTerm,
-    status: statusFilter !== "all" ? statusFilter : undefined,
+    status: statusFilter !== 'all' ? statusFilter : undefined,
   });
 
   const insuranceRecords = insuranceRecordsData?.data || [];
@@ -104,11 +104,11 @@ const InsuranceDocumentation = () => {
   } = useInsuranceRecordById(selectedRecordId, {
     enabled: !!selectedRecordId,
     onSuccess: (data) => {
-      console.log("Successfully fetched record details:", data);
+      console.log('Successfully fetched record details:', data);
     },
     onError: (error) => {
-      console.error("Error fetching record details:", error);
-      toast.error("Failed to load record details");
+      console.error('Error fetching record details:', error);
+      toast.error('Failed to load record details');
     },
   });
 
@@ -117,7 +117,7 @@ const InsuranceDocumentation = () => {
   // Add debug useEffect for modal state
   useEffect(() => {
     if (showViewModal) {
-      console.log("Modal state:", {
+      console.log('Modal state:', {
         showViewModal,
         selectedRecordId,
         hasSelectedRecordData: !!selectedRecordData?.data,
@@ -128,7 +128,7 @@ const InsuranceDocumentation = () => {
   // Set up mutations
   const createRecordMutation = useCreateInsuranceRecord({
     onSuccess: () => {
-      toast.success("Insurance record created successfully");
+      toast.success('Insurance record created successfully');
       setShowRecordModal(false);
     },
     onError: (error) => {
@@ -138,7 +138,7 @@ const InsuranceDocumentation = () => {
 
   const updateRecordMutation = useUpdateInsuranceRecord({
     onSuccess: () => {
-      toast.success("Insurance record updated successfully");
+      toast.success('Insurance record updated successfully');
     },
     onError: (error) => {
       toast.error(`Failed to update record: ${error.message}`);
@@ -147,7 +147,7 @@ const InsuranceDocumentation = () => {
 
   const uploadDocumentMutation = useUploadInsuranceDocument(selectedRecordId, {
     onSuccess: () => {
-      toast.success("Document uploaded successfully");
+      toast.success('Document uploaded successfully');
     },
     onError: (error) => {
       toast.error(`Failed to upload document: ${error.message}`);
@@ -156,7 +156,7 @@ const InsuranceDocumentation = () => {
 
   const deleteDocumentMutation = useDeleteInsuranceDocument(selectedRecordId, {
     onSuccess: () => {
-      toast.success("Document deleted successfully");
+      toast.success('Document deleted successfully');
     },
     onError: (error) => {
       toast.error(`Failed to delete document: ${error.message}`);
@@ -170,26 +170,26 @@ const InsuranceDocumentation = () => {
     try {
       return {
         id: apiRecord.id,
-        patientId: apiRecord.patient_id?.toString() || "",
+        patientId: apiRecord.patient_id?.toString() || '',
         patientName:
           apiRecord.patient_name || `Patient ID: ${apiRecord.patient_id}`,
-        insuranceProvider: apiRecord.provider || "N/A",
-        policyNumber: apiRecord.policy_number || "N/A",
-        groupNumber: apiRecord.group_number || "N/A",
-        verificationStatus: apiRecord.verification_status || "pending",
+        insuranceProvider: apiRecord.provider || 'N/A',
+        policyNumber: apiRecord.policy_number || 'N/A',
+        groupNumber: apiRecord.group_number || 'N/A',
+        verificationStatus: apiRecord.verification_status || 'pending',
         verificationDate: apiRecord.verified_at || new Date().toISOString(),
-        coverageType: apiRecord.coverage_type || "Medical",
-        coverageDetails: apiRecord.coverage_details || "",
+        coverageType: apiRecord.coverage_type || 'Medical',
+        coverageDetails: apiRecord.coverage_details || '',
         priorAuthRequired: apiRecord.prior_auth_status !== null,
         priorAuthStatus: apiRecord.prior_auth_status || null,
         priorAuthExpiryDate: apiRecord.prior_auth_expiry_date || null,
-        notes: apiRecord.notes || "",
+        notes: apiRecord.notes || '',
         documents: apiRecord.documents || [],
         verificationLogs:
           parseVerificationHistory(apiRecord.verification_history) || [],
       };
     } catch (error) {
-      console.error("Error transforming record:", error);
+      console.error('Error transforming record:', error);
       return null;
     }
   };
@@ -202,13 +202,13 @@ const InsuranceDocumentation = () => {
       const history = JSON.parse(historyString);
       return history.map((log, index) => ({
         id: `v${index}`,
-        status: log.status || "pending",
+        status: log.status || 'pending',
         timestamp: log.timestamp || new Date().toISOString(),
-        user: log.user || "System",
-        notes: log.notes || "",
+        user: log.user || 'System',
+        notes: log.notes || '',
       }));
     } catch (e) {
-      console.error("Error parsing verification history:", e);
+      console.error('Error parsing verification history:', e);
       return [];
     }
   };
@@ -228,7 +228,7 @@ const InsuranceDocumentation = () => {
         : true;
 
       const matchesStatus =
-        statusFilter === "all" || record.verificationStatus === statusFilter;
+        statusFilter === 'all' || record.verificationStatus === statusFilter;
 
       return matchesSearch && matchesStatus;
     });
@@ -238,7 +238,7 @@ const InsuranceDocumentation = () => {
     const { name, value, type, checked } = e.target;
     setFormData({
       ...formData,
-      [name]: type === "checkbox" ? checked : value,
+      [name]: type === 'checkbox' ? checked : value,
     });
   };
 
@@ -254,35 +254,35 @@ const InsuranceDocumentation = () => {
   // Handle adding a new insurance record
   const handleAddRecord = () => {
     setFormData({
-      patient_id: "",
-      patientName: "",
-      provider: "",
-      policy_number: "",
-      group_number: "",
-      verification_status: "pending",
-      coverage_type: "Medical",
-      coverage_details: "",
+      patient_id: '',
+      patientName: '',
+      provider: '',
+      policy_number: '',
+      group_number: '',
+      verification_status: 'pending',
+      coverage_type: 'Medical',
+      coverage_details: '',
       prior_auth_status: null,
       prior_auth_expiry_date: null,
-      notes: "",
+      notes: '',
     });
     setShowRecordModal(true);
   };
 
   // Handle viewing a record
   const handleViewRecord = (record) => {
-    console.log("Opening modal for record:", record);
+    console.log('Opening modal for record:', record);
 
     // First set the record ID to trigger the query
     setSelectedRecordId(record.id);
 
     // Set default tab
-    setActiveTab("info");
+    setActiveTab('info');
 
     // Add small delay to ensure states are updated
     setTimeout(() => {
       setShowViewModal(true);
-      console.log("Modal should be visible now");
+      console.log('Modal should be visible now');
     }, 10);
   };
 
@@ -298,17 +298,17 @@ const InsuranceDocumentation = () => {
       coverage_type: formData.coverage_type,
       coverage_details: formData.coverage_details,
       prior_auth_status:
-        formData.verification_status === "not_applicable"
+        formData.verification_status === 'not_applicable'
           ? null
           : formData.prior_auth_status,
       prior_auth_expiry_date: formData.prior_auth_expiry_date,
       notes: formData.notes,
       // Handle self-pay option
-      ...(formData.coverage_type === "Self-Pay" && {
-        verification_status: "not_applicable",
-        provider: "N/A",
-        policy_number: "N/A",
-        group_number: "N/A",
+      ...(formData.coverage_type === 'Self-Pay' && {
+        verification_status: 'not_applicable',
+        provider: 'N/A',
+        policy_number: 'N/A',
+        group_number: 'N/A',
       }),
     };
 
@@ -327,7 +327,7 @@ const InsuranceDocumentation = () => {
 
     const newLogEntry = {
       status: newLog.status,
-      user: "Current User", // In a real app, this would be the logged-in user
+      user: 'Current User', // In a real app, this would be the logged-in user
       notes: newLog.notes,
       timestamp: new Date().toISOString(),
     };
@@ -337,7 +337,7 @@ const InsuranceDocumentation = () => {
 
     // Determine if status should be updated based on log entry
     let statusUpdates = {};
-    if (["verified", "denied", "not_applicable"].includes(newLog.status)) {
+    if (['verified', 'denied', 'not_applicable'].includes(newLog.status)) {
       statusUpdates = {
         verification_status: newLog.status,
         verified_at: new Date().toISOString(),
@@ -345,11 +345,11 @@ const InsuranceDocumentation = () => {
     }
 
     // Handle prior auth status updates
-    if (["prior_auth_approved", "prior_auth_denied"].includes(newLog.status)) {
+    if (['prior_auth_approved', 'prior_auth_denied'].includes(newLog.status)) {
       statusUpdates = {
         ...statusUpdates,
         prior_auth_status:
-          newLog.status === "prior_auth_approved" ? "approved" : "denied",
+          newLog.status === 'prior_auth_approved' ? 'approved' : 'denied',
       };
     }
 
@@ -364,8 +364,8 @@ const InsuranceDocumentation = () => {
 
     // Clear form
     setNewLog({
-      status: "pending",
-      notes: "",
+      status: 'pending',
+      notes: '',
     });
   };
 
@@ -375,8 +375,8 @@ const InsuranceDocumentation = () => {
     if (!file || !selectedRecordId) return;
 
     const formData = new FormData();
-    formData.append("document", file);
-    formData.append("document_type", "card"); // Default type, can be made selectable
+    formData.append('document', file);
+    formData.append('document_type', 'card'); // Default type, can be made selectable
 
     uploadDocumentMutation.mutate(formData);
   };
@@ -402,9 +402,9 @@ const InsuranceDocumentation = () => {
   if (selectedRecord) {
     try {
       formattedSelectedRecord = transformApiData(selectedRecord);
-      console.log("Successfully transformed record:", formattedSelectedRecord);
+      console.log('Successfully transformed record:', formattedSelectedRecord);
     } catch (error) {
-      console.error("Error transforming record:", error);
+      console.error('Error transforming record:', error);
     }
   }
 
@@ -493,8 +493,8 @@ const InsuranceDocumentation = () => {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm text-gray-900">
-                      {record.coverageType === "Self-Pay"
-                        ? "Self-Pay"
+                      {record.coverageType === 'Self-Pay'
+                        ? 'Self-Pay'
                         : record.insuranceProvider}
                     </div>
                     <div className="text-xs text-gray-500">
@@ -502,7 +502,7 @@ const InsuranceDocumentation = () => {
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    {record.coverageType === "Self-Pay" ? (
+                    {record.coverageType === 'Self-Pay' ? (
                       <span className="text-sm text-gray-500">N/A</span>
                     ) : (
                       <>
@@ -524,7 +524,7 @@ const InsuranceDocumentation = () => {
                         status={
                           record.priorAuthStatus
                             ? `prior_auth_${record.priorAuthStatus}`
-                            : "pending"
+                            : 'pending'
                         }
                       />
                     ) : (
@@ -534,7 +534,7 @@ const InsuranceDocumentation = () => {
                     )}
                     {record.priorAuthExpiryDate && (
                       <div className="text-xs text-gray-500 mt-1">
-                        Expires:{" "}
+                        Expires:{' '}
                         {new Date(
                           record.priorAuthExpiryDate
                         ).toLocaleDateString()}
@@ -549,7 +549,7 @@ const InsuranceDocumentation = () => {
                             record.verificationLogs.length - 1
                           ].timestamp
                         ).toLocaleDateString()
-                      : "N/A"}
+                      : 'N/A'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <button
@@ -634,7 +634,7 @@ const InsuranceDocumentation = () => {
                     </select>
                   </div>
 
-                  {formData.coverage_type !== "Self-Pay" && (
+                  {formData.coverage_type !== 'Self-Pay' && (
                     <>
                       <div className="mb-4">
                         <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -679,7 +679,7 @@ const InsuranceDocumentation = () => {
                 </div>
 
                 <div>
-                  {formData.coverage_type === "Self-Pay" ? (
+                  {formData.coverage_type === 'Self-Pay' ? (
                     <div className="mb-4">
                       <p className="text-sm text-gray-500 mb-4">
                         Patient has opted for self-pay instead of using
@@ -741,7 +741,7 @@ const InsuranceDocumentation = () => {
                               setFormData({
                                 ...formData,
                                 prior_auth_status: e.target.checked
-                                  ? "pending"
+                                  ? 'pending'
                                   : null,
                               })
                             }
@@ -760,7 +760,7 @@ const InsuranceDocumentation = () => {
                           <select
                             name="prior_auth_status"
                             className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
-                            value={formData.prior_auth_status || ""}
+                            value={formData.prior_auth_status || ''}
                             onChange={handleInputChange}
                           >
                             <option value="">Not Started</option>
@@ -804,10 +804,10 @@ const InsuranceDocumentation = () => {
                   }
                 >
                   {createRecordMutation.isPending
-                    ? "Submitting..."
-                    : formData.coverage_type === "Self-Pay"
-                    ? "Mark as Self-Pay"
-                    : "Add Insurance Record"}
+                    ? 'Submitting...'
+                    : formData.coverage_type === 'Self-Pay'
+                      ? 'Mark as Self-Pay'
+                      : 'Add Insurance Record'}
                 </button>
               </div>
             </div>
@@ -847,7 +847,7 @@ const InsuranceDocumentation = () => {
                     Error loading record details
                   </p>
                   <p className="text-gray-500 mt-1">
-                    {recordError.message || "Please try again"}
+                    {recordError.message || 'Please try again'}
                   </p>
                 </div>
               ) : !formattedSelectedRecord ? (
@@ -860,21 +860,21 @@ const InsuranceDocumentation = () => {
                   <div className="border-b border-gray-200">
                     <nav className="flex -mb-px">
                       <button
-                        onClick={() => setActiveTab("info")}
+                        onClick={() => setActiveTab('info')}
                         className={`py-4 px-6 text-sm font-medium ${
-                          activeTab === "info"
-                            ? "border-b-2 border-indigo-500 text-indigo-600"
-                            : "text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                          activeTab === 'info'
+                            ? 'border-b-2 border-indigo-500 text-indigo-600'
+                            : 'text-gray-500 hover:text-gray-700 hover:border-gray-300'
                         }`}
                       >
                         Insurance Info
                       </button>
                       <button
-                        onClick={() => setActiveTab("documents")}
+                        onClick={() => setActiveTab('documents')}
                         className={`py-4 px-6 text-sm font-medium ${
-                          activeTab === "documents"
-                            ? "border-b-2 border-indigo-500 text-indigo-600"
-                            : "text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                          activeTab === 'documents'
+                            ? 'border-b-2 border-indigo-500 text-indigo-600'
+                            : 'text-gray-500 hover:text-gray-700 hover:border-gray-300'
                         }`}
                       >
                         Documents (
@@ -884,11 +884,11 @@ const InsuranceDocumentation = () => {
                         )
                       </button>
                       <button
-                        onClick={() => setActiveTab("logs")}
+                        onClick={() => setActiveTab('logs')}
                         className={`py-4 px-6 text-sm font-medium ${
-                          activeTab === "logs"
-                            ? "border-b-2 border-indigo-500 text-indigo-600"
-                            : "text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                          activeTab === 'logs'
+                            ? 'border-b-2 border-indigo-500 text-indigo-600'
+                            : 'text-gray-500 hover:text-gray-700 hover:border-gray-300'
                         }`}
                       >
                         Verification Log (
@@ -902,7 +902,7 @@ const InsuranceDocumentation = () => {
 
                   <div className="flex-1 overflow-y-auto p-6">
                     {/* Insurance Info Tab */}
-                    {activeTab === "info" && (
+                    {activeTab === 'info' && (
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
                           <h4 className="text-sm font-medium text-gray-500 mb-3">
@@ -955,7 +955,7 @@ const InsuranceDocumentation = () => {
                             </div>
 
                             {formattedSelectedRecord.coverageType !==
-                              "Self-Pay" && (
+                              'Self-Pay' && (
                               <>
                                 <div className="grid grid-cols-2 gap-4 mb-4">
                                   <div>
@@ -977,7 +977,7 @@ const InsuranceDocumentation = () => {
                                         ? new Date(
                                             formattedSelectedRecord.verificationDate
                                           ).toLocaleDateString()
-                                        : "N/A"}
+                                        : 'N/A'}
                                     </p>
                                   </div>
                                 </div>
@@ -1007,7 +1007,7 @@ const InsuranceDocumentation = () => {
                                   </label>
                                   <p className="text-sm">
                                     {formattedSelectedRecord.coverageDetails ||
-                                      "No details available"}
+                                      'No details available'}
                                   </p>
                                 </div>
                               </>
@@ -1031,7 +1031,7 @@ const InsuranceDocumentation = () => {
                                       status={
                                         formattedSelectedRecord.priorAuthStatus
                                           ? `prior_auth_${formattedSelectedRecord.priorAuthStatus}`
-                                          : "pending"
+                                          : 'pending'
                                       }
                                     />
                                   </div>
@@ -1044,7 +1044,7 @@ const InsuranceDocumentation = () => {
                                         ? new Date(
                                             formattedSelectedRecord.priorAuthExpiryDate
                                           ).toLocaleDateString()
-                                        : "N/A"}
+                                        : 'N/A'}
                                     </p>
                                   </div>
                                 </div>
@@ -1053,13 +1053,13 @@ const InsuranceDocumentation = () => {
                                 <div className="flex space-x-2 mt-4">
                                   <button
                                     className="px-3 py-1 bg-indigo-100 text-indigo-700 text-xs font-medium rounded hover:bg-indigo-200"
-                                    onClick={() => setActiveTab("logs")}
+                                    onClick={() => setActiveTab('logs')}
                                   >
                                     Update Status
                                   </button>
                                   <button
                                     className="px-3 py-1 bg-indigo-100 text-indigo-700 text-xs font-medium rounded hover:bg-indigo-200"
-                                    onClick={() => setActiveTab("documents")}
+                                    onClick={() => setActiveTab('documents')}
                                   >
                                     Add Documents
                                   </button>
@@ -1081,7 +1081,7 @@ const InsuranceDocumentation = () => {
                           <div className="bg-gray-50 p-4 rounded border border-gray-200 mb-6">
                             <p className="text-sm">
                               {formattedSelectedRecord.notes ||
-                                "No notes available"}
+                                'No notes available'}
                             </p>
                           </div>
 
@@ -1126,7 +1126,7 @@ const InsuranceDocumentation = () => {
 
                             <button
                               className="mt-3 text-xs text-indigo-600 hover:text-indigo-900"
-                              onClick={() => setActiveTab("logs")}
+                              onClick={() => setActiveTab('logs')}
                             >
                               View all activity
                             </button>
@@ -1136,7 +1136,7 @@ const InsuranceDocumentation = () => {
                     )}
 
                     {/* Documents Tab */}
-                    {activeTab === "documents" && (
+                    {activeTab === 'documents' && (
                       <div>
                         <div className="flex justify-between items-center mb-4">
                           <h4 className="text-sm font-medium text-gray-900">
@@ -1154,8 +1154,8 @@ const InsuranceDocumentation = () => {
                               htmlFor="document-upload"
                               className={`px-3 py-1.5 ${
                                 uploadDocumentMutation.isPending
-                                  ? "bg-indigo-400"
-                                  : "bg-indigo-600 hover:bg-indigo-700"
+                                  ? 'bg-indigo-400'
+                                  : 'bg-indigo-600 hover:bg-indigo-700'
                               } text-white text-sm rounded flex items-center cursor-pointer`}
                             >
                               {uploadDocumentMutation.isPending ? (
@@ -1189,7 +1189,7 @@ const InsuranceDocumentation = () => {
                                     <span className="text-xs text-gray-500 capitalize">
                                       {doc.type ||
                                         doc.document_type ||
-                                        "document"}
+                                        'document'}
                                     </span>
                                     <span className="text-xs text-gray-400">
                                       {doc.date
@@ -1197,10 +1197,10 @@ const InsuranceDocumentation = () => {
                                             doc.date
                                           ).toLocaleDateString()
                                         : doc.created_at
-                                        ? new Date(
-                                            doc.created_at
-                                          ).toLocaleDateString()
-                                        : "N/A"}
+                                          ? new Date(
+                                              doc.created_at
+                                            ).toLocaleDateString()
+                                          : 'N/A'}
                                     </span>
                                   </div>
                                 </div>
@@ -1241,7 +1241,7 @@ const InsuranceDocumentation = () => {
                     )}
 
                     {/* Verification Logs Tab */}
-                    {activeTab === "logs" && (
+                    {activeTab === 'logs' && (
                       <div>
                         <div className="mb-6">
                           <h4 className="text-sm font-medium text-gray-900 mb-3">
@@ -1302,8 +1302,8 @@ const InsuranceDocumentation = () => {
                               <button
                                 className={`px-3 py-1.5 ${
                                   updateRecordMutation.isPending
-                                    ? "bg-indigo-400"
-                                    : "bg-indigo-600 hover:bg-indigo-700"
+                                    ? 'bg-indigo-400'
+                                    : 'bg-indigo-600 hover:bg-indigo-700'
                                 } text-white text-sm rounded`}
                                 onClick={handleAddLog}
                                 disabled={
@@ -1312,8 +1312,8 @@ const InsuranceDocumentation = () => {
                                 }
                               >
                                 {updateRecordMutation.isPending
-                                  ? "Adding..."
-                                  : "Add Log Entry"}
+                                  ? 'Adding...'
+                                  : 'Add Log Entry'}
                               </button>
                             </div>
                           </div>

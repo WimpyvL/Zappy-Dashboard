@@ -1,14 +1,14 @@
-import React, { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 
 // Helper function to format date
 const formatDate = (dateString) => {
-  if (!dateString) return "-";
+  if (!dateString) return '-';
   const date = new Date(dateString);
-  return date.toLocaleDateString("en-US", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
+  return date.toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
   });
 };
 
@@ -69,17 +69,17 @@ const SortIcon = () => (
 const InvoicePage = () => {
   const [invoices, setInvoices] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState("");
+  const [searchTerm, setSearchTerm] = useState('');
   const [sortConfig, setSortConfig] = useState({
-    key: "createdAt",
-    direction: "desc",
+    key: 'createdAt',
+    direction: 'desc',
   });
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [newInvoice, setNewInvoice] = useState({
-    name: "",
-    email: "",
-    amount: "",
-    dueDate: "",
+    name: '',
+    email: '',
+    amount: '',
+    dueDate: '',
   });
 
   // Mock data - replace with actual API call
@@ -93,86 +93,86 @@ const InvoicePage = () => {
         // Mock data
         const mockInvoices = [
           {
-            id: "INV-001",
-            createdAt: "2025-02-15T10:30:00",
-            name: "John Doe",
-            email: "john@example.com",
-            invoiceId: "INV-001",
-            status: "Paid",
+            id: 'INV-001',
+            createdAt: '2025-02-15T10:30:00',
+            name: 'John Doe',
+            email: 'john@example.com',
+            invoiceId: 'INV-001',
+            status: 'Paid',
             invoiceAmount: 299.99,
             amountPaid: 299.99,
             dueAmount: 0,
             refundedAmount: 0,
-            paymentDate: "2025-02-20T14:00:00",
+            paymentDate: '2025-02-20T14:00:00',
             refunded: false,
-            updatedAt: "2025-02-20T14:00:00",
+            updatedAt: '2025-02-20T14:00:00',
           },
           {
-            id: "INV-002",
-            createdAt: "2025-02-10T09:15:00",
-            name: "Jane Smith",
-            email: "jane@example.com",
-            invoiceId: "INV-002",
-            status: "Pending",
+            id: 'INV-002',
+            createdAt: '2025-02-10T09:15:00',
+            name: 'Jane Smith',
+            email: 'jane@example.com',
+            invoiceId: 'INV-002',
+            status: 'Pending',
             invoiceAmount: 199.99,
             amountPaid: 0,
             dueAmount: 199.99,
             refundedAmount: 0,
             paymentDate: null,
             refunded: false,
-            updatedAt: "2025-02-10T09:15:00",
+            updatedAt: '2025-02-10T09:15:00',
           },
           {
-            id: "INV-003",
-            createdAt: "2025-01-25T15:45:00",
-            name: "Robert Johnson",
-            email: "robert@example.com",
-            invoiceId: "INV-003",
-            status: "Refunded",
+            id: 'INV-003',
+            createdAt: '2025-01-25T15:45:00',
+            name: 'Robert Johnson',
+            email: 'robert@example.com',
+            invoiceId: 'INV-003',
+            status: 'Refunded',
             invoiceAmount: 399.99,
             amountPaid: 399.99,
             dueAmount: 0,
             refundedAmount: 399.99,
-            paymentDate: "2025-01-28T11:30:00",
+            paymentDate: '2025-01-28T11:30:00',
             refunded: true,
-            updatedAt: "2025-02-05T16:20:00",
+            updatedAt: '2025-02-05T16:20:00',
           },
           {
-            id: "INV-004",
-            createdAt: "2025-01-20T13:10:00",
-            name: "Sarah Williams",
-            email: "sarah@example.com",
-            invoiceId: "INV-004",
-            status: "Partially Paid",
+            id: 'INV-004',
+            createdAt: '2025-01-20T13:10:00',
+            name: 'Sarah Williams',
+            email: 'sarah@example.com',
+            invoiceId: 'INV-004',
+            status: 'Partially Paid',
             invoiceAmount: 599.99,
             amountPaid: 300.0,
             dueAmount: 299.99,
             refundedAmount: 0,
-            paymentDate: "2025-01-25T10:15:00",
+            paymentDate: '2025-01-25T10:15:00',
             refunded: false,
-            updatedAt: "2025-01-25T10:15:00",
+            updatedAt: '2025-01-25T10:15:00',
           },
           {
-            id: "INV-005",
-            createdAt: "2025-01-15T11:20:00",
-            name: "Michael Brown",
-            email: "michael@example.com",
-            invoiceId: "INV-005",
-            status: "Cancelled",
+            id: 'INV-005',
+            createdAt: '2025-01-15T11:20:00',
+            name: 'Michael Brown',
+            email: 'michael@example.com',
+            invoiceId: 'INV-005',
+            status: 'Cancelled',
             invoiceAmount: 499.99,
             amountPaid: 0,
             dueAmount: 0,
             refundedAmount: 0,
             paymentDate: null,
             refunded: false,
-            updatedAt: "2025-01-18T09:30:00",
+            updatedAt: '2025-01-18T09:30:00',
           },
         ];
 
         setInvoices(mockInvoices);
         setLoading(false);
       } catch (error) {
-        console.error("Error fetching invoices:", error);
+        console.error('Error fetching invoices:', error);
         setLoading(false);
       }
     };
@@ -182,9 +182,9 @@ const InvoicePage = () => {
 
   // Handle sorting
   const requestSort = (key) => {
-    let direction = "asc";
-    if (sortConfig.key === key && sortConfig.direction === "asc") {
-      direction = "desc";
+    let direction = 'asc';
+    if (sortConfig.key === key && sortConfig.direction === 'asc') {
+      direction = 'desc';
     }
     setSortConfig({ key, direction });
   };
@@ -207,10 +207,10 @@ const InvoicePage = () => {
     if (sortConfig.key) {
       sortableInvoices.sort((a, b) => {
         if (a[sortConfig.key] < b[sortConfig.key]) {
-          return sortConfig.direction === "asc" ? -1 : 1;
+          return sortConfig.direction === 'asc' ? -1 : 1;
         }
         if (a[sortConfig.key] > b[sortConfig.key]) {
-          return sortConfig.direction === "asc" ? 1 : -1;
+          return sortConfig.direction === 'asc' ? 1 : -1;
         }
         return 0;
       });
@@ -228,7 +228,7 @@ const InvoicePage = () => {
   const handleCreateInvoice = (e) => {
     e.preventDefault();
     // In a real app, you would make an API call here
-    console.log("Creating invoice:", newInvoice);
+    console.log('Creating invoice:', newInvoice);
 
     // Create a new invoice object
     const newInvoiceObj = {
@@ -237,7 +237,7 @@ const InvoicePage = () => {
       name: newInvoice.name,
       email: newInvoice.email,
       invoiceId: `INV-00${invoices.length + 1}`,
-      status: "Pending",
+      status: 'Pending',
       invoiceAmount: parseFloat(newInvoice.amount),
       amountPaid: 0,
       dueAmount: parseFloat(newInvoice.amount),
@@ -252,10 +252,10 @@ const InvoicePage = () => {
 
     // Reset form and close modal
     setNewInvoice({
-      name: "",
-      email: "",
-      amount: "",
-      dueDate: "",
+      name: '',
+      email: '',
+      amount: '',
+      dueDate: '',
     });
     setShowCreateModal(false);
   };
@@ -297,7 +297,7 @@ const InvoicePage = () => {
               <tr>
                 <th
                   className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
-                  onClick={() => requestSort("createdAt")}
+                  onClick={() => requestSort('createdAt')}
                 >
                   <div className="flex items-center">
                     Created At
@@ -306,7 +306,7 @@ const InvoicePage = () => {
                 </th>
                 <th
                   className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
-                  onClick={() => requestSort("name")}
+                  onClick={() => requestSort('name')}
                 >
                   <div className="flex items-center">
                     Name
@@ -315,7 +315,7 @@ const InvoicePage = () => {
                 </th>
                 <th
                   className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
-                  onClick={() => requestSort("email")}
+                  onClick={() => requestSort('email')}
                 >
                   <div className="flex items-center">
                     Email
@@ -324,7 +324,7 @@ const InvoicePage = () => {
                 </th>
                 <th
                   className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
-                  onClick={() => requestSort("invoiceId")}
+                  onClick={() => requestSort('invoiceId')}
                 >
                   <div className="flex items-center">
                     Invoice ID
@@ -333,7 +333,7 @@ const InvoicePage = () => {
                 </th>
                 <th
                   className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
-                  onClick={() => requestSort("status")}
+                  onClick={() => requestSort('status')}
                 >
                   <div className="flex items-center">
                     Status
@@ -342,7 +342,7 @@ const InvoicePage = () => {
                 </th>
                 <th
                   className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
-                  onClick={() => requestSort("invoiceAmount")}
+                  onClick={() => requestSort('invoiceAmount')}
                 >
                   <div className="flex items-center">
                     Invoice Amount ($)
@@ -351,7 +351,7 @@ const InvoicePage = () => {
                 </th>
                 <th
                   className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
-                  onClick={() => requestSort("amountPaid")}
+                  onClick={() => requestSort('amountPaid')}
                 >
                   <div className="flex items-center">
                     Amount Paid ($)
@@ -360,7 +360,7 @@ const InvoicePage = () => {
                 </th>
                 <th
                   className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
-                  onClick={() => requestSort("dueAmount")}
+                  onClick={() => requestSort('dueAmount')}
                 >
                   <div className="flex items-center">
                     Due Amount ($)
@@ -369,7 +369,7 @@ const InvoicePage = () => {
                 </th>
                 <th
                   className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
-                  onClick={() => requestSort("refundedAmount")}
+                  onClick={() => requestSort('refundedAmount')}
                 >
                   <div className="flex items-center">
                     Refunded Amount ($)
@@ -378,7 +378,7 @@ const InvoicePage = () => {
                 </th>
                 <th
                   className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
-                  onClick={() => requestSort("paymentDate")}
+                  onClick={() => requestSort('paymentDate')}
                 >
                   <div className="flex items-center">
                     Payment Date
@@ -387,7 +387,7 @@ const InvoicePage = () => {
                 </th>
                 <th
                   className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
-                  onClick={() => requestSort("refunded")}
+                  onClick={() => requestSort('refunded')}
                 >
                   <div className="flex items-center">
                     Refunded
@@ -396,7 +396,7 @@ const InvoicePage = () => {
                 </th>
                 <th
                   className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
-                  onClick={() => requestSort("updatedAt")}
+                  onClick={() => requestSort('updatedAt')}
                 >
                   <div className="flex items-center">
                     Updated At
@@ -439,15 +439,15 @@ const InvoicePage = () => {
                       <span
                         className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full 
                           ${
-                            invoice.status === "Paid"
-                              ? "bg-green-100 text-green-800"
-                              : invoice.status === "Pending"
-                              ? "bg-yellow-100 text-yellow-800"
-                              : invoice.status === "Refunded"
-                              ? "bg-blue-100 text-blue-800"
-                              : invoice.status === "Partially Paid"
-                              ? "bg-indigo-100 text-indigo-800"
-                              : "bg-red-100 text-red-800"
+                            invoice.status === 'Paid'
+                              ? 'bg-green-100 text-green-800'
+                              : invoice.status === 'Pending'
+                                ? 'bg-yellow-100 text-yellow-800'
+                                : invoice.status === 'Refunded'
+                                  ? 'bg-blue-100 text-blue-800'
+                                  : invoice.status === 'Partially Paid'
+                                    ? 'bg-indigo-100 text-indigo-800'
+                                    : 'bg-red-100 text-red-800'
                           }`}
                       >
                         {invoice.status}
@@ -468,10 +468,10 @@ const InvoicePage = () => {
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {invoice.paymentDate
                         ? formatDate(invoice.paymentDate)
-                        : "-"}
+                        : '-'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {invoice.refunded ? "Yes" : "No"}
+                      {invoice.refunded ? 'Yes' : 'No'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {formatDate(invoice.updatedAt)}
@@ -484,13 +484,13 @@ const InvoicePage = () => {
                         >
                           View
                         </Link>
-                        {invoice.status === "Pending" && (
+                        {invoice.status === 'Pending' && (
                           <button className="text-green-600 hover:text-green-900">
                             Pay
                           </button>
                         )}
-                        {(invoice.status === "Paid" ||
-                          invoice.status === "Partially Paid") &&
+                        {(invoice.status === 'Paid' ||
+                          invoice.status === 'Partially Paid') &&
                           !invoice.refunded && (
                             <button className="text-blue-600 hover:text-blue-900">
                               Refund

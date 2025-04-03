@@ -1,6 +1,6 @@
-import React, { useMemo, useState } from "react";
-import { Plus, Edit, Trash2, Search, X, Info, Loader } from "lucide-react";
-import Tag from "../common/Tag";
+import React, { useMemo, useState } from 'react';
+import { Plus, Edit, Trash2, Search, X, Info, Loader } from 'lucide-react';
+import Tag from '../common/Tag';
 import {
   useTags,
   useTagById,
@@ -8,19 +8,19 @@ import {
   useUpdateTag,
   useDeleteTag,
   useTagUsage,
-} from "../../apis/tags/hooks";
+} from '../../apis/tags/hooks';
 
 const TagManagement = () => {
   // States
-  const [searchTerm, setSearchTerm] = useState("");
+  const [searchTerm, setSearchTerm] = useState('');
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showUsageModal, setShowUsageModal] = useState(false);
   const [currentTag, setCurrentTag] = useState(null);
   const [formData, setFormData] = useState({
-    name: "",
-    color: "gray",
+    name: '',
+    color: 'gray',
   });
 
   // Use React Query hooks for tag operations
@@ -40,21 +40,21 @@ const TagManagement = () => {
 
   // Tag colors available in the system
   const tagColors = [
-    { name: "Gray", value: "gray" },
-    { name: "Red", value: "red" },
-    { name: "Yellow", value: "yellow" },
-    { name: "Green", value: "green" },
-    { name: "Blue", value: "blue" },
-    { name: "Indigo", value: "indigo" },
-    { name: "Purple", value: "purple" },
-    { name: "Pink", value: "pink" },
+    { name: 'Gray', value: 'gray' },
+    { name: 'Red', value: 'red' },
+    { name: 'Yellow', value: 'yellow' },
+    { name: 'Green', value: 'green' },
+    { name: 'Blue', value: 'blue' },
+    { name: 'Indigo', value: 'indigo' },
+    { name: 'Purple', value: 'purple' },
+    { name: 'Pink', value: 'pink' },
   ];
 
   // Handle opening tag creation modal
   const handleAddTag = () => {
     setFormData({
-      name: "",
-      color: "gray",
+      name: '',
+      color: 'gray',
     });
     setShowAddModal(true);
   };
@@ -156,8 +156,8 @@ const TagManagement = () => {
       >
         <strong className="font-bold">Error!</strong>
         <span className="block sm:inline">
-          {" "}
-          {error.message || "Failed to load tags. Please try again later."}
+          {' '}
+          {error.message || 'Failed to load tags. Please try again later.'}
         </span>
       </div>
     );
@@ -277,8 +277,8 @@ const TagManagement = () => {
                       key={colorOption.value}
                       className={`flex items-center p-2 rounded cursor-pointer border ${
                         formData.color === colorOption.value
-                          ? "ring-2 ring-indigo-500 border-indigo-500"
-                          : "border-gray-200 hover:bg-gray-50"
+                          ? 'ring-2 ring-indigo-500 border-indigo-500'
+                          : 'border-gray-200 hover:bg-gray-50'
                       }`}
                       onClick={() => handleColorSelection(colorOption.value)}
                     >
@@ -308,7 +308,7 @@ const TagManagement = () => {
                         Creating...
                       </>
                     ) : (
-                      "Add Tag"
+                      'Add Tag'
                     )}
                   </button>
                 </div>
@@ -357,8 +357,8 @@ const TagManagement = () => {
                       key={colorOption.value}
                       className={`flex items-center p-2 rounded cursor-pointer border ${
                         formData.color === colorOption.value
-                          ? "ring-2 ring-indigo-500 border-indigo-500"
-                          : "border-gray-200 hover:bg-gray-50"
+                          ? 'ring-2 ring-indigo-500 border-indigo-500'
+                          : 'border-gray-200 hover:bg-gray-50'
                       }`}
                       onClick={() => handleColorSelection(colorOption.value)}
                     >
@@ -388,7 +388,7 @@ const TagManagement = () => {
                         Saving...
                       </>
                     ) : (
-                      "Save Changes"
+                      'Save Changes'
                     )}
                   </button>
                 </div>
@@ -441,7 +441,7 @@ const TagManagement = () => {
                       Deleting...
                     </>
                   ) : (
-                    "Delete"
+                    'Delete'
                   )}
                 </button>
               </div>
@@ -490,7 +490,7 @@ const TagManagement = () => {
                             className="flex justify-between items-center border-b border-gray-200 pb-2"
                           >
                             <span className="text-sm capitalize">
-                              {entityType.replace("_", " ")}
+                              {entityType.replace('_', ' ')}
                             </span>
                             <span className="text-sm font-medium bg-gray-100 px-2 py-1 rounded">
                               {count}

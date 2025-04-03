@@ -32,5 +32,5 @@ export const paths = {
   reports: '/reports',
   forms: '/forms',
   messages: '/messages', // Added messages path
-  auditlog: '/audit-log' // Added audit log path
+  auditlog: '/audit-log', // Added audit log path
 };

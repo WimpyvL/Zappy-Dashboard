@@ -34,7 +34,11 @@ const StatusBadge = ({ status }) => {
         {status.charAt(0).toUpperCase() + status.slice(1)}
       </span>
     );
-  } else if (status === 'denied' || status === 'rejected' || status === 'failed') {
+  } else if (
+    status === 'denied' ||
+    status === 'rejected' ||
+    status === 'failed'
+  ) {
     return (
       <span className="flex items-center px-2 py-1 text-xs font-medium rounded-full bg-red-100 text-red-800">
         <XCircle className="h-3 w-3 mr-1" />
@@ -42,11 +46,13 @@ const StatusBadge = ({ status }) => {
       </span>
     );
   }
-  
+
   // Default for unhandled statuses
   return (
     <span className="px-2 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-800">
-      {typeof status === 'string' ? status.charAt(0).toUpperCase() + status.slice(1) : 'Unknown'}
+      {typeof status === 'string'
+        ? status.charAt(0).toUpperCase() + status.slice(1)
+        : 'Unknown'}
     </span>
   );
 };

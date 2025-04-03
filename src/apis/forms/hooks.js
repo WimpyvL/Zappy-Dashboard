@@ -1,17 +1,19 @@
-import {
-  useQuery,
-  useMutation,
-  useQueryClient
-} from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 import { toast } from 'react-toastify';
-import { createForm, getFormById, getForms, updateForm, deleteForm } from './api';
+import {
+  createForm,
+  getFormById,
+  getForms,
+  updateForm,
+  deleteForm,
+} from './api';
 
 export const useForms = (params = {}) => {
   return useQuery({
     queryKey: ['forms', params],
     queryFn: () => getForms(params),
-    select: (data) => data // Optional transformation if needed
+    select: (data) => data, // Optional transformation if needed
   });
 };
 
@@ -20,7 +22,7 @@ export const useFormById = (id, options = {}) => {
     queryKey: ['form', id],
     queryFn: () => getFormById(id),
     enabled: !!id,
-    ...options
+    ...options,
   });
 };
 
@@ -35,9 +37,11 @@ export const useCreateForm = (options = {}) => {
       options.onSuccess && options.onSuccess();
     },
     onError: (error) => {
-      toast.error(error.message || 'An error occurred while creating the form.');
+      toast.error(
+        error.message || 'An error occurred while creating the form.'
+      );
       options.onError && options.onError(error);
-    }
+    },
   });
 };
 
@@ -54,9 +58,11 @@ export const useUpdateForm = (options = {}) => {
       options.onSuccess && options.onSuccess();
     },
     onError: (error) => {
-      toast.error(error.message || 'An error occurred while updating the form.');
+      toast.error(
+        error.message || 'An error occurred while updating the form.'
+      );
       options.onError && options.onError(error);
-    }
+    },
   });
 };
 
@@ -72,6 +78,6 @@ export const useDeleteForm = (options = {}) => {
     },
     onError: (error) => {
       options.onError && options.onError(error);
-    }
+    },
   });
 };

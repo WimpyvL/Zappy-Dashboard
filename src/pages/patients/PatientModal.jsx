@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect } from 'react';
 import {
   X,
   User,
@@ -8,25 +8,25 @@ import {
   Calendar,
   Tag,
   Building,
-} from "lucide-react";
-import apiService from "../../utils/apiService";
-import { toast } from "react-toastify";
+} from 'lucide-react';
+import apiService from '../../utils/apiService';
+import { toast } from 'react-toastify';
 
 const PatientModal = ({ isOpen, onClose, patientData, onSuccess }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
-    full_name: "",
-    email: "",
-    phone: "",
-    address: "",
-    city: "",
-    state: "",
-    zipCode: "",
-    dateOfBirth: "",
-    status: "active",
-    preferredPharmacy: "",
-    assignedDoctor: "",
-    medicalNotes: "",
+    full_name: '',
+    email: '',
+    phone: '',
+    address: '',
+    city: '',
+    state: '',
+    zipCode: '',
+    dateOfBirth: '',
+    status: 'active',
+    preferredPharmacy: '',
+    assignedDoctor: '',
+    medicalNotes: '',
   });
 
   // Initialize form data when patientData changes
@@ -36,18 +36,18 @@ const PatientModal = ({ isOpen, onClose, patientData, onSuccess }) => {
     } else {
       // Reset form when adding a new patient
       setFormData({
-        full_name: "",
-        email: "",
-        phone: "",
-        address: "",
-        city: "",
-        state: "",
-        zipCode: "",
-        dateOfBirth: "",
-        status: "active",
-        preferredPharmacy: "",
-        assignedDoctor: "",
-        medicalNotes: "",
+        full_name: '',
+        email: '',
+        phone: '',
+        address: '',
+        city: '',
+        state: '',
+        zipCode: '',
+        dateOfBirth: '',
+        status: 'active',
+        preferredPharmacy: '',
+        assignedDoctor: '',
+        medicalNotes: '',
       });
     }
   }, [patientData, isOpen]);
@@ -56,7 +56,7 @@ const PatientModal = ({ isOpen, onClose, patientData, onSuccess }) => {
     const { name, value, type, checked } = e.target;
     setFormData({
       ...formData,
-      [name]: type === "checkbox" ? checked : value,
+      [name]: type === 'checkbox' ? checked : value,
     });
   };
 
@@ -89,11 +89,11 @@ const PatientModal = ({ isOpen, onClose, patientData, onSuccess }) => {
           patientData.id,
           patientPayload
         );
-        toast.success("Patient updated successfully");
+        toast.success('Patient updated successfully');
       } else {
         // Create new patient
         response = await apiService.patients.create(patientPayload);
-        toast.success("Patient created successfully");
+        toast.success('Patient created successfully');
       }
 
       // Call onSuccess callback with the response data
@@ -104,8 +104,8 @@ const PatientModal = ({ isOpen, onClose, patientData, onSuccess }) => {
       // Close the modal
       onClose();
     } catch (error) {
-      console.error("Error saving patient:", error);
-      toast.error(error.response?.data?.error || "Failed to save patient");
+      console.error('Error saving patient:', error);
+      toast.error(error.response?.data?.error || 'Failed to save patient');
     } finally {
       setIsSubmitting(false);
     }
@@ -117,8 +117,8 @@ const PatientModal = ({ isOpen, onClose, patientData, onSuccess }) => {
   }
 
   const isEditMode = patientData && patientData.id;
-  const modalTitle = isEditMode ? "Edit Patient" : "Add New Patient";
-  const submitButtonText = isEditMode ? "Save Changes" : "Add Patient";
+  const modalTitle = isEditMode ? 'Edit Patient' : 'Add New Patient';
+  const submitButtonText = isEditMode ? 'Save Changes' : 'Add Patient';
 
   return (
     <div className="fixed inset-0 flex items-center justify-center p-4 z-50">
@@ -157,7 +157,7 @@ const PatientModal = ({ isOpen, onClose, patientData, onSuccess }) => {
                     type="text"
                     name="full_name"
                     className="block w-full pl-10 pr-3 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
-                    value={formData.full_name || ""}
+                    value={formData.full_name || ''}
                     onChange={handleChange}
                     placeholder="Full Name"
                     required
@@ -178,7 +178,7 @@ const PatientModal = ({ isOpen, onClose, patientData, onSuccess }) => {
                   type="email"
                   name="email"
                   className="block w-full pl-10 pr-3 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
-                  value={formData.email || ""}
+                  value={formData.email || ''}
                   onChange={handleChange}
                   placeholder="patient@example.com"
                   required
@@ -198,7 +198,7 @@ const PatientModal = ({ isOpen, onClose, patientData, onSuccess }) => {
                   type="tel"
                   name="phone"
                   className="block w-full pl-10 pr-3 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
-                  value={formData.phone || ""}
+                  value={formData.phone || ''}
                   onChange={handleChange}
                   placeholder="(XXX) XXX-XXXX"
                 />
@@ -218,7 +218,7 @@ const PatientModal = ({ isOpen, onClose, patientData, onSuccess }) => {
                     type="date"
                     name="dateOfBirth"
                     className="block w-full pl-10 pr-3 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
-                    value={formData.dateOfBirth || ""}
+                    value={formData.dateOfBirth || ''}
                     onChange={handleChange}
                   />
                 </div>
@@ -235,7 +235,7 @@ const PatientModal = ({ isOpen, onClose, patientData, onSuccess }) => {
                   <select
                     name="status"
                     className="block w-full pl-10 pr-3 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
-                    value={formData.status || "active"}
+                    value={formData.status || 'active'}
                     onChange={handleChange}
                   >
                     <option value="active">Active</option>
@@ -255,7 +255,7 @@ const PatientModal = ({ isOpen, onClose, patientData, onSuccess }) => {
                 type="text"
                 name="address"
                 className="block w-full pl-3 pr-3 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
-                value={formData.address || ""}
+                value={formData.address || ''}
                 onChange={handleChange}
                 placeholder="Street Address"
               />
@@ -270,7 +270,7 @@ const PatientModal = ({ isOpen, onClose, patientData, onSuccess }) => {
                   type="text"
                   name="city"
                   className="block w-full pl-3 pr-3 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
-                  value={formData.city || ""}
+                  value={formData.city || ''}
                   onChange={handleChange}
                 />
               </div>
@@ -283,7 +283,7 @@ const PatientModal = ({ isOpen, onClose, patientData, onSuccess }) => {
                   type="text"
                   name="state"
                   className="block w-full pl-3 pr-3 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
-                  value={formData.state || ""}
+                  value={formData.state || ''}
                   onChange={handleChange}
                 />
               </div>
@@ -296,7 +296,7 @@ const PatientModal = ({ isOpen, onClose, patientData, onSuccess }) => {
                   type="text"
                   name="zipCode"
                   className="block w-full pl-3 pr-3 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
-                  value={formData.zipCode || ""}
+                  value={formData.zipCode || ''}
                   onChange={handleChange}
                 />
               </div>
@@ -313,7 +313,7 @@ const PatientModal = ({ isOpen, onClose, patientData, onSuccess }) => {
                   type="text"
                   name="preferredPharmacy"
                   className="block w-full pl-10 pr-3 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
-                  value={formData.preferredPharmacy || ""}
+                  value={formData.preferredPharmacy || ''}
                   onChange={handleChange}
                   placeholder="Preferred Pharmacy"
                 />
@@ -335,7 +335,7 @@ const PatientModal = ({ isOpen, onClose, patientData, onSuccess }) => {
               className="px-4 py-2 bg-indigo-600 rounded-md text-sm font-medium text-white hover:bg-indigo-700 disabled:bg-indigo-300"
               disabled={isSubmitting}
             >
-              {isSubmitting ? "Saving..." : submitButtonText}
+              {isSubmitting ? 'Saving...' : submitButtonText}
             </button>
           </div>
         </form>

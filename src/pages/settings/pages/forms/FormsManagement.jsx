@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect } from 'react';
 import {
   Table,
   Button,
@@ -18,7 +18,7 @@ import {
   Empty,
   Menu,
   Dropdown,
-} from "antd";
+} from 'antd';
 import {
   PlusOutlined,
   EditOutlined,
@@ -28,21 +28,21 @@ import {
   EyeOutlined,
   MoreOutlined,
   SearchOutlined,
-} from "@ant-design/icons";
-import { useForm, Controller } from "react-hook-form";
+} from '@ant-design/icons';
+import { useForm, Controller } from 'react-hook-form';
 
 // Import components and hooks
-import FormElementSidebar from "./FormElementSidebar";
-import FormBuilderElements from "./FormBuilderElements";
-import FormPages from "./FormPages";
-import FormConditionals from "./FormConditionals";
+import FormElementSidebar from './FormElementSidebar';
+import FormBuilderElements from './FormBuilderElements';
+import FormPages from './FormPages';
+import FormConditionals from './FormConditionals';
 import {
   useForms,
   useFormById,
   useCreateForm,
   useUpdateForm,
   useDeleteForm,
-} from "../../../../apis/forms/hooks";
+} from '../../../../apis/forms/hooks';
 
 const { Title, Text } = Typography;
 const { TabPane } = Tabs;
@@ -64,7 +64,7 @@ const FormsManagement = () => {
       resetFormBasics();
       setFormPages([]);
       setFormConditionals([]);
-      message.success("Form created successfully");
+      message.success('Form created successfully');
     },
   });
   const updateFormMutation = useUpdateForm({
@@ -74,40 +74,40 @@ const FormsManagement = () => {
       resetFormBasics();
       setFormPages([]);
       setFormConditionals([]);
-      message.success("Form updated successfully");
+      message.success('Form updated successfully');
     },
   });
   const deleteFormMutation = useDeleteForm();
 
   // Local state
-  const [activeService, setActiveService] = useState("all");
-  const [searchTerm, setSearchTerm] = useState("");
+  const [activeService, setActiveService] = useState('all');
+  const [searchTerm, setSearchTerm] = useState('');
   const [formModalVisible, setFormModalVisible] = useState(false);
-  const [formActionType, setFormActionType] = useState("create"); // 'create' or 'edit'
+  const [formActionType, setFormActionType] = useState('create'); // 'create' or 'edit'
   const [currentForm, setCurrentForm] = useState(null);
   const [formBuilderVisible, setFormBuilderVisible] = useState(false);
   const [shareModalVisible, setShareModalVisible] = useState(false);
-  const [shareLink, setShareLink] = useState("");
+  const [shareLink, setShareLink] = useState('');
   const [formPages, setFormPages] = useState([]);
   const [formConditionals, setFormConditionals] = useState([]);
-  const [activeBuilderTab, setActiveBuilderTab] = useState("pages");
+  const [activeBuilderTab, setActiveBuilderTab] = useState('pages');
   const [currentPageIndex, setCurrentPageIndex] = useState(0);
   const [services, setServices] = useState([
-    { id: 1, name: "Consultation", category: "Medical" },
-    { id: 2, name: "Weight Management", category: "Medical" },
-    { id: 4, name: "Insurance Verification", category: "Administrative" },
+    { id: 1, name: 'Consultation', category: 'Medical' },
+    { id: 2, name: 'Weight Management', category: 'Medical' },
+    { id: 4, name: 'Insurance Verification', category: 'Administrative' },
   ]);
 
   const {
     control: formBasicsControl,
     handleSubmit: handleFormBasicsSubmit,
-    reset: resetFormBasics
+    reset: resetFormBasics,
   } = useForm({
     defaultValues: {
-      title: "",
-      description: "",
+      title: '',
+      description: '',
       service_id: null,
-      form_type: "",
+      form_type: '',
       status: true,
     },
   });
@@ -133,18 +133,18 @@ const FormsManagement = () => {
           formPages = [
             {
               id: generateRandomId(),
-              title: "Page 1",
+              title: 'Page 1',
               elements: structure,
             },
           ];
         }
       }
     } catch (e) {
-      console.error("Error parsing form structure:", e);
+      console.error('Error parsing form structure:', e);
       formPages = [
         {
           id: generateRandomId(),
-          title: "Page 1",
+          title: 'Page 1',
           elements: [],
         },
       ];
@@ -161,7 +161,7 @@ const FormsManagement = () => {
       description: formData.description,
       serviceId: formData.service?.id,
       serviceName: formData.service?.name,
-      status: formData.status ? "active" : "inactive",
+      status: formData.status ? 'active' : 'inactive',
       form_type: formData.form_type,
       createdAt: new Date(formData.created_at).toLocaleDateString(),
       updatedAt: new Date(formData.updated_at).toLocaleDateString(),
@@ -176,13 +176,13 @@ const FormsManagement = () => {
 
   // Initialize form pages and conditionals when form is loaded
   useEffect(() => {
-    if (currentForm && formActionType === "edit") {
+    if (currentForm && formActionType === 'edit') {
       resetFormBasics({
         title: currentForm.title,
         description: currentForm.description,
         service_id: currentForm.serviceId,
-        form_type: currentForm.form_type || "",
-        status: currentForm.status === "active",
+        form_type: currentForm.form_type || '',
+        status: currentForm.status === 'active',
       });
 
       // Load the form pages if they exist
@@ -192,7 +192,7 @@ const FormsManagement = () => {
         setFormPages([
           {
             id: generateRandomId(),
-            title: "Page 1",
+            title: 'Page 1',
             elements: [],
           },
         ]);
@@ -209,7 +209,7 @@ const FormsManagement = () => {
       setFormPages([
         {
           id: generateRandomId(),
-          title: "Page 1",
+          title: 'Page 1',
           elements: [],
         },
       ]);
@@ -223,7 +223,7 @@ const FormsManagement = () => {
   // Filter forms based on selected service and search text
   const filteredForms = transformedForms.filter((form) => {
     const matchesService =
-      activeService === "all" || form.serviceId === parseInt(activeService);
+      activeService === 'all' || form.serviceId === parseInt(activeService);
     const matchesSearch =
       form.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       form.description.toLowerCase().includes(searchTerm.toLowerCase());
@@ -232,7 +232,7 @@ const FormsManagement = () => {
 
   // Handle form basics submission (first step of form creation/editing)
   const onFormBasicsSubmit = (data) => {
-    if (formActionType === "create") {
+    if (formActionType === 'create') {
       // Create a new form object
       const newForm = {
         id: generateRandomId(),
@@ -240,18 +240,18 @@ const FormsManagement = () => {
         description: data.description,
         serviceId: data.service_id,
         form_type: data.form_type,
-        status: data.status ? "active" : "inactive",
-        createdAt: new Date().toISOString().split("T")[0],
-        updatedAt: new Date().toISOString().split("T")[0],
+        status: data.status ? 'active' : 'inactive',
+        createdAt: new Date().toISOString().split('T')[0],
+        updatedAt: new Date().toISOString().split('T')[0],
         pages: [
           {
             id: generateRandomId(),
-            title: "Page 1",
+            title: 'Page 1',
             elements: [],
           },
         ],
         conditionals: [],
-        shareLink: data.title.toLowerCase().replace(/\s+/g, "-"),
+        shareLink: data.title.toLowerCase().replace(/\s+/g, '-'),
         submissions: 0,
         elementCount: 0,
         pageCount: 1,
@@ -265,8 +265,8 @@ const FormsManagement = () => {
         description: data.description,
         serviceId: data.service_id,
         form_type: data.form_type,
-        status: data.status ? "active" : "inactive",
-        updatedAt: new Date().toISOString().split("T")[0],
+        status: data.status ? 'active' : 'inactive',
+        updatedAt: new Date().toISOString().split('T')[0],
       };
       setCurrentForm(updatedForm);
     }
@@ -288,10 +288,10 @@ const FormsManagement = () => {
         pages: formPages,
         conditionals: formConditionals,
       }),
-      status: currentForm.status === "active",
+      status: currentForm.status === 'active',
     };
 
-    if (formActionType === "create") {
+    if (formActionType === 'create') {
       // Call API to create new form
       createFormMutation.mutate(formData);
     } else {
@@ -320,7 +320,7 @@ const FormsManagement = () => {
   const handleDeletePage = (pageIndex) => {
     if (formPages.length <= 1) {
       message.error(
-        "Cannot delete the only page. Forms must have at least one page."
+        'Cannot delete the only page. Forms must have at least one page.'
       );
       return;
     }
@@ -365,17 +365,17 @@ const FormsManagement = () => {
     const newElement = {
       id: generateRandomId(),
       type,
-      label: `New ${type.replace("_", " ")} field`,
-      placeholder: `Enter ${type.replace("_", " ")}`,
+      label: `New ${type.replace('_', ' ')} field`,
+      placeholder: `Enter ${type.replace('_', ' ')}`,
       required: false,
     };
 
     // Add options if the element type needs them
-    if (["multiple_choice", "checkboxes", "dropdown"].includes(type)) {
+    if (['multiple_choice', 'checkboxes', 'dropdown'].includes(type)) {
       newElement.options = [
-        { id: generateRandomId(), value: "Option 1" },
-        { id: generateRandomId(), value: "Option 2" },
-        { id: generateRandomId(), value: "Option 3" },
+        { id: generateRandomId(), value: 'Option 1' },
+        { id: generateRandomId(), value: 'Option 2' },
+        { id: generateRandomId(), value: 'Option 3' },
       ];
     }
 
@@ -478,7 +478,7 @@ const FormsManagement = () => {
 
   // Handle form deletion
   const handleDeleteForm = (formId) => {
-    debugger
+    debugger;
     // Call API to delete form
     deleteFormMutation.mutate(formId);
   };
@@ -495,12 +495,12 @@ const FormsManagement = () => {
         pages: form.pages,
         conditionals: form.conditionals,
       }),
-      status: form.status === "active",
+      status: form.status === 'active',
     };
 
     // Call API to create a new form with the duplicated data
     createFormMutation.mutate(formData);
-    message.success("Form duplicated successfully");
+    message.success('Form duplicated successfully');
   };
 
   // Handle form sharing
@@ -517,19 +517,19 @@ const FormsManagement = () => {
     const form = transformedForms.find((f) => f.id === formId);
     if (!form) return;
 
-    const newStatus = currentStatus === "active" ? "inactive" : "active";
+    const newStatus = currentStatus === 'active' ? 'inactive' : 'active';
 
     // Call API to update form status
     updateFormMutation.mutate({
       id: formId,
       formData: {
-        status: newStatus === "active",
+        status: newStatus === 'active',
       },
     });
 
     message.success(
       `Form ${
-        newStatus === "active" ? "activated" : "deactivated"
+        newStatus === 'active' ? 'activated' : 'deactivated'
       } successfully`
     );
   };
@@ -539,36 +539,36 @@ const FormsManagement = () => {
     navigator.clipboard
       .writeText(shareLink)
       .then(() => {
-        message.success("Link copied to clipboard");
+        message.success('Link copied to clipboard');
       })
       .catch(() => {
-        message.error("Failed to copy link");
+        message.error('Failed to copy link');
       });
   };
 
   // Get service name by ID
   const getServiceName = (serviceId) => {
     const service = services.find((s) => s.id === serviceId);
-    return service ? service.name : "-";
+    return service ? service.name : '-';
   };
 
   // Handle preview form
   const handlePreviewForm = (form) => {
     // Open the form in a new tab
-    window.open(`/forms/${form.shareLink}`, "_blank");
+    window.open(`/forms/${form.shareLink}`, '_blank');
   };
 
   // Table columns configuration
   const columns = [
     {
-      title: "Form Name",
-      dataIndex: "title",
-      key: "title",
+      title: 'Form Name',
+      dataIndex: 'title',
+      key: 'title',
       render: (text, record) => (
         <div>
           <Text strong>{text}</Text>
           <div>
-            <Text type="secondary" style={{ fontSize: "12px" }}>
+            <Text type="secondary" style={{ fontSize: '12px' }}>
               {record.description}
             </Text>
           </div>
@@ -576,34 +576,34 @@ const FormsManagement = () => {
       ),
     },
     {
-      title: "Service",
-      dataIndex: "serviceName",
-      key: "serviceName",
+      title: 'Service',
+      dataIndex: 'serviceName',
+      key: 'serviceName',
     },
     {
-      title: "Type",
-      dataIndex: "form_type",
-      key: "form_type",
+      title: 'Type',
+      dataIndex: 'form_type',
+      key: 'form_type',
       render: (type) =>
-        type?.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase()) ||
-        "-",
+        type?.replace(/_/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase()) ||
+        '-',
     },
     {
-      title: "Status",
-      dataIndex: "status",
-      key: "status",
+      title: 'Status',
+      dataIndex: 'status',
+      key: 'status',
       render: (status, record) => (
         <Popconfirm
           title={`Are you sure you want to ${
-            status === "active" ? "deactivate" : "activate"
+            status === 'active' ? 'deactivate' : 'activate'
           } this form?`}
           onConfirm={() => toggleFormStatus(record.id, status)}
           okText="Yes"
           cancelText="No"
         >
           <Tag
-            color={status === "active" ? "green" : "red"}
-            style={{ cursor: "pointer" }}
+            color={status === 'active' ? 'green' : 'red'}
+            style={{ cursor: 'pointer' }}
           >
             {status.charAt(0).toUpperCase() + status.slice(1)}
           </Tag>
@@ -611,32 +611,32 @@ const FormsManagement = () => {
       ),
     },
     {
-      title: "Pages",
-      dataIndex: "pageCount",
-      key: "pageCount",
+      title: 'Pages',
+      dataIndex: 'pageCount',
+      key: 'pageCount',
       sorter: (a, b) => a.pageCount - b.pageCount,
     },
     {
-      title: "Fields",
-      dataIndex: "elementCount",
-      key: "elementCount",
+      title: 'Fields',
+      dataIndex: 'elementCount',
+      key: 'elementCount',
       sorter: (a, b) => a.elementCount - b.elementCount,
     },
     {
-      title: "Created",
-      dataIndex: "createdAt",
-      key: "createdAt",
+      title: 'Created',
+      dataIndex: 'createdAt',
+      key: 'createdAt',
       sorter: (a, b) => new Date(a.createdAt) - new Date(b.createdAt),
     },
     {
-      title: "Last Updated",
-      dataIndex: "updatedAt",
-      key: "updatedAt",
+      title: 'Last Updated',
+      dataIndex: 'updatedAt',
+      key: 'updatedAt',
       sorter: (a, b) => new Date(a.updatedAt) - new Date(b.updatedAt),
     },
     {
-      title: "Actions",
-      key: "actions",
+      title: 'Actions',
+      key: 'actions',
       render: (_, record) => (
         <Space>
           <Tooltip title="Edit Form">
@@ -644,7 +644,7 @@ const FormsManagement = () => {
               icon={<EditOutlined />}
               onClick={() => {
                 setCurrentForm(record);
-                setFormActionType("edit");
+                setFormActionType('edit');
                 setFormModalVisible(true);
               }}
             />
@@ -685,7 +685,7 @@ const FormsManagement = () => {
                 </Menu.Item>
               </Menu>
             }
-            trigger={["click"]}
+            trigger={['click']}
           >
             <Button icon={<MoreOutlined />} />
           </Dropdown>
@@ -720,7 +720,7 @@ const FormsManagement = () => {
             icon={<PlusOutlined />}
             onClick={() => {
               setCurrentForm(null);
-              setFormActionType("create");
+              setFormActionType('create');
               resetFormBasics();
               setFormPages([]);
               setFormConditionals([]);
@@ -744,12 +744,12 @@ const FormsManagement = () => {
               image={Empty.PRESENTED_IMAGE_SIMPLE}
               description={
                 <span>
-                  No forms found.{" "}
+                  No forms found.{' '}
                   <Button
                     type="link"
                     onClick={() => {
                       setCurrentForm(null);
-                      setFormActionType("create");
+                      setFormActionType('create');
                       resetFormBasics();
                       setFormPages([]);
                       setFormModalVisible(true);
@@ -766,7 +766,7 @@ const FormsManagement = () => {
 
       {/* Form Basics Modal */}
       <Modal
-        title={formActionType === "create" ? "Create New Form" : "Edit Form"}
+        title={formActionType === 'create' ? 'Create New Form' : 'Edit Form'}
         visible={formModalVisible}
         onCancel={() => setFormModalVisible(false)}
         footer={[
@@ -778,9 +778,9 @@ const FormsManagement = () => {
             type="primary"
             onClick={handleFormBasicsSubmit(onFormBasicsSubmit)}
           >
-            {formActionType === "create"
-              ? "Proceed to Form Builder"
-              : "Save Changes & Edit Form"}
+            {formActionType === 'create'
+              ? 'Proceed to Form Builder'
+              : 'Save Changes & Edit Form'}
           </Button>,
         ]}
         width={600}
@@ -789,12 +789,12 @@ const FormsManagement = () => {
           <Controller
             name="title"
             control={formBasicsControl}
-            rules={{ required: "Form title is required" }}
+            rules={{ required: 'Form title is required' }}
             render={({ field, fieldState }) => (
               <Form.Item
                 label="Form Title"
-                validateStatus={fieldState.error ? "error" : ""}
-                help={fieldState.error ? fieldState.error.message : ""}
+                validateStatus={fieldState.error ? 'error' : ''}
+                help={fieldState.error ? fieldState.error.message : ''}
               >
                 <Input {...field} placeholder="Enter form title" />
               </Form.Item>
@@ -818,12 +818,12 @@ const FormsManagement = () => {
           <Controller
             name="service_id"
             control={formBasicsControl}
-            rules={{ required: "Please select a service" }}
+            rules={{ required: 'Please select a service' }}
             render={({ field, fieldState }) => (
               <Form.Item
                 label="Associated Service"
-                validateStatus={fieldState.error ? "error" : ""}
-                help={fieldState.error ? fieldState.error.message : ""}
+                validateStatus={fieldState.error ? 'error' : ''}
+                help={fieldState.error ? fieldState.error.message : ''}
               >
                 <Select {...field} placeholder="Select a service">
                   {services.map((service) => (
@@ -882,7 +882,7 @@ const FormsManagement = () => {
           <div className="form-builder-header">
             <div>
               <span>Form Builder: </span>
-              <Text strong>{currentForm?.title || "New Form"}</Text>
+              <Text strong>{currentForm?.title || 'New Form'}</Text>
             </div>
           </div>
         }
@@ -903,7 +903,7 @@ const FormsManagement = () => {
                 createFormMutation.isLoading || updateFormMutation.isLoading
               }
             >
-              {formActionType === "create" ? "Create Form" : "Save Changes"}
+              {formActionType === 'create' ? 'Create Form' : 'Save Changes'}
             </Button>
           </Space>
         }
@@ -915,7 +915,7 @@ const FormsManagement = () => {
             activeKey={activeBuilderTab}
             onChange={setActiveBuilderTab}
             tabPosition="top"
-            style={{ width: "100%" }}
+            style={{ width: '100%' }}
           >
             <TabPane tab="Pages & Fields" key="pages">
               <div className="form-builder-content">
@@ -937,7 +937,7 @@ const FormsManagement = () => {
                     <div className="form-preview-header">
                       <div>
                         <Title level={4}>
-                          {formPages[currentPageIndex]?.title || "Page"}
+                          {formPages[currentPageIndex]?.title || 'Page'}
                         </Title>
                         {currentForm?.description && (
                           <Text type="secondary">
@@ -1000,7 +1000,7 @@ const FormsManagement = () => {
             addonAfter={
               <CopyOutlined
                 onClick={copyToClipboard}
-                style={{ cursor: "pointer" }}
+                style={{ cursor: 'pointer' }}
               />
             }
             readOnly

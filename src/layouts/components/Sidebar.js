@@ -1,7 +1,11 @@
 import React from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { sidebarItems, settingsItems, logoutItem } from '../../constants/SidebarItems';
+import {
+  sidebarItems,
+  settingsItems,
+  logoutItem,
+} from '../../constants/SidebarItems';
 
 const Sidebar = () => {
   const location = useLocation();
@@ -12,7 +16,6 @@ const Sidebar = () => {
     logout();
     navigate('/login');
   };
-
 
   // Function to determine if a menu item is active
   const isActive = (path) => {

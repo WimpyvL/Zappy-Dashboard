@@ -1,16 +1,16 @@
 // components/patients/components/PatientBilling.jsx
-import React from "react";
+import React from 'react';
 import {
   CreditCard,
   DollarSign,
   CheckCircle,
   Clock,
   XCircle,
-} from "lucide-react";
-import { toast } from "react-toastify";
-import { redirectToCheckout } from "../../../utils/stripeCheckout";
-import LoadingSpinner from "./common/LoadingSpinner";
-import apiService from "../../../utils/apiService";
+} from 'lucide-react';
+import { toast } from 'react-toastify';
+import { redirectToCheckout } from '../../../utils/stripeCheckout';
+import LoadingSpinner from './common/LoadingSpinner';
+import apiService from '../../../utils/apiService';
 
 const PaymentMethodCard = ({
   method,
@@ -23,23 +23,23 @@ const PaymentMethodCard = ({
       await apiService.put(
         `/api/v1/admin/patients/${patientId}/payment_methods/${method.id}/make_default`
       );
-      toast.success("Default payment method updated");
+      toast.success('Default payment method updated');
       refreshPatient();
     } catch (error) {
-      console.error("Failed to update default payment method:", error);
-      toast.error("Failed to update payment method");
+      console.error('Failed to update default payment method:', error);
+      toast.error('Failed to update payment method');
     }
   };
 
   return (
     <div
       className={`border ${
-        isDefault ? "border-indigo-300 bg-indigo-50" : "border-gray-200"
+        isDefault ? 'border-indigo-300 bg-indigo-50' : 'border-gray-200'
       } rounded-lg p-4 flex justify-between items-center`}
     >
       <div className="flex items-center">
         <div className="mr-4">
-          {method.type === "card" ? (
+          {method.type === 'card' ? (
             <CreditCard className="h-6 w-6 text-gray-500" />
           ) : (
             <DollarSign className="h-6 w-6 text-gray-500" />
@@ -47,9 +47,9 @@ const PaymentMethodCard = ({
         </div>
         <div>
           <p className="text-sm font-medium text-gray-900">
-            {method.type === "card"
+            {method.type === 'card'
               ? `${method.brand} ending in ${method.last4}`
-              : "Bank Account"}
+              : 'Bank Account'}
             {isDefault && (
               <span className="ml-2 px-2 py-0.5 text-xs font-medium rounded-full bg-indigo-100 text-indigo-800">
                 Default
@@ -57,7 +57,7 @@ const PaymentMethodCard = ({
             )}
           </p>
           <p className="text-xs text-gray-500">
-            {method.type === "card"
+            {method.type === 'card'
               ? `Expires ${method.expMonth}/${method.expYear}`
               : `****${method.last4}`}
           </p>
@@ -81,18 +81,18 @@ const PaymentStatusBadge = ({ status }) => {
   return (
     <span
       className={`flex items-center px-2 py-1 text-xs font-medium rounded-full ${
-        status === "paid"
-          ? "bg-green-100 text-green-800"
-          : status === "pending"
-          ? "bg-yellow-100 text-yellow-800"
-          : status === "failed"
-          ? "bg-red-100 text-red-800"
-          : "bg-gray-100 text-gray-800"
+        status === 'paid'
+          ? 'bg-green-100 text-green-800'
+          : status === 'pending'
+            ? 'bg-yellow-100 text-yellow-800'
+            : status === 'failed'
+              ? 'bg-red-100 text-red-800'
+              : 'bg-gray-100 text-gray-800'
       }`}
     >
-      {status === "paid" ? (
+      {status === 'paid' ? (
         <CheckCircle className="h-3 w-3 mr-1" />
-      ) : status === "pending" ? (
+      ) : status === 'pending' ? (
         <Clock className="h-3 w-3 mr-1" />
       ) : (
         <XCircle className="h-3 w-3 mr-1" />
@@ -105,12 +105,12 @@ const PaymentStatusBadge = ({ status }) => {
 const PatientBilling = ({ patient, invoices, loading, refreshPatient }) => {
   // Format date for display
   const formatDate = (dateString) => {
-    if (!dateString) return "Not available";
+    if (!dateString) return 'Not available';
     const date = new Date(dateString);
-    return new Intl.DateTimeFormat("en-US", {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
+    return new Intl.DateTimeFormat('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
     }).format(date);
   };
 
@@ -123,7 +123,7 @@ const PatientBilling = ({ patient, invoices, loading, refreshPatient }) => {
           patient.subscriptionPlan
             ? patient.subscriptionPlan.charAt(0).toUpperCase() +
               patient.subscriptionPlan.slice(1)
-            : "Basic"
+            : 'Basic'
         } Plan`,
         description: `Monthly subscription for ${patient.medication}`,
         price: 199.99, // This would come from your actual plan data
@@ -132,8 +132,8 @@ const PatientBilling = ({ patient, invoices, loading, refreshPatient }) => {
 
       await redirectToCheckout(patient.id, planDetails);
     } catch (error) {
-      console.error("Failed to initiate checkout:", error);
-      toast.error("Failed to initiate payment process");
+      console.error('Failed to initiate checkout:', error);
+      toast.error('Failed to initiate payment process');
     }
   };
 
@@ -235,7 +235,7 @@ const PatientBilling = ({ patient, invoices, loading, refreshPatient }) => {
                       >
                         View
                       </a>
-                      {invoice.status === "pending" && (
+                      {invoice.status === 'pending' && (
                         <button
                           className="text-indigo-600 hover:text-indigo-900"
                           onClick={handlePayment}
@@ -270,7 +270,7 @@ const PatientBilling = ({ patient, invoices, loading, refreshPatient }) => {
               <div>
                 <p className="text-lg font-medium text-gray-900">
                   {patient.subscriptionPlan.charAt(0).toUpperCase() +
-                    patient.subscriptionPlan.slice(1)}{" "}
+                    patient.subscriptionPlan.slice(1)}{' '}
                   Plan
                 </p>
                 <p className="text-sm text-gray-500">Monthly subscription</p>
@@ -300,7 +300,7 @@ const PatientBilling = ({ patient, invoices, loading, refreshPatient }) => {
                   <p className="text-sm font-medium">
                     {patient.nextBillingDate
                       ? formatDate(patient.nextBillingDate)
-                      : "Unknown"}
+                      : 'Unknown'}
                   </p>
                 </div>
                 <div>
@@ -308,7 +308,7 @@ const PatientBilling = ({ patient, invoices, loading, refreshPatient }) => {
                   <p className="text-sm font-medium">
                     {patient.subscriptionStartDate
                       ? formatDate(patient.subscriptionStartDate)
-                      : "Unknown"}
+                      : 'Unknown'}
                   </p>
                 </div>
               </div>
@@ -322,11 +322,11 @@ const PatientBilling = ({ patient, invoices, loading, refreshPatient }) => {
                     await apiService.post(
                       `/api/v1/admin/patients/${patient.id}/subscription/pause`
                     );
-                    toast.success("Subscription paused successfully");
+                    toast.success('Subscription paused successfully');
                     refreshPatient();
                   } catch (error) {
-                    console.error("Failed to pause subscription:", error);
-                    toast.error("Failed to pause subscription");
+                    console.error('Failed to pause subscription:', error);
+                    toast.error('Failed to pause subscription');
                   }
                 }}
               >
@@ -337,18 +337,18 @@ const PatientBilling = ({ patient, invoices, loading, refreshPatient }) => {
                 onClick={async () => {
                   if (
                     window.confirm(
-                      "Are you sure you want to cancel this subscription? This action cannot be undone."
+                      'Are you sure you want to cancel this subscription? This action cannot be undone.'
                     )
                   ) {
                     try {
                       await apiService.post(
                         `/api/v1/admin/patients/${patient.id}/subscription/cancel`
                       );
-                      toast.success("Subscription cancelled successfully");
+                      toast.success('Subscription cancelled successfully');
                       refreshPatient();
                     } catch (error) {
-                      console.error("Failed to cancel subscription:", error);
-                      toast.error("Failed to cancel subscription");
+                      console.error('Failed to cancel subscription:', error);
+                      toast.error('Failed to cancel subscription');
                     }
                   }
                 }}

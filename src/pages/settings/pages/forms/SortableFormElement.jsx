@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState } from 'react';
 import {
   Card,
   Input,
@@ -15,7 +15,7 @@ import {
   Tabs,
   Tag,
   Popover,
-} from "antd";
+} from 'antd';
 import {
   DeleteOutlined,
   MenuOutlined,
@@ -26,9 +26,9 @@ import {
   ApiOutlined,
   InfoCircleOutlined,
   LinkOutlined,
-} from "@ant-design/icons";
-import { useSortable } from "@dnd-kit/sortable";
-import { CSS } from "@dnd-kit/utilities";
+} from '@ant-design/icons';
+import { useSortable } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
 const { Panel } = Collapse;
 const { TabPane } = Tabs;
@@ -39,7 +39,7 @@ const generateRandomId = () => `_${Math.random().toString(36).substr(2, 9)}`;
 
 const SortableFormElement = ({ element, index, onUpdate, onDelete }) => {
   const [expanded, setExpanded] = useState(false);
-  const [activeSettingsTab, setActiveSettingsTab] = useState("basic");
+  const [activeSettingsTab, setActiveSettingsTab] = useState('basic');
 
   // Use dnd-kit's useSortable hook for drag and drop
   const {
@@ -71,7 +71,7 @@ const SortableFormElement = ({ element, index, onUpdate, onDelete }) => {
   const handleOptionChange = (optionIndex, value) => {
     const updatedOptions = [...element.options];
     updatedOptions[optionIndex].value = value;
-    handleElementUpdate("options", updatedOptions);
+    handleElementUpdate('options', updatedOptions);
   };
 
   const handleAddOption = () => {
@@ -79,36 +79,36 @@ const SortableFormElement = ({ element, index, onUpdate, onDelete }) => {
       id: generateRandomId(),
       value: `Option ${(element.options?.length || 0) + 1}`,
     };
-    handleElementUpdate("options", [...(element.options || []), newOption]);
+    handleElementUpdate('options', [...(element.options || []), newOption]);
   };
 
   const handleRemoveOption = (optionIndex) => {
     const updatedOptions = [...element.options];
     updatedOptions.splice(optionIndex, 1);
-    handleElementUpdate("options", updatedOptions);
+    handleElementUpdate('options', updatedOptions);
   };
 
   // Handle dynamic value setup
   const handleDynamicValueChange = (field, value) => {
     const dynamicData = element.dynamicData || {};
     const updatedDynamicData = { ...dynamicData, [field]: value };
-    handleElementUpdate("dynamicData", updatedDynamicData);
+    handleElementUpdate('dynamicData', updatedDynamicData);
   };
 
   // Handle enabling/disabling dynamic values
   const handleToggleDynamicValues = (enabled) => {
     if (enabled) {
       handleElementUpdate(
-        "dynamicData",
+        'dynamicData',
         element.dynamicData || {
-          source: "service",
-          path: "",
+          source: 'service',
+          path: '',
           enabled: true,
         }
       );
     } else {
       // We keep the configuration but disable it
-      handleElementUpdate("dynamicData", {
+      handleElementUpdate('dynamicData', {
         ...element.dynamicData,
         enabled: false,
       });
@@ -118,30 +118,30 @@ const SortableFormElement = ({ element, index, onUpdate, onDelete }) => {
   // Render a preview of the element based on its type
   const renderElementPreview = () => {
     switch (element.type) {
-      case "short_text":
+      case 'short_text':
         return (
-          <Input placeholder={element.placeholder || "Short text"} disabled />
+          <Input placeholder={element.placeholder || 'Short text'} disabled />
         );
 
-      case "paragraph":
+      case 'paragraph':
         return (
           <Input.TextArea
             rows={3}
-            placeholder={element.placeholder || "Paragraph text"}
+            placeholder={element.placeholder || 'Paragraph text'}
             disabled
           />
         );
 
-      case "number":
+      case 'number':
         return (
           <Input
             type="number"
-            placeholder={element.placeholder || "Number"}
+            placeholder={element.placeholder || 'Number'}
             disabled
           />
         );
 
-      case "multiple_choice":
+      case 'multiple_choice':
         return (
           <Radio.Group disabled>
             {element.options?.map((option) => (
@@ -152,7 +152,7 @@ const SortableFormElement = ({ element, index, onUpdate, onDelete }) => {
           </Radio.Group>
         );
 
-      case "checkboxes":
+      case 'checkboxes':
         return (
           <Checkbox.Group disabled>
             <Space direction="vertical">
@@ -165,11 +165,11 @@ const SortableFormElement = ({ element, index, onUpdate, onDelete }) => {
           </Checkbox.Group>
         );
 
-      case "dropdown":
+      case 'dropdown':
         return (
           <Select
             placeholder="Select option"
-            style={{ width: "100%" }}
+            style={{ width: '100%' }}
             disabled
           >
             {element.options?.map((option) => (
@@ -180,22 +180,22 @@ const SortableFormElement = ({ element, index, onUpdate, onDelete }) => {
           </Select>
         );
 
-      case "date":
-        return <DatePicker style={{ width: "100%" }} disabled />;
+      case 'date':
+        return <DatePicker style={{ width: '100%' }} disabled />;
 
-      case "time":
-        return <TimePicker style={{ width: "100%" }} disabled />;
+      case 'time':
+        return <TimePicker style={{ width: '100%' }} disabled />;
 
-      case "email":
+      case 'email':
         return <Input placeholder="Email address" disabled />;
 
-      case "phone":
+      case 'phone':
         return <Input placeholder="Phone number" disabled />;
 
-      case "name":
+      case 'name':
         return <Input placeholder="Name" disabled />;
 
-      case "address":
+      case 'address':
         return <Input placeholder="Address" disabled />;
 
       default:
@@ -209,41 +209,41 @@ const SortableFormElement = ({ element, index, onUpdate, onDelete }) => {
   };
 
   const elementTypeNames = {
-    short_text: "Short Text",
-    paragraph: "Paragraph",
-    number: "Number",
-    multiple_choice: "Multiple Choice",
-    checkboxes: "Checkboxes",
-    dropdown: "Dropdown",
-    date: "Date",
-    time: "Time",
-    email: "Email",
-    phone: "Phone",
-    name: "Name",
-    address: "Address",
+    short_text: 'Short Text',
+    paragraph: 'Paragraph',
+    number: 'Number',
+    multiple_choice: 'Multiple Choice',
+    checkboxes: 'Checkboxes',
+    dropdown: 'Dropdown',
+    date: 'Date',
+    time: 'Time',
+    email: 'Email',
+    phone: 'Phone',
+    name: 'Name',
+    address: 'Address',
   };
 
   // Dynamic source options for populating field values
   const dynamicSourceOptions = [
-    { value: "service", label: "Service Data" },
-    { value: "user", label: "User Profile" },
-    { value: "custom", label: "Custom API" },
+    { value: 'service', label: 'Service Data' },
+    { value: 'user', label: 'User Profile' },
+    { value: 'custom', label: 'Custom API' },
   ];
 
   // Sample dynamic path options based on source
   const getDynamicPathOptions = (source) => {
-    if (source === "service") {
+    if (source === 'service') {
       return [
-        { value: "plans", label: "Available Plans" },
-        { value: "medications", label: "Medications" },
-        { value: "providers", label: "Healthcare Providers" },
+        { value: 'plans', label: 'Available Plans' },
+        { value: 'medications', label: 'Medications' },
+        { value: 'providers', label: 'Healthcare Providers' },
       ];
-    } else if (source === "user") {
+    } else if (source === 'user') {
       return [
-        { value: "profile.name", label: "Full Name" },
-        { value: "profile.email", label: "Email Address" },
-        { value: "profile.phone", label: "Phone Number" },
-        { value: "profile.address", label: "Address" },
+        { value: 'profile.name', label: 'Full Name' },
+        { value: 'profile.email', label: 'Email Address' },
+        { value: 'profile.phone', label: 'Phone Number' },
+        { value: 'profile.address', label: 'Address' },
       ];
     } else {
       return [];
@@ -253,7 +253,7 @@ const SortableFormElement = ({ element, index, onUpdate, onDelete }) => {
   return (
     <div ref={setNodeRef} style={style} className="sortable-form-element">
       <Card
-        className={`form-element-card ${isDragging ? "dragging" : ""}`}
+        className={`form-element-card ${isDragging ? 'dragging' : ''}`}
         size="small"
         title={
           <div className="element-header">
@@ -282,7 +282,7 @@ const SortableFormElement = ({ element, index, onUpdate, onDelete }) => {
         }
       >
         <Collapse
-          activeKey={expanded ? ["1"] : []}
+          activeKey={expanded ? ['1'] : []}
           onChange={() => setExpanded(!expanded)}
           ghost
         >
@@ -318,7 +318,7 @@ const SortableFormElement = ({ element, index, onUpdate, onDelete }) => {
                     <Input
                       value={element.label}
                       onChange={(e) =>
-                        handleElementUpdate("label", e.target.value)
+                        handleElementUpdate('label', e.target.value)
                       }
                       placeholder="Enter field label"
                     />
@@ -329,7 +329,7 @@ const SortableFormElement = ({ element, index, onUpdate, onDelete }) => {
                     <Input
                       value={element.placeholder}
                       onChange={(e) =>
-                        handleElementUpdate("placeholder", e.target.value)
+                        handleElementUpdate('placeholder', e.target.value)
                       }
                       placeholder="Enter placeholder text"
                     />
@@ -340,7 +340,7 @@ const SortableFormElement = ({ element, index, onUpdate, onDelete }) => {
                     <Switch
                       checked={element.required}
                       onChange={(checked) =>
-                        handleElementUpdate("required", checked)
+                        handleElementUpdate('required', checked)
                       }
                     />
                   </div>
@@ -350,14 +350,14 @@ const SortableFormElement = ({ element, index, onUpdate, onDelete }) => {
                     <Input
                       value={element.helperText}
                       onChange={(e) =>
-                        handleElementUpdate("helperText", e.target.value)
+                        handleElementUpdate('helperText', e.target.value)
                       }
                       placeholder="Additional instructions for this field"
                     />
                   </div>
 
                   {/* Options settings for multiple choice, checkboxes, and dropdown */}
-                  {["multiple_choice", "checkboxes", "dropdown"].includes(
+                  {['multiple_choice', 'checkboxes', 'dropdown'].includes(
                     element.type
                   ) && (
                     <div className="setting-row options-row">
@@ -419,11 +419,11 @@ const SortableFormElement = ({ element, index, onUpdate, onDelete }) => {
                       <div className="setting-row">
                         <label>Data Source:</label>
                         <Select
-                          value={element.dynamicData?.source || "service"}
+                          value={element.dynamicData?.source || 'service'}
                           onChange={(value) =>
-                            handleDynamicValueChange("source", value)
+                            handleDynamicValueChange('source', value)
                           }
-                          style={{ width: "100%" }}
+                          style={{ width: '100%' }}
                         >
                           {dynamicSourceOptions.map((option) => (
                             <Option key={option.value} value={option.value}>
@@ -438,13 +438,13 @@ const SortableFormElement = ({ element, index, onUpdate, onDelete }) => {
                         <Select
                           value={element.dynamicData?.path}
                           onChange={(value) =>
-                            handleDynamicValueChange("path", value)
+                            handleDynamicValueChange('path', value)
                           }
-                          style={{ width: "100%" }}
+                          style={{ width: '100%' }}
                           placeholder="Select data to display"
                         >
                           {getDynamicPathOptions(
-                            element.dynamicData?.source || "service"
+                            element.dynamicData?.source || 'service'
                           ).map((option) => (
                             <Option key={option.value} value={option.value}>
                               {option.label}
@@ -453,14 +453,14 @@ const SortableFormElement = ({ element, index, onUpdate, onDelete }) => {
                         </Select>
                       </div>
 
-                      {element.dynamicData?.source === "custom" && (
+                      {element.dynamicData?.source === 'custom' && (
                         <div className="setting-row">
                           <label>API Endpoint:</label>
                           <Input
                             value={element.dynamicData?.endpoint}
                             onChange={(e) =>
                               handleDynamicValueChange(
-                                "endpoint",
+                                'endpoint',
                                 e.target.value
                               )
                             }
@@ -473,12 +473,12 @@ const SortableFormElement = ({ element, index, onUpdate, onDelete }) => {
                         <label>Display Method:</label>
                         <Select
                           value={
-                            element.dynamicData?.displayMethod || "dropdown"
+                            element.dynamicData?.displayMethod || 'dropdown'
                           }
                           onChange={(value) =>
-                            handleDynamicValueChange("displayMethod", value)
+                            handleDynamicValueChange('displayMethod', value)
                           }
-                          style={{ width: "100%" }}
+                          style={{ width: '100%' }}
                         >
                           <Option value="dropdown">Dropdown Selection</Option>
                           <Option value="radio">Radio Buttons</Option>
@@ -500,9 +500,9 @@ const SortableFormElement = ({ element, index, onUpdate, onDelete }) => {
                   <div className="setting-row">
                     <label>Field Width:</label>
                     <Select
-                      value={element.width || "full"}
-                      onChange={(value) => handleElementUpdate("width", value)}
-                      style={{ width: "100%" }}
+                      value={element.width || 'full'}
+                      onChange={(value) => handleElementUpdate('width', value)}
+                      style={{ width: '100%' }}
                     >
                       <Option value="full">Full Width</Option>
                       <Option value="half">Half Width</Option>
@@ -513,9 +513,9 @@ const SortableFormElement = ({ element, index, onUpdate, onDelete }) => {
                   <div className="setting-row">
                     <label>Field Size:</label>
                     <Select
-                      value={element.size || "default"}
-                      onChange={(value) => handleElementUpdate("size", value)}
-                      style={{ width: "100%" }}
+                      value={element.size || 'default'}
+                      onChange={(value) => handleElementUpdate('size', value)}
+                      style={{ width: '100%' }}
                     >
                       <Option value="small">Small</Option>
                       <Option value="default">Medium</Option>
@@ -528,7 +528,7 @@ const SortableFormElement = ({ element, index, onUpdate, onDelete }) => {
                     <Input
                       value={element.cssClass}
                       onChange={(e) =>
-                        handleElementUpdate("cssClass", e.target.value)
+                        handleElementUpdate('cssClass', e.target.value)
                       }
                       placeholder="Enter custom CSS class"
                     />

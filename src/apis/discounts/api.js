@@ -5,7 +5,7 @@ export const getDiscounts = async (params) => {
   const data = await request({
     url: '/api/v1/admin/discounts',
     method: 'GET',
-    params
+    params,
   });
   return data;
 };
@@ -14,7 +14,7 @@ export const getDiscounts = async (params) => {
 export const getDiscountById = async (id) => {
   const data = await request({
     url: `/api/v1/admin/discounts/${id}`,
-    method: 'GET'
+    method: 'GET',
   });
   return data;
 };
@@ -24,7 +24,7 @@ export const createDiscount = async (discountData) => {
   const data = await request({
     url: '/api/v1/admin/discounts',
     method: 'POST',
-    data: { discount: discountData }
+    data: { discount: discountData },
   });
   return data;
 };
@@ -34,7 +34,7 @@ export const updateDiscount = async (id, discountData) => {
   const data = await request({
     url: `/api/v1/admin/discounts/${id}`,
     method: 'PUT',
-    data: { discount: discountData }
+    data: { discount: discountData },
   });
   return data;
 };
@@ -43,7 +43,7 @@ export const updateDiscount = async (id, discountData) => {
 export const deleteDiscount = async (id) => {
   const data = await request({
     url: `/api/v1/admin/discounts/${id}`,
-    method: 'DELETE'
+    method: 'DELETE',
   });
   return data;
 };
@@ -53,7 +53,7 @@ export const toggleDiscountActive = async (id, active) => {
   const data = await request({
     url: `/api/v1/admin/discounts/${id}/toggle_active`,
     method: 'PUT',
-    data: { active }
+    data: { active },
   });
   return data;
 };

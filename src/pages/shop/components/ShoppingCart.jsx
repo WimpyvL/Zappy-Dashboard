@@ -31,7 +31,7 @@ const ShoppingCart = ({ isOpen, onClose }) => {
   };
 
   const handleQuantityChange = (doseId, change) => {
-    const item = cartItems.find(i => i.doseId === doseId);
+    const item = cartItems.find((i) => i.doseId === doseId);
     if (item) {
       updateQuantity(doseId, item.quantity + change);
     }
@@ -63,15 +63,22 @@ const ShoppingCart = ({ isOpen, onClose }) => {
             </div>
           ) : (
             cartItems.map((item) => (
-              <div key={item.doseId} className="flex items-start space-x-3 border-b pb-3 last:border-b-0">
+              <div
+                key={item.doseId}
+                className="flex items-start space-x-3 border-b pb-3 last:border-b-0"
+              >
                 {/* Placeholder for image */}
                 <div className="w-16 h-16 bg-gray-100 rounded flex items-center justify-center text-gray-400">
                   <CartIcon size={24} />
                 </div>
                 <div className="flex-grow">
-                  <p className="text-sm font-medium text-gray-800">{item.productName}</p>
+                  <p className="text-sm font-medium text-gray-800">
+                    {item.productName}
+                  </p>
                   <p className="text-xs text-gray-500">{item.doseValue}</p>
-                  <p className="text-sm font-semibold text-indigo-600 mt-1">${item.price.toFixed(2)}</p>
+                  <p className="text-sm font-semibold text-indigo-600 mt-1">
+                    ${item.price.toFixed(2)}
+                  </p>
                   <div className="flex items-center mt-2">
                     <button
                       onClick={() => handleQuantityChange(item.doseId, -1)}
@@ -107,7 +114,9 @@ const ShoppingCart = ({ isOpen, onClose }) => {
         {cartItems.length > 0 && (
           <div className="p-4 border-t border-gray-200 space-y-3">
             <div className="flex justify-between items-center">
-              <span className="text-gray-600">Subtotal ({getCartItemCount()} items)</span>
+              <span className="text-gray-600">
+                Subtotal ({getCartItemCount()} items)
+              </span>
               <span className="text-lg font-semibold text-gray-800">
                 ${getCartTotal().toFixed(2)}
               </span>

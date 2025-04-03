@@ -110,7 +110,7 @@ export const settingsItems = [
     title: 'Audit Log',
     path: paths.auditlog, // Use path constant
     icon: History,
-  }
+  },
 ];
 
 // Export the logout item

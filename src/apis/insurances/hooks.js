@@ -10,13 +10,24 @@ import {
   updateInsuranceRecord,
   uploadInsuranceDocument,
   deleteInsuranceDocument
-} from './api';
+} from './api'; // Keep imports for other hooks
 
-// Get insurance records hook
+// --- Mock Data ---
+const sampleInsuranceRecords = [
+  { id: 'ir001', patientId: 'p001', patientName: 'John Smith', insuranceProvider: 'Blue Cross', policyNumber: 'BC12345', status: 'Verified', documents: [] },
+  { id: 'ir002', patientId: 'p002', patientName: 'Emily Davis', insuranceProvider: 'Aetna', policyNumber: 'AE67890', status: 'Pending', documents: [] },
+];
+// --- End Mock Data ---
+
+
+// Get insurance records hook (Mocked)
 export const useInsuranceRecords = (filters) => {
+  console.log("Using mock insurance records data");
   return useQuery({
     queryKey: ['insuranceRecords', filters],
-    queryFn: () => getInsuranceRecords(filters)
+    // queryFn: () => getInsuranceRecords(filters), // Original API call
+    queryFn: () => Promise.resolve({ data: sampleInsuranceRecords }), // Return mock data
+    staleTime: Infinity, // Prevent refetching for mock data
   });
 };
 

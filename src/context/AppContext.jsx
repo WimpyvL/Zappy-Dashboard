@@ -1,25 +1,45 @@
 import React, { createContext, useState, useEffect, useContext } from "react";
-import apiService from "../utils/apiService";
+// Comment out apiService import as we are mocking data
+// import apiService from "../utils/apiService";
 
 // Create context
 const AppContext = createContext();
 
-// Sample tags data - Will be replaced by API call
-// const sampleTags = [ ... ];
+// --- Mock Data ---
+const samplePatients = [
+  { id: 'p001', firstName: 'John', lastName: 'Smith', email: 'john.smith@example.com', status: 'Active', tags: ['vip'] },
+  { id: 'p002', firstName: 'Emily', lastName: 'Davis', email: 'emily.davis@example.com', status: 'Active', tags: [] },
+  { id: 'p003', firstName: 'Robert', lastName: 'Wilson', email: 'robert.wilson@example.com', status: 'Inactive', tags: ['follow-up'] },
+];
 
-// Sample documents for patients - Will be replaced by API call
-// const sampleDocuments = [ ... ];
+const sampleSessions = [
+  { id: 's001', patientId: 'p001', patientName: 'John Smith', scheduledDate: new Date(Date.now() + 86400000).toISOString(), status: 'scheduled', type: 'Follow-up', tags: [] }, // Tomorrow
+  { id: 's002', patientId: 'p002', patientName: 'Emily Davis', scheduledDate: new Date().toISOString(), status: 'scheduled', type: 'Initial Consultation', tags: [] }, // Today
+  { id: 's003', patientId: 'p003', patientName: 'Robert Wilson', scheduledDate: new Date(Date.now() - 86400000).toISOString(), status: 'completed', type: 'Follow-up', tags: [] }, // Yesterday
+];
 
-// Sample forms sent to patients - Will be replaced by API call
-// const sampleForms = [ ... ];
+const sampleOrders = [
+  { id: 'o001', patientId: 'p001', orderDate: new Date().toISOString(), status: 'pending', medication: 'Ozempic', tags: [] },
+  { id: 'o002', patientId: 'p002', orderDate: new Date(Date.now() - 86400000).toISOString(), status: 'shipped', medication: 'Wegovy', tags: [] },
+  { id: 'o003', patientId: 'p001', orderDate: new Date(Date.now() - 172800000).toISOString(), status: 'delivered', medication: 'Ozempic', tags: [] },
+];
 
-// Sample invoices for patients - Will be replaced by API call
-// const sampleInvoices = [ ... ];
+const sampleProducts = [
+  { id: 1, name: 'Ozempic Pens', description: 'Injectable medication', category: 'Weight Loss', active: true, doses: [{ id: 101, value: '0.25mg' }, { id: 102, value: '0.5mg' }, { id: 103, value: '1.0mg' }] },
+  { id: 2, name: 'Wegovy Pens', description: 'Injectable medication', category: 'Weight Loss', active: true, doses: [{ id: 201, value: '1.7mg' }, { id: 202, value: '2.4mg' }] },
+];
 
-// Sample services data - Will be replaced by API call
-// const sampleServices = [ ... ];
+const sampleServices = [
+  { id: 'svc001', name: 'Initial Consultation', description: 'First meeting with provider', price: 150, active: true },
+  { id: 'svc002', name: 'Follow-up Session', description: 'Regular check-in', price: 75, active: true },
+];
 
-// Re-added Sample subscription plans as fallback
+const sampleTags = [
+  { id: 'vip', name: 'VIP', color: 'gold' },
+  { id: 'follow-up', name: 'Needs Follow Up', color: 'blue' },
+  { id: 'high-risk', name: 'High Risk', color: 'red' },
+];
+
 const sampleSubscriptionPlans = [
   {
     id: 1,
@@ -55,9 +75,7 @@ const sampleSubscriptionPlans = [
     allowedProductDoses: [{ productId: 1, doseId: 103 }, { productId: 2, doseId: 202 }]
   }
 ];
-
-// Sample products data - Will be replaced by API call
-// const sampleProducts = [ ... ]; // Need to define or fetch
+// --- End Mock Data ---
 
 export const AppProvider = ({ children }) => {
   // State for core data types
@@ -109,172 +127,98 @@ export const AppProvider = ({ children }) => {
     invoices: null, // Added invoices error (placeholder)
   });
 
-  // --- Fetch Functions ---
+  // --- Fetch Functions (Mocked) ---
 
-  const fetchPatients = async () => {
-    setLoading((prev) => ({ ...prev, patients: true }));
-    setErrors((prev) => ({ ...prev, patients: null })); // Clear previous error
-    try {
-      const data = await apiService.patients.getAll();
-      setPatients(data.data || []); // Ensure it's an array
-    } catch (error) {
-      console.error("Error fetching patients:", error);
-      setErrors((prev) => ({
-        ...prev,
-        patients: error.response?.data?.message || "Failed to fetch patients",
-      }));
-      setPatients([]); // Set empty array on error
-    } finally {
-      setLoading((prev) => ({ ...prev, patients: false }));
-    }
+  const fetchPatients = () => {
+    console.log("Using mock patient data");
+    setPatients(samplePatients);
+    setLoading((prev) => ({ ...prev, patients: false }));
+    setErrors((prev) => ({ ...prev, patients: null }));
   };
 
-  const fetchSessions = async () => {
-    setLoading((prev) => ({ ...prev, sessions: true }));
+  const fetchSessions = () => {
+    console.log("Using mock session data");
+    setSessions(sampleSessions);
+    setLoading((prev) => ({ ...prev, sessions: false }));
     setErrors((prev) => ({ ...prev, sessions: null }));
-    try {
-      const data = await apiService.sessions.getAll();
-      const sessionsWithTags = (data || []).map((session) => ({ // Ensure data is array
-        ...session,
-        tags: session.tags || [],
-      }));
-      setSessions(sessionsWithTags);
-    } catch (error) {
-      console.error("Error fetching sessions:", error);
-      setErrors((prev) => ({
-        ...prev,
-        sessions: error.response?.data?.message || "Failed to fetch sessions",
-      }));
-      setSessions([]); // Set empty array on error
-    } finally {
-      setLoading((prev) => ({ ...prev, sessions: false }));
-    }
   };
 
-  const fetchOrders = async () => {
-    setLoading((prev) => ({ ...prev, orders: true }));
+  const fetchOrders = () => {
+    console.log("Using mock order data");
+    setOrders(sampleOrders);
+    setLoading((prev) => ({ ...prev, orders: false }));
     setErrors((prev) => ({ ...prev, orders: null }));
-    try {
-      const data = await apiService.orders.getAll();
-      const ordersWithTags = (data.data || []).map((order) => ({ // Ensure data.data is array
-        ...order,
-        tags: order.tags || [],
-      }));
-      setOrders(ordersWithTags);
-    } catch (error) {
-      console.error("Error fetching orders:", error);
-      setErrors((prev) => ({
-        ...prev,
-        orders: error.response?.data?.message || "Failed to fetch orders",
-      }));
-      setOrders([]); // Set empty array on error
-    } finally {
-      setLoading((prev) => ({ ...prev, orders: false }));
-    }
   };
 
-  // Added fetchProducts
-  const fetchProducts = async () => {
-    setLoading((prev) => ({ ...prev, products: true }));
+  const fetchProducts = () => {
+    console.log("Using mock product data");
+    setProducts(sampleProducts);
+    setLoading((prev) => ({ ...prev, products: false }));
     setErrors((prev) => ({ ...prev, products: null }));
-    try {
-      const data = await apiService.products.getAll(); // Assuming this exists
-      setProducts(data || []); // Ensure it's an array
-    } catch (error) {
-      console.error("Error fetching products:", error);
-      setErrors((prev) => ({
-        ...prev,
-        products: error.response?.data?.message || "Failed to fetch products",
-      }));
-      setProducts([]); // Set empty array on error
-    } finally {
-      setLoading((prev) => ({ ...prev, products: false }));
-    }
   };
 
-  const fetchServices = async () => {
-    setLoading((prev) => ({ ...prev, services: true }));
+  const fetchServices = () => {
+    console.log("Using mock service data");
+    setServices(sampleServices);
+    setLoading((prev) => ({ ...prev, services: false }));
     setErrors((prev) => ({ ...prev, services: null }));
-    try {
-      const data = await apiService.services.getAll(); // Use API call
-      setServices(data || []); // Ensure it's an array
-    } catch (error) {
-      console.error("Error fetching services:", error);
-      setErrors((prev) => ({
-        ...prev,
-        services: error.response?.data?.message || "Failed to fetch services",
-      }));
-      setServices([]); // Set empty array on error
-    } finally {
-      setLoading((prev) => ({ ...prev, services: false }));
-    }
   };
 
-  const fetchSubscriptionPlans = async () => {
-    setLoading((prev) => ({ ...prev, plans: true }));
+  // Keep fetchSubscriptionPlans with fallback for now, or mock it too
+  const fetchSubscriptionPlans = () => {
+    console.log("Using mock subscription plan data");
+    setSubscriptionPlans(sampleSubscriptionPlans);
+    setLoading((prev) => ({ ...prev, plans: false }));
     setErrors((prev) => ({ ...prev, plans: null }));
-    try {
-      const data = await apiService.subscriptionPlans.getAll();
-      // Use fetched data only if it's a non-empty array, otherwise use sample data
-      if (Array.isArray(data) && data.length > 0) {
-           console.log("Fetched plans from API:", data);
-           setSubscriptionPlans(data);
-       } else {
-           console.warn("API returned no subscription plans or invalid data, using sample data.");
-           setSubscriptionPlans(sampleSubscriptionPlans); // Use sample data if API returns empty/invalid
-       }
-    } catch (error) {
-      console.error("Error fetching subscription plans, using sample data:", error);
-      setErrors((prev) => ({
-        ...prev,
-        plans: error.response?.data?.message || "Failed to fetch plans",
-      }));
-      setSubscriptionPlans(sampleSubscriptionPlans); // Use sample data on error too
-    } finally {
-       setLoading((prev) => ({ ...prev, plans: false }));
-    }
+    // setLoading((prev) => ({ ...prev, plans: true }));
+    // setErrors((prev) => ({ ...prev, plans: null }));
+    // try {
+    //   // const data = await apiService.subscriptionPlans.getAll(); // Mocked out
+    //   const data = []; // Simulate empty API response to force fallback
+    //   if (Array.isArray(data) && data.length > 0) {
+    //        console.log("Fetched plans from API:", data);
+    //        setSubscriptionPlans(data);
+    //    } else {
+    //        console.warn("API returned no subscription plans or invalid data, using sample data.");
+    //        setSubscriptionPlans(sampleSubscriptionPlans);
+    //    }
+    // } catch (error) {
+    //   console.error("Error fetching subscription plans, using sample data:", error);
+    //   setErrors((prev) => ({
+    //     ...prev,
+    //     plans: error.response?.data?.message || "Failed to fetch plans",
+    //   }));
+    //   setSubscriptionPlans(sampleSubscriptionPlans);
+    // } finally {
+    //    setLoading((prev) => ({ ...prev, plans: false }));
+    // }
   };
 
-  const fetchTags = async () => {
-    setLoading((prev) => ({ ...prev, tags: true }));
+  const fetchTags = () => {
+    console.log("Using mock tag data");
+    setTags(sampleTags);
+    setLoading((prev) => ({ ...prev, tags: false }));
     setErrors((prev) => ({ ...prev, tags: null }));
-    try {
-      const data = await apiService.tags.getAll(); // Use API call
-      setTags(data || []); // Ensure it's an array
-    } catch (error) {
-      console.error("Error fetching tags:", error);
-      setErrors((prev) => ({
-        ...prev,
-        tags: error.response?.data?.message || "Failed to fetch tags",
-      }));
-      setTags([]); // Set empty array on error
-    } finally {
-      setLoading((prev) => ({ ...prev, tags: false }));
-    }
   };
 
-  // TODO: Add fetchDocuments, fetchForms, fetchInvoices similarly
+  // TODO: Add mock fetchDocuments, fetchForms, fetchInvoices similarly if needed
 
-  const fetchInitialData = async () => {
+  const fetchInitialData = () => { // Removed async as fetch functions are now synchronous
+    console.log("Fetching initial mock data...");
     setLoading((prev) => ({ ...prev, global: true }));
-    try {
-      // Fetch data in parallel
-      await Promise.all([
-        fetchPatients(),
-        fetchSessions(),
-        fetchOrders(),
-        fetchProducts(), // Added fetchProducts
-        fetchServices(),
-        fetchSubscriptionPlans(),
-        fetchTags(),
-        // TODO: Add fetchDocuments(), fetchForms(), fetchInvoices() here
-      ]);
-    } catch (error) {
-      console.error("Error fetching initial data:", error);
-      // Set a global error state?
-    } finally {
-      setLoading((prev) => ({ ...prev, global: false }));
-    }
+
+    // Call mocked fetch functions directly (no need for Promise.all)
+    fetchPatients();
+    fetchSessions();
+    fetchOrders();
+    fetchProducts();
+    fetchServices();
+    fetchSubscriptionPlans();
+    fetchTags();
+    // TODO: Call mock fetchDocuments(), fetchForms(), fetchInvoices() here
+
+    setLoading((prev) => ({ ...prev, global: false }));
+    console.log("Finished fetching initial mock data.");
   };
 
   // Initial data fetching

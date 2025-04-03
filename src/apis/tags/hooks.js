@@ -10,15 +10,27 @@ import {
   createTag,
   updateTag,
   deleteTag,
-  getTagUsage
-} from './api';
+  getTagUsage // Removed duplicate
+} from './api'; // Keep imports for other hooks
 import { toast } from 'react-toastify';
 
-// Hook to fetch all tags
+// --- Mock Data ---
+const sampleTagsData = [
+  { id: 'vip', name: 'VIP', color: 'gold' },
+  { id: 'follow-up', name: 'Needs Follow Up', color: 'blue' },
+  { id: 'high-risk', name: 'High Risk', color: 'red' },
+  { id: 'new-patient', name: 'New Patient', color: 'green' },
+];
+// --- End Mock Data ---
+
+// Hook to fetch all tags (Mocked)
 export const useTags = (params = {}) => {
+  console.log("Using mock tags data in useTags hook");
   return useQuery({
     queryKey: ['tags', params],
-    queryFn: () => getTags(params)
+    // queryFn: () => getTags(params), // Original API call
+    queryFn: () => Promise.resolve({ data: sampleTagsData }), // Return mock data
+    staleTime: Infinity, // Prevent refetching for mock data
   });
 };
 

@@ -1,128 +1,127 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-// import apiService from '../../utils/apiService'; // Removed unused import
+import { supabase } from '../../utils/supabaseClient'; // Import Supabase client
 import { toast } from 'react-toastify';
 
-// --- Mock Data ---
-const sampleConsultationsData = [
-  {
-    id: 'c001',
-    patientId: 'p001',
-    patientName: 'John Smith',
-    email: 'john.smith@example.com',
-    dateSubmitted: new Date(Date.now() - 2 * 86400000).toISOString(), // 2 days ago
-    service: 'Weight Management',
-    preferredMedication: 'Ozempic',
-    preferredPlan: 'Monthly',
-    draftDate: null,
-    provider: 'Dr. Sarah Johnson',
-    status: 'pending',
-    formCompleted: true,
-    consultationData: {
-      /* Add mock notes/order data if needed for detail view */
-    },
-  },
-  {
-    id: 'c002',
-    patientId: 'p002',
-    patientName: 'Emily Davis',
-    email: 'emily.davis@example.com',
-    dateSubmitted: new Date(Date.now() - 1 * 86400000).toISOString(), // Yesterday
-    service: 'Initial Consultation',
-    preferredMedication: 'Wegovy',
-    preferredPlan: '3-Month',
-    draftDate: null,
-    provider: 'Dr. Michael Chen',
-    status: 'reviewed',
-    formCompleted: true,
-    consultationData: {
-      /* ... */
-    },
-  },
-  {
-    id: 'c003',
-    patientId: 'p003',
-    patientName: 'Robert Wilson',
-    email: 'robert.wilson@example.com',
-    dateSubmitted: new Date().toISOString(), // Today
-    service: 'Weight Management',
-    preferredMedication: 'Ozempic',
-    preferredPlan: 'Monthly',
-    draftDate: null,
-    provider: 'Dr. Sarah Johnson',
-    status: 'pending',
-    formCompleted: false,
-    consultationData: {
-      /* ... */
-    },
-  },
-];
-// --- End Mock Data ---
+// Removed Mock Data
 
+// Define query keys
 const queryKeys = {
   all: ['consultations'],
-  lists: (params) => [...queryKeys.all, 'list', params],
+  lists: (params = {}) => [...queryKeys.all, 'list', { params }],
   details: (id) => [...queryKeys.all, 'detail', id],
 };
 
-// Get consultations hook (Mocked)
-export const useConsultations = (params = {}) => {
-  console.log('Using mock consultations data in useConsultations hook');
+// Get consultations hook using Supabase
+export const useConsultations = (params = {}, pageSize = 10) => {
+  const currentPage = params.page || 1;
+  const rangeFrom = (currentPage - 1) * pageSize;
+  const rangeTo = rangeFrom + pageSize - 1;
+
   return useQuery({
     queryKey: queryKeys.lists(params),
-    // queryFn: () => apiService.consultations.getAll(params), // Original API call
-    queryFn: () =>
-      Promise.resolve({
-        data: sampleConsultationsData, // Return mock data
+    queryFn: async () => {
+      let query = supabase
+        .from('consultations') // ASSUMING table name is 'consultations'
+        .select(`
+          *,
+          client_record ( id, first_name, last_name )
+        `, { count: 'exact' }) // Example join
+        .order('dateSubmitted', { ascending: false }) // Adjust column name if needed
+        .range(rangeFrom, rangeTo);
+
+      // Apply filters
+      if (params.status) {
+        query = query.eq('status', params.status);
+      }
+      if (params.patientId) {
+         query = query.eq('patientId', params.patientId); // Adjust column name if needed
+      }
+      // Add other filters as needed
+
+      const { data, error, count } = await query;
+
+      if (error) {
+        console.error('Error fetching consultations:', error);
+        throw new Error(error.message);
+      }
+
+      // Map data if needed
+      const mappedData = data?.map(consult => ({
+          ...consult,
+          patientName: consult.client_record ? `${consult.client_record.first_name || ''} ${consult.client_record.last_name || ''}`.trim() : 'N/A',
+      })) || [];
+
+      return {
+        data: mappedData,
         meta: {
-          total: sampleConsultationsData.length,
-          per_page: 10,
-          current_page: params?.page || 1,
+          total: count || 0,
+          per_page: pageSize,
+          current_page: currentPage,
+          last_page: Math.ceil((count || 0) / pageSize),
         },
-      }),
+      };
+    },
     keepPreviousData: true,
-    staleTime: Infinity, // Keep mock data fresh
   });
 };
 
-// Get consultation by ID hook (Mocked)
+// Get consultation by ID hook using Supabase
 export const useConsultationById = (id, options = {}) => {
-  console.log(
-    `Using mock consultation data for ID: ${id} in useConsultationById hook`
-  );
   return useQuery({
     queryKey: queryKeys.details(id),
-    // queryFn: () => apiService.consultations.getById(id), // Original API call
-    queryFn: () =>
-      Promise.resolve(
-        sampleConsultationsData.find((c) => c.id === id) ||
-          sampleConsultationsData[0]
-      ), // Find mock consultation or return first
+    queryFn: async () => {
+      if (!id) return null;
+
+      const { data, error } = await supabase
+        .from('consultations') // ASSUMING table name is 'consultations'
+        .select(`
+          *,
+          client_record ( id, first_name, last_name )
+        `) // Example join
+        .eq('id', id)
+        .single();
+
+      if (error) {
+        console.error(`Error fetching consultation ${id}:`, error);
+        if (error.code === 'PGRST116') return null; // Not found
+        throw new Error(error.message);
+      }
+       // Map data if needed
+       const mappedData = data ? {
+           ...data,
+           patientName: data.client_record ? `${data.client_record.first_name || ''} ${data.client_record.last_name || ''}`.trim() : 'N/A',
+       } : null;
+
+      return mappedData;
+    },
     enabled: !!id,
-    staleTime: Infinity, // Keep mock data fresh
     ...options,
   });
 };
 
-// Update consultation status hook
+// Update consultation status hook using Supabase
 export const useUpdateConsultationStatus = (options = {}) => {
   const queryClient = useQueryClient();
   return useMutation({
-    // mutationFn: ({ consultationId, status }) => apiService.consultations.updateStatus(consultationId, status), // Original API call
     mutationFn: async ({ consultationId, status }) => {
-      // Simulate API call for updating status
-      console.log(
-        `Mock Updating consultation ${consultationId} status to: ${status}`
-      );
-      await new Promise((resolve) => setTimeout(resolve, 300)); // Simulate delay
-      // Return a success indicator or the updated status
-      return { success: true, id: consultationId, status: status };
+      if (!consultationId) throw new Error("Consultation ID is required for status update.");
+
+      const { data, error } = await supabase
+        .from('consultations') // ASSUMING table name is 'consultations'
+        .update({ status: status, updated_at: new Date().toISOString() }) // Assuming updated_at column
+        .eq('id', consultationId)
+        .select()
+        .single();
+
+      if (error) {
+        console.error(`Error updating consultation status ${consultationId}:`, error);
+        throw new Error(error.message);
+      }
+      return data;
     },
     onSuccess: (data, variables, context) => {
-      // Invalidate lists and the specific detail
       queryClient.invalidateQueries({ queryKey: queryKeys.lists() });
-      queryClient.invalidateQueries({
-        queryKey: queryKeys.details(variables.consultationId),
-      });
+      queryClient.invalidateQueries({ queryKey: queryKeys.details(variables.consultationId) });
       toast.success('Consultation status updated');
       options.onSuccess?.(data, variables, context);
     },
@@ -134,7 +133,82 @@ export const useUpdateConsultationStatus = (options = {}) => {
   });
 };
 
-// Add other mutation hooks as needed (create, update, delete)
-// export const useCreateConsultation = (options = {}) => { ... };
-// export const useUpdateConsultation = (options = {}) => { ... };
-// export const useDeleteConsultation = (options = {}) => { ... };
+// Placeholder for Create Consultation Hook
+export const useCreateConsultation = (options = {}) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (consultationData) => {
+      console.warn("useCreateConsultation hook not fully implemented. Needs Supabase insert logic.");
+      // Placeholder: Replace with actual Supabase insert
+      // const { data, error } = await supabase.from('consultations').insert({...}).select().single();
+      // if (error) throw error;
+      // return data;
+      await new Promise(res => setTimeout(res, 100)); // Simulate async
+      return { ...consultationData, id: `temp_${Date.now()}`}; // Return dummy data
+    },
+     onSuccess: (data, variables, context) => {
+      toast.success('Consultation created (placeholder)');
+      queryClient.invalidateQueries({ queryKey: queryKeys.lists() });
+      options.onSuccess?.(data, variables, context);
+    },
+     onError: (error, variables, context) => {
+       toast.error(`Error creating consultation: ${error.message || 'Unknown error'}`);
+       options.onError?.(error, variables, context);
+    },
+     onSettled: options.onSettled,
+  });
+};
+
+// Placeholder for Update Consultation Hook
+export const useUpdateConsultation = (options = {}) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, consultationData }) => {
+       console.warn(`useUpdateConsultation hook not fully implemented for ID: ${id}. Needs Supabase update logic.`);
+       // Placeholder: Replace with actual Supabase update
+       // const { data, error } = await supabase.from('consultations').update({...}).eq('id', id).select().single();
+       // if (error) throw error;
+       // return data;
+       await new Promise(res => setTimeout(res, 100)); // Simulate async
+       return { ...consultationData, id: id }; // Return dummy data
+    },
+     onSuccess: (data, variables, context) => {
+       toast.success('Consultation updated (placeholder)');
+       queryClient.invalidateQueries({ queryKey: queryKeys.lists() });
+       queryClient.invalidateQueries({ queryKey: queryKeys.details(variables.id) });
+       options.onSuccess?.(data, variables, context);
+    },
+     onError: (error, variables, context) => {
+       toast.error(`Error updating consultation: ${error.message || 'Unknown error'}`);
+       options.onError?.(error, variables, context);
+    },
+     onSettled: options.onSettled,
+  });
+};
+
+// Placeholder for Delete Consultation Hook
+export const useDeleteConsultation = (options = {}) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+     mutationFn: async (id) => {
+       console.warn(`useDeleteConsultation hook not fully implemented for ID: ${id}. Needs Supabase delete logic.`);
+       // Placeholder: Replace with actual Supabase delete
+       // const { error } = await supabase.from('consultations').delete().eq('id', id);
+       // if (error) throw error;
+       // return { success: true, id };
+       await new Promise(res => setTimeout(res, 100)); // Simulate async
+       return { success: true, id };
+     },
+     onSuccess: (data, variables, context) => { // variables is the id
+       toast.success('Consultation deleted (placeholder)');
+       queryClient.invalidateQueries({ queryKey: queryKeys.lists() });
+       queryClient.removeQueries({ queryKey: queryKeys.details(variables) });
+       options.onSuccess?.(data, variables, context);
+    },
+     onError: (error, variables, context) => {
+       toast.error(`Error deleting consultation: ${error.message || 'Unknown error'}`);
+       options.onError?.(error, variables, context);
+    },
+     onSettled: options.onSettled,
+  });
+};

@@ -1,222 +1,244 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-// import { // Commented out API functions
-//   getDiscounts,
-//   getDiscountById,
-//   createDiscount,
-//   updateDiscount,
-//   deleteDiscount,
-//   toggleDiscountActive,
-// } from './api';
+import { supabase } from '../../utils/supabaseClient'; // Import Supabase client
 import { toast } from 'react-toastify';
 
-// --- Mock Data ---
-const sampleDiscountsData = [
-  {
-    id: 1,
-    name: 'Spring Sale 10%',
-    code: 'SPRING10',
-    discount_type: 'percentage',
-    value: '10.0',
-    description: '10% off all products for spring',
-    valid_from: '2025-03-01T00:00:00Z',
-    valid_until: '2025-05-31T23:59:59Z',
-    requirement: 'None',
-    min_purchase: '0.0',
-    status: 'Active',
-    usage_limit: null,
-    usage_limit_per_user: 1,
-    usage_count: 5,
-  },
-  {
-    id: 2,
-    name: '$25 Off First Order',
-    code: 'WELCOME25',
-    discount_type: 'fixed',
-    value: '25.0',
-    description: '$25 off for new customers',
-    valid_from: '2025-01-01T00:00:00Z',
-    valid_until: null,
-    requirement: 'New patients only',
-    min_purchase: '50.0',
-    status: 'Active',
-    usage_limit: null,
-    usage_limit_per_user: 1,
-    usage_count: 12,
-  },
-  {
-    id: 3,
-    name: 'Expired Discount',
-    code: 'EXPIRED5',
-    discount_type: 'percentage',
-    value: '5.0',
-    description: 'An old expired discount',
-    valid_from: '2024-01-01T00:00:00Z',
-    valid_until: '2024-12-31T23:59:59Z',
-    requirement: 'None',
-    min_purchase: '0.0',
-    status: 'Active', // Status might be active, but validity dates make it expired
-    usage_limit: 100,
-    usage_limit_per_user: null,
-    usage_count: 95,
-  },
-  {
-    id: 4,
-    name: 'Inactive Discount',
-    code: 'INACTIVE15',
-    discount_type: 'fixed',
-    value: '15.0',
-    description: 'Currently inactive discount',
-    valid_from: '2025-01-01T00:00:00Z',
-    valid_until: null,
-    requirement: 'None',
-    min_purchase: '0.0',
-    status: 'Inactive',
-    usage_limit: null,
-    usage_limit_per_user: null,
-    usage_count: 0,
-  },
-];
-// --- End Mock Data ---
+// Removed Mock Data
 
-// Hook to fetch all discounts (Mocked)
+// Define query keys
+const queryKeys = {
+  all: ['discounts'],
+  lists: (params = {}) => [...queryKeys.all, 'list', { params }],
+  details: (id) => [...queryKeys.all, 'detail', id],
+};
+
+// Hook to fetch all discounts using Supabase
 export const useDiscounts = (params = {}) => {
-  console.log('Using mock discounts data in useDiscounts hook');
   return useQuery({
-    queryKey: ['discounts', params],
-    // queryFn: () => getDiscounts(params), // Original API call
-    queryFn: () =>
-      Promise.resolve({
-        data: sampleDiscountsData, // Return mock data
-        // Add meta if your API returns pagination info
-      }),
-    staleTime: Infinity,
+    queryKey: queryKeys.lists(params),
+    queryFn: async () => {
+      let query = supabase
+        .from('discounts')
+        .select('*')
+        .order('name', { ascending: true }); // Example order
+
+      // Apply filters if any
+      if (params.status !== undefined) {
+        query = query.eq('status', params.status);
+      }
+      if (params.code) {
+         query = query.ilike('code', `%${params.code}%`);
+      }
+
+      const { data, error } = await query;
+
+      if (error) {
+        console.error('Error fetching discounts:', error);
+        throw new Error(error.message);
+      }
+      // Map data if needed (e.g., convert status boolean to string)
+      const mappedData = data?.map(d => ({
+          ...d,
+          status: d.status ? 'Active' : 'Inactive' // Example mapping
+      })) || [];
+      return { data: mappedData }; // Return data wrapped in object if needed
+    },
   });
 };
 
-// Hook to fetch a specific discount by ID (Mocked)
+// Hook to fetch a specific discount by ID using Supabase
 export const useDiscountById = (id, options = {}) => {
-  console.log(`Using mock discount data for ID: ${id} in useDiscountById hook`);
   return useQuery({
-    queryKey: ['discount', id],
-    // queryFn: () => getDiscountById(id), // Original API call
-    queryFn: () =>
-      Promise.resolve(
-        sampleDiscountsData.find((d) => d.id === id) || sampleDiscountsData[0]
-      ), // Find mock discount or return first
+    queryKey: queryKeys.details(id),
+    queryFn: async () => {
+      if (!id) return null;
+
+      const { data, error } = await supabase
+        .from('discounts')
+        .select('*')
+        .eq('id', id)
+        .single();
+
+      if (error) {
+        console.error(`Error fetching discount ${id}:`, error);
+        if (error.code === 'PGRST116') return null; // Not found
+        throw new Error(error.message);
+      }
+       // Map data if needed
+       const mappedData = data ? {
+           ...data,
+           status: data.status ? 'Active' : 'Inactive' // Example mapping
+       } : null;
+      return mappedData;
+    },
     enabled: !!id,
-    staleTime: Infinity,
     ...options,
   });
 };
 
-// Hook to create a new discount (Mocked)
+// Hook to create a new discount using Supabase
 export const useCreateDiscount = (options = {}) => {
   const queryClient = useQueryClient();
-
   return useMutation({
-    // mutationFn: (discountData) => createDiscount(discountData), // Original API call
     mutationFn: async (discountData) => {
-      console.log('Mock Creating discount:', discountData);
-      await new Promise((resolve) => setTimeout(resolve, 300)); // Simulate delay
-      const newDiscount = {
-        id: Date.now(), // Generate mock ID
+      // Map frontend fields to DB columns if needed
+      const dataToInsert = {
         ...discountData,
-        usage_count: 0, // Default usage count
+        // Assuming 'value' from mock maps to 'amount' or 'percentage'
+        amount: discountData.discount_type === 'fixed' ? parseFloat(discountData.value) : 0,
+        percentage: discountData.discount_type === 'percentage' ? parseInt(discountData.value, 10) : 0,
+        status: discountData.status === 'Active', // Convert string to boolean
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
       };
-      // Note: Doesn't actually add to sampleDiscountsData
-      return { data: newDiscount }; // Simulate API response structure if needed
+      // Remove fields not directly in DB table
+      delete dataToInsert.discount_type;
+      delete dataToInsert.value;
+
+
+      const { data, error } = await supabase
+        .from('discounts')
+        .insert(dataToInsert)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error creating discount:', error);
+         if (error.code === '23505') { // Unique violation (likely on 'code')
+           throw new Error(`Discount code '${dataToInsert.code}' already exists.`);
+         }
+        throw new Error(error.message);
+      }
+      return data;
     },
-    onSuccess: (data) => { // Adjust to potentially use data from mock response
-      queryClient.invalidateQueries({ queryKey: ['discounts'] });
+    onSuccess: (data, variables, context) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.lists() });
       toast.success('Discount created successfully');
-      options.onSuccess && options.onSuccess();
+      options.onSuccess?.(data, variables, context);
     },
-    onError: (error) => {
-      toast.error(
-        error.message || 'An error occurred while creating the discount.'
-      );
-      options.onError && options.onError(error);
+    onError: (error, variables, context) => {
+      toast.error(`Error creating discount: ${error.message || 'Unknown error'}`);
+      options.onError?.(error, variables, context);
     },
+    onSettled: options.onSettled,
   });
 };
 
-// Hook to update an existing discount (Mocked)
+// Hook to update an existing discount using Supabase
 export const useUpdateDiscount = (options = {}) => {
   const queryClient = useQueryClient();
-
   return useMutation({
-    // mutationFn: ({ id, discountData }) => updateDiscount(id, discountData), // Original API call
     mutationFn: async ({ id, discountData }) => {
-      console.log(`Mock Updating discount ${id}:`, discountData);
-      await new Promise((resolve) => setTimeout(resolve, 300)); // Simulate delay
-      return { data: { id, ...discountData } }; // Simulate API response
+      if (!id) throw new Error("Discount ID is required for update.");
+
+      const dataToUpdate = {
+        ...discountData,
+        amount: discountData.discount_type === 'fixed' ? parseFloat(discountData.value) : 0,
+        percentage: discountData.discount_type === 'percentage' ? parseInt(discountData.value, 10) : 0,
+        status: discountData.status === 'Active',
+        updated_at: new Date().toISOString(),
+      };
+      delete dataToUpdate.id;
+      delete dataToUpdate.created_at;
+      delete dataToUpdate.discount_type;
+      delete dataToUpdate.value;
+      delete dataToUpdate.usage_count; // Assuming usage_count is managed by backend triggers/logic
+
+      const { data, error } = await supabase
+        .from('discounts')
+        .update(dataToUpdate)
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) {
+        console.error(`Error updating discount ${id}:`, error);
+         if (error.code === '23505') { // Unique violation (likely on 'code')
+           throw new Error(`Discount code '${dataToUpdate.code}' already exists.`);
+         }
+        throw new Error(error.message);
+      }
+      return data;
     },
-    onSuccess: (data, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['discounts'] });
-      queryClient.invalidateQueries({ queryKey: ['discount', variables.id] });
+    onSuccess: (data, variables, context) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.details(variables.id) });
       toast.success('Discount updated successfully');
-      options.onSuccess && options.onSuccess();
+      options.onSuccess?.(data, variables, context);
     },
-    onError: (error) => {
-      toast.error(
-        error.message || 'An error occurred while updating the discount.'
-      );
-      options.onError && options.onError(error);
+    onError: (error, variables, context) => {
+      toast.error(`Error updating discount: ${error.message || 'Unknown error'}`);
+      options.onError?.(error, variables, context);
     },
+    onSettled: options.onSettled,
   });
 };
 
-// Hook to delete a discount (Mocked)
+// Hook to delete a discount using Supabase
 export const useDeleteDiscount = (options = {}) => {
   const queryClient = useQueryClient();
-
   return useMutation({
-    // mutationFn: (id) => deleteDiscount(id), // Original API call
     mutationFn: async (id) => {
-      console.log(`Mock Deleting discount ${id}`);
-      await new Promise((resolve) => setTimeout(resolve, 300)); // Simulate delay
-      return { success: true }; // Simulate API response
+      if (!id) throw new Error("Discount ID is required for deletion.");
+
+      const { error } = await supabase
+        .from('discounts')
+        .delete()
+        .eq('id', id);
+
+      if (error) {
+        console.error(`Error deleting discount ${id}:`, error);
+         // Handle foreign key constraint errors if discounts are linked elsewhere
+         if (error.code === '23503') {
+           throw new Error(`Cannot delete discount: It might be linked to orders or other records.`);
+         }
+        throw new Error(error.message);
+      }
+      return { success: true, id };
     },
-    onSuccess: (data, variables) => { // Add variables to access id if needed
-      queryClient.invalidateQueries({ queryKey: ['discounts'] });
-      // Also invalidate specific discount if cached
-      queryClient.invalidateQueries({ queryKey: ['discount', variables] });
+    onSuccess: (data, variables, context) => { // variables is the id
+      queryClient.invalidateQueries({ queryKey: queryKeys.lists() });
+      queryClient.removeQueries({ queryKey: queryKeys.details(variables) });
       toast.success('Discount deleted successfully');
-      options.onSuccess && options.onSuccess();
+      options.onSuccess?.(data, variables, context);
     },
-    onError: (error) => {
-      toast.error(
-        error.message || 'An error occurred while deleting the discount.'
-      );
-      options.onError && options.onError(error);
+    onError: (error, variables, context) => {
+      toast.error(`Error deleting discount: ${error.message || 'Unknown error'}`);
+      options.onError?.(error, variables, context);
     },
+    onSettled: options.onSettled,
   });
 };
 
-// Hook to toggle discount active status (Mocked)
+// Hook to toggle discount active status using Supabase
 export const useToggleDiscountActive = (options = {}) => {
   const queryClient = useQueryClient();
-
   return useMutation({
-    // mutationFn: ({ id, active }) => toggleDiscountActive(id, active), // Original API call
     mutationFn: async ({ id, active }) => {
-      console.log(`Mock Toggling discount ${id} active status to: ${active}`);
-      await new Promise((resolve) => setTimeout(resolve, 300)); // Simulate delay
-      return { success: true, id, active }; // Simulate API response
+       if (!id) throw new Error("Discount ID is required.");
+
+       const { data, error } = await supabase
+         .from('discounts')
+         .update({ status: active, updated_at: new Date().toISOString() })
+         .eq('id', id)
+         .select()
+         .single();
+
+       if (error) {
+         console.error(`Error toggling discount ${id} status:`, error);
+         throw new Error(error.message);
+       }
+       return data;
     },
-    onSuccess: (data, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['discounts'] });
-      queryClient.invalidateQueries({ queryKey: ['discount', variables.id] });
-      toast.success(
-        `Discount ${variables.active ? 'activated' : 'deactivated'} successfully`
-      );
-      options.onSuccess && options.onSuccess();
+    onSuccess: (data, variables, context) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.details(variables.id) });
+      toast.success(`Discount ${variables.active ? 'activated' : 'deactivated'} successfully`);
+      options.onSuccess?.(data, variables, context);
     },
-    onError: (error) => {
-      toast.error(
-        error.message || 'An error occurred while updating the discount status.'
-      );
-      options.onError && options.onError(error);
+    onError: (error, variables, context) => {
+      toast.error(`Error updating discount status: ${error.message || 'Unknown error'}`);
+      options.onError?.(error, variables, context);
     },
+    onSettled: options.onSettled,
   });
 };

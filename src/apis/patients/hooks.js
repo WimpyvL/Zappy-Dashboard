@@ -1,171 +1,208 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-// import { // Commented out as functions are unused due to mocking/apiService usage below
+import { supabase } from '../../utils/supabaseClient'; // Import Supabase client
+// Removed unused imports like apiService and commented out local api functions
+// import {
 //   getPatients,
 //   getPatientById,
 //   createPatient,
 //   updatePatient,
 //   deletePatient
-// } from './api';
-// import apiService from '../../utils/apiService'; // Removed unused import
-import auditLogService from '../../utils/auditLogService'; // Import the audit log service
+import auditLogService from '../../utils/auditLogService';
 
-// --- Mock Data ---
-const samplePatientsData = [
-  {
-    id: 'p001',
-    firstName: 'John',
-    lastName: 'Smith',
-    email: 'john.smith@example.com',
-    status: 'Active',
-    tags: ['vip'],
-  },
-  {
-    id: 'p002',
-    firstName: 'Emily',
-    lastName: 'Davis',
-    email: 'emily.davis@example.com',
-    status: 'Active',
-    tags: [],
-  },
-  {
-    id: 'p003',
-    firstName: 'Robert',
-    lastName: 'Wilson',
-    email: 'robert.wilson@example.com',
-    status: 'Inactive',
-    tags: ['follow-up'],
-  },
-];
-// --- End Mock Data ---
+// Removed Mock Data
 
-// Get patients hook (Mocked)
-export const usePatients = (currentPage, filters) => {
-  console.log('Using mock patients data in usePatients hook');
+// Get patients hook using Supabase
+export const usePatients = (currentPage = 1, filters = {}, pageSize = 10) => {
+  // Calculate range for Supabase pagination
+  const rangeFrom = (currentPage - 1) * pageSize;
+  const rangeTo = rangeFrom + pageSize - 1;
+
   return useQuery({
-    queryKey: ['patients', currentPage, filters],
-    // queryFn: () => getPatients(currentPage, filters), // Original API call
-    // queryFn: () => apiService.patients.getAll({ page: currentPage, ...filters }), // Alternative using apiService
-    queryFn: () =>
-      Promise.resolve({
-        data: samplePatientsData,
+    queryKey: ['patients', currentPage, filters, pageSize],
+    queryFn: async () => {
+      let query = supabase
+        .from('client_record') // Assuming table name is 'client_record'
+        .select('*', { count: 'exact' }) // Select all columns and request total count
+        .order('created_at', { ascending: false }) // Example order
+        .range(rangeFrom, rangeTo); // Apply pagination
+
+      // Apply filters (example: filter by status)
+      if (filters.status) {
+        query = query.eq('status', filters.status);
+      }
+      // Add more filters as needed based on the 'filters' object structure
+      if (filters.search) {
+         // Example: Search across multiple fields (adjust fields as needed)
+         // This requires careful consideration of indexing in Postgres
+         query = query.or(`first_name.ilike.%${filters.search}%,last_name.ilike.%${filters.search}%,email.ilike.%${filters.search}%`);
+      }
+
+
+      const { data, error, count } = await query;
+
+      if (error) {
+        console.error('Error fetching patients:', error);
+        throw new Error(error.message);
+      }
+
+      // Return data in a structure compatible with pagination components
+      return {
+        data: data || [],
         meta: {
-          total: samplePatientsData.length,
-          per_page: 10,
+          total: count || 0,
+          per_page: pageSize,
           current_page: currentPage,
+          last_page: Math.ceil((count || 0) / pageSize),
         },
-      }), // Return mock data with pagination structure
-    staleTime: Infinity,
+      };
+    },
+    // staleTime: 5 * 60 * 1000, // Example: 5 minutes stale time
   });
 };
 
-// Get patient by ID hook
-// Get patient by ID hook (Mocked)
+// Get patient by ID hook using Supabase
 export const usePatientById = (id, options = {}) => {
-  console.log(`Using mock patient data for ID: ${id} in usePatientById hook`);
   return useQuery({
     queryKey: ['patient', id],
-    queryFn: () =>
-      Promise.resolve(
-        samplePatientsData.find((p) => p.id === id) || samplePatientsData[0]
-      ), // Find mock patient or return first as fallback
-    enabled: !!id,
-    staleTime: Infinity, // Keep mock data fresh
+    queryFn: async () => {
+      if (!id) return null; // Don't fetch if no ID is provided
+
+      const { data, error } = await supabase
+        .from('client_record')
+        .select('*')
+        .eq('id', id)
+        .single(); // Use .single() if expecting one record or null
+
+      if (error) {
+        console.error(`Error fetching patient ${id}:`, error);
+        // Handle specific errors like 'PGRST116' (resource not found) if needed
+        if (error.code === 'PGRST116') return null; // Return null if not found
+        throw new Error(error.message);
+      }
+      return data;
+    },
+    enabled: !!id, // Only run query if id is truthy
+    // staleTime: 5 * 60 * 1000, // Example stale time
     ...options,
   });
 };
 
-// Create patient hook
+// Create patient hook using Supabase
 export const useCreatePatient = (options = {}) => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    // mutationFn: (patientData) => apiService.patients.create(patientData), // Original API call
     mutationFn: async (patientData) => {
-      // Simulate API call for creating patient
-      console.log('Mock Creating patient:', patientData);
-      await new Promise((resolve) => setTimeout(resolve, 300)); // Simulate delay
-      const newPatient = {
-        id: `p${Date.now()}`, // Generate a mock ID
+      // Ensure required fields like date_created are set if not provided
+      const dataToInsert = {
         ...patientData,
-        status: patientData.status || 'active', // Ensure status default
-        tags: [], // Default tags
+        date_created: patientData.date_created || new Date().toISOString(),
+        // Set defaults for boolean fields if necessary
+        is_child_record: patientData.is_child_record ?? false,
+        is_active: patientData.is_active ?? true,
+        invitation_sent: patientData.invitation_sent ?? false,
       };
-      // Note: This doesn't actually add to the samplePatientsData array in this context
-      // In a more complex mock, you might manage a mutable mock store
-      return newPatient; // Return the mock created patient
+
+      const { data, error } = await supabase
+        .from('client_record')
+        .insert(dataToInsert)
+        .select() // Select the newly created record
+        .single(); // Expecting a single record back
+
+      if (error) {
+        console.error('Error creating patient:', error);
+        throw new Error(error.message);
+      }
+      return data;
     },
     onSuccess: (data, variables, context) => {
-      // Ensure parameters are available if needed
-      queryClient.invalidateQueries({ queryKey: ['patients'] });
+      queryClient.invalidateQueries({ queryKey: ['patients'] }); // Invalidate the list
 
       // Log the audit event
-      // Assuming 'data' contains the created patient details, including an ID
-      const patientId = data?.id || variables?.id || 'unknown'; // Get ID from response or input variables
-      const patientName = variables?.firstName
-        ? `${variables.firstName} ${variables.lastName}`
-        : 'Unknown Name'; // Get name from input variables
-      auditLogService.log('Patient Created', {
-        patientId: patientId,
-        name: patientName,
-      });
+      const patientId = data?.id || 'unknown';
+      const patientName = data?.firstName ? `${data.firstName} ${data.lastName}` : 'Unknown Name';
+       auditLogService.log('Patient Created', { patientId: patientId, name: patientName });
 
-      // Call original onSuccess if provided
-      options.onSuccess && options.onSuccess(data, variables, context);
-    },
+       options.onSuccess && options.onSuccess(data, variables, context); // Call original onSuccess
+    }, // Added comma here
+     onError: (error, variables, context) => {
+        console.error("Create patient mutation error:", error);
+        options.onError && options.onError(error, variables, context);
+    }
   });
 };
 
-// Update patient hook
+// Update patient hook using Supabase
 export const useUpdatePatient = (options = {}) => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    // mutationFn: ({ id, patientData }) => apiService.patients.update(id, patientData), // Original API call
     mutationFn: async ({ id, patientData }) => {
-      // Simulate API call for updating patient
-      console.log(`Mock Updating patient ${id}:`, patientData);
-      await new Promise((resolve) => setTimeout(resolve, 300)); // Simulate delay
-      // Return the updated data structure expected by the component
-      return { id, ...patientData };
+      if (!id) throw new Error("Patient ID is required for update.");
+
+      const { data, error } = await supabase
+        .from('client_record')
+        .update(patientData)
+        .eq('id', id)
+        .select() // Select the updated record
+        .single(); // Expecting a single record back
+
+      if (error) {
+        console.error(`Error updating patient ${id}:`, error);
+        throw new Error(error.message);
+      }
+      return data;
     },
-    onSuccess: (data, variables) => { // Add variables to access id
-      queryClient.invalidateQueries({ queryKey: ['patients'] });
-      // Invalidate the specific patient query as well
-      queryClient.invalidateQueries({ queryKey: ['patient', variables.id] });
-      options.onSuccess && options.onSuccess(data, variables); // Pass data and variables
-    },
+    onSuccess: (data, variables, context) => {
+      queryClient.invalidateQueries({ queryKey: ['patients'] }); // Invalidate the list
+      queryClient.invalidateQueries({ queryKey: ['patient', variables.id] }); // Invalidate the specific patient
+
+      // Log audit event (optional)
+      const patientId = variables.id;
+      const patientName = data?.firstName ? `${data.firstName} ${data.lastName}` : 'Unknown Name';
+       auditLogService.log('Patient Updated', { patientId: patientId, name: patientName, changes: variables.patientData });
+
+
+       options.onSuccess && options.onSuccess(data, variables, context); // Call original onSuccess
+    }, // Added comma here
+     onError: (error, variables, context) => {
+        console.error(`Update patient ${variables.id} mutation error:`, error);
+        options.onError && options.onError(error, variables, context);
+    }
   });
 };
 
-// Delete patient hook (Mocked)
+// Delete patient hook using Supabase
 export const useDeletePatient = (options = {}) => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    // mutationFn: (id) => apiService.patients.delete(id), // Original API call
     mutationFn: async (id) => {
-      // Simulate API call for deleting patient
-      console.log(`Mock Deleting patient ${id}`);
-      await new Promise((resolve) => setTimeout(resolve, 300)); // Simulate delay
-      // Return a success indicator or empty object
-      return { success: true };
+       if (!id) throw new Error("Patient ID is required for deletion.");
+
+      const { error } = await supabase
+        .from('client_record')
+        .delete()
+        .eq('id', id);
+
+      if (error) {
+        console.error(`Error deleting patient ${id}:`, error);
+        throw new Error(error.message);
+      }
+      return { success: true, id }; // Return success and id
     },
-    onSuccess: (data, variables) => { // Add variables to access id
-      queryClient.invalidateQueries({ queryKey: ['patient'] });
-      options.onSuccess && options.onSuccess();
+    onSuccess: (data, variables, context) => { // variables here is the id
+      queryClient.invalidateQueries({ queryKey: ['patients'] }); // Invalidate the list
+      queryClient.removeQueries({ queryKey: ['patient', variables] }); // Remove the specific patient query
+
+      // Log audit event (optional)
+      auditLogService.log('Patient Deleted', { patientId: variables });
+
+      options.onSuccess && options.onSuccess(data, variables, context); // Call original onSuccess
     },
+     onError: (error, variables, context) => {
+       console.error(`Delete patient ${variables} mutation error:`, error);
+       options.onError && options.onError(error, variables, context);
+    }
   });
 };
-
-// Delete patient hook (Original removed, keeping mocked version above)
-// export const useDeletePatient = (options = {}) => {
-//   const queryClient = useQueryClient();
-//
-//   return useMutation({
-//     mutationFn: (id) => apiService.patients.delete(id), // Use apiService
-//     onSuccess: () => {
-//       queryClient.invalidateQueries({ queryKey: ['patients'] });
-//       options.onSuccess && options.onSuccess();
-//     },
-//   });
-// };

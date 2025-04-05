@@ -1,165 +1,193 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-// import apiService from '../../utils/apiService'; // Removed unused import
-import { toast } from 'react-toastify'; // Added for mock feedback
+import { supabase } from '../../utils/supabaseClient'; // Import Supabase client
+import { toast } from 'react-toastify';
 
-// --- Mock Data (Using sample from AppContext for consistency) ---
-const sampleProductsData = [
-  {
-    id: 1,
-    name: 'Ozempic Pens',
-    description: 'Injectable medication',
-    category: 'Weight Loss',
-    active: true,
-    type: 'medication', // Added type
-    fulfillmentSource: 'compounding_pharmacy', // Added source
-    doses: [
-      { id: 101, value: '0.25mg', allowOneTimePurchase: false },
-      { id: 102, value: '0.5mg', allowOneTimePurchase: true },
-      { id: 103, value: '1.0mg', allowOneTimePurchase: true },
-    ],
-    oneTimePurchasePrice: 249.99, // Added example price
-    requiresPrescription: true,
-    associatedServiceIds: [1, 2], // Example service IDs
-    stockStatus: 'in-stock',
-    interactionWarnings: ['Thyroid C-cell tumors'],
-  },
-  {
-    id: 2,
-    name: 'Wegovy Pens',
-    description: 'Injectable medication',
-    category: 'Weight Loss',
-    active: true,
-    type: 'medication',
-    fulfillmentSource: 'retail_pharmacy',
-    doses: [
-      { id: 201, value: '1.7mg', allowOneTimePurchase: true },
-      { id: 202, value: '2.4mg', allowOneTimePurchase: true },
-    ],
-    oneTimePurchasePrice: 299.99,
-    requiresPrescription: true,
-    associatedServiceIds: [1, 2],
-    stockStatus: 'in-stock',
-    interactionWarnings: ['Thyroid C-cell tumors', 'Pancreatitis'],
-  },
-  {
-    id: 3,
-    name: 'Vitamin D3 Supplement',
-    description: 'High-potency Vitamin D3',
-    category: 'Supplements',
-    active: true,
-    type: 'supplement',
-    fulfillmentSource: 'internal_supplement',
-    price: 19.99, // Price for non-medication
-    requiresPrescription: false,
-    associatedServiceIds: [],
-    stockStatus: 'in-stock',
-    interactionWarnings: [],
-    allowOneTimePurchase: true,
-  },
-];
-// --- End Mock Data ---
+// Removed Mock Data
 
-// Get products hook (Mocked)
-export const useProducts = (filters) => {
-  console.log('Using mock products data in useProducts hook');
+// Define query keys
+const queryKeys = {
+  all: ['products'],
+  lists: (filters = {}) => [...queryKeys.all, 'list', { filters }],
+  details: (id) => [...queryKeys.all, 'detail', id],
+};
+
+
+// Get products hook using Supabase
+export const useProducts = (filters = {}) => {
   return useQuery({
-    queryKey: ['products', filters],
-    // queryFn: () => apiService.products.getAll(filters), // Original API call
-    queryFn: () =>
-      Promise.resolve({
-        data: sampleProductsData, // Return mock data
-        // Add meta if needed
-      }),
-    staleTime: Infinity,
+    queryKey: queryKeys.lists(filters),
+    queryFn: async () => {
+      let query = supabase
+        .from('products') // ASSUMING table name is 'products'
+        .select('*')
+        .order('name', { ascending: true }); // Example order
+
+      // Apply filters if any
+      if (filters.category) {
+        query = query.eq('category', filters.category);
+      }
+      if (filters.active !== undefined) {
+        query = query.eq('active', filters.active);
+      }
+      // Add search filter if needed
+      if (filters.search) {
+         query = query.or(`name.ilike.%${filters.search}%,description.ilike.%${filters.search}%`);
+      }
+
+      const { data, error } = await query;
+
+      if (error) {
+        console.error('Error fetching products:', error);
+        throw new Error(error.message);
+      }
+      // Return data directly, or wrap if pagination/meta is needed later
+      return data || [];
+    },
   });
 };
 
-// Get product by ID hook (Mocked)
+// Get product by ID hook using Supabase
 export const useProductById = (id, options = {}) => {
-  console.log(`Using mock product data for ID: ${id} in useProductById hook`);
   return useQuery({
-    queryKey: ['product', id],
-    // queryFn: () => apiService.products.getById(id), // Original API call
-    queryFn: () =>
-      Promise.resolve(
-        sampleProductsData.find((p) => p.id === id) || sampleProductsData[0]
-      ), // Find mock product or return first
+    queryKey: queryKeys.details(id),
+    queryFn: async () => {
+      if (!id) return null;
+
+      const { data, error } = await supabase
+        .from('products') // ASSUMING table name is 'products'
+        .select('*')
+        .eq('id', id)
+        .single();
+
+      if (error) {
+        console.error(`Error fetching product ${id}:`, error);
+        if (error.code === 'PGRST116') return null; // Not found
+        throw new Error(error.message);
+      }
+      return data;
+    },
     enabled: !!id,
-    staleTime: Infinity,
     ...options,
   });
 };
 
-// Create product hook (Mocked)
+// Create product hook using Supabase
 export const useCreateProduct = (options = {}) => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    // mutationFn: (productData) => apiService.products.create(productData), // Original API call
     mutationFn: async (productData) => {
-      console.log('Mock Creating product:', productData);
-      await new Promise((resolve) => setTimeout(resolve, 300)); // Simulate delay
-      const newProduct = {
-        id: Date.now(), // Generate mock ID
+      // Add timestamps, default values etc. based on your actual 'products' table schema
+      const dataToInsert = {
         ...productData,
-        active: productData.active !== undefined ? productData.active : true,
+        created_at: new Date().toISOString(), // Assuming created_at column
+        updated_at: new Date().toISOString(), // Assuming updated_at column
+        active: productData.active ?? true,
+        // Ensure complex fields like 'doses' or 'associatedServiceIds' are formatted correctly
+        // e.g., if they are JSONB columns, they should be passed as is.
+        // If they are relational, this logic needs adjustment.
       };
-      // Note: Doesn't actually add to sampleProductsData
-      return { data: newProduct }; // Simulate API response
+
+      const { data, error } = await supabase
+        .from('products') // ASSUMING table name is 'products'
+        .insert(dataToInsert)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error creating product:', error);
+        throw new Error(error.message);
+      }
+      return data;
     },
     onSuccess: (data, variables, context) => {
-      // Added params
       toast.success('Product created successfully');
-      queryClient.invalidateQueries({ queryKey: ['products'] });
-      options.onSuccess?.(data, variables, context); // Pass params
+      queryClient.invalidateQueries({ queryKey: queryKeys.lists() });
+      options.onSuccess?.(data, variables, context);
     },
-    onError: options.onError, // Pass through onError
-    onSettled: options.onSettled, // Pass through onSettled
+    onError: (error, variables, context) => {
+      toast.error(error.message || 'An error occurred while creating the product.');
+      options.onError?.(error, variables, context);
+    },
+    onSettled: options.onSettled,
   });
 };
 
-// Update product hook (Mocked)
+// Update product hook using Supabase
 export const useUpdateProduct = (options = {}) => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    // mutationFn: ({ id, productData }) => apiService.products.update(id, productData), // Original API call
     mutationFn: async ({ id, productData }) => {
-      console.log(`Mock Updating product ${id}:`, productData);
-      await new Promise((resolve) => setTimeout(resolve, 300)); // Simulate delay
-      return { data: { id, ...productData } }; // Simulate API response
+      if (!id) throw new Error("Product ID is required for update.");
+      const dataToUpdate = {
+        ...productData,
+        updated_at: new Date().toISOString(), // Update timestamp
+      };
+      // Remove fields that shouldn't be updated directly if necessary
+      delete dataToUpdate.id;
+      delete dataToUpdate.created_at;
+
+      const { data, error } = await supabase
+        .from('products') // ASSUMING table name is 'products'
+        .update(dataToUpdate)
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) {
+        console.error(`Error updating product ${id}:`, error);
+        throw new Error(error.message);
+      }
+      return data;
     },
     onSuccess: (data, variables, context) => {
-      // Added params
       toast.success('Product updated successfully');
-      queryClient.invalidateQueries({ queryKey: ['products'] });
-      queryClient.invalidateQueries({ queryKey: ['product', variables.id] }); // Use variables.id
-      options.onSuccess?.(data, variables, context); // Pass params
+      queryClient.invalidateQueries({ queryKey: queryKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.details(variables.id) });
+      options.onSuccess?.(data, variables, context);
     },
-    onError: options.onError, // Pass through onError
-    onSettled: options.onSettled, // Pass through onSettled
+    onError: (error, variables, context) => {
+      toast.error(error.message || 'An error occurred while updating the product.');
+      options.onError?.(error, variables, context);
+    },
+    onSettled: options.onSettled,
   });
 };
 
-// Delete product hook (Mocked)
+// Delete product hook using Supabase
 export const useDeleteProduct = (options = {}) => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    // mutationFn: (id) => apiService.products.delete(id), // Original API call
     mutationFn: async (id) => {
-      console.log(`Mock Deleting product ${id}`);
-      await new Promise((resolve) => setTimeout(resolve, 300)); // Simulate delay
-      return { success: true }; // Simulate API response
+      if (!id) throw new Error("Product ID is required for deletion.");
+
+      const { error } = await supabase
+        .from('products') // ASSUMING table name is 'products'
+        .delete()
+        .eq('id', id);
+
+      if (error) {
+        console.error(`Error deleting product ${id}:`, error);
+         // Handle foreign key constraint errors if products are linked elsewhere
+         if (error.code === '23503') { // Foreign key violation
+           throw new Error(`Cannot delete product: It is still linked to other records (e.g., orders, packages).`);
+         }
+        throw new Error(error.message);
+      }
+      return { success: true, id };
     },
-    onSuccess: (data, variables, context) => {
-      // Added params
+    onSuccess: (data, variables, context) => { // variables is the id
       toast.success('Product deleted successfully');
-      queryClient.invalidateQueries({ queryKey: ['products'] });
-      // Optionally remove detail query: queryClient.removeQueries({ queryKey: ['product', variables] });
-      options.onSuccess?.(data, variables, context); // Pass params
+      queryClient.invalidateQueries({ queryKey: queryKeys.lists() });
+      queryClient.removeQueries({ queryKey: queryKeys.details(variables) });
+      options.onSuccess?.(data, variables, context);
     },
-    onError: options.onError, // Pass through onError
-    onSettled: options.onSettled, // Pass through onSettled
+    onError: (error, variables, context) => {
+      toast.error(error.message || 'An error occurred while deleting the product.');
+      options.onError?.(error, variables, context);
+    },
+    onSettled: options.onSettled,
   });
 };

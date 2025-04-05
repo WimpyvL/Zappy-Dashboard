@@ -1,132 +1,91 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-// import { getAuditLogs, createAuditLog } from './api'; // Commented out API functions
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '../../utils/supabaseClient'; // Import Supabase client
 import { toast } from 'react-toastify';
 
-// --- Mock Data ---
-const sampleAuditLogsData = [
-  {
-    id: 1,
-    timestamp: '2025-04-01T18:30:00Z',
-    user: 'admin@example.com',
-    action: 'Patient Created',
-    details: 'Patient ID: p001, Name: John Smith',
-  },
-  {
-    id: 2,
-    timestamp: '2025-04-01T18:35:10Z',
-    user: 'admin@example.com',
-    action: 'Order Status Updated',
-    details: 'Order ID: o002, Status: shipped',
-  },
-  {
-    id: 3,
-    timestamp: '2025-04-01T18:40:25Z',
-    user: 'support@example.com',
-    action: 'User Logged In',
-    details: 'User ID: user_admin',
-  },
-  {
-    id: 4,
-    timestamp: '2025-04-02T09:00:00Z',
-    user: 'admin@example.com',
-    action: 'Discount Created',
-    details: 'Discount Code: SPRING10',
-  },
-  {
-    id: 5,
-    timestamp: '2025-04-03T14:15:00Z',
-    user: 'admin@example.com',
-    action: 'Task Assigned',
-    details: 'Task ID: t001, Assignee: Dr. Sarah Johnson',
-  },
-];
-// --- End Mock Data ---
+// Removed Mock Data
+
+// Define query keys
+const queryKeys = {
+  all: ['auditLogs'],
+  lists: (params = {}) => [...queryKeys.all, 'list', { params }],
+};
 
 /**
- * Hook to fetch audit logs with pagination and filtering.
+ * Hook to fetch audit logs with pagination and filtering using Supabase.
  * @param {object} params - Query parameters (e.g., { page: 1, limit: 20, userId: '...', action: '...' })
  * @param {object} options - React Query options
  * @returns {QueryResult} Result object from useQuery
  */
-// Hook to fetch audit logs with pagination and filtering (Mocked)
 export const useAuditLogs = (params = { page: 1, limit: 20 }, options = {}) => {
-  console.log('Using mock audit logs data');
-  return useQuery({
-    queryKey: ['auditLogs', params],
-    // queryFn: () => getAuditLogs(params), // Original API call
-    queryFn: () => {
-      // Basic filtering simulation (can be expanded)
-      const filteredLogs = sampleAuditLogsData.filter((log) => {
-        let match = true;
-        if (params.userId && log.user !== params.userId) match = false;
-        if (params.action && !log.action.includes(params.action)) match = false;
-        // Add more filters as needed
-        return match;
-      });
-      // Basic pagination simulation
-      const page = params.page || 1;
-      const limit = params.limit || 20;
-      const start = (page - 1) * limit;
-      const end = start + limit;
-      const paginatedLogs = filteredLogs.slice(start, end);
+  const currentPage = params.page || 1;
+  const pageSize = params.limit || 20;
+  const rangeFrom = (currentPage - 1) * pageSize;
+  const rangeTo = rangeFrom + pageSize - 1;
 
-      return Promise.resolve({
-        logs: paginatedLogs,
-        total: filteredLogs.length,
-        page: page,
-        limit: limit,
-      });
+  return useQuery({
+    queryKey: queryKeys.lists(params),
+    queryFn: async () => {
+      let query = supabase
+        .from('api_logs') // Target the api_logs table
+        .select('*', { count: 'exact' })
+        .order('created_at', { ascending: false }) // Order by creation time
+        .range(rangeFrom, rangeTo);
+
+      // Apply filters (adjust column names and logic as needed)
+      if (params.userId) {
+        // Note: api_logs doesn't have a direct user ID. Filtering might need joins or backend logic.
+        // This is a placeholder filter based on potential request_data content.
+        // query = query.contains('request_data', { userId: params.userId }); // Example filter
+        console.warn("Filtering audit logs by userId might require backend changes or different table structure.");
+      }
+      if (params.action) { // Assuming 'action' might map to 'path' or 'method' or be in request_data
+         query = query.or(`path.ilike.%${params.action}%,method.ilike.%${params.action}%`);
+         console.warn("Filtering audit logs by action might require backend changes or different table structure.");
+      }
+      // Add date range filters if needed
+      // if (params.startDate) { query = query.gte('created_at', params.startDate); }
+      // if (params.endDate) { query = query.lte('created_at', params.endDate); }
+
+
+      const { data, error, count } = await query;
+
+      if (error) {
+        console.error('Error fetching audit logs:', error);
+        throw new Error(error.message);
+      }
+
+      // Map data if needed (e.g., extract user info if stored in request_data)
+      const mappedData = data?.map(log => ({
+          ...log,
+          // Example: Extract user email if available in request_data
+          // user: log.request_data?.user?.email || 'N/A',
+          timestamp: log.created_at, // Map created_at to timestamp if needed
+          action: `${log.method} ${log.path}`, // Combine method and path for action
+          details: JSON.stringify(log.request_data || log.response_data || {}), // Show JSON data as details
+      })) || [];
+
+      return {
+        // Adjust the returned structure based on how AuditLogPage expects it
+        logs: mappedData,
+        total: count || 0,
+        page: currentPage,
+        limit: pageSize,
+        // Add meta structure if needed by the component
+        // meta: {
+        //   total: count || 0,
+        //   per_page: pageSize,
+        //   current_page: currentPage,
+        //   last_page: Math.ceil((count || 0) / pageSize),
+        // },
+      };
     },
     keepPreviousData: true,
-    staleTime: Infinity, // Keep mock data fresh
+    // staleTime: 60 * 1000, // Example: 1 minute stale time
     onError: (error) => {
-      // TODO: Use error handling utility
-      toast.error(
-        `Error fetching audit logs: ${error.message || 'Unknown error'}`
-      );
+      toast.error(`Error fetching audit logs: ${error.message || 'Unknown error'}`);
     },
-    ...options, // Allow overriding query options
+    ...options,
   });
 };
 
-/**
- * Hook to create a new audit log entry.
- * NOTE: This might not be used if logging is purely backend-driven.
- * @param {object} options - React Query mutation options
- * @returns {MutationResult} Result object from useMutation
- */
-export const useCreateAuditLog = (options = {}) => {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    // mutationFn: (logData) => createAuditLog(logData), // Original API call
-    mutationFn: async (logData) => {
-      console.log('Mock Creating audit log:', logData);
-      await new Promise((resolve) => setTimeout(resolve, 300)); // Simulate delay
-      const newLog = {
-        id: Date.now(), // Generate mock ID
-        timestamp: new Date().toISOString(),
-        user: 'current_user@example.com', // Placeholder user
-        ...logData,
-      };
-      // Note: Doesn't actually add to sampleAuditLogsData
-      return { success: true, log: newLog }; // Simulate API response
-    },
-    onSuccess: (data, variables, context) => {
-      // Invalidate the audit logs query to refetch after creating a new one
-      queryClient.invalidateQueries({ queryKey: ['auditLogs'] });
-      toast.success('Audit log entry created (simulated).');
-      // Allow chaining custom onSuccess logic
-      options.onSuccess && options.onSuccess(data, variables, context);
-    },
-    onError: (error, variables, context) => {
-      // TODO: Use error handling utility
-      toast.error(
-        `Error creating audit log: ${error.message || 'Unknown error'}`
-      );
-      // Allow chaining custom onError logic
-      options.onError && options.onError(error, variables, context);
-    },
-    ...options, // Allow overriding mutation options
-  });
-};
+// Removed useCreateAuditLog hook - Logging should likely be handled by auditLogService or backend directly.

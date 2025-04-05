@@ -1,185 +1,238 @@
-// context/AuthContext.js
-import React, { createContext, useState, useContext } from 'react'; // Removed unused useEffect
-import apiService from '../utils/apiService';
-import errorHandling from '../utils/errorHandling';
+import React, { createContext, useState, useContext, useEffect, useCallback } from 'react';
+import { supabase } from '../utils/supabaseClient'; // Import Supabase client
+// Removed apiService and errorHandling imports
 
-// Create context
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
   const [currentUser, setCurrentUser] = useState(null);
-  // Initialize loading to false, as we are not checking localStorage anymore
-  // Auth status will be determined by API calls or login actions.
-  const [loading, setLoading] = useState(false);
-  // isAuthenticated is now derived directly from currentUser state (Removed unused variable declaration)
-  // const isAuthenticated = !!currentUser;
+  const [loading, setLoading] = useState(true); // Start loading true to check initial session
   const [error, setError] = useState(null);
 
-  // Removed useEffect checking localStorage on initial load.
-  // Authentication state will be established via login or API calls
-  // triggering the interceptor (which uses refreshToken from localStorage).
+  // Check current user session on initial load
+  useEffect(() => {
+    const checkSession = async () => {
+      setLoading(true);
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
 
-  // Function to set user data (e.g., after login or profile fetch)
-  // This should also handle storing the refreshToken if applicable
-  const setUser = (userData, refreshToken) => {
-    console.log('AuthContext: Setting user data', userData);
-    setCurrentUser(userData);
-    // Store refreshToken securely (localStorage is used here based on existing interceptor)
-    if (refreshToken) {
-      localStorage.setItem('refreshToken', refreshToken);
-    } else {
-      // If no refresh token provided (e.g., profile update), don't clear existing one
-      // localStorage.removeItem('refreshToken'); // Decide if this should be cleared
+      if (sessionError) {
+        console.error('Error getting session:', sessionError.message);
+        setError(sessionError.message);
+      } else {
+        setCurrentUser(session?.user ?? null); // Set user if session exists, otherwise null
+      }
+      setLoading(false);
+    };
+
+    checkSession();
+
+    // Listen for changes on auth state (logged in, signed out, etc.)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (_event, session) => {
+        console.log('Auth state changed:', _event, session);
+        setCurrentUser(session?.user ?? null);
+        setError(null); // Clear errors on auth change
+        // No need to set loading here as getSession handles initial load
+      }
+    );
+
+    // Cleanup subscription on unmount
+    return () => {
+      subscription?.unsubscribe();
+    };
+  }, []);
+
+  // Login function using Supabase
+  const login = async (email, password) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const { data, error: loginError } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (loginError) throw loginError;
+
+      // User state will be updated by onAuthStateChange listener
+      console.log('Login successful:', data.user);
+      return { success: true, user: data.user };
+
+    } catch (err) {
+      console.error('Login error:', err.message);
+      setError(err.message || 'Failed to log in.');
+      return { success: false, error: err.message };
+    } finally {
+      setLoading(false);
     }
-    // Removed setting localStorage for token, user, isAuthenticated
   };
 
-  // Logout function
+
+  // Logout function using Supabase
   const logout = async () => {
-    // Make async if calling API logout
-    console.log('AuthContext: Logging out');
-
-    // Optional: Call API logout endpoint
-    try {
-      await apiService.auth.logout(); // Assuming this exists and handles server-side session invalidation
-    } catch (logoutError) {
-      console.error('Logout API call failed:', logoutError);
-      // Decide if you want to proceed with client-side logout anyway
-    }
-
-    // Clear sensitive data from state and refreshToken from localStorage
-    setCurrentUser(null);
-    localStorage.removeItem('refreshToken');
-    // Removed clearing token, user, isAuthenticated from localStorage
-
-    console.log('AuthContext: Logout completed');
-    // Optionally redirect to login page
-    // window.location.href = '/login';
-  };
-
-  // Register function
-  const register = async (userData) => {
     setLoading(true);
     setError(null);
-
     try {
-      const response = await apiService.auth.register(userData);
-      return { success: true, user: response.user };
-    } catch (error) {
-      errorHandling.logError(error, 'AuthContext.register');
-      setError(errorHandling.getErrorMessage(error));
-      return {
-        success: false,
-        error: errorHandling.getErrorMessage(error),
-        formErrors: errorHandling.getFormErrors(error),
-      };
+      const { error: signOutError } = await supabase.auth.signOut();
+      if (signOutError) throw signOutError;
+      // User state will be set to null by onAuthStateChange listener
+      console.log('Logout successful');
+    } catch (err) {
+      console.error('Logout error:', err.message);
+      setError(err.message || 'Failed to log out.');
     } finally {
       setLoading(false);
     }
   };
 
-  // Update user profile
-  const updateProfile = async (userData) => {
+  // Register function using Supabase
+  const register = async (email, password, options = {}) => { // Accept options for metadata etc.
     setLoading(true);
     setError(null);
-
     try {
-      const updatedUser = await apiService.users.updateProfile(userData);
+      const { data, error: signUpError } = await supabase.auth.signUp({
+        email,
+        password,
+        options: options, // Pass additional data like firstName, lastName if needed
+      });
 
-      // Update state only, removed localStorage.setItem('user', ...)
-      setCurrentUser(updatedUser);
+      if (signUpError) throw signUpError;
 
-      return { success: true, user: updatedUser };
-    } catch (error) {
-      errorHandling.logError(error, 'AuthContext.updateProfile');
-      setError(errorHandling.getErrorMessage(error));
-      return {
-        success: false,
-        error: errorHandling.getErrorMessage(error),
-        formErrors: errorHandling.getFormErrors(error),
-      };
+      // User state might be updated by onAuthStateChange if auto-login occurs,
+      // or user might need email confirmation depending on Supabase settings.
+      console.log('Registration successful:', data.user);
+      // Check if email confirmation is required
+      if (data.user && !data.session) {
+         alert('Registration successful! Please check your email to confirm your account.');
+      }
+      return { success: true, user: data.user, session: data.session };
+
+    } catch (err) {
+      console.error('Registration error:', err.message);
+      setError(err.message || 'Failed to register.');
+      return { success: false, error: err.message };
     } finally {
       setLoading(false);
     }
   };
 
-  // Change password
-  const changePassword = async (currentPassword, newPassword) => {
+  // Update user profile using Supabase (e.g., metadata)
+  const updateProfile = async (metadata) => {
     setLoading(true);
     setError(null);
-
     try {
-      await apiService.users.changePassword(currentPassword, newPassword);
+      const { data, error: updateError } = await supabase.auth.updateUser({
+        data: metadata // Supabase uses 'data' for user_metadata
+      });
+
+      if (updateError) throw updateError;
+
+      // Update local state immediately as onAuthStateChange might not trigger for metadata
+      setCurrentUser(data.user);
+      console.log('Profile updated successfully:', data.user);
+      return { success: true, user: data.user };
+
+    } catch (err) {
+      console.error('Update profile error:', err.message);
+      setError(err.message || 'Failed to update profile.');
+      return { success: false, error: err.message };
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Change password using Supabase (for logged-in user)
+  const changePassword = async (newPassword) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const { data, error: passwordError } = await supabase.auth.updateUser({
+        password: newPassword
+      });
+
+      if (passwordError) throw passwordError;
+
+      console.log('Password updated successfully');
+      alert('Password updated successfully!'); // Give user feedback
       return { success: true };
-    } catch (error) {
-      errorHandling.logError(error, 'AuthContext.changePassword');
-      setError(errorHandling.getErrorMessage(error));
-      return {
-        success: false,
-        error: errorHandling.getErrorMessage(error),
-        formErrors: errorHandling.getFormErrors(error),
-      };
+
+    } catch (err) {
+      console.error('Change password error:', err.message);
+      setError(err.message || 'Failed to change password.');
+      return { success: false, error: err.message };
     } finally {
       setLoading(false);
     }
   };
 
-  // Request password reset
+  // Request password reset using Supabase
   const forgotPassword = async (email) => {
     setLoading(true);
     setError(null);
-
     try {
-      await apiService.auth.forgotPassword(email);
+      const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
+        // Optional: redirectTo URL for the password reset link
+        // redirectTo: 'http://localhost:3000/update-password', // Adjust URL as needed
+      });
+
+      if (resetError) throw resetError;
+
+      console.log('Password reset email sent successfully.');
+      alert('Password reset email sent. Please check your inbox.');
       return { success: true };
-    } catch (error) {
-      errorHandling.logError(error, 'AuthContext.forgotPassword');
-      setError(errorHandling.getErrorMessage(error));
-      return { success: false, error: errorHandling.getErrorMessage(error) };
+
+    } catch (err) {
+      console.error('Forgot password error:', err.message);
+      setError(err.message || 'Failed to send password reset email.');
+      return { success: false, error: err.message };
     } finally {
       setLoading(false);
     }
   };
 
-  // Reset password with token
-  const resetPassword = async (token, newPassword) => {
-    setLoading(true);
-    setError(null);
-
-    try {
-      await apiService.auth.resetPassword(token, newPassword);
-      return { success: true };
-    } catch (error) {
-      errorHandling.logError(error, 'AuthContext.resetPassword');
-      setError(errorHandling.getErrorMessage(error));
-      return {
-        success: false,
-        error: errorHandling.getErrorMessage(error),
-        formErrors: errorHandling.getFormErrors(error),
-      };
-    } finally {
-      setLoading(false);
-    }
+  // Reset password with token (handled via link from email, typically on a separate page)
+  // This function might not be needed directly in the context if using Supabase's flow.
+  // The user clicks the link, Supabase handles verification, and onAuthStateChange updates the state.
+  // If implementing a custom reset form after link click:
+  const updatePassword = async (newPassword) => {
+     setLoading(true);
+     setError(null);
+     try {
+       // This assumes the user is already authenticated via the reset link session
+       const { data, error: updatePassError } = await supabase.auth.updateUser({ password: newPassword });
+       if (updatePassError) throw updatePassError;
+       console.log('Password updated via reset link.');
+       alert('Password successfully reset.');
+       return { success: true };
+     } catch (err) {
+       console.error('Update password error:', err.message);
+       setError(err.message || 'Failed to update password.');
+       return { success: false, error: err.message };
+     } finally {
+       setLoading(false);
+     }
   };
+
 
   // Clear error
-  const clearError = () => {
+  const clearError = useCallback(() => {
     setError(null);
-  };
+  }, []);
 
   // Derive isAuthenticated directly from currentUser state
   const value = {
     currentUser,
+    session: supabase.auth.getSession(), // Provide access to session info if needed elsewhere
     isAuthenticated: !!currentUser, // Derived state
     loading,
     error,
-    setUser,
-    logout,
-    register,
-    updateProfile,
-    changePassword,
-    forgotPassword,
-    resetPassword,
+    login, // Use Supabase login
+    logout, // Use Supabase logout
+    register, // Use Supabase register
+    updateProfile, // Use Supabase updateProfile
+    changePassword, // Use Supabase changePassword (for logged-in user)
+    forgotPassword, // Use Supabase forgotPassword
+    updatePassword, // Use Supabase updatePassword (after reset link)
     clearError,
   };
 

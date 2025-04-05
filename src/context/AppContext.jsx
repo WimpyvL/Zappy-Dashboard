@@ -1,476 +1,215 @@
-import React, { createContext, useState, useEffect, useContext, useCallback } from 'react'; // Added useCallback
-// Comment out apiService import as we are mocking data
-// import apiService from "../utils/apiService";
+import React, { createContext, useState, useContext, useCallback } from 'react'; // Removed useEffect
 
 // Create context
 const AppContext = createContext();
 
-// --- Mock Data ---
-const samplePatients = [
-  {
-    id: 'p001',
-    firstName: 'John',
-    lastName: 'Smith',
-    email: 'john.smith@example.com',
-    status: 'Active',
-    tags: ['vip'],
-  },
-  {
-    id: 'p002',
-    firstName: 'Emily',
-    lastName: 'Davis',
-    email: 'emily.davis@example.com',
-    status: 'Active',
-    tags: [],
-  },
-  {
-    id: 'p003',
-    firstName: 'Robert',
-    lastName: 'Wilson',
-    email: 'robert.wilson@example.com',
-    status: 'Inactive',
-    tags: ['follow-up'],
-  },
-];
-
-const sampleSessions = [
-  {
-    id: 's001',
-    patientId: 'p001',
-    patientName: 'John Smith',
-    scheduledDate: new Date(Date.now() + 86400000).toISOString(),
-    status: 'scheduled',
-    type: 'Follow-up',
-    tags: [],
-  }, // Tomorrow
-  {
-    id: 's002',
-    patientId: 'p002',
-    patientName: 'Emily Davis',
-    scheduledDate: new Date().toISOString(),
-    status: 'scheduled',
-    type: 'Initial Consultation',
-    tags: [],
-  }, // Today
-  {
-    id: 's003',
-    patientId: 'p003',
-    patientName: 'Robert Wilson',
-    scheduledDate: new Date(Date.now() - 86400000).toISOString(),
-    status: 'completed',
-    type: 'Follow-up',
-    tags: [],
-  }, // Yesterday
-];
-
-const sampleOrders = [
-  {
-    id: 'o001',
-    patientId: 'p001',
-    orderDate: new Date().toISOString(),
-    status: 'pending',
-    medication: 'Ozempic',
-    tags: [],
-  },
-  {
-    id: 'o002',
-    patientId: 'p002',
-    orderDate: new Date(Date.now() - 86400000).toISOString(),
-    status: 'shipped',
-    medication: 'Wegovy',
-    tags: [],
-  },
-  {
-    id: 'o003',
-    patientId: 'p001',
-    orderDate: new Date(Date.now() - 172800000).toISOString(),
-    status: 'delivered',
-    medication: 'Ozempic',
-    tags: [],
-  },
-];
-
-const sampleProducts = [
-  {
-    id: 1,
-    name: 'Ozempic Pens',
-    description: 'Injectable medication',
-    category: 'Weight Loss',
-    active: true,
-    doses: [
-      { id: 101, value: '0.25mg' },
-      { id: 102, value: '0.5mg' },
-      { id: 103, value: '1.0mg' },
-    ],
-  },
-  {
-    id: 2,
-    name: 'Wegovy Pens',
-    description: 'Injectable medication',
-    category: 'Weight Loss',
-    active: true,
-    doses: [
-      { id: 201, value: '1.7mg' },
-      { id: 202, value: '2.4mg' },
-    ],
-  },
-];
-
-const sampleServices = [
-  {
-    id: 'svc001',
-    name: 'Initial Consultation',
-    description: 'First meeting with provider',
-    price: 150,
-    active: true,
-  },
-  {
-    id: 'svc002',
-    name: 'Follow-up Session',
-    description: 'Regular check-in',
-    price: 75,
-    active: true,
-  },
-];
-
-const sampleTags = [
-  { id: 'vip', name: 'VIP', color: 'gold' },
-  { id: 'follow-up', name: 'Needs Follow Up', color: 'blue' },
-  { id: 'high-risk', name: 'High Risk', color: 'red' },
-];
-
-const sampleSubscriptionPlans = [
-  {
-    id: 1,
-    name: 'Monthly Plan',
-    description: 'Pay month-to-month with no commitment',
-    billingFrequency: 'monthly',
-    deliveryFrequency: 'monthly',
-    price: 199.0,
-    active: true,
-    discount: 0,
-    allowedProductDoses: [
-      { productId: 1, doseId: 102 },
-      { productId: 2, doseId: 201 },
-    ], // Example using new structure
-  },
-  {
-    id: 2,
-    name: '3-Month Plan',
-    description: 'Quarterly billing with monthly delivery',
-    billingFrequency: 'quarterly',
-    deliveryFrequency: 'monthly',
-    price: 179.0,
-    active: true,
-    discount: 10,
-    allowedProductDoses: [
-      { productId: 1, doseId: 102 },
-      { productId: 2, doseId: 201 },
-    ],
-  },
-  {
-    id: 3,
-    name: '6-Month Plan',
-    description:
-      'Semi-annual billing with monthly delivery and maximum savings',
-    billingFrequency: 'biannually',
-    deliveryFrequency: 'monthly',
-    price: 159.0,
-    active: true,
-    discount: 20,
-    allowedProductDoses: [
-      { productId: 1, doseId: 103 },
-      { productId: 2, doseId: 202 },
-    ],
-  },
-];
-// --- End Mock Data ---
+// Removed all Mock Data (samplePatients, sampleSessions, etc.)
 
 export const AppProvider = ({ children }) => {
-  // State for core data types
-  const [patients, setPatients] = useState([]);
-  const [sessions, setSessions] = useState([]);
-  const [orders, setOrders] = useState([]);
-  const [products, setProducts] = useState([]); // Added products state
-  const [services, setServices] = useState([]); // Initialize empty
-  const [subscriptionPlans, setSubscriptionPlans] = useState([]); // Initialize empty
-  const [tags, setTags] = useState([]); // Initialize empty
-
   // State for view mode simulation
   const [viewMode, setViewMode] = useState('admin'); // 'admin' or 'patient'
 
-  // State for secondary data types (still using sample for now)
-  const [documents] = useState([]); // Initialize empty - TODO: Add fetchDocuments (Removed unused setDocuments)
-  const [forms] = useState([]); // Initialize empty - TODO: Add fetchForms (Removed unused setForms)
-  const [invoices] = useState([]); // Initialize empty - TODO: Add fetchInvoices (Removed unused setInvoices)
+  // NOTE: Removed state for patients, sessions, orders, products, services, plans, tags, documents, forms, invoices
+  // It's assumed this data will be fetched and managed via React Query hooks (e.g., usePatients, useOrders)
+  // in the components where it's needed, rather than being held globally in this context.
 
-  // Loading states
-  const [loading, setLoading] = useState({
-    global: true,
-    patients: true,
-    sessions: true,
-    orders: true,
-    products: true, // Added products loading
-    services: true, // Added services loading
-    plans: true, // Added plans loading
-    tags: true, // Added tags loading
-    pharmacies: false, // Assuming not fetched initially
-    providers: false, // Assuming not fetched initially
-    insurance: false, // Assuming not fetched initially
-    notes: false,
-    documents: true, // Added documents loading (placeholder)
-    forms: true, // Added forms loading (placeholder)
-    invoices: true, // Added invoices loading (placeholder)
-  });
+  // NOTE: Removed loading and error states. React Query handles this per-query.
+  // If truly global loading/error states are needed, they could be managed here,
+  // but it's often better handled closer to the data fetching logic.
 
-  // Error states
-  const [errors, setErrors] = useState({
-    patients: null,
-    sessions: null,
-    orders: null,
-    products: null, // Added products error
-    services: null, // Added services error
-    plans: null, // Added plans error
-    tags: null, // Added tags error
-    notes: null,
-    documents: null, // Added documents error (placeholder)
-    forms: null, // Added forms error (placeholder)
-    invoices: null, // Added invoices error (placeholder)
-  });
+  // --- Removed Mock Fetch Functions ---
+  // (fetchPatients, fetchSessions, fetchOrders, fetchProducts, fetchServices, fetchSubscriptionPlans, fetchTags, fetchInitialData)
 
-  // --- Fetch Functions (Mocked) ---
+  // --- Removed Initial Data Fetching useEffect ---
 
-  const fetchPatients = () => {
-    console.log('Using mock patient data');
-    setPatients(samplePatients);
-    setLoading((prev) => ({ ...prev, patients: false }));
-    setErrors((prev) => ({ ...prev, patients: null }));
-  };
+  // --- Helper Functions (Placeholder - Functionality depends on actual data fetching/state management) ---
+  // These functions likely need to be removed or significantly refactored
+  // depending on how data is managed (e.g., using React Query hooks directly in components).
+  // Keeping them as placeholders for now, but they won't work without the removed state.
 
-  const fetchSessions = () => {
-    console.log('Using mock session data');
-    setSessions(sampleSessions);
-    setLoading((prev) => ({ ...prev, sessions: false }));
-    setErrors((prev) => ({ ...prev, sessions: null }));
-  };
-
-  const fetchOrders = () => {
-    console.log('Using mock order data');
-    setOrders(sampleOrders);
-    setLoading((prev) => ({ ...prev, orders: false }));
-    setErrors((prev) => ({ ...prev, orders: null }));
-  };
-
-  const fetchProducts = () => {
-    console.log('Using mock product data');
-    setProducts(sampleProducts);
-    setLoading((prev) => ({ ...prev, products: false }));
-    setErrors((prev) => ({ ...prev, products: null }));
-  };
-
-  const fetchServices = () => {
-    console.log('Using mock service data');
-    setServices(sampleServices);
-    setLoading((prev) => ({ ...prev, services: false }));
-    setErrors((prev) => ({ ...prev, services: null }));
-  };
-
-  // Keep fetchSubscriptionPlans with fallback for now, or mock it too
-  const fetchSubscriptionPlans = () => {
-    console.log('Using mock subscription plan data');
-    setSubscriptionPlans(sampleSubscriptionPlans);
-    setLoading((prev) => ({ ...prev, plans: false }));
-    setErrors((prev) => ({ ...prev, plans: null }));
-    // setLoading((prev) => ({ ...prev, plans: true }));
-    // setErrors((prev) => ({ ...prev, plans: null }));
-    // try {
-    //   // const data = await apiService.subscriptionPlans.getAll(); // Mocked out
-    //   const data = []; // Simulate empty API response to force fallback
-    //   if (Array.isArray(data) && data.length > 0) {
-    //        console.log("Fetched plans from API:", data);
-    //        setSubscriptionPlans(data);
-    //    } else {
-    //        console.warn("API returned no subscription plans or invalid data, using sample data.");
-    //        setSubscriptionPlans(sampleSubscriptionPlans);
-    //    }
-    // } catch (error) {
-    //   console.error("Error fetching subscription plans, using sample data:", error);
-    //   setErrors((prev) => ({
-    //     ...prev,
-    //     plans: error.response?.data?.message || "Failed to fetch plans",
-    //   }));
-    //   setSubscriptionPlans(sampleSubscriptionPlans);
-    // } finally {
-    //    setLoading((prev) => ({ ...prev, plans: false }));
-    // }
-  };
-
-  const fetchTags = () => {
-    console.log('Using mock tag data');
-    setTags(sampleTags);
-    setLoading((prev) => ({ ...prev, tags: false }));
-    setErrors((prev) => ({ ...prev, tags: null }));
-  };
-
-  // TODO: Add mock fetchDocuments, fetchForms, fetchInvoices similarly if needed
-
-  const fetchInitialData = () => {
-    // Removed async as fetch functions are now synchronous
-    console.log('Fetching initial mock data...');
-    setLoading((prev) => ({ ...prev, global: true }));
-
-    // Call mocked fetch functions directly (no need for Promise.all)
-    fetchPatients();
-    fetchSessions();
-    fetchOrders();
-    fetchProducts();
-    fetchServices();
-    fetchSubscriptionPlans();
-    fetchTags();
-    // TODO: Call mock fetchDocuments(), fetchForms(), fetchInvoices() here
-
-    setLoading((prev) => ({ ...prev, global: false }));
-    console.log('Finished fetching initial mock data.');
-  };
-
-  // Initial data fetching
-  useEffect(() => {
-    fetchInitialData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Added eslint-disable to suppress warning about missing dependency, as it's intentional for mock setup
-
-  // --- Helper Functions (Keep existing ones - these might need mocking too if used) ---
   const getPatientOrders = (patientId) => {
-    /* ... */
+    console.warn('getPatientOrders function needs implementation based on actual data fetching.');
+    return []; // Placeholder
+    /* ... */ // Placeholder
   };
   const getPatientSessions = (patientId) => {
-    /* ... */
+     console.warn('getPatientSessions function needs implementation based on actual data fetching.');
+     return []; // Placeholder
+    /* ... */ // Placeholder
   };
   const getPatientNotes = async (patientId) => {
-    /* ... */
+     console.warn('getPatientNotes function needs implementation based on actual data fetching.');
+     return []; // Placeholder
+    /* ... */ // Placeholder
   };
   const getPatientDocuments = (patientId) => {
-    /* ... */
+     console.warn('getPatientDocuments function needs implementation based on actual data fetching.');
+     return []; // Placeholder
+    /* ... */ // Placeholder
   };
   const getPatientForms = (patientId) => {
-    /* ... */
+     console.warn('getPatientForms function needs implementation based on actual data fetching.');
+     return []; // Placeholder
+    /* ... */ // Placeholder
   };
   const getPatientInvoices = (patientId) => {
-    /* ... */
+     console.warn('getPatientInvoices function needs implementation based on actual data fetching.');
+     return []; // Placeholder
+    /* ... */ // Placeholder
   };
   const addPatientNote = async (patientId, note) => {
-    /* ... */
+     console.warn('addPatientNote function needs implementation based on actual data fetching.');
+    /* ... */ // Placeholder
   };
   const updatePatientNote = async (patientId, noteId, updatedNote) => {
-    /* ... */
+     console.warn('updatePatientNote function needs implementation based on actual data fetching.');
+    /* ... */ // Placeholder
   };
   const deletePatientNote = async (patientId, noteId) => {
-    /* ... */
+     console.warn('deletePatientNote function needs implementation based on actual data fetching.');
+    /* ... */ // Placeholder
   };
   const updateSessionStatus = async (sessionId, newStatus) => {
-    /* ... */
+     console.warn('updateSessionStatus function needs implementation based on actual data fetching.');
+    /* ... */ // Placeholder
   };
   const updateOrderStatus = async (orderId, newStatus) => {
-    /* ... */
+     console.warn('updateOrderStatus function needs implementation based on actual data fetching.');
+    /* ... */ // Placeholder
   };
   const createPatient = async (patientData) => {
-    /* ... */
+     console.warn('createPatient function needs implementation based on actual data fetching.');
+    /* ... */ // Placeholder
   };
   const updatePatient = async (patientId, patientData) => {
-    /* ... */
+     console.warn('updatePatient function needs implementation based on actual data fetching.');
+    /* ... */ // Placeholder
   };
   const deletePatient = async (patientId) => {
-    /* ... */
+     console.warn('deletePatient function needs implementation based on actual data fetching.');
+    /* ... */ // Placeholder
   };
   const updatePatientWeight = async (patientId, newWeight) => {
-    /* ... */
+     console.warn('updatePatientWeight function needs implementation based on actual data fetching.');
+    /* ... */ // Placeholder
   };
   const addTag = async (tagName, tagColor = 'gray') => {
-    /* ... */
+     console.warn('addTag function needs implementation based on actual data fetching.');
+    /* ... */ // Placeholder
   };
   const updateTag = async (tagId, updatedTag) => {
-    /* ... */
+     console.warn('updateTag function needs implementation based on actual data fetching.');
+    /* ... */ // Placeholder
   };
   const deleteTag = async (tagId) => {
-    /* ... */
+     console.warn('deleteTag function needs implementation based on actual data fetching.');
+    /* ... */ // Placeholder
   };
   const getAllTags = () => {
-    return tags;
-  }; // Updated to return state
+     console.warn('getAllTags function needs implementation based on actual data fetching.');
+     return []; // Placeholder
+  };
   const getTagById = (tagId) => {
-    return tags.find((tag) => tag.id === tagId);
-  }; // Updated to use state
+     console.warn('getTagById function needs implementation based on actual data fetching.');
+     return undefined; // Placeholder
+  };
   const addPatientTag = async (patientId, tagId) => {
-    /* ... */
+     console.warn('addPatientTag function needs implementation based on actual data fetching.');
+    /* ... */ // Placeholder
   };
   const removePatientTag = async (patientId, tagId) => {
-    /* ... */
+     console.warn('removePatientTag function needs implementation based on actual data fetching.');
+    /* ... */ // Placeholder
   };
   const addSessionTag = async (sessionId, tagId) => {
-    /* ... */
+     console.warn('addSessionTag function needs implementation based on actual data fetching.');
+    /* ... */ // Placeholder
   };
   const removeSessionTag = async (sessionId, tagId) => {
-    /* ... */
+     console.warn('removeSessionTag function needs implementation based on actual data fetching.');
+    /* ... */ // Placeholder
   };
   const addOrderTag = async (orderId, tagId) => {
-    /* ... */
+     console.warn('addOrderTag function needs implementation based on actual data fetching.');
+    /* ... */ // Placeholder
   };
   const removeOrderTag = async (orderId, tagId) => {
-    /* ... */
+     console.warn('removeOrderTag function needs implementation based on actual data fetching.');
+    /* ... */ // Placeholder
   };
   const addDocumentTag = (documentId, tagId) => {
-    /* ... */
+     console.warn('addDocumentTag function needs implementation based on actual data fetching.');
+    /* ... */ // Placeholder
   };
   const removeDocumentTag = (documentId, tagId) => {
-    /* ... */
+     console.warn('removeDocumentTag function needs implementation based on actual data fetching.');
+    /* ... */ // Placeholder
   };
   const addFormTag = (formId, tagId) => {
-    /* ... */
+     console.warn('addFormTag function needs implementation based on actual data fetching.');
+    /* ... */ // Placeholder
   };
   const removeFormTag = (formId, tagId) => {
-    /* ... */
+     console.warn('removeFormTag function needs implementation based on actual data fetching.');
+    /* ... */ // Placeholder
   };
   const addInvoiceTag = (invoiceId, tagId) => {
-    /* ... */
+     console.warn('addInvoiceTag function needs implementation based on actual data fetching.');
+    /* ... */ // Placeholder
   };
   const removeInvoiceTag = (invoiceId, tagId) => {
-    /* ... */
+     console.warn('removeInvoiceTag function needs implementation based on actual data fetching.');
+    /* ... */ // Placeholder
   };
   const filterEntitiesByTag = (entityType, tagId) => {
-    /* ... */
+     console.warn('filterEntitiesByTag function needs implementation based on actual data fetching.');
+     return []; // Placeholder
+    /* ... */ // Placeholder
   };
   const getServiceById = (serviceId) => {
-    return services.find((service) => service.id === serviceId);
-  }; // Updated to use state
+     console.warn('getServiceById function needs implementation based on actual data fetching.');
+     return undefined; // Placeholder
+  };
   const getServicePlans = (serviceId) => {
-    /* ... */
-  }; // Keep existing logic using state
+     console.warn('getServicePlans function needs implementation based on actual data fetching.');
+     return []; // Placeholder
+    /* ... */ // Placeholder
+  };
   const getAllPlans = () => {
-    return subscriptionPlans;
-  }; // Updated to return state
+     console.warn('getAllPlans function needs implementation based on actual data fetching.');
+     return []; // Placeholder
+  };
   const addService = async (serviceData) => {
-    /* ... */
+     console.warn('addService function needs implementation based on actual data fetching.');
+    /* ... */ // Placeholder
   };
   const updateService = async (serviceId, serviceData) => {
-    /* ... */
+     console.warn('updateService function needs implementation based on actual data fetching.');
+    /* ... */ // Placeholder
   };
   const deleteService = async (serviceId) => {
-    /* ... */
+     console.warn('deleteService function needs implementation based on actual data fetching.');
+    /* ... */ // Placeholder
   };
   const addSubscriptionPlan = async (planData) => {
-    /* ... */
+     console.warn('addSubscriptionPlan function needs implementation based on actual data fetching.');
+    /* ... */ // Placeholder
   };
   const updateSubscriptionPlan = async (planId, planData) => {
-    /* ... */
+     console.warn('updateSubscriptionPlan function needs implementation based on actual data fetching.');
+    /* ... */ // Placeholder
   };
   const deleteSubscriptionPlan = async (planId) => {
-    /* ... */
+     console.warn('deleteSubscriptionPlan function needs implementation based on actual data fetching.');
+    /* ... */ // Placeholder
   };
   const saveInitialConsultationNote = async (patientId, consultationData) => {
-    /* ... */
+     console.warn('saveInitialConsultationNote function needs implementation based on actual data fetching.');
+    /* ... */ // Placeholder
   };
   const getPatientConsultationNotes = async (patientId) => {
-    /* ... */
+     console.warn('getPatientConsultationNotes function needs implementation based on actual data fetching.');
+     return []; // Placeholder
   };
 
   // --- View Mode Setter ---
@@ -487,21 +226,12 @@ export const AppProvider = ({ children }) => {
   // --- Context Provider Value ---
   const contextValue = {
     // State
-    viewMode, // Added viewMode state
-    patients,
-    sessions,
-    orders,
-    products, // Added products
-    documents,
-    forms,
-    invoices,
-    tags,
-    services,
-    subscriptionPlans,
-    loading,
-    errors,
+    viewMode, // Keep viewMode state
 
-    // Data access functions
+    // Removed data state (patients, sessions, etc.)
+    // Removed loading and errors state
+
+    // Placeholder Data access functions (to be removed or refactored)
     getPatientOrders,
     getPatientSessions,
     getPatientNotes,
@@ -524,17 +254,9 @@ export const AppProvider = ({ children }) => {
     deletePatient,
     updatePatientWeight,
 
-    // Data fetching functions (now mostly point to mock setters)
-    fetchPatients,
-    fetchSessions,
-    fetchOrders,
-    fetchProducts, // Added fetchProducts
-    fetchServices,
-    fetchSubscriptionPlans,
-    fetchTags,
-    // TODO: Add fetchDocuments, fetchForms, fetchInvoices
+    // Removed fetch functions
 
-    // Tag management functions
+    // Placeholder Tag management functions (to be removed or refactored)
     addTag,
     updateTag,
     deleteTag,

@@ -2,19 +2,20 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Eye, EyeOff, AlertCircle, CheckCircle } from 'lucide-react';
 import { useForm } from 'react-hook-form';
-import { useAuth } from '../../context/AuthContext';
-import { useMutation } from '@tanstack/react-query';
-import apiService from '../../utils/apiService';
+import { useAuth } from '../../context/AuthContext'; // Keep useAuth
+// Removed useMutation and apiService imports
 
 const Login = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { setUser, error: authError, isAuthenticated, clearError } = useAuth();
+  // Get login function, loading state, and error from useAuth
+  const { login, loading: authLoading, error: authError, isAuthenticated, clearError } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   const [successMessage, setSuccessMessage] = useState(
     location.state?.message || ''
   );
-  const [apiError, setApiError] = useState('');
+  // Use authError directly instead of local apiError state
+  // const [apiError, setApiError] = useState('');
 
   const {
     register,
@@ -25,53 +26,42 @@ const Login = () => {
     defaultValues: { email: '', password: '', rememberMe: false },
   });
 
+  // Clear auth error on component mount or location change
   useEffect(() => {
-    if (authError) setApiError(authError);
-    clearError && clearError();
-  }, [authError, clearError]);
+    if (authError && clearError) {
+      clearError();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.pathname]); // Clear error when navigating to login
 
   useEffect(() => {
-    if (isAuthenticated) {
+    // Redirect if already authenticated
+    if (isAuthenticated && !authLoading) { // Check loading state
       navigate(location.state?.from?.pathname || '/', { replace: true });
     }
   }, [isAuthenticated, navigate, location.state]);
 
   const togglePasswordVisibility = () => setShowPassword((prev) => !prev);
 
-  const mutation = useMutation({
-    mutationFn: ({ email, password }) => apiService.auth.login(email, password),
-    onSuccess: (response) => {
-      const authHeader =
-        response.headers?.authorization || response.headers?.Authorization;
-      const token = authHeader?.startsWith('Bearer ')
-        ? authHeader.split(' ')[1]
-        : null;
+  // Removed useMutation hook
 
-      if (token) localStorage.setItem('token', token);
-
-      const userData = {
-        email: response.data?.attributes?.email,
-        role: response.data?.attributes?.role,
-        id: response.data?.id,
-      };
-
-      localStorage.setItem('isAuthenticated', 'true');
-      localStorage.setItem('user', JSON.stringify(userData));
-      setUser(userData);
-      reset();
-    },
-    onError: (error) => {
-      setApiError(
-        error?.response?.data ||
-          'An unexpected error occurred. Please try again.'
-      );
-    },
-  });
-
-  const onSubmit = (data) => {
+  // Updated onSubmit to call context login function
+  const onSubmit = async (data) => {
     setSuccessMessage('');
-    setApiError('');
-    mutation.mutate(data);
+    // Clear previous auth error before attempting login
+    if (clearError) clearError();
+
+    const { email, password } = data;
+    const result = await login(email, password);
+
+    if (result.success) {
+      // Navigation is handled by the useEffect watching isAuthenticated
+      console.log('Login successful, navigating...');
+      reset(); // Reset form on successful login
+    } else {
+      // Error state is set within the login function in AuthContext
+      console.log('Login failed:', result.error);
+    }
   };
 
   return (
@@ -87,9 +77,10 @@ const Login = () => {
             <CheckCircle className="h-5 w-5 mr-2" /> <p>{successMessage}</p>
           </div>
         )}
-        {apiError && (
+        {/* Display authError from context */}
+        {authError && (
           <div className="mb-4 p-3 bg-red-50 text-red-700 text-sm rounded flex items-start">
-            <AlertCircle className="h-5 w-5 mr-2" /> <p>{apiError}</p>
+            <AlertCircle className="h-5 w-5 mr-2" /> <p>{authError}</p>
           </div>
         )}
 
@@ -169,14 +160,14 @@ const Login = () => {
 
           <button
             type="submit"
-            disabled={mutation.isLoading}
+            disabled={authLoading} // Use loading state from context
             className={`w-full py-2 px-4 text-sm font-medium text-white rounded-md shadow-sm ${
-              mutation.isLoading
-                ? 'bg-indigo-400'
+              authLoading
+                ? 'bg-indigo-400 cursor-not-allowed' // Style for loading state
                 : 'bg-indigo-600 hover:bg-indigo-700'
             } focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500`}
           >
-            {mutation.isPending ? 'Signing in...' : 'Sign in'}
+            {authLoading ? 'Signing in...' : 'Sign in'}
           </button>
 
           <p className="mt-6 text-center text-sm text-gray-600">

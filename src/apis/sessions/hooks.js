@@ -1,235 +1,250 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-// import apiService from '../../utils/apiService'; // Removed unused import
-import { toast } from 'react-toastify'; // Added for mock feedback
+import { supabase } from '../../utils/supabaseClient'; // Import Supabase client
+import { toast } from 'react-toastify'; // Keep for feedback
+// Removed auditLogService import as it wasn't used here previously
 
-// --- Mock Data (Using sample from AppContext for consistency) ---
-const sampleSessionsData = [
-  {
-    id: 's001',
-    patientId: 'p001',
-    patientName: 'John Smith',
-    scheduledDate: new Date(Date.now() + 86400000).toISOString(), // Tomorrow
-    status: 'scheduled',
-    type: 'Follow-up',
-    tags: [],
-    doctor: 'Dr. Johnson', // Added doctor
-    notes: 'Discussed medication side effects.', // Added notes
-    followUpNeeded: false, // Added followUpNeeded
-  },
-  {
-    id: 's002',
-    patientId: 'p002',
-    patientName: 'Emily Davis',
-    scheduledDate: new Date().toISOString(), // Today
-    status: 'scheduled',
-    type: 'Initial Consultation',
-    tags: [],
-    doctor: 'Dr. Chen',
-    notes: null,
-    followUpNeeded: true,
-  },
-  {
-    id: 's003',
-    patientId: 'p003',
-    patientName: 'Robert Wilson',
-    scheduledDate: new Date(Date.now() - 86400000).toISOString(), // Yesterday
-    status: 'completed',
-    type: 'Follow-up',
-    tags: [],
-    doctor: 'Dr. Johnson',
-    notes: 'Patient progress is good. Continue current plan.',
-    followUpNeeded: false,
-  },
-  {
-    id: 's004',
-    patientId: 'p001',
-    patientName: 'John Smith',
-    scheduledDate: new Date(Date.now() - 10 * 86400000).toISOString(), // 10 days ago
-    status: 'missed',
-    type: 'Follow-up',
-    tags: [],
-    doctor: 'Dr. Johnson',
-    notes: 'Patient did not attend scheduled session.',
-    followUpNeeded: true,
-  },
-];
-// --- End Mock Data ---
-
+// Define query keys for sessions
 const queryKeys = {
   all: ['sessions'],
-  lists: (params) => [...queryKeys.all, 'list', params],
+  lists: (params = {}) => [...queryKeys.all, 'list', { params }],
   details: (id) => [...queryKeys.all, 'detail', id],
 };
 
-// Get sessions hook (Mocked)
-export const useSessions = (params = {}) => {
-  console.log('Using mock sessions data in useSessions hook');
+// Get sessions hook using Supabase
+export const useSessions = (params = {}, pageSize = 10) => {
+  const currentPage = params.page || 1;
+  const rangeFrom = (currentPage - 1) * pageSize;
+  const rangeTo = rangeFrom + pageSize - 1;
+
   return useQuery({
     queryKey: queryKeys.lists(params),
-    // queryFn: () => apiService.sessions.getAll(params), // Original API call
-    queryFn: () =>
-      Promise.resolve({
-        data: sampleSessionsData, // Return mock data
-        // Add meta if needed
-      }),
+    queryFn: async () => {
+      let query = supabase
+        .from('session') // Assuming table name is 'session'
+        .select(`
+          *,
+          client_record ( id, first_name, last_name )
+        `, { count: 'exact' })
+        .order('created_at', { ascending: false }) // Example order
+        .range(rangeFrom, rangeTo);
+
+      // Apply filters
+      if (params.patientId) {
+        query = query.eq('client_record_id', params.patientId);
+      }
+      if (params.status) {
+        query = query.eq('status', params.status); // Assuming 'status' column exists
+      }
+      // Add other filters as needed
+
+      const { data, error, count } = await query;
+
+      if (error) {
+        console.error('Error fetching sessions:', error);
+        throw new Error(error.message);
+      }
+
+      const mappedData = data?.map(session => ({
+          ...session,
+          patientName: session.client_record ? `${session.client_record.first_name || ''} ${session.client_record.last_name || ''}`.trim() : 'N/A',
+      })) || [];
+
+      return {
+        data: mappedData,
+        meta: {
+          total: count || 0,
+          per_page: pageSize,
+          current_page: currentPage,
+          last_page: Math.ceil((count || 0) / pageSize),
+        },
+      };
+    },
     keepPreviousData: true,
-    staleTime: Infinity,
   });
 };
 
-// Get session by ID hook (Mocked)
+// Get session by ID hook using Supabase
 export const useSessionById = (id, options = {}) => {
-  console.log(`Using mock session data for ID: ${id} in useSessionById hook`);
   return useQuery({
     queryKey: queryKeys.details(id),
-    // queryFn: () => apiService.sessions.getById(id), // Original API call
-    queryFn: () =>
-      Promise.resolve(
-        sampleSessionsData.find((s) => s.id === id) || sampleSessionsData[0]
-      ), // Find mock session or return first
+    queryFn: async () => {
+      if (!id) return null;
+
+      const { data, error } = await supabase
+        .from('session')
+        .select(`
+          *,
+          client_record ( id, first_name, last_name )
+        `)
+        .eq('id', id)
+        .single();
+
+      if (error) {
+        console.error(`Error fetching session ${id}:`, error);
+        if (error.code === 'PGRST116') return null; // Not found
+        throw new Error(error.message);
+      }
+
+      const mappedData = data ? {
+          ...data,
+          patientName: data.client_record ? `${data.client_record.first_name || ''} ${data.client_record.last_name || ''}`.trim() : 'N/A',
+      } : null;
+
+      return mappedData;
+    },
     enabled: !!id,
-    staleTime: Infinity,
     ...options,
   });
 };
 
-// Create session hook (Mocked)
+// Create session hook using Supabase
 export const useCreateSession = (options = {}) => {
   const queryClient = useQueryClient();
   return useMutation({
-    // mutationFn: (sessionData) => apiService.sessions.create(sessionData), // Original API call
     mutationFn: async (sessionData) => {
-      console.log('Mock Creating session:', sessionData);
-      await new Promise((resolve) => setTimeout(resolve, 300)); // Simulate delay
-      const newSession = {
-        id: `s${Date.now()}`, // Generate mock ID
+      const dataToInsert = {
         ...sessionData,
-        status: 'scheduled', // Default status
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
       };
-      // Note: Doesn't actually add to sampleSessionsData
-      return { data: newSession }; // Simulate API response
+
+      const { data, error } = await supabase
+        .from('session')
+        .insert(dataToInsert)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error creating session:', error);
+        throw new Error(error.message);
+      }
+      return data;
     },
     onSuccess: (data, variables, context) => {
-      // Invalidate the list query to refetch sessions
       toast.success('Session created successfully');
       queryClient.invalidateQueries({ queryKey: queryKeys.lists() });
-      // Call original onSuccess if provided
       options.onSuccess?.(data, variables, context);
+    }, // Ensure comma is present
+    onError: (error, variables, context) => {
+       console.error("Create session mutation error:", error);
+       toast.error(`Error creating session: ${error.message}`);
+       options.onError?.(error, variables, context);
     },
-    onError: options.onError,
     onSettled: options.onSettled,
   });
 };
 
-// Update session hook (Mocked)
+// Update session hook using Supabase
 export const useUpdateSession = (options = {}) => {
   const queryClient = useQueryClient();
   return useMutation({
-    // mutationFn: ({ id, sessionData }) => apiService.sessions.update(id, sessionData), // Original API call
     mutationFn: async ({ id, sessionData }) => {
-      console.log(`Mock Updating session ${id}:`, sessionData);
-      await new Promise((resolve) => setTimeout(resolve, 300)); // Simulate delay
-      return { data: { id, ...sessionData } }; // Simulate API response
+      if (!id) throw new Error("Session ID is required for update.");
+      const dataToUpdate = {
+        ...sessionData,
+        updated_at: new Date().toISOString(),
+      };
+
+      const { data, error } = await supabase
+        .from('session')
+        .update(dataToUpdate)
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) {
+        console.error(`Error updating session ${id}:`, error);
+        throw new Error(error.message);
+      }
+      return data;
     },
     onSuccess: (data, variables, context) => {
-      // Invalidate list and specific detail queries
       toast.success('Session updated successfully');
       queryClient.invalidateQueries({ queryKey: queryKeys.lists() });
-      queryClient.invalidateQueries({
-        queryKey: queryKeys.details(variables.id),
-      });
+      queryClient.invalidateQueries({ queryKey: queryKeys.details(variables.id) });
       options.onSuccess?.(data, variables, context);
+    }, // Ensure comma is present
+    onError: (error, variables, context) => {
+       console.error(`Update session ${variables.id} mutation error:`, error);
+       toast.error(`Error updating session: ${error.message}`);
+       options.onError?.(error, variables, context);
     },
-    onError: options.onError,
     onSettled: options.onSettled,
   });
 };
 
-// Update session status hook
+// Update session status hook using Supabase
 export const useUpdateSessionStatus = (options = {}) => {
   const queryClient = useQueryClient();
   return useMutation({
-    // mutationFn: ({ sessionId, status }) => apiService.sessions.updateStatus(sessionId, status), // Original API call
-    mutationFn: async ({ sessionId, status }) => {
-      console.log(`Mock Updating session ${sessionId} status to: ${status}`);
-      await new Promise((resolve) => setTimeout(resolve, 300)); // Simulate delay
-      return { success: true, id: sessionId, status: status }; // Simulate API response
-    },
+     mutationFn: async ({ sessionId, status }) => {
+       if (!sessionId) throw new Error("Session ID is required for status update.");
+
+       // Assuming 'status' is a column in the 'session' table
+       const { data, error } = await supabase
+         .from('session')
+         .update({ status: status, updated_at: new Date().toISOString() })
+         .eq('id', sessionId)
+         .select()
+         .single();
+
+       if (error) {
+         console.error(`Error updating session status ${sessionId}:`, error);
+         throw new Error(error.message);
+       }
+       return data;
+     },
     onSuccess: (data, variables, context) => {
-      // Invalidate list and specific detail queries
       toast.success('Session status updated successfully');
       queryClient.invalidateQueries({ queryKey: queryKeys.lists() });
-      queryClient.invalidateQueries({
-        queryKey: queryKeys.details(variables.sessionId),
-      });
+      queryClient.invalidateQueries({ queryKey: queryKeys.details(variables.sessionId) });
       options.onSuccess?.(data, variables, context);
+    }, // Ensure comma is present
+    onError: (error, variables, context) => {
+       console.error(`Update session status ${variables.sessionId} mutation error:`, error);
+       toast.error(`Error updating session status: ${error.message}`);
+       options.onError?.(error, variables, context);
     },
-    onError: options.onError,
     onSettled: options.onSettled,
   });
 };
 
-// Delete session hook (Mocked)
+// Delete session hook using Supabase
 export const useDeleteSession = (options = {}) => {
   const queryClient = useQueryClient();
   return useMutation({
-    // mutationFn: (id) => apiService.sessions.delete(id), // Original API call
-    mutationFn: async (id) => {
-      console.log(`Mock Deleting session ${id}`);
-      await new Promise((resolve) => setTimeout(resolve, 300)); // Simulate delay
-      return { success: true }; // Simulate API response
-    },
-    onSuccess: (data, variables, context) => {
-      // Invalidate list query
+     mutationFn: async (id) => {
+       if (!id) throw new Error("Session ID is required for deletion.");
+
+       const { error } = await supabase
+         .from('session')
+         .delete()
+         .eq('id', id);
+
+       if (error) {
+         console.error(`Error deleting session ${id}:`, error);
+         throw new Error(error.message);
+       }
+       return { success: true, id };
+     },
+    onSuccess: (data, variables, context) => { // variables is the id
       toast.success('Session deleted successfully');
       queryClient.invalidateQueries({ queryKey: queryKeys.lists() });
-      // Optionally remove the specific detail query from cache
-      // queryClient.removeQueries({ queryKey: queryKeys.details(variables) });
+      queryClient.removeQueries({ queryKey: queryKeys.details(variables) });
       options.onSuccess?.(data, variables, context);
+    }, // Ensure comma is present
+    onError: (error, variables, context) => {
+       console.error(`Delete session ${variables} mutation error:`, error);
+       toast.error(`Error deleting session: ${error.message}`);
+       options.onError?.(error, variables, context);
     },
-    onError: options.onError,
     onSettled: options.onSettled,
   });
 };
 
-// Hook for adding a tag to a session (Example - adjust based on actual API)
-export const useAddSessionTag = (options = {}) => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    // mutationFn: ({ entityId, tagId }) => apiService.sessions.addTag(entityId, tagId), // Original API call
-    mutationFn: async ({ entityId, tagId }) => {
-      console.log(`Mock Adding tag ${tagId} to session ${entityId}`);
-      await new Promise((resolve) => setTimeout(resolve, 300)); // Simulate delay
-      return { success: true }; // Simulate success
-    },
-    onSuccess: (data, variables, context) => {
-      queryClient.invalidateQueries({
-        queryKey: queryKeys.details(variables.entityId),
-      });
-      queryClient.invalidateQueries({ queryKey: queryKeys.lists() });
-      options.onSuccess?.(data, variables, context);
-    },
-    onError: options.onError,
-  });
-};
-
-// Hook for removing a tag from a session (Example - adjust based on actual API)
-export const useRemoveSessionTag = (options = {}) => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    // mutationFn: ({ entityId, tagId }) => apiService.sessions.removeTag(entityId, tagId), // Original API call
-    mutationFn: async ({ entityId, tagId }) => {
-      console.log(`Mock Removing tag ${tagId} from session ${entityId}`);
-      await new Promise((resolve) => setTimeout(resolve, 300)); // Simulate delay
-      return { success: true }; // Simulate success
-    },
-    onSuccess: (data, variables, context) => {
-      queryClient.invalidateQueries({
-        queryKey: queryKeys.details(variables.entityId),
-      });
-      queryClient.invalidateQueries({ queryKey: queryKeys.lists() });
-      options.onSuccess?.(data, variables, context);
-    },
-    onError: options.onError,
-  });
-};
+// --- Tag Hooks Removed ---
+// Tagging sessions likely requires a join table (e.g., session_tags)
+// which is not present in the provided schema.sql.
+// Implementing this would require schema changes and new hook logic.
+// export const useAddSessionTag = ...
+// export const useRemoveSessionTag = ...

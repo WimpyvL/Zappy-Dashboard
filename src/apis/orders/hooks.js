@@ -1,229 +1,241 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-// import apiService from '../../utils/apiService'; // Removed unused import
-// import { toast } from 'react-toastify'; // Removed unused import
+import { supabase } from '../../utils/supabaseClient'; // Import Supabase client
+import auditLogService from '../../utils/auditLogService'; // Keep audit log
 
-// --- Mock Data ---
-const sampleOrdersData = [
-  {
-    id: 'o001',
-    patientId: 'p001',
-    patientName: 'John Smith',
-    orderDate: new Date().toISOString(),
-    status: 'pending',
-    medication: 'Ozempic',
-    tags: [],
-    linkedSessionId: 's001',
-    pharmacy: 'Compounding Pharmacy A',
-    holdReason: null,
-  },
-  {
-    id: 'o002',
-    patientId: 'p002',
-    patientName: 'Emily Davis',
-    orderDate: new Date(Date.now() - 86400000).toISOString(),
-    status: 'shipped',
-    medication: 'Wegovy',
-    tags: [],
-    linkedSessionId: 's002',
-    pharmacy: 'Retail Pharmacy B',
-    trackingNumber: 'TRK123456',
-    estimatedDelivery: '2025-04-05',
-    holdReason: null,
-  },
-  {
-    id: 'o003',
-    patientId: 'p001',
-    patientName: 'John Smith',
-    orderDate: new Date(Date.now() - 172800000).toISOString(),
-    status: 'delivered', // Assuming delivered is a status
-    medication: 'Ozempic',
-    tags: [],
-    linkedSessionId: null,
-    pharmacy: 'Compounding Pharmacy A',
-    holdReason: null,
-  },
-  {
-    id: 'o004',
-    patientId: 'p003',
-    patientName: 'Robert Wilson',
-    orderDate: new Date(Date.now() - 5 * 86400000).toISOString(),
-    status: 'pending',
-    medication: 'Mounjaro',
-    tags: [],
-    linkedSessionId: 's003',
-    pharmacy: 'Compounding Pharmacy C',
-    holdReason: 'Awaiting follow-up appointment',
-  },
-];
-// --- End Mock Data ---
+// Get orders hook using Supabase
+export const useOrders = (currentPage = 1, filters = {}, pageSize = 10) => {
+  const rangeFrom = (currentPage - 1) * pageSize;
+  const rangeTo = rangeFrom + pageSize - 1;
 
-// Get orders hook (Mocked)
-export const useOrders = (currentPage, filters) => {
-  console.log('Using mock orders data in useOrders hook');
-  const params = { page: currentPage, ...filters };
   return useQuery({
-    queryKey: ['orders', params],
-    // queryFn: () => apiService.orders.getAll(params), // Original API call
-    queryFn: () =>
-      Promise.resolve({
-        data: sampleOrdersData, // Return mock data
+    queryKey: ['orders', currentPage, filters, pageSize],
+    queryFn: async () => {
+      let query = supabase
+        .from('order') // Use quoted table name if needed, or adjust if different
+        .select(`
+          *,
+          client_record ( id, first_name, last_name )
+        `, { count: 'exact' }) // Example join with client_record
+        .order('order_date', { ascending: false })
+        .range(rangeFrom, rangeTo);
+
+      // Apply filters (adjust column names based on schema.sql)
+      if (filters.status) {
+        query = query.eq('status', filters.status);
+      }
+      if (filters.patientId) {
+         query = query.eq('client_record_id', filters.patientId);
+      }
+      // Add search filter if needed (similar to usePatients)
+      if (filters.search) {
+         query = query.or(`medication.ilike.%${filters.search}%,pharmacy.ilike.%${filters.search}%,client_record.first_name.ilike.%${filters.search}%,client_record.last_name.ilike.%${filters.search}%`);
+      }
+
+      const { data, error, count } = await query;
+
+      if (error) {
+        console.error('Error fetching orders:', error);
+        throw new Error(error.message);
+      }
+
+      // Map data if needed to match frontend expectations (e.g., patientName)
+      const mappedData = data?.map(order => ({
+          ...order,
+          // Combine patient first/last name if joined data exists
+          patientName: order.client_record ? `${order.client_record.first_name || ''} ${order.client_record.last_name || ''}`.trim() : 'N/A',
+      })) || [];
+
+      return {
+        data: mappedData,
         meta: {
-          total_count: sampleOrdersData.length,
-          // Add other meta fields if needed
+          total: count || 0,
+          per_page: pageSize,
+          current_page: currentPage,
+          last_page: Math.ceil((count || 0) / pageSize),
         },
-      }),
-    staleTime: Infinity,
+      };
+    },
+    // staleTime: 5 * 60 * 1000, // Example: 5 minutes stale time
   });
 };
 
-// Get order by ID hook (Mocked)
+// Get order by ID hook using Supabase
 export const useOrderById = (id, options = {}) => {
-  console.log(`Using mock order data for ID: ${id} in useOrderById hook`);
   return useQuery({
     queryKey: ['order', id],
-    // queryFn: () => apiService.orders.getById(id), // Original API call
-    queryFn: () =>
-      Promise.resolve(
-        sampleOrdersData.find((o) => o.id === id) || sampleOrdersData[0]
-      ), // Find mock order or return first
+    queryFn: async () => {
+      if (!id) return null;
+
+      const { data, error } = await supabase
+        .from('order')
+        .select(`
+          *,
+          client_record ( id, first_name, last_name )
+        `) // Example join
+        .eq('id', id)
+        .single();
+
+      if (error) {
+        console.error(`Error fetching order ${id}:`, error);
+        if (error.code === 'PGRST116') return null; // Not found
+        throw new Error(error.message);
+      }
+       // Map data if needed
+       const mappedData = data ? {
+           ...data,
+           patientName: data.client_record ? `${data.client_record.first_name || ''} ${data.client_record.last_name || ''}`.trim() : 'N/A',
+       } : null;
+
+      return mappedData;
+    },
     enabled: !!id,
-    staleTime: Infinity,
     ...options,
   });
 };
 
-// Create order hook (Mocked)
+// Create order hook using Supabase
 export const useCreateOrder = (options = {}) => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    // mutationFn: (orderData) => apiService.orders.create(orderData), // Original API call
     mutationFn: async (orderData) => {
-      console.log('Mock Creating order:', orderData);
-      await new Promise((resolve) => setTimeout(resolve, 300)); // Simulate delay
-      const newOrder = {
-        id: `o${Date.now()}`, // Generate mock ID
-        ...orderData,
-        status: 'pending', // Default status
-        orderDate: new Date().toISOString(),
-      };
-      // Note: Doesn't actually add to sampleOrdersData
-      return { data: newOrder }; // Simulate API response
+       const dataToInsert = {
+         ...orderData,
+         order_date: orderData.order_date || new Date().toISOString(),
+         created_at: new Date().toISOString(),
+         updated_at: new Date().toISOString(),
+         is_deleted: false,
+       };
+
+      const { data, error } = await supabase
+        .from('order')
+        .insert(dataToInsert)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error creating order:', error);
+        throw new Error(error.message);
+      }
+      return data;
     },
     onSuccess: (data, variables, context) => {
-      // Added params
       queryClient.invalidateQueries({ queryKey: ['orders'] });
-      options.onSuccess?.(data, variables, context); // Pass params
+      options.onSuccess?.(data, variables, context);
+    }, // Comma added
+    onError: (error, variables, context) => {
+       console.error("Create order mutation error:", error);
+       options.onError?.(error, variables, context);
     },
-    onError: options.onError, // Pass through onError
-    onSettled: options.onSettled, // Pass through onSettled
+    onSettled: options.onSettled,
   });
 };
 
-// Update order hook (Mocked)
+// Update order hook using Supabase
 export const useUpdateOrder = (options = {}) => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    // mutationFn: ({ id, orderData }) => apiService.orders.update(id, orderData), // Original API call
     mutationFn: async ({ id, orderData }) => {
-      console.log(`Mock Updating order ${id}:`, orderData);
-      await new Promise((resolve) => setTimeout(resolve, 300)); // Simulate delay
-      return { data: { id, ...orderData } }; // Simulate API response
+      if (!id) throw new Error("Order ID is required for update.");
+
+       const dataToUpdate = {
+         ...orderData,
+         updated_at: new Date().toISOString(),
+       };
+
+      const { data, error } = await supabase
+        .from('order')
+        .update(dataToUpdate)
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) {
+        console.error(`Error updating order ${id}:`, error);
+        throw new Error(error.message);
+      }
+      return data;
     },
     onSuccess: (data, variables, context) => {
-      // Added params
       queryClient.invalidateQueries({ queryKey: ['orders'] });
-      queryClient.invalidateQueries({ queryKey: ['order', variables.id] }); // Use variables.id
-      options.onSuccess?.(data, variables, context); // Pass params
+      queryClient.invalidateQueries({ queryKey: ['order', variables.id] });
+      options.onSuccess?.(data, variables, context);
+    }, // Comma added
+    onError: (error, variables, context) => {
+       console.error(`Update order ${variables.id} mutation error:`, error);
+       options.onError?.(error, variables, context);
     },
-    onError: options.onError, // Pass through onError
-    onSettled: options.onSettled, // Pass through onSettled
+    onSettled: options.onSettled,
   });
 };
 
-// Update order status hook
+// Update order status hook using Supabase
 export const useUpdateOrderStatus = (options = {}) => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    // mutationFn: ({ orderId, status }) => apiService.orders.updateStatus(orderId, status), // Original API call
-    mutationFn: async ({ orderId, status }) => {
-      console.log(`Mock Updating order ${orderId} status to: ${status}`);
-      await new Promise((resolve) => setTimeout(resolve, 300)); // Simulate delay
-      return { success: true, id: orderId, status: status }; // Simulate API response
-    },
+     mutationFn: async ({ orderId, status }) => {
+       if (!orderId) throw new Error("Order ID is required for status update.");
+
+       const { data, error } = await supabase
+         .from('order')
+         .update({ status: status, updated_at: new Date().toISOString() })
+         .eq('id', orderId)
+         .select()
+         .single();
+
+       if (error) {
+         console.error(`Error updating order status ${orderId}:`, error);
+         throw new Error(error.message);
+       }
+       return data;
+     },
     onSuccess: (data, variables, context) => {
-      // Added params
       queryClient.invalidateQueries({ queryKey: ['orders'] });
-      queryClient.invalidateQueries({ queryKey: ['order', variables.orderId] }); // Use variables.orderId
-      options.onSuccess?.(data, variables, context); // Pass params
+      queryClient.invalidateQueries({ queryKey: ['order', variables.orderId] });
+      options.onSuccess?.(data, variables, context);
+    }, // Comma added
+    onError: (error, variables, context) => {
+       console.error(`Update order status ${variables.orderId} mutation error:`, error);
+       options.onError?.(error, variables, context);
     },
-    onError: options.onError, // Pass through onError
-    onSettled: options.onSettled, // Pass through onSettled
+    onSettled: options.onSettled,
   });
 };
 
-// Delete order hook (Mocked)
+// Delete order hook using Supabase (Soft Delete)
 export const useDeleteOrder = (options = {}) => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    // mutationFn: (id) => apiService.orders.delete(id), // Original API call
-    mutationFn: async (id) => {
-      console.log(`Mock Deleting order ${id}`);
-      await new Promise((resolve) => setTimeout(resolve, 300)); // Simulate delay
-      return { success: true }; // Simulate API response
-    },
-    onSuccess: (data, variables, context) => {
-      // Added params
+     mutationFn: async (id) => {
+       if (!id) throw new Error("Order ID is required for deletion.");
+
+       const { data, error } = await supabase
+         .from('order')
+         .update({ is_deleted: true, deleted_at: new Date().toISOString() })
+         .eq('id', id)
+         .select()
+         .single();
+
+       if (error) {
+         console.error(`Error 'deleting' order ${id}:`, error);
+         throw new Error(error.message);
+       }
+       return { success: true, id };
+     },
+    onSuccess: (data, variables, context) => { // variables is the id
       queryClient.invalidateQueries({ queryKey: ['orders'] });
-      // Optionally remove detail query: queryClient.removeQueries({ queryKey: ['order', variables] });
-      options.onSuccess?.(data, variables, context); // Pass params
+      queryClient.removeQueries({ queryKey: ['order', variables] });
+      options.onSuccess?.(data, variables, context);
+    }, // Comma added
+    onError: (error, variables, context) => {
+       console.error(`Delete order ${variables} mutation error:`, error);
+       options.onError?.(error, variables, context);
     },
-    onError: options.onError, // Pass through onError
-    onSettled: options.onSettled, // Pass through onSettled
+    onSettled: options.onSettled,
   });
 };
 
-// Hook for adding a tag to an order (Example - adjust based on actual API)
-export const useAddOrderTag = (options = {}) => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    // mutationFn: ({ entityId, tagId }) => apiService.orders.addTag(entityId, tagId), // Original API call
-    mutationFn: async ({ entityId, tagId }) => {
-      console.log(`Mock Adding tag ${tagId} to order ${entityId}`);
-      await new Promise((resolve) => setTimeout(resolve, 300)); // Simulate delay
-      return { success: true }; // Simulate success
-    },
-    onSuccess: (data, variables, context) => {
-      queryClient.invalidateQueries({
-        queryKey: ['order', variables.entityId],
-      });
-      queryClient.invalidateQueries({ queryKey: ['orders'] });
-      options.onSuccess?.(data, variables, context);
-    },
-    onError: options.onError,
-  });
-};
-
-// Hook for removing a tag from an order (Example - adjust based on actual API)
-export const useRemoveOrderTag = (options = {}) => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    // mutationFn: ({ entityId, tagId }) => apiService.orders.removeTag(entityId, tagId), // Original API call
-    mutationFn: async ({ entityId, tagId }) => {
-      console.log(`Mock Removing tag ${tagId} from order ${entityId}`);
-      await new Promise((resolve) => setTimeout(resolve, 300)); // Simulate delay
-      return { success: true }; // Simulate success
-    },
-    onSuccess: (data, variables, context) => {
-      queryClient.invalidateQueries({
-        queryKey: ['order', variables.entityId],
-      });
-      queryClient.invalidateQueries({ queryKey: ['orders'] });
-      options.onSuccess?.(data, variables, context);
-    },
-    onError: options.onError,
-  });
-};
+// --- Tag Hooks Removed ---

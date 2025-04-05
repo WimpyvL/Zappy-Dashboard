@@ -1,166 +1,184 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-// import apiService from '../../utils/apiService'; // Removed unused import
-import { toast } from 'react-toastify'; // Assuming react-toastify for notifications
+import { supabase } from '../../utils/supabaseClient'; // Import Supabase client
+import { toast } from 'react-toastify';
 
-// --- Mock Data (Using sample from AppContext for consistency) ---
-const sampleServicesData = [
-  {
-    id: 'svc001',
-    name: 'Initial Consultation',
-    description: 'First meeting with provider',
-    price: 150,
-    active: true,
-    requiresConsultation: false, // Example field
-    associatedProducts: [1, 2], // Example product IDs
-    availablePlans: [
-      { planId: 1, duration: '1 month', requiresSubscription: true },
-      { planId: 2, duration: '3 months', requiresSubscription: true },
-    ], // Example plan configs
-  },
-  {
-    id: 'svc002',
-    name: 'Follow-up Session',
-    description: 'Regular check-in',
-    price: 75,
-    active: true,
-    requiresConsultation: false,
-    associatedProducts: [1, 2],
-    availablePlans: [
-      { planId: 1, duration: '1 month', requiresSubscription: true },
-    ],
-  },
-  {
-    id: 'svc003',
-    name: 'Insurance Verification Only',
-    description: 'Verify insurance coverage',
-    price: 0,
-    active: true,
-    requiresConsultation: false,
-    associatedProducts: [],
-    availablePlans: [],
-  },
-];
-// --- End Mock Data ---
+// Removed Mock Data
 
+// Define query keys
 const queryKeys = {
   all: ['services'],
-  lists: (params) => [...queryKeys.all, 'list', params],
+  lists: (params = {}) => [...queryKeys.all, 'list', { params }],
   details: (id) => [...queryKeys.all, 'detail', id],
 };
 
-// Get services hook (Mocked)
+// Get services hook using Supabase
 export const useServices = (params = {}) => {
-  console.log('Using mock services data in useServices hook');
   return useQuery({
     queryKey: queryKeys.lists(params),
-    // queryFn: () => apiService.services.getAll(params), // Original API call
-    queryFn: () =>
-      Promise.resolve({
-        data: sampleServicesData, // Return mock data
-        // Add meta if needed
-      }),
-    keepPreviousData: true,
-    staleTime: Infinity,
+    queryFn: async () => {
+      let query = supabase
+        .from('services') // ASSUMING table name is 'services'
+        .select('*')
+        .order('name', { ascending: true }); // Example order
+
+      // Apply filters if any
+      if (params.active !== undefined) {
+        query = query.eq('active', params.active);
+      }
+      // Add other filters as needed
+
+      const { data, error } = await query;
+
+      if (error) {
+        console.error('Error fetching services:', error);
+        throw new Error(error.message);
+      }
+      return data || []; // Return data array
+    },
   });
 };
 
-// Get service by ID hook (Mocked)
+// Get service by ID hook using Supabase
 export const useServiceById = (id, options = {}) => {
-  console.log(`Using mock service data for ID: ${id} in useServiceById hook`);
   return useQuery({
     queryKey: queryKeys.details(id),
-    // queryFn: () => apiService.services.getById(id), // Original API call
-    queryFn: () =>
-      Promise.resolve(
-        sampleServicesData.find((s) => s.id === id) || sampleServicesData[0]
-      ), // Find mock service or return first
+    queryFn: async () => {
+      if (!id) return null;
+
+      const { data, error } = await supabase
+        .from('services') // ASSUMING table name is 'services'
+        .select('*')
+        .eq('id', id)
+        .single();
+
+      if (error) {
+        console.error(`Error fetching service ${id}:`, error);
+        if (error.code === 'PGRST116') return null; // Not found
+        throw new Error(error.message);
+      }
+      return data;
+    },
     enabled: !!id,
-    staleTime: Infinity,
     ...options,
   });
 };
 
-// Create service hook (Mocked)
-export const useAddService = (options = {}) => {
+// Create service hook using Supabase
+// Renamed from useAddService to useCreateService for consistency
+export const useCreateService = (options = {}) => {
   const queryClient = useQueryClient();
   return useMutation({
-    // mutationFn: (serviceData) => apiService.services.create(serviceData), // Original API call
     mutationFn: async (serviceData) => {
-      console.log('Mock Creating service:', serviceData);
-      await new Promise((resolve) => setTimeout(resolve, 300)); // Simulate delay
-      const newService = {
-        id: `svc${Date.now()}`, // Generate mock ID
+      // Add timestamps, default values etc. based on your actual 'services' table schema
+      const dataToInsert = {
         ...serviceData,
-        active: serviceData.active !== undefined ? serviceData.active : true,
+        created_at: new Date().toISOString(), // Assuming created_at column
+        updated_at: new Date().toISOString(), // Assuming updated_at column
+        active: serviceData.active ?? true,
+        // Ensure complex fields are handled (assuming JSONB for now)
+        associated_products: serviceData.associatedProducts || [],
+        available_plans: serviceData.availablePlans || [],
       };
-      // Note: Doesn't actually add to sampleServicesData
-      return { data: newService }; // Simulate API response
+
+      const { data, error } = await supabase
+        .from('services') // ASSUMING table name is 'services'
+        .insert(dataToInsert)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error creating service:', error);
+        throw new Error(error.message);
+      }
+      return data;
     },
     onSuccess: (data, variables, context) => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.lists() });
       toast.success('Service created successfully');
+      queryClient.invalidateQueries({ queryKey: queryKeys.lists() });
       options.onSuccess?.(data, variables, context);
     },
     onError: (error, variables, context) => {
-      toast.error(
-        `Error creating service: ${error.message || 'Unknown error'}`
-      );
+      toast.error(`Error creating service: ${error.message || 'Unknown error'}`);
       options.onError?.(error, variables, context);
     },
     onSettled: options.onSettled,
   });
 };
 
-// Update service hook (Mocked)
+// Update service hook using Supabase
 export const useUpdateService = (options = {}) => {
   const queryClient = useQueryClient();
   return useMutation({
-    // mutationFn: ({ id, ...serviceData }) => apiService.services.update(id, serviceData), // Original API call
-    mutationFn: async ({ id, ...serviceData }) => {
-      console.log(`Mock Updating service ${id}:`, serviceData);
-      await new Promise((resolve) => setTimeout(resolve, 300)); // Simulate delay
-      return { data: { id, ...serviceData } }; // Simulate API response
+    mutationFn: async ({ id, serviceData }) => {
+      if (!id) throw new Error("Service ID is required for update.");
+      const dataToUpdate = {
+        ...serviceData,
+        updated_at: new Date().toISOString(),
+        // Ensure complex fields are handled (assuming JSONB for now)
+        associated_products: serviceData.associatedProducts,
+        available_plans: serviceData.availablePlans,
+      };
+      // Remove fields that shouldn't be updated directly if necessary
+      delete dataToUpdate.id;
+      delete dataToUpdate.created_at;
+
+      const { data, error } = await supabase
+        .from('services') // ASSUMING table name is 'services'
+        .update(dataToUpdate)
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) {
+        console.error(`Error updating service ${id}:`, error);
+        throw new Error(error.message);
+      }
+      return data;
     },
     onSuccess: (data, variables, context) => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.lists() });
-      queryClient.invalidateQueries({
-        queryKey: queryKeys.details(variables.id),
-      });
       toast.success('Service updated successfully');
+      queryClient.invalidateQueries({ queryKey: queryKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.details(variables.id) });
       options.onSuccess?.(data, variables, context);
     },
     onError: (error, variables, context) => {
-      toast.error(
-        `Error updating service: ${error.message || 'Unknown error'}`
-      );
+      toast.error(`Error updating service: ${error.message || 'Unknown error'}`);
       options.onError?.(error, variables, context);
     },
     onSettled: options.onSettled,
   });
 };
 
-// Delete service hook (Mocked)
+// Delete service hook using Supabase
 export const useDeleteService = (options = {}) => {
   const queryClient = useQueryClient();
   return useMutation({
-    // mutationFn: (id) => apiService.services.delete(id), // Original API call
     mutationFn: async (id) => {
-      console.log(`Mock Deleting service ${id}`);
-      await new Promise((resolve) => setTimeout(resolve, 300)); // Simulate delay
-      return { success: true }; // Simulate API response
+      if (!id) throw new Error("Service ID is required for deletion.");
+
+      const { error } = await supabase
+        .from('services') // ASSUMING table name is 'services'
+        .delete()
+        .eq('id', id);
+
+      if (error) {
+        console.error(`Error deleting service ${id}:`, error);
+        // Handle foreign key constraint errors if services are linked elsewhere
+        if (error.code === '23503') { // Foreign key violation
+           throw new Error(`Cannot delete service: It is still linked to other records.`);
+        }
+        throw new Error(error.message);
+      }
+      return { success: true, id };
     },
-    onSuccess: (data, variables, context) => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.lists() });
-      // Also invalidate specific service if cached
-      queryClient.invalidateQueries({ queryKey: queryKeys.details(variables) });
-      // Consider removing detail query if needed: queryClient.removeQueries({ queryKey: queryKeys.details(variables) });
+    onSuccess: (data, variables, context) => { // variables is the id
       toast.success('Service deleted successfully');
+      queryClient.invalidateQueries({ queryKey: queryKeys.lists() });
+      queryClient.removeQueries({ queryKey: queryKeys.details(variables) });
       options.onSuccess?.(data, variables, context);
     },
     onError: (error, variables, context) => {
-      toast.error(
-        `Error deleting service: ${error.message || 'Unknown error'}`
-      );
+      toast.error(`Error deleting service: ${error.message || 'Unknown error'}`);
       options.onError?.(error, variables, context);
     },
     onSettled: options.onSettled,

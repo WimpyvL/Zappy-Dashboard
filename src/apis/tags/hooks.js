@@ -1,157 +1,183 @@
-// hooks.js - React Query Hooks for Tags
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-// Commented out direct API imports as we use apiService or mock data
-// import {
-//   getTags,
-//   getTagById,
-//   createTag,
-//   updateTag,
-//   deleteTag,
-//   getTagUsage
-// } from './api';
-// import apiService from '../../utils/apiService'; // Removed unused import
+import { supabase } from '../../utils/supabaseClient'; // Import Supabase client
 import { toast } from 'react-toastify';
 
-// --- Mock Data ---
-const sampleTagsData = [
-  { id: 'vip', name: 'VIP', color: 'gold' },
-  { id: 'follow-up', name: 'Needs Follow Up', color: 'blue' },
-  { id: 'high-risk', name: 'High Risk', color: 'red' },
-  { id: 'new-patient', name: 'New Patient', color: 'green' },
-];
-// --- End Mock Data ---
-
-// Hook to fetch all tags (Mocked)
+// Hook to fetch all tags using Supabase
 export const useTags = (params = {}) => {
-  console.log('Using mock tags data in useTags hook');
   return useQuery({
     queryKey: ['tags', params],
-    // queryFn: () => getTags(params), // Original direct API call
-    // queryFn: () => apiService.tags.getAll(params), // Original apiService call
-    queryFn: () => Promise.resolve({ data: sampleTagsData }), // Return mock data
-    staleTime: Infinity, // Prevent refetching for mock data
+    queryFn: async () => {
+      let query = supabase
+        .from('tag') // Assuming table name is 'tag'
+        .select('*')
+        .order('name', { ascending: true }); // Example order
+
+      // Add any filters based on params if needed
+      // if (params.someFilter) { query = query.eq('column', params.someFilter); }
+
+      const { data, error } = await query;
+
+      if (error) {
+        console.error('Error fetching tags:', error);
+        throw new Error(error.message);
+      }
+      // Return just the data array, as components might expect that directly
+      return data || [];
+    },
+    // staleTime: 5 * 60 * 1000, // Example stale time
   });
 };
 
-// Hook to fetch a specific tag by ID (Mocked)
+// Hook to fetch a specific tag by ID using Supabase
 export const useTagById = (id, options = {}) => {
-  console.log(`Using mock tag data for ID: ${id} in useTagById hook`);
   return useQuery({
     queryKey: ['tag', id],
-    // queryFn: () => apiService.tags.getById(id), // Original API call
-    queryFn: () =>
-      Promise.resolve(
-        sampleTagsData.find((t) => t.id === id) || sampleTagsData[0]
-      ), // Find mock tag or return first
+    queryFn: async () => {
+      if (!id) return null;
+
+      const { data, error } = await supabase
+        .from('tag')
+        .select('*')
+        .eq('id', id)
+        .single();
+
+      if (error) {
+        console.error(`Error fetching tag ${id}:`, error);
+        if (error.code === 'PGRST116') return null; // Not found
+        throw new Error(error.message);
+      }
+      return data;
+    },
     enabled: !!id,
-    staleTime: Infinity,
     ...options,
   });
 };
 
-// Hook to create a new tag
+// Hook to create a new tag using Supabase
 export const useCreateTag = (options = {}) => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    // mutationFn: (tagData) => apiService.tags.create(tagData), // Original API call
     mutationFn: async (tagData) => {
-      console.log('Mock Creating tag:', tagData);
-      await new Promise((resolve) => setTimeout(resolve, 300)); // Simulate delay
-      const newTag = {
-        id: tagData.name.toLowerCase().replace(/\s+/g, '-'), // Generate mock ID from name
+      // Assuming schema has 'name', 'created_at', 'updated_at' and maybe 'color'
+      // The ID might be auto-generated if it's UUID, or needs to be provided if VARCHAR
+      const dataToInsert = {
         ...tagData,
+        // Generate ID client-side if it's VARCHAR and required, otherwise let DB handle UUID
+        id: tagData.id || tagData.name?.toLowerCase().replace(/\s+/g, '-') || `tag-${Date.now()}`, // Example ID generation if needed
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
       };
-      // Note: Doesn't actually add to sampleTagsData
-      return { data: newTag }; // Simulate API response
+
+      const { data, error } = await supabase
+        .from('tag')
+        .insert(dataToInsert)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error creating tag:', error);
+        if (error.code === '23505') { // Unique violation code in Postgres
+           throw new Error(`Tag with this name or ID already exists.`);
+        }
+        throw new Error(error.message);
+      }
+      return data;
     },
     onSuccess: (data, variables, context) => {
-      // Added params
       queryClient.invalidateQueries({ queryKey: ['tags'] });
       toast.success('Tag created successfully');
-      options.onSuccess?.(data, variables, context); // Pass params
-    },
+      options.onSuccess?.(data, variables, context);
+    }, // Comma added
     onError: (error, variables, context) => {
-      // Added params
       toast.error(error.message || 'An error occurred while creating the tag.');
-      options.onError?.(error, variables, context); // Pass params
+      options.onError?.(error, variables, context);
     },
-    onSettled: options.onSettled, // Pass through onSettled
+    onSettled: options.onSettled,
   });
 };
 
-// Hook to update an existing tag
+// Hook to update an existing tag using Supabase
 export const useUpdateTag = (options = {}) => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    // mutationFn: ({ id, tagData }) => apiService.tags.update(id, tagData), // Original API call
     mutationFn: async ({ id, tagData }) => {
-      console.log(`Mock Updating tag ${id}:`, tagData);
-      await new Promise((resolve) => setTimeout(resolve, 300)); // Simulate delay
-      return { data: { id, ...tagData } }; // Simulate API response
+      if (!id) throw new Error("Tag ID is required for update.");
+      const dataToUpdate = {
+        ...tagData,
+        updated_at: new Date().toISOString(),
+      };
+      // Ensure ID is not part of the update payload itself
+      delete dataToUpdate.id;
+      delete dataToUpdate.created_at;
+
+
+      const { data, error } = await supabase
+        .from('tag')
+        .update(dataToUpdate)
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) {
+        console.error(`Error updating tag ${id}:`, error);
+         if (error.code === '23505') { // Unique violation
+           throw new Error(`Tag with this name or code already exists.`);
+         }
+        throw new Error(error.message);
+      }
+      return data;
     },
     onSuccess: (data, variables, context) => {
-      // Added params
       queryClient.invalidateQueries({ queryKey: ['tags'] });
       queryClient.invalidateQueries({ queryKey: ['tag', variables.id] });
       toast.success('Tag updated successfully');
-      options.onSuccess?.(data, variables, context); // Pass params
-    },
+      options.onSuccess?.(data, variables, context);
+    }, // Comma added
     onError: (error, variables, context) => {
-      // Added params
       toast.error(error.message || 'An error occurred while updating the tag.');
-      options.onError?.(error, variables, context); // Pass params
+      options.onError?.(error, variables, context);
     },
-    onSettled: options.onSettled, // Pass through onSettled
+    onSettled: options.onSettled,
   });
 };
 
-// Hook to delete a tag
+// Hook to delete a tag using Supabase
 export const useDeleteTag = (options = {}) => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    // mutationFn: (id) => apiService.tags.delete(id), // Original API call
     mutationFn: async (id) => {
-      console.log(`Mock Deleting tag ${id}`);
-      await new Promise((resolve) => setTimeout(resolve, 300)); // Simulate delay
-      return { success: true }; // Simulate API response
+      if (!id) throw new Error("Tag ID is required for deletion.");
+
+      const { error } = await supabase
+        .from('tag')
+        .delete()
+        .eq('id', id);
+
+      if (error) {
+        console.error(`Error deleting tag ${id}:`, error);
+        // Handle foreign key constraint errors if tags are linked elsewhere
+        if (error.code === '23503') { // Foreign key violation
+           throw new Error(`Cannot delete tag: It is still linked to other records.`);
+        }
+        throw new Error(error.message);
+      }
+      return { success: true, id };
     },
-    onSuccess: (data, variables, context) => {
-      // Added params
-      // Also invalidate specific tag if cached
-      queryClient.invalidateQueries({ queryKey: ['tag', variables] });
+    onSuccess: (data, variables, context) => { // variables is the id
       queryClient.invalidateQueries({ queryKey: ['tags'] });
+      queryClient.removeQueries({ queryKey: ['tag', variables] }); // Remove detail query
       toast.success('Tag deleted successfully');
-      options.onSuccess?.(data, variables, context); // Pass params
-    },
+      options.onSuccess?.(data, variables, context);
+    }, // Comma added
     onError: (error, variables, context) => {
-      // Added params
       toast.error(error.message || 'An error occurred while deleting the tag.');
-      options.onError?.(error, variables, context); // Pass params
+      options.onError?.(error, variables, context);
     },
-    onSettled: options.onSettled, // Pass through onSettled
+    onSettled: options.onSettled,
   });
 };
 
-// Hook to get tag usage information (Mocked)
-export const useTagUsage = (id, options = {}) => {
-  console.log(`Using mock tag usage data for ID: ${id}`);
-  return useQuery({
-    queryKey: ['tagUsage', id],
-    // queryFn: () => apiService.tags.getUsage(id), // Original API call
-    queryFn: () => {
-      // Simulate usage based on sample data (very basic example)
-      const usage = {
-        patients: sampleTagsData.find((t) => t.id === id) ? 1 : 0, // Example: Check if tag exists
-        orders: id === 'vip' ? 1 : 0, // Example: VIP tag used in 1 order
-        sessions: id === 'follow-up' ? 1 : 0, // Example: follow-up used in 1 session
-      };
-      return Promise.resolve({ usage });
-    },
-    enabled: !!id,
-    staleTime: Infinity,
-    ...options,
-  });
-};
+// Removed useTagUsage hook

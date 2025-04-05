@@ -1,116 +1,124 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import apiService from '../../utils/apiService'; // Import the central apiService
+import { supabase } from '../../utils/supabaseClient'; // Import Supabase client
 import { toast } from 'react-toastify';
 
-// --- Mock Data ---
-const sampleNotesData = {
-  p001: [
-    {
-      id: 'n001',
-      patientId: 'p001',
-      createdAt: '2025-04-01T10:00:00Z',
-      updatedAt: '2025-04-01T10:00:00Z',
-      author: 'Dr. Johnson',
-      type: 'Consultation',
-      content: 'Initial consultation notes for John Smith.',
-    },
-    {
-      id: 'n003',
-      patientId: 'p001',
-      createdAt: '2025-04-03T11:00:00Z',
-      updatedAt: '2025-04-03T11:00:00Z',
-      author: 'Dr. Johnson',
-      type: 'Follow-up',
-      content: 'Follow-up regarding medication adjustment.',
-    },
-  ],
-  p002: [
-    {
-      id: 'n002',
-      patientId: 'p002',
-      createdAt: '2025-04-02T09:30:00Z',
-      updatedAt: '2025-04-02T09:30:00Z',
-      author: 'Dr. Chen',
-      type: 'Consultation',
-      content: 'Initial consultation notes for Emily Davis.',
-    },
-  ],
-  p003: [], // Robert Wilson has no notes yet
-};
-// --- End Mock Data ---
+// Removed Mock Data
 
-// Query keys might need patientId if notes are always fetched per patient
+// Define query keys for notes
 const queryKeys = {
   all: ['notes'],
-  patientNotes: (patientId, params) => [
-    ...queryKeys.all,
-    'patient',
-    patientId,
-    params,
-  ],
+  patientNotes: (patientId, params = {}) => [...queryKeys.all, 'patient', patientId, { params }],
   details: (id) => [...queryKeys.all, 'detail', id],
 };
 
-// Get notes for a specific patient
-// Get notes for a specific patient (Mocked)
+// Get notes for a specific patient using Supabase
 export const useNotes = (patientId, params = {}, options = {}) => {
-  console.log(`Using mock notes data for patient ID: ${patientId}`);
   return useQuery({
     queryKey: queryKeys.patientNotes(patientId, params),
-    // queryFn: () => apiService.notes.getPatientNotes(patientId, params), // Original API call
-    queryFn: () =>
-      Promise.resolve({
-        data: sampleNotesData[patientId] || [], // Return mock notes for the patient
-        // Add meta if your API returns pagination info
-      }),
-    enabled: !!patientId,
+    queryFn: async () => {
+      if (!patientId) return []; // Return empty if no patientId
+
+      let query = supabase
+        .from('notes') // ASSUMING table name is 'notes'
+        .select(`
+          *,
+          user ( id, first_name, last_name )
+        `) // Example join to get author name
+        .eq('client_record_id', patientId) // Filter by patient
+        .order('created_at', { ascending: false }); // Order by creation date
+
+      // Add other filters from params if needed
+      // if (params.type) { query = query.eq('type', params.type); }
+
+      const { data, error } = await query;
+
+      if (error) {
+        console.error(`Error fetching notes for patient ${patientId}:`, error);
+        throw new Error(error.message);
+      }
+
+      // Map data if needed (e.g., format author name)
+      const mappedData = data?.map(note => ({
+          ...note,
+          authorName: note.user ? `${note.user.first_name || ''} ${note.user.last_name || ''}`.trim() : 'System',
+      })) || [];
+
+      return mappedData; // Return array of notes
+    },
+    enabled: !!patientId, // Only run query if patientId is truthy
     keepPreviousData: true,
-    staleTime: Infinity,
     ...options,
   });
 };
 
-// Get a specific note by ID (Mocked)
-export const useNoteById = (noteId, patientId, options = {}) => {
-  console.log(`Using mock note data for note ID: ${noteId}`);
+// Get a specific note by ID using Supabase
+export const useNoteById = (noteId, options = {}) => {
   return useQuery({
     queryKey: queryKeys.details(noteId),
-    // queryFn: () => apiService.notes.getNoteById(noteId, patientId), // Original API call
-    queryFn: () => {
-      const patientNotes = sampleNotesData[patientId] || [];
-      const note = patientNotes.find((n) => n.id === noteId);
-      return Promise.resolve(note || null); // Find mock note
+    queryFn: async () => {
+      if (!noteId) return null;
+
+      const { data, error } = await supabase
+        .from('notes') // ASSUMING table name is 'notes'
+        .select(`
+          *,
+          user ( id, first_name, last_name )
+        `) // Example join
+        .eq('id', noteId)
+        .single();
+
+      if (error) {
+        console.error(`Error fetching note ${noteId}:`, error);
+        if (error.code === 'PGRST116') return null; // Not found
+        throw new Error(error.message);
+      }
+       // Map data if needed
+       const mappedData = data ? {
+           ...data,
+           authorName: data.user ? `${data.user.first_name || ''} ${data.user.last_name || ''}`.trim() : 'System',
+       } : null;
+
+      return mappedData;
     },
     enabled: !!noteId,
-    staleTime: Infinity,
     ...options,
   });
 };
 
-// Create a note for a patient
-export const useAddNote = (options = {}) => {
+// Create a note for a patient using Supabase
+// Renamed from useAddNote to useCreateNote for consistency
+export const useCreateNote = (options = {}) => {
   const queryClient = useQueryClient();
+  // Get current user ID for author field (assuming AuthContext provides it)
+  // This might need adjustment based on how user ID is stored/accessed
+  // const { currentUser } = useAuth(); // Example: If using useAuth hook
+
   return useMutation({
-    // mutationFn: ({ patientId, ...noteData }) => apiService.notes.createPatientNote(patientId, noteData), // Original API call
     mutationFn: async ({ patientId, ...noteData }) => {
-      console.log(`Mock Adding note for patient ${patientId}:`, noteData);
-      await new Promise((resolve) => setTimeout(resolve, 300)); // Simulate delay
-      const newNote = {
-        id: `n${Date.now()}`, // Generate mock ID
-        patientId: patientId,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        author: 'Current User', // Placeholder
+      if (!patientId) throw new Error("Patient ID is required to create a note.");
+
+      const dataToInsert = {
         ...noteData,
+        client_record_id: patientId,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        // user_id: currentUser?.id, // Set author ID if available
       };
-      // Note: Doesn't actually add to sampleNotesData
-      return { data: newNote }; // Simulate API response
+
+      const { data, error } = await supabase
+        .from('notes') // ASSUMING table name is 'notes'
+        .insert(dataToInsert)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error creating note:', error);
+        throw new Error(error.message);
+      }
+      return data;
     },
     onSuccess: (data, variables, context) => {
-      // Invalidate notes for the specific patient
-      queryClient.invalidateQueries({
-        queryKey: queryKeys.patientNotes(variables.patientId),
-      });
+      queryClient.invalidateQueries({ queryKey: queryKeys.patientNotes(variables.patientId) });
       toast.success('Note added successfully');
       options.onSuccess?.(data, variables, context);
     },
@@ -122,28 +130,45 @@ export const useAddNote = (options = {}) => {
   });
 };
 
-// Update a note
+// Update a note using Supabase
 export const useUpdateNote = (options = {}) => {
   const queryClient = useQueryClient();
   return useMutation({
-    // mutationFn: ({ noteId, patientId, ...noteData }) => apiService.notes.updatePatientNote(noteId, noteData, patientId), // Original API call
     mutationFn: async ({ noteId, patientId, ...noteData }) => {
-      console.log(`Mock Updating note ${noteId}:`, noteData);
-      await new Promise((resolve) => setTimeout(resolve, 300)); // Simulate delay
-      return { data: { id: noteId, patientId, ...noteData } }; // Simulate API response
+      if (!noteId) throw new Error("Note ID is required for update.");
+
+      const dataToUpdate = {
+        ...noteData,
+        updated_at: new Date().toISOString(),
+      };
+       // Remove fields that shouldn't be updated directly if necessary
+       delete dataToUpdate.id;
+       delete dataToUpdate.created_at;
+       delete dataToUpdate.client_record_id; // Don't allow changing patient link
+       delete dataToUpdate.user_id; // Don't allow changing author
+
+      const { data, error } = await supabase
+        .from('notes') // ASSUMING table name is 'notes'
+        .update(dataToUpdate)
+        .eq('id', noteId)
+        .select()
+        .single();
+
+      if (error) {
+        console.error(`Error updating note ${noteId}:`, error);
+        throw new Error(error.message);
+      }
+      return data;
     },
     onSuccess: (data, variables, context) => {
       // Invalidate notes for the patient and the specific note detail
       if (variables.patientId) {
-        queryClient.invalidateQueries({
-          queryKey: queryKeys.patientNotes(variables.patientId),
-        });
+        queryClient.invalidateQueries({ queryKey: queryKeys.patientNotes(variables.patientId) });
       } else {
-        queryClient.invalidateQueries({ queryKey: queryKeys.all }); // Invalidate all if no patientId
+         // If patientId wasn't passed, invalidate all notes lists (less efficient)
+         queryClient.invalidateQueries({ queryKey: queryKeys.all });
       }
-      queryClient.invalidateQueries({
-        queryKey: queryKeys.details(variables.noteId),
-      });
+      queryClient.invalidateQueries({ queryKey: queryKeys.details(variables.noteId) });
       toast.success('Note updated successfully');
       options.onSuccess?.(data, variables, context);
     },
@@ -155,26 +180,32 @@ export const useUpdateNote = (options = {}) => {
   });
 };
 
-// Delete a note
+// Delete a note using Supabase
 export const useDeleteNote = (options = {}) => {
   const queryClient = useQueryClient();
   return useMutation({
-    // mutationFn: ({ noteId, patientId }) => apiService.notes.deletePatientNote(noteId, patientId), // Original API call
-    mutationFn: async ({ noteId, patientId }) => {
-      console.log(`Mock Deleting note ${noteId} for patient ${patientId}`);
-      await new Promise((resolve) => setTimeout(resolve, 300)); // Simulate delay
-      return { success: true }; // Simulate API response
+    mutationFn: async ({ noteId, patientId }) => { // Accept patientId for invalidation
+      if (!noteId) throw new Error("Note ID is required for deletion.");
+
+      const { error } = await supabase
+        .from('notes') // ASSUMING table name is 'notes'
+        .delete()
+        .eq('id', noteId);
+
+      if (error) {
+        console.error(`Error deleting note ${noteId}:`, error);
+        throw new Error(error.message);
+      }
+      return { success: true, id: noteId, patientId: patientId }; // Pass patientId back
     },
     onSuccess: (data, variables, context) => {
       // Invalidate notes for the patient
       if (variables.patientId) {
-        queryClient.invalidateQueries({
-          queryKey: queryKeys.patientNotes(variables.patientId),
-        });
+        queryClient.invalidateQueries({ queryKey: queryKeys.patientNotes(variables.patientId) });
       } else {
-        queryClient.invalidateQueries({ queryKey: queryKeys.all }); // Invalidate all if no patientId
+         queryClient.invalidateQueries({ queryKey: queryKeys.all });
       }
-      // Optionally remove detail query: queryClient.removeQueries({ queryKey: queryKeys.details(variables.noteId) });
+      queryClient.removeQueries({ queryKey: queryKeys.details(variables.noteId) });
       toast.success('Note deleted successfully');
       options.onSuccess?.(data, variables, context);
     },

@@ -1,197 +1,279 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { toast } from 'react-toastify'; // Added for mock feedback
-// import { // Commented out API functions
-//   getInvoices,
-//   getInvoiceById,
-//   createInvoice,
-//   updateInvoice,
-//   deleteInvoice,
-//   markInvoiceAsPaid,
-//   sendInvoice,
-// } from './api';
+import { supabase } from '../../utils/supabaseClient'; // Import Supabase client
+import { toast } from 'react-toastify';
 
-// --- Mock Data ---
-const sampleInvoicesData = [
-  {
-    id: 'inv001',
-    patientId: 'p001',
-    patientName: 'John Smith',
-    issueDate: '2025-04-01T00:00:00Z',
-    dueDate: '2025-04-15T00:00:00Z',
-    amount: 199.0,
-    status: 'paid',
-    items: [{ description: 'Monthly Subscription - April', amount: 199.0 }],
-  },
-  {
-    id: 'inv002',
-    patientId: 'p002',
-    patientName: 'Emily Davis',
-    issueDate: '2025-04-02T00:00:00Z',
-    dueDate: '2025-04-16T00:00:00Z',
-    amount: 75.0,
-    status: 'pending',
-    items: [{ description: 'Follow-up Session', amount: 75.0 }],
-  },
-  {
-    id: 'inv003',
-    patientId: 'p001',
-    patientName: 'John Smith',
-    issueDate: '2025-03-01T00:00:00Z',
-    dueDate: '2025-03-15T00:00:00Z',
-    amount: 199.0,
-    status: 'paid',
-    items: [{ description: 'Monthly Subscription - March', amount: 199.0 }],
-  },
-];
-// --- End Mock Data ---
+// Removed Mock Data
 
-// Hook to fetch all invoices (Mocked)
-export const useInvoices = (params = {}) => {
-  console.log('Using mock invoices data in useInvoices hook');
+// Define query keys
+const queryKeys = {
+  all: ['invoices'],
+  lists: (params = {}) => [...queryKeys.all, 'list', { params }],
+  details: (id) => [...queryKeys.all, 'detail', id],
+};
+
+// Hook to fetch all invoices using Supabase
+export const useInvoices = (params = {}, pageSize = 10) => {
+  const currentPage = params.page || 1;
+  const rangeFrom = (currentPage - 1) * pageSize;
+  const rangeTo = rangeFrom + pageSize - 1;
+
   return useQuery({
-    queryKey: ['invoices', params],
-    // queryFn: () => getInvoices(params), // Original API call
-    queryFn: () =>
-      Promise.resolve({
-        data: sampleInvoicesData, // Return mock data
-        // Add meta if your API returns pagination info
-      }),
-    staleTime: Infinity,
+    queryKey: queryKeys.lists(params),
+    queryFn: async () => {
+      let query = supabase
+        .from('pb_invoices') // Target the pb_invoices table
+        .select(`
+          *,
+          client_record ( id, first_name, last_name )
+        `, { count: 'exact' }) // Example join
+        .order('date_created', { ascending: false }) // Order by creation date
+        .range(rangeFrom, rangeTo);
+
+      // Apply filters
+      if (params.status) {
+        query = query.eq('status', params.status);
+      }
+      if (params.patientId) {
+         query = query.eq('client_record_id', params.patientId);
+      }
+      // Add date range filters if needed
+      // if (params.startDate) { query = query.gte('date_created', params.startDate); }
+      // if (params.endDate) { query = query.lte('date_created', params.endDate); }
+
+      const { data, error, count } = await query;
+
+      if (error) {
+        console.error('Error fetching invoices:', error);
+        throw new Error(error.message);
+      }
+
+      // Map data if needed
+      const mappedData = data?.map(inv => ({
+          ...inv,
+          // Map DB fields to frontend fields if necessary
+          // e.g., issueDate: inv.date_created, dueDate: inv.due_date_column_if_exists
+          patientName: inv.client_record ? `${inv.client_record.first_name || ''} ${inv.client_record.last_name || ''}`.trim() : 'N/A',
+          // Assuming amount needs calculation or is stored in metadata
+          amount: inv.pb_invoice_metadata?.total || 0, // Example: get amount from metadata
+          items: inv.pb_invoice_metadata?.items || [], // Example: get items from metadata
+      })) || [];
+
+      return {
+        data: mappedData,
+        meta: {
+          total: count || 0,
+          per_page: pageSize,
+          current_page: currentPage,
+          last_page: Math.ceil((count || 0) / pageSize),
+        },
+      };
+    },
+    keepPreviousData: true,
   });
 };
 
-// Hook to fetch a specific invoice by ID (Mocked)
+// Hook to fetch a specific invoice by ID using Supabase
 export const useInvoiceById = (id, options = {}) => {
-  console.log(`Using mock invoice data for ID: ${id} in useInvoiceById hook`);
   return useQuery({
-    queryKey: ['invoice', id],
-    // queryFn: () => getInvoiceById(id), // Original API call
-    queryFn: () =>
-      Promise.resolve(
-        sampleInvoicesData.find((inv) => inv.id === id) || sampleInvoicesData[0]
-      ), // Find mock invoice or return first
+    queryKey: queryKeys.details(id),
+    queryFn: async () => {
+      if (!id) return null;
+
+      const { data, error } = await supabase
+        .from('pb_invoices')
+        .select(`
+          *,
+          client_record ( id, first_name, last_name )
+        `) // Example join
+        .eq('id', id)
+        .single();
+
+      if (error) {
+        console.error(`Error fetching invoice ${id}:`, error);
+        if (error.code === 'PGRST116') return null; // Not found
+        throw new Error(error.message);
+      }
+       // Map data if needed
+       const mappedData = data ? {
+           ...data,
+           patientName: data.client_record ? `${data.client_record.first_name || ''} ${data.client_record.last_name || ''}`.trim() : 'N/A',
+           amount: data.pb_invoice_metadata?.total || 0,
+           items: data.pb_invoice_metadata?.items || [],
+       } : null;
+
+      return mappedData;
+    },
     enabled: !!id,
-    staleTime: Infinity,
     ...options,
   });
 };
 
-// Hook to create a new invoice (Mocked)
+// Hook to create a new invoice using Supabase
 export const useCreateInvoice = (options = {}) => {
   const queryClient = useQueryClient();
-
   return useMutation({
-    // mutationFn: (invoiceData) => createInvoice(invoiceData), // Original API call
     mutationFn: async (invoiceData) => {
-      console.log('Mock Creating invoice:', invoiceData);
-      await new Promise((resolve) => setTimeout(resolve, 300)); // Simulate delay
-      const newInvoice = {
-        id: `inv${Date.now()}`, // Generate mock ID
-        ...invoiceData,
-        status: 'pending', // Default status
-        issueDate: new Date().toISOString(),
-        // Calculate dueDate based on terms or default
+      // Map frontend fields to DB columns
+      const dataToInsert = {
+        client_record_id: invoiceData.patientId,
+        status: invoiceData.status || 'pending', // Default status
+        pb_invoice_metadata: { // Store items/amount in metadata JSONB
+            items: invoiceData.items || [],
+            total: invoiceData.amount || 0,
+            // Add other relevant metadata
+        },
+        date_created: new Date().toISOString(),
+        date_modified: new Date().toISOString(),
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        refunded: false,
+        refunded_amount: 0,
+        // Add other required fields from schema
       };
-      // Note: Doesn't actually add to sampleInvoicesData
-      return { data: newInvoice }; // Simulate API response
+
+      const { data, error } = await supabase
+        .from('pb_invoices')
+        .insert(dataToInsert)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error creating invoice:', error);
+        throw new Error(error.message);
+      }
+      return data;
     },
-    onSuccess: (data) => { // Adjust to potentially use data from mock response
-      queryClient.invalidateQueries({ queryKey: ['invoices'] });
+    onSuccess: (data, variables, context) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.lists() });
       toast.success('Invoice created successfully');
-      options.onSuccess && options.onSuccess();
+      options.onSuccess?.(data, variables, context);
     },
-    onError: (error) => {
-      options.onError && options.onError(error);
+    onError: (error, variables, context) => {
+      toast.error(`Error creating invoice: ${error.message || 'Unknown error'}`);
+      options.onError?.(error, variables, context);
     },
+    onSettled: options.onSettled,
   });
 };
 
-// Hook to update an existing invoice (Mocked)
+// Hook to update an existing invoice using Supabase
 export const useUpdateInvoice = (options = {}) => {
   const queryClient = useQueryClient();
-
   return useMutation({
-    // mutationFn: ({ id, invoiceData }) => updateInvoice(id, invoiceData), // Original API call
     mutationFn: async ({ id, invoiceData }) => {
-      console.log(`Mock Updating invoice ${id}:`, invoiceData);
-      await new Promise((resolve) => setTimeout(resolve, 300)); // Simulate delay
-      return { data: { id, ...invoiceData } }; // Simulate API response
+      if (!id) throw new Error("Invoice ID is required for update.");
+
+      const dataToUpdate = {
+         client_record_id: invoiceData.patientId, // Allow changing patient? Maybe not.
+         status: invoiceData.status,
+         pb_invoice_metadata: {
+             items: invoiceData.items,
+             total: invoiceData.amount,
+             // Add other relevant metadata
+         },
+         date_modified: new Date().toISOString(),
+         updated_at: new Date().toISOString(),
+         // Add other updatable fields from schema
+      };
+       // Remove fields that shouldn't be updated directly
+       delete dataToUpdate.id;
+       delete dataToUpdate.created_at;
+       delete dataToUpdate.date_created;
+       delete dataToUpdate.pb_invoice_id; // Assuming this is external ID
+
+      const { data, error } = await supabase
+        .from('pb_invoices')
+        .update(dataToUpdate)
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) {
+        console.error(`Error updating invoice ${id}:`, error);
+        throw new Error(error.message);
+      }
+      return data;
     },
-    onSuccess: (data, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['invoices'] });
-      queryClient.invalidateQueries({ queryKey: ['invoice', variables.id] });
-      options.onSuccess && options.onSuccess();
+    onSuccess: (data, variables, context) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.details(variables.id) });
+      toast.success('Invoice updated successfully');
+      options.onSuccess?.(data, variables, context);
     },
-    onError: (error) => {
-      options.onError && options.onError(error);
+    onError: (error, variables, context) => {
+      toast.error(`Error updating invoice: ${error.message || 'Unknown error'}`);
+      options.onError?.(error, variables, context);
     },
+    onSettled: options.onSettled,
   });
 };
 
-// Hook to delete an invoice (Mocked)
+// Hook to delete an invoice using Supabase
 export const useDeleteInvoice = (options = {}) => {
   const queryClient = useQueryClient();
-
   return useMutation({
-    // mutationFn: (id) => deleteInvoice(id), // Original API call
     mutationFn: async (id) => {
-      console.log(`Mock Deleting invoice ${id}`);
-      await new Promise((resolve) => setTimeout(resolve, 300)); // Simulate delay
-      return { success: true }; // Simulate API response
+      if (!id) throw new Error("Invoice ID is required for deletion.");
+
+      const { error } = await supabase
+        .from('pb_invoices')
+        .delete()
+        .eq('id', id);
+
+      if (error) {
+        console.error(`Error deleting invoice ${id}:`, error);
+        // Check for foreign key constraints if needed
+        // if (error.code === '23503') { ... }
+        throw new Error(error.message);
+      }
+      return { success: true, id };
     },
-    onSuccess: (data, variables) => { // Add variables to access id if needed
-      queryClient.invalidateQueries({ queryKey: ['invoices'] });
-      // Also invalidate specific invoice if cached
-      queryClient.invalidateQueries({ queryKey: ['invoice', variables] });
+    onSuccess: (data, variables, context) => { // variables is the id
+      queryClient.invalidateQueries({ queryKey: queryKeys.lists() });
+      queryClient.removeQueries({ queryKey: queryKeys.details(variables) });
       toast.success('Invoice deleted successfully');
-      options.onSuccess && options.onSuccess();
+      options.onSuccess?.(data, variables, context);
     },
-    onError: (error) => {
-      options.onError && options.onError(error);
+    onError: (error, variables, context) => {
+      toast.error(`Error deleting invoice: ${error.message || 'Unknown error'}`);
+      options.onError?.(error, variables, context);
     },
+    onSettled: options.onSettled,
   });
 };
 
-// Hook to mark invoice as paid (Mocked)
+// Hook to mark invoice as paid using Supabase
 export const useMarkInvoiceAsPaid = (options = {}) => {
   const queryClient = useQueryClient();
-
   return useMutation({
-    // mutationFn: (id) => markInvoiceAsPaid(id), // Original API call
     mutationFn: async (id) => {
-      console.log(`Mock Marking invoice ${id} as paid`);
-      await new Promise((resolve) => setTimeout(resolve, 300)); // Simulate delay
-      return { success: true, id, status: 'paid' }; // Simulate API response
+       if (!id) throw new Error("Invoice ID is required.");
+
+       const { data, error } = await supabase
+         .from('pb_invoices')
+         .update({ status: 'paid', updated_at: new Date().toISOString(), date_modified: new Date().toISOString() }) // Assuming 'paid' is a valid status
+         .eq('id', id)
+         .select()
+         .single();
+
+       if (error) {
+         console.error(`Error marking invoice ${id} as paid:`, error);
+         throw new Error(error.message);
+       }
+       return data;
     },
-    onSuccess: (data, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['invoices'] });
-      queryClient.invalidateQueries({ queryKey: ['invoice', variables] });
-      options.onSuccess && options.onSuccess();
+    onSuccess: (data, variables, context) => { // variables is the id
+      queryClient.invalidateQueries({ queryKey: queryKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.details(variables) });
+      toast.success('Invoice marked as paid');
+      options.onSuccess?.(data, variables, context);
     },
-    onError: (error) => {
-      options.onError && options.onError(error);
+    onError: (error, variables, context) => {
+       toast.error(`Error marking invoice as paid: ${error.message || 'Unknown error'}`);
+       options.onError?.(error, variables, context);
     },
+    onSettled: options.onSettled,
   });
 };
 
-// Hook to send invoice to customer (Mocked)
-export const useSendInvoice = (options = {}) => {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    // mutationFn: (id) => sendInvoice(id), // Original API call
-    mutationFn: async (id) => {
-      console.log(`Mock Sending invoice ${id}`);
-      await new Promise((resolve) => setTimeout(resolve, 300)); // Simulate delay
-      return { success: true, id, status: 'sent' }; // Simulate API response
-    },
-    onSuccess: (data, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['invoices'] });
-      queryClient.invalidateQueries({ queryKey: ['invoice', variables] });
-      options.onSuccess && options.onSuccess();
-    },
-    onError: (error) => {
-      options.onError && options.onError(error);
-    },
-  });
-};
+// Removed useSendInvoice hook - Requires backend logic (email, PDF generation etc.)

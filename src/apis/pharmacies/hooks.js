@@ -1,164 +1,220 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { toast } from 'react-toastify'; // Added for mock feedback
-// import { // Commented out API functions
-//   getPharmacies,
-//   getPharmacyById,
-//   createPharmacy,
-//   updatePharmacy,
-//   deletePharmacy,
-//   togglePharmacyActive,
-// } from './api';
+import { supabase } from '../../utils/supabaseClient'; // Import Supabase client
+import { toast } from 'react-toastify';
 
-// --- Mock Data ---
-const samplePharmaciesData = [
-  {
-    id: 1,
-    name: 'Central Compounding Pharmacy',
-    type: 'compounding',
-    address: '123 Main St, Anytown, USA',
-    phone: '555-111-2222',
-    email: 'info@centralcompounding.com',
-    active: true,
-    supportedStates: ['CA', 'NY', 'TX'],
-  },
-  {
-    id: 2,
-    name: 'Downtown Retail Pharmacy',
-    type: 'retail',
-    address: '456 Oak Ave, Anytown, USA',
-    phone: '555-333-4444',
-    email: 'contact@downtownpharm.com',
-    active: true,
-    supportedStates: ['CA', 'FL'],
-  },
-  {
-    id: 3,
-    name: 'Inactive Pharmacy',
-    type: 'retail',
-    address: '789 Pine Ln, Anytown, USA',
-    phone: '555-555-6666',
-    email: 'old@pharmacy.com',
-    active: false,
-    supportedStates: ['NY'],
-  },
-];
-// --- End Mock Data ---
+// Removed Mock Data
 
-// Get pharmacies hook (Mocked)
-export const usePharmacies = (filters) => {
-  console.log('Using mock pharmacies data in usePharmacies hook');
+// Define query keys
+const queryKeys = {
+  all: ['pharmacies'],
+  lists: (filters = {}) => [...queryKeys.all, 'list', { filters }],
+  details: (id) => [...queryKeys.all, 'detail', id],
+};
+
+// Get pharmacies hook using Supabase
+export const usePharmacies = (filters = {}) => {
   return useQuery({
-    queryKey: ['pharmacies', filters],
-    // queryFn: () => getPharmacies(filters), // Original API call
-    queryFn: () =>
-      Promise.resolve({
-        data: samplePharmaciesData, // Return mock data
-        // Add meta if needed
-      }),
-    staleTime: Infinity,
+    queryKey: queryKeys.lists(filters),
+    queryFn: async () => {
+      let query = supabase
+        .from('pharmacies') // ASSUMING table name is 'pharmacies'
+        .select('*')
+        .order('name', { ascending: true });
+
+      // Apply filters if any
+      if (filters.active !== undefined) {
+        query = query.eq('active', filters.active);
+      }
+      if (filters.type) {
+        query = query.eq('type', filters.type);
+      }
+      if (filters.search) {
+         query = query.or(`name.ilike.%${filters.search}%,address.ilike.%${filters.search}%`);
+      }
+
+      const { data, error } = await query;
+
+      if (error) {
+        console.error('Error fetching pharmacies:', error);
+        throw new Error(error.message);
+      }
+      return data || []; // Return data array
+    },
   });
 };
 
-// Get pharmacy by ID hook (Mocked)
+// Get pharmacy by ID hook using Supabase
 export const usePharmacyById = (id, options = {}) => {
-  console.log(`Using mock pharmacy data for ID: ${id} in usePharmacyById hook`);
   return useQuery({
-    queryKey: ['pharmacy', id],
-    // queryFn: () => getPharmacyById(id), // Original API call
-    queryFn: () =>
-      Promise.resolve(
-        samplePharmaciesData.find((p) => p.id === id) || samplePharmaciesData[0]
-      ), // Find mock pharmacy or return first
+    queryKey: queryKeys.details(id),
+    queryFn: async () => {
+      if (!id) return null;
+
+      const { data, error } = await supabase
+        .from('pharmacies') // ASSUMING table name is 'pharmacies'
+        .select('*')
+        .eq('id', id)
+        .single();
+
+      if (error) {
+        console.error(`Error fetching pharmacy ${id}:`, error);
+        if (error.code === 'PGRST116') return null; // Not found
+        throw new Error(error.message);
+      }
+      return data;
+    },
     enabled: !!id,
-    staleTime: Infinity,
     ...options,
   });
 };
 
-// Create pharmacy hook (Mocked)
+// Create pharmacy hook using Supabase
 export const useCreatePharmacy = (options = {}) => {
   const queryClient = useQueryClient();
-
   return useMutation({
-    // mutationFn: (pharmacyData) => createPharmacy(pharmacyData), // Original API call
     mutationFn: async (pharmacyData) => {
-      console.log('Mock Creating pharmacy:', pharmacyData);
-      await new Promise((resolve) => setTimeout(resolve, 300)); // Simulate delay
-      const newPharmacy = {
-        id: Date.now(), // Generate mock ID
+      const dataToInsert = {
         ...pharmacyData,
-        active: pharmacyData.active !== undefined ? pharmacyData.active : true,
+        created_at: new Date().toISOString(), // Assuming timestamp columns exist
+        updated_at: new Date().toISOString(),
+        active: pharmacyData.active ?? true,
+        supported_states: pharmacyData.supportedStates || [], // Map to DB column name
       };
-      // Note: Doesn't actually add to samplePharmaciesData
-      return { data: newPharmacy }; // Simulate API response
+      delete dataToInsert.supportedStates; // Remove frontend field name
+
+      const { data, error } = await supabase
+        .from('pharmacies') // ASSUMING table name is 'pharmacies'
+        .insert(dataToInsert)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error creating pharmacy:', error);
+        throw new Error(error.message);
+      }
+      return data;
     },
-    onSuccess: (data) => { // Adjust to potentially use data from mock response
-      queryClient.invalidateQueries({ queryKey: ['pharmacies'] });
+    onSuccess: (data, variables, context) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.lists() });
       toast.success('Pharmacy created successfully');
-      options.onSuccess && options.onSuccess();
+      options.onSuccess?.(data, variables, context);
     },
+    onError: (error, variables, context) => {
+      toast.error(`Error creating pharmacy: ${error.message || 'Unknown error'}`);
+      options.onError?.(error, variables, context);
+    },
+    onSettled: options.onSettled,
   });
 };
 
-// Update pharmacy hook (Mocked)
+// Update pharmacy hook using Supabase
 export const useUpdatePharmacy = (options = {}) => {
   const queryClient = useQueryClient();
-
   return useMutation({
-    // mutationFn: ({ id, pharmacyData }) => updatePharmacy(id, pharmacyData), // Original API call
     mutationFn: async ({ id, pharmacyData }) => {
-      console.log(`Mock Updating pharmacy ${id}:`, pharmacyData);
-      await new Promise((resolve) => setTimeout(resolve, 300)); // Simulate delay
-      return { data: { id, ...pharmacyData } }; // Simulate API response
+      if (!id) throw new Error("Pharmacy ID is required for update.");
+      const dataToUpdate = {
+        ...pharmacyData,
+        updated_at: new Date().toISOString(),
+        supported_states: pharmacyData.supportedStates, // Map to DB column name
+      };
+      delete dataToUpdate.id;
+      delete dataToUpdate.created_at;
+      delete dataToUpdate.supportedStates;
+
+      const { data, error } = await supabase
+        .from('pharmacies') // ASSUMING table name is 'pharmacies'
+        .update(dataToUpdate)
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) {
+        console.error(`Error updating pharmacy ${id}:`, error);
+        throw new Error(error.message);
+      }
+      return data;
     },
-    onSuccess: (data, variables) => { // Add variables to access id
-      queryClient.invalidateQueries({ queryKey: ['pharmacies'] });
-      queryClient.invalidateQueries({ queryKey: ['pharmacy', variables.id] });
+    onSuccess: (data, variables, context) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.details(variables.id) });
       toast.success('Pharmacy updated successfully');
-      options.onSuccess && options.onSuccess();
+      options.onSuccess?.(data, variables, context);
     },
+    onError: (error, variables, context) => {
+      toast.error(`Error updating pharmacy: ${error.message || 'Unknown error'}`);
+      options.onError?.(error, variables, context);
+    },
+    onSettled: options.onSettled,
   });
 };
 
-// Delete pharmacy hook (Mocked)
+// Delete pharmacy hook using Supabase
 export const useDeletePharmacy = (options = {}) => {
   const queryClient = useQueryClient();
-
   return useMutation({
-    // mutationFn: (id) => deletePharmacy(id), // Original API call
     mutationFn: async (id) => {
-      console.log(`Mock Deleting pharmacy ${id}`);
-      await new Promise((resolve) => setTimeout(resolve, 300)); // Simulate delay
-      return { success: true }; // Simulate API response
+      if (!id) throw new Error("Pharmacy ID is required for deletion.");
+
+      const { error } = await supabase
+        .from('pharmacies') // ASSUMING table name is 'pharmacies'
+        .delete()
+        .eq('id', id);
+
+      if (error) {
+        console.error(`Error deleting pharmacy ${id}:`, error);
+         // Handle foreign key constraint errors if needed
+         if (error.code === '23503') {
+           throw new Error(`Cannot delete pharmacy: It might be linked to other records.`);
+         }
+        throw new Error(error.message);
+      }
+      return { success: true, id };
     },
-    onSuccess: (data, variables) => { // Add variables to access id if needed
-      queryClient.invalidateQueries({ queryKey: ['pharmacies'] });
-      // Also invalidate specific pharmacy if cached
-      queryClient.invalidateQueries({ queryKey: ['pharmacy', variables] });
+    onSuccess: (data, variables, context) => { // variables is the id
+      queryClient.invalidateQueries({ queryKey: queryKeys.lists() });
+      queryClient.removeQueries({ queryKey: queryKeys.details(variables) });
       toast.success('Pharmacy deleted successfully');
-      options.onSuccess && options.onSuccess();
+      options.onSuccess?.(data, variables, context);
     },
+    onError: (error, variables, context) => {
+      toast.error(`Error deleting pharmacy: ${error.message || 'Unknown error'}`);
+      options.onError?.(error, variables, context);
+    },
+    onSettled: options.onSettled,
   });
 };
 
-// Toggle pharmacy active hook (Mocked)
+// Toggle pharmacy active hook using Supabase
 export const useTogglePharmacyActive = (options = {}) => {
   const queryClient = useQueryClient();
-
   return useMutation({
-    // mutationFn: ({ id, active }) => togglePharmacyActive(id, active), // Original API call
     mutationFn: async ({ id, active }) => {
-      console.log(`Mock Toggling pharmacy ${id} active status to: ${active}`);
-      await new Promise((resolve) => setTimeout(resolve, 300)); // Simulate delay
-      return { success: true, id, active }; // Simulate API response
+       if (!id) throw new Error("Pharmacy ID is required.");
+
+       const { data, error } = await supabase
+         .from('pharmacies') // ASSUMING table name is 'pharmacies'
+         .update({ active: active, updated_at: new Date().toISOString() })
+         .eq('id', id)
+         .select()
+         .single();
+
+       if (error) {
+         console.error(`Error toggling pharmacy ${id} status:`, error);
+         throw new Error(error.message);
+       }
+       return data;
     },
-    onSuccess: (data, variables) => { // Add variables to access id
-      queryClient.invalidateQueries({ queryKey: ['pharmacies'] });
-      queryClient.invalidateQueries({ queryKey: ['pharmacy', variables.id] });
-      toast.success(
-        `Pharmacy ${variables.active ? 'activated' : 'deactivated'} successfully`
-      );
-      options.onSuccess && options.onSuccess();
+    onSuccess: (data, variables, context) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.details(variables.id) });
+      toast.success(`Pharmacy ${variables.active ? 'activated' : 'deactivated'} successfully`);
+      options.onSuccess?.(data, variables, context);
     },
+    onError: (error, variables, context) => {
+      toast.error(`Error updating pharmacy status: ${error.message || 'Unknown error'}`);
+      options.onError?.(error, variables, context);
+    },
+    onSettled: options.onSettled,
   });
 };

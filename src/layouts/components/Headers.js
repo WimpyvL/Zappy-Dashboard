@@ -65,17 +65,22 @@ const Header = ({ onToggleCart }) => {
       <div className="flex items-center space-x-4">
         {/* View Mode Dropdown */}
         <Dropdown
-          overlay={
-            <Menu onClick={({ key }) => setViewMode(key)}>
-              <Menu.Item key="admin" icon={<ShieldCheck size={14} />}>
-                Admin View
-              </Menu.Item>
-              <Menu.Item key="patient" icon={<UserCheck size={14} />}>
-                Patient View
-              </Menu.Item>
-              {/* Add other views here if needed */}
-            </Menu>
-          }
+          menu={{ // Changed 'overlay' to 'menu'
+            items: [ // Define items array for menu prop
+              {
+                key: 'admin',
+                icon: <ShieldCheck size={14} />,
+                label: 'Admin View',
+              },
+              {
+                key: 'patient',
+                icon: <UserCheck size={14} />,
+                label: 'Patient View',
+              },
+              // Add other views here if needed
+            ],
+            onClick: ({ key }) => setViewMode(key), // onClick handler remains
+          }}
           trigger={['click']}
         >
           <Button className="flex items-center">

@@ -1,203 +1,226 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { supabase } from '../../utils/supabaseClient'; // Import Supabase client
 import { toast } from 'react-toastify';
-// import { // Commented out API functions
-//   createForm,
-//   getFormById,
-//   getForms,
-//   updateForm,
-//   deleteForm,
-// } from './api';
 
-// --- Mock Data ---
-const sampleFormsData = [
-  {
-    id: 1,
-    title: 'Initial Consultation Form',
-    description: 'Form for new patient consultations.',
-    service: { id: 1, name: 'Consultation' },
-    status: true,
-    form_type: 'initial_consultation',
-    created_at: '2025-03-10T10:00:00Z',
-    updated_at: '2025-03-15T11:30:00Z',
-    slug: 'initial-consultation-v1',
-    structure: JSON.stringify({
-      pages: [
-        {
-          id: 'page1',
-          title: 'Personal Information',
-          elements: [
-            { id: 'el1', type: 'name', label: 'Full Name', required: true },
-            { id: 'el2', type: 'email', label: 'Email', required: true },
-          ],
-        },
-        {
-          id: 'page2',
-          title: 'Medical History',
-          elements: [
-            {
-              id: 'el3',
-              type: 'paragraph',
-              label: 'Describe your medical history',
-              required: false,
-            },
-          ],
-        },
-      ],
-      conditionals: [],
-    }),
-  },
-  {
-    id: 2,
-    title: 'Insurance Verification',
-    description: 'Collect insurance details.',
-    service: { id: 4, name: 'Insurance Verification' },
-    status: true,
-    form_type: 'insurance_verification',
-    created_at: '2025-03-12T14:00:00Z',
-    updated_at: '2025-03-12T14:00:00Z',
-    slug: 'insurance-verification-form',
-    structure: JSON.stringify({
-      pages: [
-        {
-          id: 'page1_ins',
-          title: 'Insurance Details',
-          elements: [
-            {
-              id: 'ins1',
-              type: 'short_text',
-              label: 'Insurance Provider',
-              required: true,
-            },
-            {
-              id: 'ins2',
-              type: 'short_text',
-              label: 'Policy Number',
-              required: true,
-            },
-          ],
-        },
-      ],
-      conditionals: [],
-    }),
-  },
-];
-// --- End Mock Data ---
+// Removed Mock Data
 
-// Hook to fetch all forms (Mocked)
+// Define query keys
+const queryKeys = {
+  all: ['forms'], // Using 'forms' as the general key for questionnaires
+  lists: (params = {}) => [...queryKeys.all, 'list', { params }],
+  details: (id) => [...queryKeys.all, 'detail', id],
+};
+
+// Hook to fetch all forms (questionnaires) using Supabase
 export const useForms = (params = {}) => {
-  console.log('Using mock forms data in useForms hook');
   return useQuery({
-    queryKey: ['forms', params],
-    // queryFn: () => getForms(params), // Original API call
-    queryFn: () =>
-      Promise.resolve({
-        data: sampleFormsData, // Return mock data
-        // Add meta if your API returns pagination info
-      }),
-    select: (data) => data,
-    staleTime: Infinity,
+    queryKey: queryKeys.lists(params),
+    queryFn: async () => {
+      let query = supabase
+        .from('questionnaire') // Target the questionnaire table
+        .select('*')
+        .order('name', { ascending: true });
+
+      // Add filters if needed
+      // if (params.status !== undefined) { query = query.eq('status', params.status); }
+
+      const { data, error } = await query;
+
+      if (error) {
+        console.error('Error fetching forms (questionnaires):', error);
+        throw new Error(error.message);
+      }
+      // Map data if frontend expects a different structure (e.g., 'title' instead of 'name')
+      const mappedData = data?.map(q => ({ ...q, title: q.name })) || [];
+      return { data: mappedData }; // Return data wrapped in object if needed
+    },
   });
 };
 
-// Hook to fetch a specific form by ID (Mocked)
+// Hook to fetch a specific form (questionnaire) by ID using Supabase
+// This might need to fetch related questions as well depending on requirements
 export const useFormById = (id, options = {}) => {
-  console.log(`Using mock form data for ID: ${id} in useFormById hook`);
   return useQuery({
-    queryKey: ['form', id],
-    // queryFn: () => getFormById(id), // Original API call
-    queryFn: () =>
-      Promise.resolve(
-        sampleFormsData.find((f) => f.id === parseInt(id)) ||
-          sampleFormsData[0]
-      ), // Find mock form or return first
+    queryKey: queryKeys.details(id),
+    queryFn: async () => {
+      if (!id) return null;
+
+      // Fetch questionnaire details
+      const { data: formData, error: formError } = await supabase
+        .from('questionnaire')
+        .select('*') // Select all columns, assuming 'structure' JSONB exists
+        .eq('id', id)
+        .single();
+
+      if (formError) {
+        console.error(`Error fetching form ${id}:`, formError);
+        if (formError.code === 'PGRST116') return null; // Not found
+        throw new Error(formError.message);
+      }
+
+      // Optionally fetch related questions (if needed immediately)
+      // const { data: questionsData, error: questionsError } = await supabase
+      //   .from('questionnaire_question')
+      //   .select('*')
+      //   .eq('questionnaire_id', id);
+      // if (questionsError) { /* Handle error */ }
+
+      // Combine data (adjust structure as needed by frontend)
+      // Assuming structure is stored in a JSONB column named 'structure'
+      // If structure is derived from questions, mapping logic is needed here.
+      const mappedData = formData ? {
+          ...formData,
+          title: formData.name,
+          // structure: formData.structure || { pages: [], conditionals: [] } // Parse if stored as JSON string
+          // questions: questionsData || [] // Add questions if fetched
+      } : null;
+
+
+      return mappedData;
+    },
     enabled: !!id,
-    staleTime: Infinity,
     ...options,
   });
 };
 
-// Hook to create a new form (Mocked)
+// Hook to create a new form (questionnaire) using Supabase
 export const useCreateForm = (options = {}) => {
   const queryClient = useQueryClient();
-
   return useMutation({
-    // mutationFn: (formData) => createForm(formData), // Original API call
     mutationFn: async (formData) => {
-      console.log('Mock Creating form:', formData);
-      await new Promise((resolve) => setTimeout(resolve, 300)); // Simulate delay
-      const newForm = {
-        id: Date.now(), // Generate mock ID
-        ...formData,
+      // Prepare data for questionnaire table
+      const questionnaireData = {
+        name: formData.title, // Map title to name
+        // structure: JSON.stringify(formData.structure || { pages: [], conditionals: [] }), // Stringify structure if storing as JSON string
+        structure: formData.structure || { pages: [], conditionals: [] }, // Assuming JSONB column
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
-        slug: formData.title.toLowerCase().replace(/\s+/g, '-'),
-        service: {
-          id: formData.service_id,
-          name: 'Mock Service', // Get actual name if possible
-        },
+        // Add other fields like description, status, form_type if they exist in your table
+        description: formData.description,
+        status: formData.status ?? true,
+        form_type: formData.form_type,
+        slug: formData.slug || formData.title?.toLowerCase().replace(/\s+/g, '-'),
       };
-      // Note: Doesn't actually add to sampleFormsData
-      return { data: newForm }; // Simulate API response structure if needed
+
+      // Insert into questionnaire table
+      const { data: newQuestionnaire, error: insertError } = await supabase
+        .from('questionnaire')
+        .insert(questionnaireData)
+        .select()
+        .single();
+
+      if (insertError) {
+        console.error('Error creating form (questionnaire):', insertError);
+        throw new Error(insertError.message);
+      }
+
+      // TODO: Optionally handle creation of related questionnaire_question rows
+      // if formData.structure contains elements/questions that need separate rows.
+      // This would likely involve iterating through formData.structure.pages/elements
+      // and inserting into questionnaire_question table with newQuestionnaire.id
+
+      return newQuestionnaire;
     },
-    onSuccess: (data) => { // Adjust to potentially use data from mock response
-      queryClient.invalidateQueries({ queryKey: ['forms'] });
+    onSuccess: (data, variables, context) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.lists() });
       toast.success('Form created successfully');
-      options.onSuccess && options.onSuccess();
+      options.onSuccess?.(data, variables, context);
     },
-    onError: (error) => {
-      toast.error(
-        error.message || 'An error occurred while creating the form.'
-      );
-      options.onError && options.onError(error);
+    onError: (error, variables, context) => {
+      toast.error(`Error creating form: ${error.message || 'Unknown error'}`);
+      options.onError?.(error, variables, context);
     },
+    onSettled: options.onSettled,
   });
 };
 
-// Hook to update an existing form (Mocked)
+// Hook to update an existing form (questionnaire) using Supabase
 export const useUpdateForm = (options = {}) => {
   const queryClient = useQueryClient();
-
   return useMutation({
-    // mutationFn: ({ id, formData }) => updateForm(id, formData), // Original API call
     mutationFn: async ({ id, formData }) => {
-      console.log(`Mock Updating form ${id}:`, formData);
-      await new Promise((resolve) => setTimeout(resolve, 300)); // Simulate delay
-      return { data: { id, ...formData } }; // Simulate API response
+      if (!id) throw new Error("Form ID is required for update.");
+
+      const dataToUpdate = {
+        name: formData.title,
+        structure: formData.structure, // Assuming JSONB
+        updated_at: new Date().toISOString(),
+        description: formData.description,
+        status: formData.status,
+        form_type: formData.form_type,
+        slug: formData.slug,
+        // Add other updatable fields
+      };
+       // Remove fields that shouldn't be updated directly if necessary
+       delete dataToUpdate.id;
+       delete dataToUpdate.created_at;
+
+      const { data, error } = await supabase
+        .from('questionnaire')
+        .update(dataToUpdate)
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) {
+        console.error(`Error updating form ${id}:`, error);
+        throw new Error(error.message);
+      }
+
+      // TODO: Optionally handle updates to related questionnaire_question rows
+      // This might involve deleting existing questions and re-inserting based on formData.structure
+
+      return data;
     },
-    onSuccess: (data, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['forms'] });
-      queryClient.invalidateQueries({ queryKey: ['form', variables.id] });
+    onSuccess: (data, variables, context) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.details(variables.id) });
       toast.success('Form updated successfully');
-      options.onSuccess && options.onSuccess();
+      options.onSuccess?.(data, variables, context);
     },
-    onError: (error) => {
-      toast.error(
-        error.message || 'An error occurred while updating the form.'
-      );
-      options.onError && options.onError(error);
+    onError: (error, variables, context) => {
+      toast.error(`Error updating form: ${error.message || 'Unknown error'}`);
+      options.onError?.(error, variables, context);
     },
+    onSettled: options.onSettled,
   });
 };
 
-// Hook to delete a form (Mocked)
+// Hook to delete a form (questionnaire) using Supabase
 export const useDeleteForm = (options = {}) => {
   const queryClient = useQueryClient();
-
   return useMutation({
-    // mutationFn: (id) => deleteForm(id), // Original API call
     mutationFn: async (id) => {
-      console.log(`Mock Deleting form ${id}`);
-      await new Promise((resolve) => setTimeout(resolve, 300)); // Simulate delay
-      return { success: true }; // Simulate API response
+      if (!id) throw new Error("Form ID is required for deletion.");
+
+      // TODO: Optionally delete related questionnaire_questions first
+      // const { error: questionError } = await supabase.from('questionnaire_question').delete().eq('questionnaire_id', id);
+      // if (questionError) { /* Handle error */ }
+
+      const { error } = await supabase
+        .from('questionnaire')
+        .delete()
+        .eq('id', id);
+
+      if (error) {
+        console.error(`Error deleting form ${id}:`, error);
+         if (error.code === '23503') { // Foreign key violation
+           throw new Error(`Cannot delete form: It is still linked to other records (e.g., form requests).`);
+         }
+        throw new Error(error.message);
+      }
+      return { success: true, id };
     },
-    onSuccess: (data, variables) => { // Add variables to access id if needed
-      queryClient.invalidateQueries({ queryKey: ['forms'] });
-      // Also invalidate specific form if cached
-      queryClient.invalidateQueries({ queryKey: ['form', variables] });
-      options.onSuccess && options.onSuccess();
+    onSuccess: (data, variables, context) => { // variables is the id
+      queryClient.invalidateQueries({ queryKey: queryKeys.lists() });
+      queryClient.removeQueries({ queryKey: queryKeys.details(variables) });
+      toast.success('Form deleted successfully');
+      options.onSuccess?.(data, variables, context);
     },
-    onError: (error) => {
-      options.onError && options.onError(error);
+    onError: (error, variables, context) => {
+      toast.error(`Error deleting form: ${error.message || 'Unknown error'}`);
+      options.onError?.(error, variables, context);
     },
+    onSettled: options.onSettled,
   });
 };

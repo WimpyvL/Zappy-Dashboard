@@ -1,0 +1,17 @@
+# Netlify build configuration for Create React App
+
+[build]
+  # Build command (standard for CRA)
+  command = "npm run build"
+  # Directory containing the build output
+  publish = "build/"
+  # Optional: Specify Node.js version if needed
+  # node_bundler = "esbuild" # Optional: Use esbuild for faster builds if compatible
+  # environment = { NODE_VERSION = "18" }
+
+# Redirect rule for client-side routing (SPA support)
+# This ensures direct links to routes like /system-map work correctly
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

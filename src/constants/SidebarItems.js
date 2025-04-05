@@ -16,6 +16,8 @@ import {
   Hash,
   MessageSquare, // Import icon for Messages
   History, // Import icon for Audit Log
+  // Workflow, // Removed Automations icon
+  Map, // Import icon for System Map
 } from 'lucide-react';
 
 import { paths } from './paths'; // Ensure paths are imported
@@ -96,6 +98,11 @@ export const sidebarItems = [
     title: 'Messages',
     path: '/messages', // Define path for messages
     icon: MessageSquare,
+  },
+  {
+    title: 'System Map', // Updated title
+    path: '/system-map', // Updated path
+    icon: Map, // Updated icon
   },
 ];
 

@@ -1,15 +1,36 @@
 import React from 'react';
 import { useAuth } from '../../context/AuthContext';
+import { useAppContext } from '../../context/AppContext'; // Import useAppContext
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
-  sidebarItems,
+  LayoutDashboard,
+  User,
+  ShoppingCart,
+  CalendarCheck,
+  MessageSquare,
+  Store,
+} from 'lucide-react'; // Icons for patient view
+import {
+  sidebarItems as adminSidebarItems, // Rename admin items
   settingsItems,
   logoutItem,
 } from '../../constants/SidebarItems';
 
+
+// Placeholder for Patient Sidebar Items (Ideally move to SidebarItems.js)
+const patientSidebarItems = [
+  { title: 'Dashboard', path: '/dashboard', icon: LayoutDashboard }, // Could link to a patient-specific dashboard later
+  { title: 'My Profile', path: '/settings/profile', icon: User }, // Reuse settings profile path
+  { title: 'My Orders', path: '/orders', icon: ShoppingCart }, // Reuse orders path (needs filtering later)
+  { title: 'My Sessions', path: '/sessions', icon: CalendarCheck }, // Reuse sessions path (needs filtering later)
+  { title: 'Messages', path: '/messages', icon: MessageSquare },
+  { title: 'Shop', path: '/shop', icon: Store },
+];
+
 const Sidebar = () => {
   const location = useLocation();
   const { logout } = useAuth();
+  const { viewMode } = useAppContext(); // Get viewMode
   const navigate = useNavigate();
 
   const handleLogout = () => {
@@ -46,10 +67,14 @@ const Sidebar = () => {
       </div>
 
       <nav className="flex-1 px-2 py-4 space-y-1">
-        {/* Main menu items */}
-        {sidebarItems.map((item) => (
-          <NavItem key={item.path} item={item} />
-        ))}
+        {/* Conditional Main menu items */}
+        {viewMode === 'admin'
+          ? adminSidebarItems.map((item) => (
+              <NavItem key={`admin-${item.path}`} item={item} />
+            ))
+          : patientSidebarItems.map((item) => (
+              <NavItem key={`patient-${item.path}`} item={item} />
+            ))}
 
         <div className="pt-4">
           <hr className="border-indigo-800" />

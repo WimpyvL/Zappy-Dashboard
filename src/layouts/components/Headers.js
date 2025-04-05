@@ -1,7 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useCart } from '../../context/CartContext'; // Import useCart
+import { useAppContext } from '../../context/AppContext'; // Import useAppContext
 import { useNavigate } from 'react-router-dom';
+import { Dropdown, Menu, Button } from 'antd'; // Import Dropdown, Menu, Button
 import {
   Bell,
   Search,
@@ -10,12 +12,16 @@ import {
   User,
   ChevronDown,
   ShoppingCart,
-} from 'lucide-react'; // Import ShoppingCart icon
+  UserCheck, // Icon for Patient View
+  ShieldCheck, // Icon for Admin View
+  Eye, // Generic View icon
+} from 'lucide-react'; // Import ShoppingCart icon and view mode icons
 
 const Header = ({ onToggleCart }) => {
   // Destructure onToggleCart from props
   const { currentUser, logout } = useAuth();
   const { getCartItemCount } = useCart(); // Get cart item count function
+  const { viewMode, setViewMode } = useAppContext(); // Get view mode state and SETTER function
   const navigate = useNavigate();
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
@@ -55,8 +61,32 @@ const Header = ({ onToggleCart }) => {
         </div>
       </div>
 
-      {/* Notifications, Cart, and user profile */}
+      {/* View Mode Dropdown, Notifications, Cart, and user profile */}
       <div className="flex items-center space-x-4">
+        {/* View Mode Dropdown */}
+        <Dropdown
+          overlay={
+            <Menu onClick={({ key }) => setViewMode(key)}>
+              <Menu.Item key="admin" icon={<ShieldCheck size={14} />}>
+                Admin View
+              </Menu.Item>
+              <Menu.Item key="patient" icon={<UserCheck size={14} />}>
+                Patient View
+              </Menu.Item>
+              {/* Add other views here if needed */}
+            </Menu>
+          }
+          trigger={['click']}
+        >
+          <Button className="flex items-center">
+            <Eye size={16} className="mr-1" />
+            <span className="text-sm font-medium capitalize mr-1">
+              {viewMode} View
+            </span>
+            <ChevronDown size={16} />
+          </Button>
+        </Dropdown>
+
         {/* Notifications Button */}
         <button className="relative p-1 text-gray-600 hover:text-gray-900">
           <Bell className="h-6 w-6" />

@@ -1,4 +1,4 @@
-import React, { createContext, useState, useEffect, useContext } from 'react';
+import React, { createContext, useState, useEffect, useContext, useCallback } from 'react'; // Added useCallback
 // Comment out apiService import as we are mocking data
 // import apiService from "../utils/apiService";
 
@@ -195,6 +195,9 @@ export const AppProvider = ({ children }) => {
   const [services, setServices] = useState([]); // Initialize empty
   const [subscriptionPlans, setSubscriptionPlans] = useState([]); // Initialize empty
   const [tags, setTags] = useState([]); // Initialize empty
+
+  // State for view mode simulation
+  const [viewMode, setViewMode] = useState('admin'); // 'admin' or 'patient'
 
   // State for secondary data types (still using sample for now)
   const [documents] = useState([]); // Initialize empty - TODO: Add fetchDocuments (Removed unused setDocuments)
@@ -470,9 +473,21 @@ export const AppProvider = ({ children }) => {
     /* ... */
   };
 
+  // --- View Mode Setter ---
+  // Changed from toggleViewMode to setViewMode to accept a specific mode
+  const handleSetViewMode = useCallback((newMode) => {
+    if (newMode === 'admin' || newMode === 'patient') {
+      setViewMode(newMode);
+      console.log(`Switched view mode to: ${newMode}`);
+    } else {
+      console.warn(`Invalid view mode attempted: ${newMode}`);
+    }
+  }, []); // No dependency needed as setViewMode from useState is stable
+
   // --- Context Provider Value ---
   const contextValue = {
     // State
+    viewMode, // Added viewMode state
     patients,
     sessions,
     orders,
@@ -559,6 +574,9 @@ export const AppProvider = ({ children }) => {
     // Consultation note functions
     saveInitialConsultationNote,
     getPatientConsultationNotes,
+
+    // View Mode function
+    setViewMode: handleSetViewMode, // Changed to setViewMode
   };
 
   return (

@@ -54,6 +54,7 @@ import FormViewer from '../pages/settings/pages/forms/FormViewer.jsx';
 import ShopPage from '../pages/shop/ShopPage.jsx'; // Import the new ShopPage
 import MessagingPage from '../pages/messaging/MessagingPage.jsx'; // Import Messaging Page
 import AuditLogPage from '../pages/auditlog/AuditLogPage.jsx'; // Import Audit Log Page
+import SystemMapPage from '../pages/system-map/SystemMapPage.jsx'; // Import SystemMap Page
 
 // Paths constants
 import { paths } from './paths.js';
@@ -249,6 +250,16 @@ const AppRoutes = () => {
         element={
           <MainLayout>
             <AuditLogPage />
+          </MainLayout>
+        }
+      />
+
+      {/* System Map Page Route */}
+      <Route
+        path="/system-map" // Define the path for the system map page
+        element={
+          <MainLayout>
+            <SystemMapPage />
           </MainLayout>
         }
       />

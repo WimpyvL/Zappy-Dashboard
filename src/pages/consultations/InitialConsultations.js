@@ -571,8 +571,10 @@ const InitialConsultations = () => {
 
       {/* Consultation Notes Modal (View/Edit Existing) */}
       {showConsultationModal && selectedPatient && selectedConsultation && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-75 flex items-center justify-center z-50 p-4">
-          <div className="max-w-4xl w-full">
+        // Overlay covers screen, centers content horizontally
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-75 flex justify-center z-50">
+          {/* Container fills screen, manages internal layout */}
+          <div className="w-full h-full bg-white flex flex-col overflow-hidden">
             <InitialConsultationNotes
               patient={selectedPatient}
               consultationData={selectedConsultation?.consultationData} // Pass existing data
@@ -583,6 +585,7 @@ const InitialConsultations = () => {
               }
               onClose={handleCloseConsultationModal}
               // Pass mutation hooks if notes component handles saving
+              updateStatusMutation={updateStatusMutation} // Pass down mutation
             />
           </div>
         </div>
@@ -590,8 +593,10 @@ const InitialConsultations = () => {
 
       {/* New Consultation Modal (After Patient Selected) */}
       {showNewConsultationModal && selectedPatient && !selectedConsultation && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-75 flex items-center justify-center z-50 p-4">
-          <div className="max-w-4xl w-full">
+        // Overlay covers screen, centers content horizontally
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-75 flex justify-center z-50">
+           {/* Container fills screen, manages internal layout */}
+          <div className="w-full h-full bg-white flex flex-col overflow-hidden">
             <InitialConsultationNotes
               patient={selectedPatient} // Pass selected patient
               onClose={handleCloseConsultationModal}

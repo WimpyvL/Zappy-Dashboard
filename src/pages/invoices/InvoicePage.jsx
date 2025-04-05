@@ -75,12 +75,14 @@ const InvoicePage = () => {
     direction: 'desc',
   });
   const [showCreateModal, setShowCreateModal] = useState(false);
+  // State for new invoice modal, including line items
   const [newInvoice, setNewInvoice] = useState({
     name: '',
     email: '',
-    amount: '',
     dueDate: '',
+    lineItems: [{ description: '', quantity: 1, unitPrice: '' }], // Start with one empty line item
   });
+  const [invoiceTotal, setInvoiceTotal] = useState(0); // State to hold calculated total
 
   // Mock data - replace with actual API call
   useEffect(() => {
@@ -218,44 +220,94 @@ const InvoicePage = () => {
     return sortableInvoices;
   }, [invoices, searchTerm, sortConfig]);
 
-  // Handle input change for new invoice
-  const handleInputChange = (e) => {
+  // --- New Invoice Modal Handlers ---
+
+  // Calculate total whenever line items change
+  useEffect(() => {
+    const total = newInvoice.lineItems.reduce((sum, item) => {
+      const quantity = parseFloat(item.quantity) || 0;
+      const price = parseFloat(item.unitPrice) || 0;
+      return sum + quantity * price;
+    }, 0);
+    setInvoiceTotal(total);
+  }, [newInvoice.lineItems]);
+
+
+  // Handle general input changes (name, email, dueDate)
+  const handleGeneralInputChange = (e) => {
     const { name, value } = e.target;
-    setNewInvoice({ ...newInvoice, [name]: value });
+    setNewInvoice((prev) => ({ ...prev, [name]: value }));
   };
 
-  // Handle create invoice
+  // Handle changes within a specific line item
+  const handleLineItemChange = (index, field, value) => {
+    setNewInvoice((prev) => {
+      const updatedLineItems = [...prev.lineItems];
+      updatedLineItems[index] = { ...updatedLineItems[index], [field]: value };
+      return { ...prev, lineItems: updatedLineItems };
+    });
+  };
+
+  // Add a new empty line item
+  const addLineItem = () => {
+    setNewInvoice((prev) => ({
+      ...prev,
+      lineItems: [
+        ...prev.lineItems,
+        { description: '', quantity: 1, unitPrice: '' },
+      ],
+    }));
+  };
+
+  // Remove a line item by index
+  const removeLineItem = (index) => {
+    if (newInvoice.lineItems.length <= 1) return; // Keep at least one line
+    setNewInvoice((prev) => ({
+      ...prev,
+      lineItems: prev.lineItems.filter((_, i) => i !== index),
+    }));
+  };
+
+
+  // Handle create invoice submission
   const handleCreateInvoice = (e) => {
     e.preventDefault();
-    // In a real app, you would make an API call here
-    console.log('Creating invoice:', newInvoice);
+    // In a real app, you would make an API call here with line items
+    const submissionData = {
+      ...newInvoice,
+      lineItems: newInvoice.lineItems.filter(item => item.description && item.unitPrice), // Filter out empty lines
+      totalAmount: invoiceTotal,
+    };
+    console.log('Creating invoice with line items:', submissionData);
 
-    // Create a new invoice object
+    // --- Mock adding to list (replace with API call) ---
     const newInvoiceObj = {
       id: `INV-00${invoices.length + 1}`,
       createdAt: new Date().toISOString(),
-      name: newInvoice.name,
-      email: newInvoice.email,
+      name: submissionData.name,
+      email: submissionData.email,
       invoiceId: `INV-00${invoices.length + 1}`,
       status: 'Pending',
-      invoiceAmount: parseFloat(newInvoice.amount),
+      invoiceAmount: submissionData.totalAmount, // Use calculated total
       amountPaid: 0,
-      dueAmount: parseFloat(newInvoice.amount),
+      dueAmount: submissionData.totalAmount,
       refundedAmount: 0,
       paymentDate: null,
       refunded: false,
       updatedAt: new Date().toISOString(),
+      // Store line items if needed for display later (optional)
+      // lineItems: submissionData.lineItems
     };
-
-    // Add to invoices list
     setInvoices([newInvoiceObj, ...invoices]);
+    // --- End Mock ---
+
 
     // Reset form and close modal
     setNewInvoice({
       name: '',
       email: '',
-      amount: '',
       dueDate: '',
+      lineItems: [{ description: '', quantity: 1, unitPrice: '' }],
     });
     setShowCreateModal(false);
   };
@@ -553,7 +605,7 @@ const InvoicePage = () => {
                     type="text"
                     name="name"
                     value={newInvoice.name}
-                    onChange={handleInputChange}
+                    onChange={handleGeneralInputChange} // Corrected function name
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
                     required
                   />
@@ -567,27 +619,72 @@ const InvoicePage = () => {
                     type="email"
                     name="email"
                     value={newInvoice.email}
-                    onChange={handleInputChange}
+                    // onChange={handleInputChange} // Removed duplicate
+                    // className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" // Removed duplicate
+                    onChange={handleGeneralInputChange}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
                     required
                   />
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Amount ($)
-                  </label>
-                  <input
-                    type="number"
-                    name="amount"
-                    min="0.01"
-                    step="0.01"
-                    value={newInvoice.amount}
-                    onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                    required
-                  />
-                </div>
+                {/* Line Items Section */}
+                <div className="space-y-3">
+                   <label className="block text-sm font-medium text-gray-700 mb-1">
+                     Line Items
+                   </label>
+                   {newInvoice.lineItems.map((item, index) => (
+                     <div key={index} className="flex items-center space-x-2 p-2 border border-gray-200 rounded-md">
+                       <input
+                         type="text"
+                         placeholder="Description"
+                         value={item.description}
+                         onChange={(e) => handleLineItemChange(index, 'description', e.target.value)}
+                         className="flex-grow px-2 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                         required={index === 0} // Only first line required description
+                       />
+                       <input
+                         type="number"
+                         placeholder="Qty"
+                         min="1"
+                         value={item.quantity}
+                         onChange={(e) => handleLineItemChange(index, 'quantity', e.target.value)}
+                         className="w-16 px-2 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                         required
+                       />
+                       <input
+                         type="number"
+                         placeholder="Unit Price"
+                         min="0.01"
+                         step="0.01"
+                         value={item.unitPrice}
+                         onChange={(e) => handleLineItemChange(index, 'unitPrice', e.target.value)}
+                         className="w-24 px-2 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                         required={index === 0} // Only first line required price
+                       />
+                       <button
+                         type="button"
+                         onClick={() => removeLineItem(index)}
+                         className={`text-red-500 hover:text-red-700 p-1 ${newInvoice.lineItems.length <= 1 ? 'opacity-50 cursor-not-allowed' : ''}`}
+                         disabled={newInvoice.lineItems.length <= 1}
+                       >
+                         <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                       </button>
+                     </div>
+                   ))}
+                   <button
+                     type="button"
+                     onClick={addLineItem}
+                     className="text-sm text-indigo-600 hover:text-indigo-800 flex items-center"
+                   >
+                     <PlusIcon className="h-4 w-4 mr-1" /> Add Line Item
+                   </button>
+                 </div>
+
+                 {/* Total Amount Display */}
+                 <div className="text-right font-medium">
+                   Total: ${invoiceTotal.toFixed(2)}
+                 </div>
+
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -597,7 +694,7 @@ const InvoicePage = () => {
                     type="date"
                     name="dueDate"
                     value={newInvoice.dueDate}
-                    onChange={handleInputChange}
+                    onChange={handleGeneralInputChange}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
                     required
                   />

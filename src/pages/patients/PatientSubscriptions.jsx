@@ -12,8 +12,17 @@ import {
   AlertCircle,
   Plus,
   Truck,
+  PauseCircle, // Added for Pause button
+  XCircle, // Added for Cancel button
+  Edit, // Re-added Edit icon
 } from 'lucide-react';
-import { redirectToCheckout } from '../../utils/stripeCheckout';
+// Import necessary functions from stripeCheckout utility, including the new one
+import {
+  redirectToCheckout,
+  updateSubscription,
+  cancelSubscription,
+  redirectToCustomerPortal // Added import
+} from '../../utils/stripeCheckout';
 
 // Enhanced version of PatientSubscriptions that includes Stripe Checkout integration
 const PatientSubscriptions = ({ patient }) => {
@@ -21,6 +30,14 @@ const PatientSubscriptions = ({ patient }) => {
   const [lastShipment, setLastShipment] = useState(null);
   const [medications, setMedications] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  const [isSubmitting, setIsSubmitting] = useState(false); // To disable buttons during API call
+  const [error, setError] = useState(null); // To display errors
+
+  // --- Mock Subscription ID ---
+  // In a real app, this would be fetched from the backend along with other subscription data
+  const mockSubscriptionId = patient ? `sub_mock_${patient.id}` : null;
+  // --- End Mock Data ---
 
   useEffect(() => {
     // In a real app, you would fetch these from your API
@@ -70,21 +87,69 @@ const PatientSubscriptions = ({ patient }) => {
     return formatDate(nextDate);
   };
 
-  // Handle subscription management with Stripe
-  const handleSubscriptionManagement = async () => {
+  // Renamed function: Handles redirecting to Stripe Customer Portal for managing subscription/payment
+  const handleManageSubscriptionViaPortal = async () => {
+    if (!patient || !patient.id) {
+      setError('Patient information is missing.');
+      return;
+    }
+    setIsSubmitting(true); // Use submitting state to provide feedback
+    setError(null);
     try {
-      // Prepare plan details to send to checkout
-      const planDetails = {
-        name: `${patient.subscriptionPlan ? patient.subscriptionPlan.charAt(0).toUpperCase() + patient.subscriptionPlan.slice(1) : 'Basic'} Plan`,
-        description: `Monthly subscription for ${patient.medication}`,
-        price: 199.99, // This would come from your actual plan data
-        medication: patient.medication,
-      };
+      await redirectToCustomerPortal(patient.id);
+      // Redirect happens in the utility function, no further action needed here.
+    } catch (err) {
+      console.error('Failed to redirect to customer portal:', err);
+      setError('Could not open subscription/payment settings. Please try again.');
+      setIsSubmitting(false); // Only set submitting false if redirect fails
+    }
+    // Don't set isSubmitting to false here if redirect is successful, as the page will navigate away.
+  };
 
-      await redirectToCheckout(patient.id, planDetails);
-    } catch (error) {
-      console.error('Failed to initiate checkout:', error);
-      // Handle error - you could show an error message to the user
+  // Handle pausing the subscription
+  const handlePauseSubscription = async () => {
+    if (!mockSubscriptionId) {
+      setError('Subscription ID not found.');
+      return;
+    }
+    if (window.confirm('Are you sure you want to pause this subscription? Payments will stop, but the subscription remains active.')) {
+      setIsSubmitting(true);
+      setError(null);
+      try {
+        // Example: Pausing collection. Backend needs to handle this specific update.
+        await updateSubscription(mockSubscriptionId, { pause_collection: { behavior: 'void' } });
+        // TODO: Update local state to reflect paused status if needed, ideally refetch data
+        alert('Subscription paused successfully.'); // Placeholder feedback
+      } catch (err) {
+        console.error('Failed to pause subscription:', err);
+        setError('Failed to pause subscription. Please try again.');
+      } finally {
+        setIsSubmitting(false);
+      }
+    }
+  };
+
+  // Handle cancelling the subscription
+  const handleCancelSubscription = async () => {
+    if (!mockSubscriptionId) {
+      setError('Subscription ID not found.');
+      return;
+    }
+    if (window.confirm('Are you sure you want to cancel this subscription? This action cannot be undone.')) {
+      setIsSubmitting(true);
+      setError(null);
+      try {
+        // Cancel at period end by default
+        await cancelSubscription(mockSubscriptionId, false);
+        // TODO: Update local state to reflect cancelled status, ideally refetch data
+        alert('Subscription cancelled successfully.'); // Placeholder feedback
+        setPaymentStatus('cancelled'); // Basic local state update for demo
+      } catch (err) {
+        console.error('Failed to cancel subscription:', err);
+        setError('Failed to cancel subscription. Please try again.');
+      } finally {
+        setIsSubmitting(false);
+      }
     }
   };
 
@@ -107,6 +172,13 @@ const PatientSubscriptions = ({ patient }) => {
         return (
           <span className="px-2 py-1 text-xs font-medium rounded-full bg-red-100 text-red-800">
             Payment Failed
+          </span>
+        );
+      // Added case for cancelled status
+      case 'cancelled':
+        return (
+          <span className="px-2 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-800">
+            Cancelled
           </span>
         );
       default:
@@ -139,6 +211,14 @@ const PatientSubscriptions = ({ patient }) => {
       </div>
 
       <div className="p-6">
+        {/* Display Error Message */}
+        {error && (
+          <div className="mb-4 p-4 bg-red-50 border-l-4 border-red-400 text-red-700" role="alert">
+            <p className="font-bold">Error</p>
+            <p>{error}</p>
+          </div>
+        )}
+
         {patient.subscriptionPlan ? (
           <div className="space-y-6">
             {/* Current Subscription */}
@@ -181,7 +261,12 @@ const PatientSubscriptions = ({ patient }) => {
                         </div>
                       </div>
                     ))}
-                    <button className="mt-2 text-xs text-indigo-600 hover:text-indigo-900 flex items-center">
+                    {/* Added placeholder onClick handler */}
+                    <button
+                      className="mt-2 text-xs text-indigo-600 hover:text-indigo-900 flex items-center disabled:opacity-50"
+                      onClick={() => alert('Feature to add medication to an existing subscription is not yet implemented.')}
+                      // disabled // Optionally disable if preferred
+                    >
                       <Plus className="h-3 w-3 mr-1" />
                       Add medication
                     </button>
@@ -220,17 +305,29 @@ const PatientSubscriptions = ({ patient }) => {
 
                 <div className="mt-4 pt-4 border-t border-gray-100">
                   <div className="flex justify-end space-x-2">
-                    <button className="px-3 py-1 bg-white border border-gray-300 text-sm font-medium rounded text-gray-700 hover:bg-gray-50">
-                      Pause Subscription
-                    </button>
+                    {/* Pause Button */}
                     <button
-                      className="px-3 py-1 bg-white border border-gray-300 text-sm font-medium rounded text-gray-700 hover:bg-gray-50"
-                      onClick={handleSubscriptionManagement}
+                      className="px-3 py-1 bg-white border border-gray-300 text-sm font-medium rounded text-yellow-700 hover:bg-gray-50 flex items-center disabled:opacity-50"
+                      onClick={handlePauseSubscription}
+                      disabled={isSubmitting || paymentStatus === 'cancelled'}
                     >
-                      Modify
+                      <PauseCircle className="h-4 w-4 mr-1" /> Pause
                     </button>
-                    <button className="px-3 py-1 bg-white border border-gray-300 text-sm font-medium rounded text-red-700 hover:bg-gray-50">
-                      Cancel
+                    {/* Modify Button - Updated onClick */}
+                    <button
+                      className="px-3 py-1 bg-white border border-gray-300 text-sm font-medium rounded text-gray-700 hover:bg-gray-50 flex items-center disabled:opacity-50"
+                      onClick={handleManageSubscriptionViaPortal} // Use portal redirect
+                      disabled={isSubmitting || paymentStatus === 'cancelled'}
+                    >
+                      <Edit className="h-4 w-4 mr-1" /> Manage
+                    </button>
+                    {/* Cancel Button */}
+                    <button
+                      className="px-3 py-1 bg-white border border-gray-300 text-sm font-medium rounded text-red-700 hover:bg-gray-50 flex items-center disabled:opacity-50"
+                      onClick={handleCancelSubscription}
+                      disabled={isSubmitting || paymentStatus === 'cancelled'}
+                    >
+                      <XCircle className="h-4 w-4 mr-1" /> Cancel
                     </button>
                   </div>
                 </div>
@@ -265,11 +362,13 @@ const PatientSubscriptions = ({ patient }) => {
                   <p className="text-xs text-gray-500">Payment Method</p>
                   <div className="flex items-center">
                     <CreditCard className="h-3 w-3 text-gray-400 mr-1" />
+                    {/* Updated onClick handler */}
                     <button
-                      className="text-sm text-indigo-600 hover:text-indigo-900"
-                      onClick={handleSubscriptionManagement}
+                      className="text-sm text-indigo-600 hover:text-indigo-900 disabled:opacity-50 disabled:cursor-not-allowed"
+                      onClick={handleManageSubscriptionViaPortal} // Use portal redirect
+                      disabled={isSubmitting}
                     >
-                      Update
+                      Update Payment
                     </button>
                   </div>
                 </div>
@@ -289,9 +388,11 @@ const PatientSubscriptions = ({ patient }) => {
                       method to continue your subscription.
                     </p>
                     <div className="mt-2">
+                      {/* Updated onClick handler */}
                       <button
-                        className="px-2 py-1 text-xs font-medium rounded bg-yellow-100 text-yellow-800 hover:bg-yellow-200"
-                        onClick={handleSubscriptionManagement}
+                        className="px-2 py-1 text-xs font-medium rounded bg-yellow-100 text-yellow-800 hover:bg-yellow-200 disabled:opacity-50"
+                        onClick={handleManageSubscriptionViaPortal} // Use portal redirect
+                        disabled={isSubmitting}
                       >
                         Update Payment Method
                       </button>

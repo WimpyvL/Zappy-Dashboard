@@ -204,87 +204,61 @@ const InitialConsultationNotes = ({
     if (onClose) onClose(); // Close modal after save attempt
   };
 
-  const handleSubmit = () => {
-    const submitData = {
-      consultationId: consultationId, // Pass ID if editing/submitting existing
-      patientId: patient?.id,
-      patientInfo: { hpi, pmh, contraindications },
+  // Updated handleSubmit to trigger backend invoicing instead of direct creation
+  const handleSubmit = async () => { // Make async for API call
+     const consultationId = consultationData?.id; // Assuming consultationData prop includes the ID
+
+     const submissionPayload = {
+        patientId: patient?.id,
+        patientInfo: { hpi, pmh, contraindications },
       medicationOrder: {
         serviceId: selectedServiceId,
         treatmentApproach,
         selectedMedications: selectedMedications,
       },
-      communication: { messageToPatient, assessmentPlan, followUpPlan },
-      // Add any other fields needed for submission
-    };
-    console.log('Submitting consultation with data:', submitData);
-
-    // --- Group items by fulfillment source --- (Logic remains similar, uses fetched products)
-    const retailItems = [];
-    const compoundedItems = [];
-    const supplementItems = [];
-    // let pharmacySelectionNeeded = false; // Removed unused variable
-
-    selectedMedications.forEach((med) => {
-      const productDetail = allProducts.find((p) => p.id === med.productId);
-      if (!productDetail) return;
-      const doseDetail = productDetail.doses?.find((d) => d.id === med.doseId);
-      if (!doseDetail) return;
-
-      const item = {
-        /* ... item details ... */
+        medicationOrder: {
+          serviceId: selectedServiceId,
+          treatmentApproach,
+          selectedMedications: selectedMedications, // Array of { productId, doseId, planId }
+        },
+        communication: { messageToPatient, assessmentPlan, followUpPlan },
       };
-        switch (productDetail.fulfillmentSource) {
-          case 'retail_pharmacy':
-            retailItems.push(item);
-            // pharmacySelectionNeeded = true; // Assignment removed
-            break;
-          case 'compounding_pharmacy':
-            compoundedItems.push(item);
-            // pharmacySelectionNeeded = true; // Assignment removed
-            break;
-          case 'internal_supplement':
-          supplementItems.push(item);
-          break;
-        default:
-          console.warn(`Unknown source: ${productDetail.fulfillmentSource}`);
-      }
-    });
 
-    // --- Determine Billing Actions --- (Logic remains similar)
-    const subscriptionItems = selectedMedications.filter(
-      (med) => med.planId !== null
-    );
-    const oneTimeItemsRaw = selectedMedications.filter(
-      (med) => med.planId === null
-    );
-    const uniquePlanIds = [
-      ...new Set(subscriptionItems.map((item) => item.planId)),
-    ];
+     console.log("Submitting consultation for approval and invoicing:", submissionPayload);
 
-    let subscriptionPayload = null;
-    let oneTimeOrderPayloadItems = [];
+     if (!consultationId) {
+        alert("Error: Consultation ID is missing. Cannot submit.");
+        console.error("Consultation ID missing from consultationData prop.");
+        return;
+     }
 
-    if (uniquePlanIds.length > 0) {
-      /* ... create subscriptionPayload ... */
-    }
-    oneTimeItemsRaw.forEach((item) => {
-      /* ... check eligibility and add to oneTimeOrderPayloadItems ... */
-    });
+     try {
+        // Call the new backend endpoint to handle approval and invoicing
+        const response = await fetch(`/api/consultations/${consultationId}/approve-and-invoice`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                // Add authorization headers if needed
+            },
+            body: JSON.stringify(submissionPayload),
+        });
 
-    console.log('Subscription Payload:', subscriptionPayload);
-    console.log('Eligible One-Time Order Items:', oneTimeOrderPayloadItems);
-    console.log('Grouped Retail Items:', retailItems);
-    console.log('Grouped Compounded Items:', compoundedItems);
-    console.log('Grouped Supplement Items:', supplementItems);
+        if (!response.ok) {
+            // Handle API errors (e.g., display error message)
+            const errorData = await response.json().catch(() => ({ message: 'Failed to approve consultation and send invoice.' }));
+            throw new Error(errorData.message || 'API request failed');
+        }
 
-    // if (onSubmitConsultation) {
-    //   onSubmitConsultation(submitData); // Call the mutation hook passed via props
-    // } else {
-    //   alert('Submit function not implemented!');
-    // }
-    alert('Consultation submitted successfully! (Placeholder)');
-    if (onClose) onClose(); // Close modal after submit attempt
+        // If successful:
+        alert("Consultation approved successfully! An invoice will be sent to the patient.");
+        // TODO: Potentially update the consultation status locally or refetch data
+        if (onClose) onClose();
+
+     } catch (error) {
+        console.error("Error submitting consultation for invoicing:", error);
+        alert(`Error: ${error.message || 'Could not submit consultation.'}`);
+        // Handle fetch errors or API errors shown to the user
+     }
   };
 
   // --- Styles & Render ---

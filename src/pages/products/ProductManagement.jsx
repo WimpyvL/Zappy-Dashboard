@@ -36,7 +36,7 @@ import {
 } from '../../apis/products/hooks';
 import {
   useSubscriptionPlans,
-  useAddSubscriptionPlan,
+  useCreateSubscriptionPlan, // Renamed import
   useUpdateSubscriptionPlan,
   useDeleteSubscriptionPlan,
 } from '../../apis/subscriptionPlans/hooks';

@@ -7,14 +7,28 @@ import {
   useUpdateConsultationStatus,
   // useArchiveConsultation, // Assuming these hooks exist or will be created
 } from '../../apis/consultations/hooks';
+import { useServices } from '../../apis/services/hooks'; // Import useServices
+// Date Picker Imports
+import { format } from "date-fns";
+import { Calendar as CalendarIcon } from "lucide-react"; // Alias Calendar icon
+import { cn } from "@/lib/utils"; // Assuming cn utility exists
+import { Button } from "@/components/ui/button"; // Assuming Button component exists
+import { Calendar } from "@/components/ui/calendar"; // Assuming Calendar component exists
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover"; // Assuming Popover components exist
+// Other Icons
 import {
   Search,
   Plus,
   Filter,
-  Calendar,
+  // Calendar, // Already imported for Date Picker
   Clock,
   CheckCircle,
   AlertTriangle,
+  Briefcase, // Added Briefcase icon
   // FileText, // Removed unused import
   User,
   X,
@@ -47,7 +61,7 @@ const StatusBadge = ({ status }) => {
   } else if (status === 'followup') {
     return (
       <span className="flex items-center px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800">
-        <Calendar className="h-3 w-3 mr-1" />
+        <CalendarIcon className="h-3 w-3 mr-1" /> {/* Use aliased icon */}
         Follow-up
       </span>
     );
@@ -85,6 +99,10 @@ const InitialConsultations = () => {
   // Local state for UI controls
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('pending'); // Default filter to 'pending'
+  const [providerFilter, setProviderFilter] = useState('all'); // State for provider filter
+  const [serviceFilter, setServiceFilter] = useState('all'); // State for service filter
+  const [startDate, setStartDate] = useState(null); // State for start date filter
+  const [endDate, setEndDate] = useState(null); // State for end date filter
   const [selectedPatient, setSelectedPatient] = useState(null);
   const [selectedConsultation, setSelectedConsultation] = useState(null);
   const [showConsultationModal, setShowConsultationModal] = useState(false);
@@ -105,6 +123,11 @@ const InitialConsultations = () => {
     isLoading: isLoadingConsultations,
     error: errorConsultations,
   } = useConsultations(); // Fetch consultations
+  const {
+    data: servicesData,
+    isLoading: isLoadingServices,
+    error: errorServices,
+  } = useServices(); // Fetch services for filter
 
   // Mutation hooks
   const updateStatusMutation = useUpdateConsultationStatus({
@@ -119,24 +142,63 @@ const InitialConsultations = () => {
   // Process fetched data
   const patients = patientsData?.data || patientsData || [];
   const allConsultations = consultationsData?.data || consultationsData || [];
+  const allServices = servicesData?.data || servicesData || []; // Process services data
 
-  // Filter consultations based on search and status filter
+  // Get unique providers for filter dropdown
+  const uniqueProviders = [
+    ...new Set(allConsultations.map(c => c.provider).filter(Boolean))
+  ].sort();
+
+  // Filter consultations based on search and filters (status, provider, service, date)
   const filteredConsultations = allConsultations.filter((consultation) => {
     const patientName = consultation.patientName || '';
     const provider = consultation.provider || '';
     const email = consultation.email || '';
-    const preferredMed = consultation.preferredMedication || '';
+    const preferredMed = consultation.preferredMedication || ''; // Keep for search
 
     const matchesSearch =
       patientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       provider.toLowerCase().includes(searchTerm.toLowerCase()) ||
       email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      preferredMed.toLowerCase().includes(searchTerm.toLowerCase());
+      preferredMed.toLowerCase().includes(searchTerm.toLowerCase()); // Keep preferredMed in search
 
     const matchesStatus =
       statusFilter === 'all' || consultation.status === statusFilter;
 
-    return matchesSearch && matchesStatus;
+    const matchesProvider =
+       providerFilter === 'all' || consultation.provider === providerFilter;
+
+    // Assuming consultation.service holds the service name string
+    const matchesService =
+       serviceFilter === 'all' || consultation.service === serviceFilter;
+
+    // Date Range Filter Logic
+    let matchesDate = true;
+    if (startDate || endDate) {
+      try {
+        const submittedDate = new Date(consultation.dateSubmitted);
+        // Set time to 0 to compare dates only
+        submittedDate.setHours(0, 0, 0, 0);
+        const start = startDate ? new Date(startDate) : null;
+        if (start) start.setHours(0, 0, 0, 0);
+        const end = endDate ? new Date(endDate) : null;
+        if (end) end.setHours(0, 0, 0, 0);
+
+        if (start && end) {
+          matchesDate = submittedDate >= start && submittedDate <= end;
+        } else if (start) {
+          matchesDate = submittedDate >= start;
+        } else if (end) {
+          matchesDate = submittedDate <= end;
+        }
+      } catch (e) {
+        console.error("Error parsing date for filtering:", consultation.dateSubmitted, e);
+        matchesDate = false; // Exclude if date is invalid
+      }
+    }
+
+
+    return matchesSearch && matchesStatus && matchesProvider && matchesService && matchesDate;
   });
 
   // Handle viewing a consultation
@@ -229,7 +291,7 @@ const InitialConsultations = () => {
   };
 
   // Handle loading state
-  if (isLoadingConsultations || isLoadingPatients) {
+  if (isLoadingConsultations || isLoadingPatients || isLoadingServices) { // Added isLoadingServices
     return (
       <div className="flex justify-center items-center h-screen">
         <Loader2 className="h-16 w-16 animate-spin text-indigo-600" />
@@ -238,12 +300,12 @@ const InitialConsultations = () => {
   }
 
   // Handle error state
-  if (errorConsultations || errorPatients) {
+  if (errorConsultations || errorPatients || errorServices) { // Added errorServices
     return (
       <div className="text-center py-10 text-red-600">
         <AlertTriangle className="h-12 w-12 mx-auto mb-4" />
         <p>Error loading consultation or patient data.</p>
-        {/* <p>{errorConsultations?.message || errorPatients?.message}</p> */}
+        {/* <p>{errorConsultations?.message || errorPatients?.message || errorServices?.message}</p> */}
       </div>
     );
   }
@@ -266,8 +328,8 @@ const InitialConsultations = () => {
       </div>
 
       {/* Search and filters */}
-      <div className="bg-white p-4 rounded-lg shadow mb-6 flex flex-col md:flex-row md:items-center space-y-4 md:space-y-0 md:space-x-4">
-        <div className="flex-1 relative">
+      <div className="bg-white p-4 rounded-lg shadow mb-6 flex flex-col md:flex-row md:items-center space-y-4 md:space-y-0 md:space-x-4 flex-wrap"> {/* Added flex-wrap */}
+        <div className="flex-1 relative min-w-[200px]"> {/* Added min-width */}
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
             <Search className="h-5 w-5 text-gray-400" />
           </div>
@@ -280,6 +342,7 @@ const InitialConsultations = () => {
           />
         </div>
 
+        {/* Status Filter */}
         <div className="flex items-center space-x-2">
           <Filter className="h-5 w-5 text-gray-400" />
           <select
@@ -294,6 +357,90 @@ const InitialConsultations = () => {
             <option value="archived">Archived</option>
           </select>
         </div>
+        {/* Provider Filter Dropdown */}
+        <div className="flex items-center space-x-2">
+           <User className="h-5 w-5 text-gray-400" /> {/* Using User icon for provider */}
+           <select
+             className="block pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
+             value={providerFilter}
+             onChange={(e) => setProviderFilter(e.target.value)}
+           >
+             <option value="all">All Providers</option>
+             {uniqueProviders.map((provider) => (
+               <option key={provider} value={provider}>
+                 {provider}
+               </option>
+             ))}
+           </select>
+         </div>
+         {/* Service Filter Dropdown */}
+         <div className="flex items-center space-x-2">
+            <Briefcase className="h-5 w-5 text-gray-400" /> {/* Using Briefcase icon for service */}
+            <select
+              className="block pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
+              value={serviceFilter}
+              onChange={(e) => setServiceFilter(e.target.value)}
+            >
+              <option value="all">All Services</option>
+              {allServices.map((service) => (
+                // Assuming consultation.service stores the name, so filter value is name
+                <option key={service.id} value={service.name}>
+                  {service.name}
+                </option>
+             ))}
+           </select>
+          </div>
+          {/* Date Range Filter */}
+          <div className="flex items-center space-x-2">
+             <Popover>
+               <PopoverTrigger asChild>
+                 <Button
+                   variant={"outline"}
+                   className={cn(
+                     "w-[150px] justify-start text-left font-normal text-sm",
+                     !startDate && "text-muted-foreground"
+                   )}
+                 >
+                   <CalendarIcon className="mr-2 h-4 w-4" />
+                   {startDate ? format(startDate, "PPP") : <span>Start date</span>}
+                 </Button>
+               </PopoverTrigger>
+               <PopoverContent className="w-auto p-0">
+                 <Calendar
+                   mode="single"
+                   selected={startDate}
+                   onSelect={setStartDate}
+                   initialFocus
+                 />
+               </PopoverContent>
+             </Popover>
+             <span className="text-gray-400">-</span>
+              <Popover>
+               <PopoverTrigger asChild>
+                 <Button
+                   variant={"outline"}
+                   className={cn(
+                     "w-[150px] justify-start text-left font-normal text-sm",
+                     !endDate && "text-muted-foreground"
+                   )}
+                 >
+                   <CalendarIcon className="mr-2 h-4 w-4" />
+                   {endDate ? format(endDate, "PPP") : <span>End date</span>}
+                 </Button>
+               </PopoverTrigger>
+               <PopoverContent className="w-auto p-0">
+                 <Calendar
+                   mode="single"
+                   selected={endDate}
+                   onSelect={setEndDate}
+                   disabled={(date) =>
+                     startDate && date < startDate // Disable dates before start date
+                   }
+                   initialFocus
+                 />
+               </PopoverContent>
+             </Popover>
+           </div>
       </div>
 
       {/* Consultations list */}
@@ -459,7 +606,7 @@ const InitialConsultations = () => {
                                   className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
                                   role="menuitem"
                                 >
-                                  <Calendar className="h-4 w-4 mr-2 text-gray-500" />
+                                  <CalendarIcon className="h-4 w-4 mr-2 text-gray-500" /> {/* Use aliased icon */}
                                   Mark for Follow-up
                                 </button>
                               )}

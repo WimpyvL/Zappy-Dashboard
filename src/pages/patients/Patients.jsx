@@ -446,9 +446,7 @@ const Patients = () => {
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Status
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Risk Level
-                </th>
+                {/* Removed Risk Level column header */}
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Next Appointment
                 </th>
@@ -513,11 +511,7 @@ const Patients = () => {
                     <td className="px-6 py-4 whitespace-nowrap">
                       <StatusBadge status={patient.status} />
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className="px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800">
-                        {patient.risk_level || 'Unknown'}
-                      </span>
-                    </td>
+                    {/* Removed Risk Level cell */}
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {patient.next_session_date
                         ? new Date(
@@ -546,7 +540,7 @@ const Patients = () => {
               ) : (
                 <tr>
                   <td
-                    colSpan="7"
+                    colSpan="6" // Adjusted colspan
                     className="px-6 py-4 text-center text-gray-500"
                   >
                     No patients found matching your search criteria.

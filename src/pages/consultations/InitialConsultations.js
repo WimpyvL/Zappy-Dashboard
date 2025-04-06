@@ -36,9 +36,9 @@ const StatusBadge = ({ status }) => {
   // ... (StatusBadge implementation remains the same)
   if (status === 'reviewed') {
     return (
-      <span className="flex items-center px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">
-        <CheckCircle className="h-3 w-3 mr-1" />
-        Reviewed
+      <span className="flex items-center px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800">
+        <Calendar className="h-3 w-3 mr-1" /> {/* Corrected icon name */}
+        Follow-up
       </span>
     );
   } else if (status === 'pending') {
@@ -51,7 +51,7 @@ const StatusBadge = ({ status }) => {
   } else if (status === 'followup') {
     return (
       <span className="flex items-center px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800">
-        <CalendarIcon className="h-3 w-3 mr-1" /> {/* Use aliased icon */}
+        <Calendar className="h-3 w-3 mr-1" /> {/* Corrected icon name */}
         Follow-up
       </span>
     );
@@ -495,11 +495,11 @@ const InitialConsultations = () => {
                               <button
                                 onClick={() => handleSendEmail(consultation)}
                                 className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
-                                role="menuitem"
-                              >
-                                <Mail className="h-4 w-4 mr-2 text-gray-500" />
-                                Send Email
-                              </button>
+                                  role="menuitem"
+                                >
+                                  <Calendar className="h-4 w-4 mr-2 text-gray-500" /> {/* Corrected icon name */}
+                                  Mark for Follow-up
+                                </button>
 
                               {consultation.status !== 'archived' && (
                                 <button
@@ -548,7 +548,7 @@ const InitialConsultations = () => {
                                   className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
                                   role="menuitem"
                                 >
-                                  <CalendarIcon className="h-4 w-4 mr-2 text-gray-500" /> {/* Use aliased icon */}
+                                  <Calendar className="h-4 w-4 mr-2 text-gray-500" /> {/* Corrected icon name */}
                                   Mark for Follow-up
                                 </button>
                               )}

@@ -58,9 +58,29 @@ import SystemMapPage from '../pages/system-map/SystemMapPage.jsx'; // Import Sys
 
 // Paths constants
 import { paths } from './paths.js';
+
+// Import tempo routes if available
+let tempoRoutes = [];
+try {
+  if (import.meta && import.meta.env && import.meta.env.VITE_TEMPO === 'true') {
+    const routes = require('tempo-routes');
+    if (routes && routes.default) {
+      tempoRoutes = routes.default;
+    }
+  }
+} catch (e) {
+  console.log('Tempo routes not available:', e.message);
+}
+
 const AppRoutes = () => {
+  // Add future flags for React Router v7 compatibility
+  const future = {
+    v7_startTransition: true,
+    v7_relativeSplatPath: true,
+  };
+
   return (
-    <Routes>
+    <Routes future={future}>
       {/* Public routes */}
       <Route path={paths.login} element={<Login />} />
       <Route path={paths.signup} element={<Signup />} />
@@ -263,6 +283,11 @@ const AppRoutes = () => {
           </MainLayout>
         }
       />
+
+      {/* Add route for tempo storyboards */}
+      {import.meta &&
+        import.meta.env &&
+        import.meta.env.VITE_TEMPO === 'true' && <Route path="/tempobook/*" />}
 
       {/* Redirect any unknown routes to dashboard */}
       <Route path="*" element={<Navigate to={paths.dashboard} replace />} />

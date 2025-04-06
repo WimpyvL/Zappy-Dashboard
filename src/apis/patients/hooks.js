@@ -23,7 +23,7 @@ export const usePatients = (currentPage = 1, filters = {}, pageSize = 10) => {
       let query = supabase
         .from('client_record') // Assuming table name is 'client_record'
         .select('*', { count: 'exact' }) // Select all columns and request total count
-        .order('created_at', { ascending: false }) // Example order
+        .order('date_created', { ascending: false }) // Use date_created instead of created_at
         .range(rangeFrom, rangeTo); // Apply pagination
 
       // Apply filters (example: filter by status)
@@ -32,11 +32,12 @@ export const usePatients = (currentPage = 1, filters = {}, pageSize = 10) => {
       }
       // Add more filters as needed based on the 'filters' object structure
       if (filters.search) {
-         // Example: Search across multiple fields (adjust fields as needed)
-         // This requires careful consideration of indexing in Postgres
-         query = query.or(`first_name.ilike.%${filters.search}%,last_name.ilike.%${filters.search}%,email.ilike.%${filters.search}%`);
+        // Example: Search across multiple fields (adjust fields as needed)
+        // This requires careful consideration of indexing in Postgres
+        query = query.or(
+          `first_name.ilike.%${filters.search}%,last_name.ilike.%${filters.search}%,email.ilike.%${filters.search}%`
+        );
       }
-
 
       const { data, error, count } = await query;
 
@@ -120,15 +121,20 @@ export const useCreatePatient = (options = {}) => {
 
       // Log the audit event
       const patientId = data?.id || 'unknown';
-      const patientName = data?.firstName ? `${data.firstName} ${data.lastName}` : 'Unknown Name';
-       auditLogService.log('Patient Created', { patientId: patientId, name: patientName });
+      const patientName = data?.firstName
+        ? `${data.firstName} ${data.lastName}`
+        : 'Unknown Name';
+      auditLogService.log('Patient Created', {
+        patientId: patientId,
+        name: patientName,
+      });
 
-       options.onSuccess && options.onSuccess(data, variables, context); // Call original onSuccess
+      options.onSuccess && options.onSuccess(data, variables, context); // Call original onSuccess
     }, // Added comma here
-     onError: (error, variables, context) => {
-        console.error("Create patient mutation error:", error);
-        options.onError && options.onError(error, variables, context);
-    }
+    onError: (error, variables, context) => {
+      console.error('Create patient mutation error:', error);
+      options.onError && options.onError(error, variables, context);
+    },
   });
 };
 
@@ -138,7 +144,7 @@ export const useUpdatePatient = (options = {}) => {
 
   return useMutation({
     mutationFn: async ({ id, patientData }) => {
-      if (!id) throw new Error("Patient ID is required for update.");
+      if (!id) throw new Error('Patient ID is required for update.');
 
       const { data, error } = await supabase
         .from('client_record')
@@ -159,16 +165,21 @@ export const useUpdatePatient = (options = {}) => {
 
       // Log audit event (optional)
       const patientId = variables.id;
-      const patientName = data?.firstName ? `${data.firstName} ${data.lastName}` : 'Unknown Name';
-       auditLogService.log('Patient Updated', { patientId: patientId, name: patientName, changes: variables.patientData });
+      const patientName = data?.firstName
+        ? `${data.firstName} ${data.lastName}`
+        : 'Unknown Name';
+      auditLogService.log('Patient Updated', {
+        patientId: patientId,
+        name: patientName,
+        changes: variables.patientData,
+      });
 
-
-       options.onSuccess && options.onSuccess(data, variables, context); // Call original onSuccess
+      options.onSuccess && options.onSuccess(data, variables, context); // Call original onSuccess
     }, // Added comma here
-     onError: (error, variables, context) => {
-        console.error(`Update patient ${variables.id} mutation error:`, error);
-        options.onError && options.onError(error, variables, context);
-    }
+    onError: (error, variables, context) => {
+      console.error(`Update patient ${variables.id} mutation error:`, error);
+      options.onError && options.onError(error, variables, context);
+    },
   });
 };
 
@@ -178,7 +189,7 @@ export const useDeletePatient = (options = {}) => {
 
   return useMutation({
     mutationFn: async (id) => {
-       if (!id) throw new Error("Patient ID is required for deletion.");
+      if (!id) throw new Error('Patient ID is required for deletion.');
 
       const { error } = await supabase
         .from('client_record')
@@ -191,7 +202,8 @@ export const useDeletePatient = (options = {}) => {
       }
       return { success: true, id }; // Return success and id
     },
-    onSuccess: (data, variables, context) => { // variables here is the id
+    onSuccess: (data, variables, context) => {
+      // variables here is the id
       queryClient.invalidateQueries({ queryKey: ['patients'] }); // Invalidate the list
       queryClient.removeQueries({ queryKey: ['patient', variables] }); // Remove the specific patient query
 
@@ -200,9 +212,9 @@ export const useDeletePatient = (options = {}) => {
 
       options.onSuccess && options.onSuccess(data, variables, context); // Call original onSuccess
     },
-     onError: (error, variables, context) => {
-       console.error(`Delete patient ${variables} mutation error:`, error);
-       options.onError && options.onError(error, variables, context);
-    }
+    onError: (error, variables, context) => {
+      console.error(`Delete patient ${variables} mutation error:`, error);
+      options.onError && options.onError(error, variables, context);
+    },
   });
 };

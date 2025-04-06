@@ -455,7 +455,6 @@ const PharmacyManagement = () => {
 
   // Use React Query hooks
   const { data: pharmaciesData, isLoading, error } = usePharmacies();
-  debugger;
   const pharmacies = useMemo(() => {
     return pharmaciesData?.data ?? [];
   }, [pharmaciesData?.data]);

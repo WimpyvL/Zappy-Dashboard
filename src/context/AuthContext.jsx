@@ -1,4 +1,10 @@
-import React, { createContext, useState, useContext, useEffect, useCallback } from 'react';
+import React, {
+  createContext,
+  useState,
+  useContext,
+  useEffect,
+  useCallback,
+} from 'react';
 import { supabase } from '../utils/supabaseClient'; // Import Supabase client
 // Removed apiService and errorHandling imports
 
@@ -13,7 +19,10 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const checkSession = async () => {
       setLoading(true);
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      const {
+        data: { session },
+        error: sessionError,
+      } = await supabase.auth.getSession();
 
       if (sessionError) {
         console.error('Error getting session:', sessionError.message);
@@ -27,14 +36,14 @@ export const AuthProvider = ({ children }) => {
     checkSession();
 
     // Listen for changes on auth state (logged in, signed out, etc.)
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
-        console.log('Auth state changed:', _event, session);
-        setCurrentUser(session?.user ?? null);
-        setError(null); // Clear errors on auth change
-        // No need to set loading here as getSession handles initial load
-      }
-    );
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      console.log('Auth state changed:', _event, session);
+      setCurrentUser(session?.user ?? null);
+      setError(null); // Clear errors on auth change
+      // No need to set loading here as getSession handles initial load
+    });
 
     // Cleanup subscription on unmount
     return () => {
@@ -47,17 +56,17 @@ export const AuthProvider = ({ children }) => {
     setLoading(true);
     setError(null);
     try {
-      const { data, error: loginError } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
+      const { data, error: loginError } =
+        await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
 
       if (loginError) throw loginError;
 
       // User state will be updated by onAuthStateChange listener
       console.log('Login successful:', data.user);
       return { success: true, user: data.user };
-
     } catch (err) {
       console.error('Login error:', err.message);
       setError(err.message || 'Failed to log in.');
@@ -66,7 +75,6 @@ export const AuthProvider = ({ children }) => {
       setLoading(false);
     }
   };
-
 
   // Logout function using Supabase
   const logout = async () => {
@@ -86,7 +94,8 @@ export const AuthProvider = ({ children }) => {
   };
 
   // Register function using Supabase
-  const register = async (email, password, options = {}) => { // Accept options for metadata etc.
+  const register = async (email, password, options = {}) => {
+    // Accept options for metadata etc.
     setLoading(true);
     setError(null);
     try {
@@ -103,10 +112,11 @@ export const AuthProvider = ({ children }) => {
       console.log('Registration successful:', data.user);
       // Check if email confirmation is required
       if (data.user && !data.session) {
-         alert('Registration successful! Please check your email to confirm your account.');
+        alert(
+          'Registration successful! Please check your email to confirm your account.'
+        );
       }
       return { success: true, user: data.user, session: data.session };
-
     } catch (err) {
       console.error('Registration error:', err.message);
       setError(err.message || 'Failed to register.');
@@ -122,7 +132,7 @@ export const AuthProvider = ({ children }) => {
     setError(null);
     try {
       const { data, error: updateError } = await supabase.auth.updateUser({
-        data: metadata // Supabase uses 'data' for user_metadata
+        data: metadata, // Supabase uses 'data' for user_metadata
       });
 
       if (updateError) throw updateError;
@@ -131,7 +141,6 @@ export const AuthProvider = ({ children }) => {
       setCurrentUser(data.user);
       console.log('Profile updated successfully:', data.user);
       return { success: true, user: data.user };
-
     } catch (err) {
       console.error('Update profile error:', err.message);
       setError(err.message || 'Failed to update profile.');
@@ -147,7 +156,7 @@ export const AuthProvider = ({ children }) => {
     setError(null);
     try {
       const { data, error: passwordError } = await supabase.auth.updateUser({
-        password: newPassword
+        password: newPassword,
       });
 
       if (passwordError) throw passwordError;
@@ -155,7 +164,6 @@ export const AuthProvider = ({ children }) => {
       console.log('Password updated successfully');
       alert('Password updated successfully!'); // Give user feedback
       return { success: true };
-
     } catch (err) {
       console.error('Change password error:', err.message);
       setError(err.message || 'Failed to change password.');
@@ -170,17 +178,19 @@ export const AuthProvider = ({ children }) => {
     setLoading(true);
     setError(null);
     try {
-      const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
-        // Optional: redirectTo URL for the password reset link
-        // redirectTo: 'http://localhost:3000/update-password', // Adjust URL as needed
-      });
+      const { error: resetError } = await supabase.auth.resetPasswordForEmail(
+        email,
+        {
+          // Optional: redirectTo URL for the password reset link
+          // redirectTo: 'http://localhost:3000/update-password', // Adjust URL as needed
+        }
+      );
 
       if (resetError) throw resetError;
 
       console.log('Password reset email sent successfully.');
       alert('Password reset email sent. Please check your inbox.');
       return { success: true };
-
     } catch (err) {
       console.error('Forgot password error:', err.message);
       setError(err.message || 'Failed to send password reset email.');
@@ -195,24 +205,25 @@ export const AuthProvider = ({ children }) => {
   // The user clicks the link, Supabase handles verification, and onAuthStateChange updates the state.
   // If implementing a custom reset form after link click:
   const updatePassword = async (newPassword) => {
-     setLoading(true);
-     setError(null);
-     try {
-       // This assumes the user is already authenticated via the reset link session
-       const { data, error: updatePassError } = await supabase.auth.updateUser({ password: newPassword });
-       if (updatePassError) throw updatePassError;
-       console.log('Password updated via reset link.');
-       alert('Password successfully reset.');
-       return { success: true };
-     } catch (err) {
-       console.error('Update password error:', err.message);
-       setError(err.message || 'Failed to update password.');
-       return { success: false, error: err.message };
-     } finally {
-       setLoading(false);
-     }
+    setLoading(true);
+    setError(null);
+    try {
+      // This assumes the user is already authenticated via the reset link session
+      const { data, error: updatePassError } = await supabase.auth.updateUser({
+        password: newPassword,
+      });
+      if (updatePassError) throw updatePassError;
+      console.log('Password updated via reset link.');
+      alert('Password successfully reset.');
+      return { success: true };
+    } catch (err) {
+      console.error('Update password error:', err.message);
+      setError(err.message || 'Failed to update password.');
+      return { success: false, error: err.message };
+    } finally {
+      setLoading(false);
+    }
   };
-
 
   // Clear error
   const clearError = useCallback(() => {
@@ -222,10 +233,14 @@ export const AuthProvider = ({ children }) => {
   // Derive isAuthenticated directly from currentUser state
   const value = {
     currentUser,
-    session: supabase.auth.getSession(), // Provide access to session info if needed elsewhere
+    // Don't call getSession() directly here as it returns a Promise
     isAuthenticated: !!currentUser, // Derived state
     loading,
-    error,
+    error: error
+      ? typeof error === 'string'
+        ? error
+        : error.message || 'An error occurred'
+      : null,
     login, // Use Supabase login
     logout, // Use Supabase logout
     register, // Use Supabase register

@@ -7,7 +7,7 @@ import {
   useCreateTag,
   useUpdateTag,
   useDeleteTag,
-  useTagUsage,
+  // useTagUsage, // Removed non-existent hook import
 } from '../../apis/tags/hooks';
 
 const TagManagement = () => {
@@ -29,10 +29,10 @@ const TagManagement = () => {
   const updateTagMutation = useUpdateTag();
   const deleteTagMutation = useDeleteTag();
 
-  // Get tag usage data when needed
-  const { data: usageData, isLoading: isLoadingUsage } = useTagUsage(
-    showUsageModal && currentTag ? currentTag.id : null
-  );
+  // Removed usage of non-existent useTagUsage hook
+  const usageData = null; // Placeholder or remove if not needed elsewhere
+  const isLoadingUsage = false; // Placeholder or remove if not needed elsewhere
+
 
   const tags = useMemo(() => {
     return tagsData?.data ?? [];

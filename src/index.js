@@ -8,6 +8,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from './context/AuthContext';
 import { AppProvider } from './context/AppContext';
 import { CartProvider } from './context/CartContext';
+import ErrorBoundary from './components/common/ErrorBoundary';
 
 // Instantiate QueryClient (moved from App.js)
 const queryClient = new QueryClient({
@@ -17,6 +18,8 @@ const queryClient = new QueryClient({
       staleTime: 10000,
       refetchOnMount: false,
       refetchOnWindowFocus: false,
+      // Add error handling to prevent rendering error objects directly
+      useErrorBoundary: true,
     },
   },
 });
@@ -24,17 +27,19 @@ const queryClient = new QueryClient({
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   <React.StrictMode>
-    <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <AppProvider>
-          <CartProvider>
-            <Router>
-              <App />
-            </Router>
-          </CartProvider>
-        </AppProvider>
-      </AuthProvider>
-    </QueryClientProvider>
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider>
+          <AppProvider>
+            <CartProvider>
+              <Router>
+                <App />
+              </Router>
+            </CartProvider>
+          </AppProvider>
+        </AuthProvider>
+      </QueryClientProvider>
+    </ErrorBoundary>
   </React.StrictMode>
 );
 

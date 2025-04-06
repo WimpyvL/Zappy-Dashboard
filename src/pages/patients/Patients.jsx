@@ -79,7 +79,8 @@ const Patients = () => {
     search_by: searchTerm ? searchType : undefined,
     status: statusFilter !== 'all' ? statusFilter : undefined,
     tag_id: tagFilter !== 'all' ? tagFilter : undefined,
-    is_affiliate: affiliateFilter !== 'all' ? affiliateFilter === 'yes' : undefined,
+    is_affiliate:
+      affiliateFilter !== 'all' ? affiliateFilter === 'yes' : undefined,
   };
 
   const {
@@ -496,7 +497,9 @@ const Patients = () => {
                       <div className="flex items-center">
                         <div>
                           <div className="text-sm font-medium text-gray-900">
-                            {patient.full_name || `${patient.firstName} ${patient.lastName}`} {/* Added fallback */}
+                            {patient.full_name ||
+                              `${patient.firstName || ''} ${patient.lastName || ''}`}{' '}
+                            {/* Added fallback and null checks */}
                             {patient.isAffiliate && (
                               <AffiliateTag isAffiliate={patient.isAffiliate} />
                             )}
@@ -585,12 +588,24 @@ const Patients = () => {
               <p className="text-sm text-gray-700">
                 Showing{' '}
                 <span className="font-medium">
-                  {paginationMeta.count > 0 ? ((paginationMeta.current_page - 1) * paginationMeta.per_page) + 1 : 0} {/* Corrected start index */}
+                  {paginationMeta.total
+                    ? (paginationMeta.current_page - 1) *
+                        paginationMeta.per_page +
+                      1
+                    : 0}{' '}
+                  {/* Fixed NaN issue by checking total */}
                 </span>{' '}
-                to <span className="font-medium">{Math.min(paginationMeta.current_page * paginationMeta.per_page, paginationMeta.total_count)}</span>{' '} {/* Corrected end index */}
+                to{' '}
+                <span className="font-medium">
+                  {Math.min(
+                    paginationMeta.current_page * paginationMeta.per_page,
+                    paginationMeta.total || 0
+                  )}
+                </span>{' '}
+                {/* Added null check */}
                 of{' '}
                 <span className="font-medium">
-                  {paginationMeta.total_count}
+                  {paginationMeta.total || 0} {/* Added null check */}
                 </span>{' '}
                 results
               </p>

@@ -55,13 +55,12 @@ const AuditLogPage = () => {
 
   // Handle loading state
   if (isLoading && !data) {
-    // Show initial loading spinner
+    // Show initial loading spinner in a nested container
     return (
-      <Spin
-        tip="Loading audit logs..."
-        size="large"
-        className="flex justify-center items-center h-64"
-      />
+      <div className="flex justify-center items-center h-64 relative">
+        <Spin size="large" />
+        <div className="mt-3 text-gray-500">Loading audit logs...</div>
+      </div>
     );
   }
 

@@ -21,10 +21,7 @@ export const useSessions = (params = {}, pageSize = 10) => {
     queryFn: async () => {
       let query = supabase
         .from('session') // Assuming table name is 'session'
-        .select(`
-          *,
-          client_record ( id, first_name, last_name )
-        `, { count: 'exact' })
+        .select('*', { count: 'exact' })
         .order('created_at', { ascending: false }) // Example order
         .range(rangeFrom, rangeTo);
 
@@ -44,10 +41,11 @@ export const useSessions = (params = {}, pageSize = 10) => {
         throw new Error(error.message);
       }
 
-      const mappedData = data?.map(session => ({
+      const mappedData =
+        data?.map((session) => ({
           ...session,
-          patientName: session.client_record ? `${session.client_record.first_name || ''} ${session.client_record.last_name || ''}`.trim() : 'N/A',
-      })) || [];
+          patientName: 'N/A', // We'll need to fetch patient names separately
+        })) || [];
 
       return {
         data: mappedData,
@@ -72,10 +70,7 @@ export const useSessionById = (id, options = {}) => {
 
       const { data, error } = await supabase
         .from('session')
-        .select(`
-          *,
-          client_record ( id, first_name, last_name )
-        `)
+        .select('*')
         .eq('id', id)
         .single();
 
@@ -85,10 +80,12 @@ export const useSessionById = (id, options = {}) => {
         throw new Error(error.message);
       }
 
-      const mappedData = data ? {
-          ...data,
-          patientName: data.client_record ? `${data.client_record.first_name || ''} ${data.client_record.last_name || ''}`.trim() : 'N/A',
-      } : null;
+      const mappedData = data
+        ? {
+            ...data,
+            patientName: 'N/A', // We'll need to fetch patient name separately
+          }
+        : null;
 
       return mappedData;
     },
@@ -126,9 +123,9 @@ export const useCreateSession = (options = {}) => {
       options.onSuccess?.(data, variables, context);
     }, // Ensure comma is present
     onError: (error, variables, context) => {
-       console.error("Create session mutation error:", error);
-       toast.error(`Error creating session: ${error.message}`);
-       options.onError?.(error, variables, context);
+      console.error('Create session mutation error:', error);
+      toast.error(`Error creating session: ${error.message}`);
+      options.onError?.(error, variables, context);
     },
     onSettled: options.onSettled,
   });
@@ -139,7 +136,7 @@ export const useUpdateSession = (options = {}) => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, sessionData }) => {
-      if (!id) throw new Error("Session ID is required for update.");
+      if (!id) throw new Error('Session ID is required for update.');
       const dataToUpdate = {
         ...sessionData,
         updated_at: new Date().toISOString(),
@@ -161,13 +158,15 @@ export const useUpdateSession = (options = {}) => {
     onSuccess: (data, variables, context) => {
       toast.success('Session updated successfully');
       queryClient.invalidateQueries({ queryKey: queryKeys.lists() });
-      queryClient.invalidateQueries({ queryKey: queryKeys.details(variables.id) });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.details(variables.id),
+      });
       options.onSuccess?.(data, variables, context);
     }, // Ensure comma is present
     onError: (error, variables, context) => {
-       console.error(`Update session ${variables.id} mutation error:`, error);
-       toast.error(`Error updating session: ${error.message}`);
-       options.onError?.(error, variables, context);
+      console.error(`Update session ${variables.id} mutation error:`, error);
+      toast.error(`Error updating session: ${error.message}`);
+      options.onError?.(error, variables, context);
     },
     onSettled: options.onSettled,
   });
@@ -177,33 +176,39 @@ export const useUpdateSession = (options = {}) => {
 export const useUpdateSessionStatus = (options = {}) => {
   const queryClient = useQueryClient();
   return useMutation({
-     mutationFn: async ({ sessionId, status }) => {
-       if (!sessionId) throw new Error("Session ID is required for status update.");
+    mutationFn: async ({ sessionId, status }) => {
+      if (!sessionId)
+        throw new Error('Session ID is required for status update.');
 
-       // Assuming 'status' is a column in the 'session' table
-       const { data, error } = await supabase
-         .from('session')
-         .update({ status: status, updated_at: new Date().toISOString() })
-         .eq('id', sessionId)
-         .select()
-         .single();
+      // Assuming 'status' is a column in the 'session' table
+      const { data, error } = await supabase
+        .from('session')
+        .update({ status: status, updated_at: new Date().toISOString() })
+        .eq('id', sessionId)
+        .select()
+        .single();
 
-       if (error) {
-         console.error(`Error updating session status ${sessionId}:`, error);
-         throw new Error(error.message);
-       }
-       return data;
-     },
+      if (error) {
+        console.error(`Error updating session status ${sessionId}:`, error);
+        throw new Error(error.message);
+      }
+      return data;
+    },
     onSuccess: (data, variables, context) => {
       toast.success('Session status updated successfully');
       queryClient.invalidateQueries({ queryKey: queryKeys.lists() });
-      queryClient.invalidateQueries({ queryKey: queryKeys.details(variables.sessionId) });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.details(variables.sessionId),
+      });
       options.onSuccess?.(data, variables, context);
     }, // Ensure comma is present
     onError: (error, variables, context) => {
-       console.error(`Update session status ${variables.sessionId} mutation error:`, error);
-       toast.error(`Error updating session status: ${error.message}`);
-       options.onError?.(error, variables, context);
+      console.error(
+        `Update session status ${variables.sessionId} mutation error:`,
+        error
+      );
+      toast.error(`Error updating session status: ${error.message}`);
+      options.onError?.(error, variables, context);
     },
     onSettled: options.onSettled,
   });
@@ -213,30 +218,28 @@ export const useUpdateSessionStatus = (options = {}) => {
 export const useDeleteSession = (options = {}) => {
   const queryClient = useQueryClient();
   return useMutation({
-     mutationFn: async (id) => {
-       if (!id) throw new Error("Session ID is required for deletion.");
+    mutationFn: async (id) => {
+      if (!id) throw new Error('Session ID is required for deletion.');
 
-       const { error } = await supabase
-         .from('session')
-         .delete()
-         .eq('id', id);
+      const { error } = await supabase.from('session').delete().eq('id', id);
 
-       if (error) {
-         console.error(`Error deleting session ${id}:`, error);
-         throw new Error(error.message);
-       }
-       return { success: true, id };
-     },
-    onSuccess: (data, variables, context) => { // variables is the id
+      if (error) {
+        console.error(`Error deleting session ${id}:`, error);
+        throw new Error(error.message);
+      }
+      return { success: true, id };
+    },
+    onSuccess: (data, variables, context) => {
+      // variables is the id
       toast.success('Session deleted successfully');
       queryClient.invalidateQueries({ queryKey: queryKeys.lists() });
       queryClient.removeQueries({ queryKey: queryKeys.details(variables) });
       options.onSuccess?.(data, variables, context);
     }, // Ensure comma is present
     onError: (error, variables, context) => {
-       console.error(`Delete session ${variables} mutation error:`, error);
-       toast.error(`Error deleting session: ${error.message}`);
-       options.onError?.(error, variables, context);
+      console.error(`Delete session ${variables} mutation error:`, error);
+      toast.error(`Error deleting session: ${error.message}`);
+      options.onError?.(error, variables, context);
     },
     onSettled: options.onSettled,
   });

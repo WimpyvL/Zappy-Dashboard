@@ -13,22 +13,27 @@ const queryKeys = {
   taskablePatients: ['taskablePatients'],
 };
 
-
 // Get tasks hook using Supabase
-export const useTasks = (currentPage = 1, filters = {}, sortingDetails = {}, pageSize = 10) => {
+export const useTasks = (
+  currentPage = 1,
+  filters = {},
+  sortingDetails = {},
+  pageSize = 10
+) => {
   const rangeFrom = (currentPage - 1) * pageSize;
   const rangeTo = rangeFrom + pageSize - 1;
 
   return useQuery({
-    queryKey: queryKeys.lists({ currentPage, filters, sortingDetails, pageSize }),
+    queryKey: queryKeys.lists({
+      currentPage,
+      filters,
+      sortingDetails,
+      pageSize,
+    }),
     queryFn: async () => {
       let query = supabase
-        .from('pb_tasks') // Assuming 'pb_tasks' is the correct table
-        .select(`
-          *,
-          user ( id, first_name, last_name ),
-          client_record ( id, first_name, last_name )
-        `, { count: 'exact' })
+        .from('pb_tasks') // Using pb_tasks table
+        .select('*', { count: 'exact' })
         .range(rangeFrom, rangeTo);
 
       // Apply sorting (example)
@@ -40,22 +45,23 @@ export const useTasks = (currentPage = 1, filters = {}, sortingDetails = {}, pag
       if (filters.status) {
         // Adjust based on actual status values (e.g., completed boolean?)
         if (filters.status === 'Completed') {
-           query = query.eq('completed', true);
+          query = query.eq('completed', true);
         } else if (filters.status === 'Pending') {
-           query = query.eq('completed', false); // Or is.('completed', null) ?
+          query = query.eq('completed', false); // Or is.('completed', null) ?
         }
       }
       if (filters.assigneeId) {
         query = query.eq('user_id', filters.assigneeId);
       }
-       if (filters.patientId) {
+      if (filters.patientId) {
         query = query.eq('client_record_id', filters.patientId);
       }
       // Add search filter if needed
       if (filters.search) {
-         query = query.or(`title.ilike.%${filters.search}%,notes.ilike.%${filters.search}%`);
+        query = query.or(
+          `title.ilike.%${filters.search}%,notes.ilike.%${filters.search}%`
+        );
       }
-
 
       const { data, error, count } = await query;
 
@@ -64,13 +70,14 @@ export const useTasks = (currentPage = 1, filters = {}, sortingDetails = {}, pag
         throw new Error(error.message);
       }
 
-       // Map data if needed
-       const mappedData = data?.map(task => ({
-           ...task,
-           assigneeName: task.user ? `${task.user.first_name || ''} ${task.user.last_name || ''}`.trim() : 'N/A',
-           patientName: task.client_record ? `${task.client_record.first_name || ''} ${task.client_record.last_name || ''}`.trim() : 'N/A',
-           status: task.completed ? 'Completed' : 'Pending', // Map boolean to status string if needed
-       })) || [];
+      // Map data without relying on joins
+      const mappedData =
+        data?.map((task) => ({
+          ...task,
+          assigneeName: 'N/A', // We'll need to fetch user names separately
+          patientName: 'N/A', // We'll need to fetch patient names separately
+          status: task.completed ? 'Completed' : 'Pending', // Map boolean to status string
+        })) || [];
 
       return {
         data: mappedData,
@@ -95,11 +102,7 @@ export const useTaskById = (id, options = {}) => {
 
       const { data, error } = await supabase
         .from('pb_tasks')
-        .select(`
-          *,
-          user ( id, first_name, last_name ),
-          client_record ( id, first_name, last_name )
-        `)
+        .select('*')
         .eq('id', id)
         .single();
 
@@ -108,13 +111,15 @@ export const useTaskById = (id, options = {}) => {
         if (error.code === 'PGRST116') return null; // Not found
         throw new Error(error.message);
       }
-       // Map data if needed
-       const mappedData = data ? {
-           ...data,
-           assigneeName: data.user ? `${data.user.first_name || ''} ${data.user.last_name || ''}`.trim() : 'N/A',
-           patientName: data.client_record ? `${data.client_record.first_name || ''} ${data.client_record.last_name || ''}`.trim() : 'N/A',
-           status: data.completed ? 'Completed' : 'Pending',
-       } : null;
+      // Map data without relying on joins
+      const mappedData = data
+        ? {
+            ...data,
+            assigneeName: 'N/A', // We'll need to fetch user name separately
+            patientName: 'N/A', // We'll need to fetch patient name separately
+            status: data.completed ? 'Completed' : 'Pending',
+          }
+        : null;
       return mappedData;
     },
     enabled: !!id,
@@ -128,23 +133,22 @@ export const useCreateTask = (options = {}) => {
 
   return useMutation({
     mutationFn: async (taskData) => {
-       const dataToInsert = {
-         ...taskData,
-         // Map frontend fields to DB columns if names differ
-         user_id: taskData.assigneeId,
-         client_record_id: taskData.patientId,
-         completed: taskData.status === 'Completed',
-         // Ensure timestamps are set
-         created_at: new Date().toISOString(),
-         updated_at: new Date().toISOString(),
-         date_created: new Date().toISOString(), // Assuming this should be set on creation
-         date_modified: new Date().toISOString(),
-       };
-       // Remove frontend-specific fields not in DB table
-       delete dataToInsert.assigneeId;
-       delete dataToInsert.patientId;
-       delete dataToInsert.status;
-
+      const dataToInsert = {
+        ...taskData,
+        // Map frontend fields to DB columns if names differ
+        user_id: taskData.assigneeId,
+        client_record_id: taskData.patientId,
+        completed: taskData.status === 'Completed',
+        // Ensure timestamps are set
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        date_created: new Date().toISOString(), // Assuming this should be set on creation
+        date_modified: new Date().toISOString(),
+      };
+      // Remove frontend-specific fields not in DB table
+      delete dataToInsert.assigneeId;
+      delete dataToInsert.patientId;
+      delete dataToInsert.status;
 
       const { data, error } = await supabase
         .from('pb_tasks')
@@ -177,23 +181,22 @@ export const useUpdateTask = (options = {}) => {
 
   return useMutation({
     mutationFn: async ({ id, taskData }) => {
-      if (!id) throw new Error("Task ID is required for update.");
+      if (!id) throw new Error('Task ID is required for update.');
 
       const dataToUpdate = {
-         ...taskData,
-         user_id: taskData.assigneeId,
-         client_record_id: taskData.patientId,
-         completed: taskData.status === 'Completed',
-         updated_at: new Date().toISOString(),
-         date_modified: new Date().toISOString(),
+        ...taskData,
+        user_id: taskData.assigneeId,
+        client_record_id: taskData.patientId,
+        completed: taskData.status === 'Completed',
+        updated_at: new Date().toISOString(),
+        date_modified: new Date().toISOString(),
       };
-       delete dataToUpdate.assigneeId;
-       delete dataToUpdate.patientId;
-       delete dataToUpdate.status;
-       delete dataToUpdate.id; // Don't update the ID itself
-       delete dataToUpdate.created_at;
-       delete dataToUpdate.date_created;
-
+      delete dataToUpdate.assigneeId;
+      delete dataToUpdate.patientId;
+      delete dataToUpdate.status;
+      delete dataToUpdate.id; // Don't update the ID itself
+      delete dataToUpdate.created_at;
+      delete dataToUpdate.date_created;
 
       const { data, error } = await supabase
         .from('pb_tasks')
@@ -210,15 +213,17 @@ export const useUpdateTask = (options = {}) => {
     },
     onSuccess: (data, variables, context) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.lists() });
-      queryClient.invalidateQueries({ queryKey: queryKeys.details(variables.id) });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.details(variables.id),
+      });
       toast.success('Task updated successfully');
       options.onSuccess?.(data, variables, context);
     },
-     onError: (error, variables, context) => {
-       toast.error(`Error updating task: ${error.message || 'Unknown error'}`);
-       options.onError?.(error, variables, context);
+    onError: (error, variables, context) => {
+      toast.error(`Error updating task: ${error.message || 'Unknown error'}`);
+      options.onError?.(error, variables, context);
     },
-     onSettled: options.onSettled,
+    onSettled: options.onSettled,
   });
 };
 
@@ -228,12 +233,9 @@ export const useDeleteTask = (options = {}) => {
 
   return useMutation({
     mutationFn: async (id) => {
-       if (!id) throw new Error("Task ID is required for deletion.");
+      if (!id) throw new Error('Task ID is required for deletion.');
 
-      const { error } = await supabase
-        .from('pb_tasks')
-        .delete()
-        .eq('id', id);
+      const { error } = await supabase.from('pb_tasks').delete().eq('id', id);
 
       if (error) {
         console.error(`Error deleting task ${id}:`, error);
@@ -241,17 +243,18 @@ export const useDeleteTask = (options = {}) => {
       }
       return { success: true, id };
     },
-    onSuccess: (data, variables, context) => { // variables is the id
+    onSuccess: (data, variables, context) => {
+      // variables is the id
       queryClient.invalidateQueries({ queryKey: queryKeys.lists() });
       queryClient.removeQueries({ queryKey: queryKeys.details(variables) });
       toast.success('Task deleted successfully');
       options.onSuccess?.(data, variables, context);
     },
-     onError: (error, variables, context) => {
-       toast.error(`Error deleting task: ${error.message || 'Unknown error'}`);
-       options.onError?.(error, variables, context);
+    onError: (error, variables, context) => {
+      toast.error(`Error deleting task: ${error.message || 'Unknown error'}`);
+      options.onError?.(error, variables, context);
     },
-     onSettled: options.onSettled,
+    onSettled: options.onSettled,
   });
 };
 
@@ -260,47 +263,52 @@ export const useMarkTaskCompleted = (options = {}) => {
   const queryClient = useQueryClient();
 
   return useMutation({
-     mutationFn: async (id) => {
-       if (!id) throw new Error("Task ID is required.");
+    mutationFn: async (id) => {
+      if (!id) throw new Error('Task ID is required.');
 
-       const { data, error } = await supabase
-         .from('pb_tasks')
-         .update({ completed: true, updated_at: new Date().toISOString(), date_modified: new Date().toISOString() })
-         .eq('id', id)
-         .select()
-         .single();
+      const { data, error } = await supabase
+        .from('pb_tasks')
+        .update({
+          completed: true,
+          updated_at: new Date().toISOString(),
+          date_modified: new Date().toISOString(),
+        })
+        .eq('id', id)
+        .select()
+        .single();
 
-       if (error) {
-         console.error(`Error marking task ${id} complete:`, error);
-         throw new Error(error.message);
-       }
-       return data;
-     },
-    onSuccess: (data, variables, context) => { // variables is the id
+      if (error) {
+        console.error(`Error marking task ${id} complete:`, error);
+        throw new Error(error.message);
+      }
+      return data;
+    },
+    onSuccess: (data, variables, context) => {
+      // variables is the id
       queryClient.invalidateQueries({ queryKey: queryKeys.lists() });
       queryClient.invalidateQueries({ queryKey: queryKeys.details(variables) });
       toast.success('Task marked as completed');
       options.onSuccess?.(data, variables, context);
     },
-     onError: (error, variables, context) => {
-       toast.error(`Error marking task complete: ${error.message || 'Unknown error'}`);
-       options.onError?.(error, variables, context);
+    onError: (error, variables, context) => {
+      toast.error(
+        `Error marking task complete: ${error.message || 'Unknown error'}`
+      );
+      options.onError?.(error, variables, context);
     },
-     onSettled: options.onSettled,
+    onSettled: options.onSettled,
   });
 };
-
 
 // Get assignees hook using Supabase (queries the 'user' table)
 export const useAssignees = (options = {}) => {
   return useQuery({
     queryKey: queryKeys.assignees,
     queryFn: async () => {
-      // Fetch users who can be assignees (adjust filter as needed, e.g., by role)
+      // Fetch users who can be assignees
       const { data, error } = await supabase
         .from('user') // Target the 'user' table
         .select('id, first_name, last_name') // Select relevant fields
-        // .eq('role', 'practitioner') // Example filter by role
         .order('last_name', { ascending: true });
 
       if (error) {
@@ -322,7 +330,6 @@ export const useTaskablePatients = (options = {}) => {
       const { data, error } = await supabase
         .from('client_record')
         .select('id, first_name, last_name') // Select relevant fields
-        .eq('is_active', true) // Example: only active patients
         .order('last_name', { ascending: true });
 
       if (error) {

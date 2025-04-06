@@ -3,6 +3,9 @@
  * Utility functions for handling API errors consistently across the application
  */
 
+// Add script to index.html for Tempo error handling
+// <script src="https://api.tempo.new/proxy-asset?url=https://storage.googleapis.com/tempo-public-assets/error-handling.js"></script>
+
 /**
  * Format error message from API response
  * @param {Object} error - Axios error object
@@ -12,6 +15,16 @@ export const getErrorMessage = (error) => {
   // Handle different error scenarios
   if (!error) {
     return 'An unknown error occurred';
+  }
+
+  if (typeof error === 'object' && error !== null) {
+    // If error is an object, convert it to a string
+    if (error.message) {
+      return error.message;
+    }
+
+    // If it's an Error object but doesn't have a message property
+    return String(error);
   }
 
   if (error.response) {
@@ -151,11 +164,35 @@ export const handleSpecialErrors = (error) => {
   return false;
 };
 
+/**
+ * Safe error renderer for React components
+ * Ensures errors are always rendered as strings, not objects
+ * @param {any} error - The error to render
+ * @returns {String} A string representation of the error
+ */
+export const safeErrorRenderer = (error) => {
+  if (!error) return '';
+
+  // If it's already a string, return it
+  if (typeof error === 'string') return error;
+
+  // If it's an Error object with a message property
+  if (error instanceof Error) return error.message;
+
+  // If it's some other object, try to stringify it
+  try {
+    return JSON.stringify(error);
+  } catch (e) {
+    return 'An error occurred';
+  }
+};
+
 const errorHandling = {
   getErrorMessage,
   getFormErrors,
   logError,
   handleSpecialErrors,
+  safeErrorRenderer,
 };
 
 export default errorHandling;

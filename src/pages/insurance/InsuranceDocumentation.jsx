@@ -145,7 +145,8 @@ const InsuranceDocumentation = () => {
     },
   });
 
-  const uploadDocumentMutation = useUploadInsuranceDocument(selectedRecordId, {
+  const uploadDocumentMutation = useUploadInsuranceDocument({
+    recordId: selectedRecordId,
     onSuccess: () => {
       toast.success('Document uploaded successfully');
     },
@@ -154,7 +155,8 @@ const InsuranceDocumentation = () => {
     },
   });
 
-  const deleteDocumentMutation = useDeleteInsuranceDocument(selectedRecordId, {
+  const deleteDocumentMutation = useDeleteInsuranceDocument({
+    recordId: selectedRecordId,
     onSuccess: () => {
       toast.success('Document deleted successfully');
     },
@@ -378,13 +380,13 @@ const InsuranceDocumentation = () => {
     formData.append('document', file);
     formData.append('document_type', 'card'); // Default type, can be made selectable
 
-    uploadDocumentMutation.mutate(formData);
+    uploadDocumentMutation.mutate({ formData, recordId: selectedRecordId });
   };
 
   // Handle document deletion
   const handleDeleteDocument = (documentId) => {
     if (!documentId || !selectedRecordId) return;
-    deleteDocumentMutation.mutate(documentId);
+    deleteDocumentMutation.mutate({ documentId, recordId: selectedRecordId });
   };
 
   // Loading state

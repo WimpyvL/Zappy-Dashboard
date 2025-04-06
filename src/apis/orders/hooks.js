@@ -12,10 +12,7 @@ export const useOrders = (currentPage = 1, filters = {}, pageSize = 10) => {
     queryFn: async () => {
       let query = supabase
         .from('order') // Use quoted table name if needed, or adjust if different
-        .select(`
-          *,
-          client_record ( id, first_name, last_name )
-        `, { count: 'exact' }) // Example join with client_record
+        .select('*', { count: 'exact' }) // Select all columns without join
         .order('order_date', { ascending: false })
         .range(rangeFrom, rangeTo);
 
@@ -24,11 +21,13 @@ export const useOrders = (currentPage = 1, filters = {}, pageSize = 10) => {
         query = query.eq('status', filters.status);
       }
       if (filters.patientId) {
-         query = query.eq('client_record_id', filters.patientId);
+        query = query.eq('client_record_id', filters.patientId);
       }
       // Add search filter if needed (similar to usePatients)
       if (filters.search) {
-         query = query.or(`medication.ilike.%${filters.search}%,pharmacy.ilike.%${filters.search}%,client_record.first_name.ilike.%${filters.search}%,client_record.last_name.ilike.%${filters.search}%`);
+        query = query.or(
+          `medication.ilike.%${filters.search}%,pharmacy.ilike.%${filters.search}%,client_record.first_name.ilike.%${filters.search}%,client_record.last_name.ilike.%${filters.search}%`
+        );
       }
 
       const { data, error, count } = await query;
@@ -38,12 +37,12 @@ export const useOrders = (currentPage = 1, filters = {}, pageSize = 10) => {
         throw new Error(error.message);
       }
 
-      // Map data if needed to match frontend expectations (e.g., patientName)
-      const mappedData = data?.map(order => ({
+      // Map data without relying on the join
+      const mappedData =
+        data?.map((order) => ({
           ...order,
-          // Combine patient first/last name if joined data exists
-          patientName: order.client_record ? `${order.client_record.first_name || ''} ${order.client_record.last_name || ''}`.trim() : 'N/A',
-      })) || [];
+          patientName: 'N/A', // We'll need to fetch patient names separately
+        })) || [];
 
       return {
         data: mappedData,
@@ -68,10 +67,7 @@ export const useOrderById = (id, options = {}) => {
 
       const { data, error } = await supabase
         .from('order')
-        .select(`
-          *,
-          client_record ( id, first_name, last_name )
-        `) // Example join
+        .select('*') // Select without join
         .eq('id', id)
         .single();
 
@@ -80,11 +76,13 @@ export const useOrderById = (id, options = {}) => {
         if (error.code === 'PGRST116') return null; // Not found
         throw new Error(error.message);
       }
-       // Map data if needed
-       const mappedData = data ? {
-           ...data,
-           patientName: data.client_record ? `${data.client_record.first_name || ''} ${data.client_record.last_name || ''}`.trim() : 'N/A',
-       } : null;
+      // Map data without relying on the join
+      const mappedData = data
+        ? {
+            ...data,
+            patientName: 'N/A', // We'll need to fetch patient name separately
+          }
+        : null;
 
       return mappedData;
     },
@@ -99,13 +97,13 @@ export const useCreateOrder = (options = {}) => {
 
   return useMutation({
     mutationFn: async (orderData) => {
-       const dataToInsert = {
-         ...orderData,
-         order_date: orderData.order_date || new Date().toISOString(),
-         created_at: new Date().toISOString(),
-         updated_at: new Date().toISOString(),
-         is_deleted: false,
-       };
+      const dataToInsert = {
+        ...orderData,
+        order_date: orderData.order_date || new Date().toISOString(),
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        is_deleted: false,
+      };
 
       const { data, error } = await supabase
         .from('order')
@@ -124,8 +122,8 @@ export const useCreateOrder = (options = {}) => {
       options.onSuccess?.(data, variables, context);
     }, // Comma added
     onError: (error, variables, context) => {
-       console.error("Create order mutation error:", error);
-       options.onError?.(error, variables, context);
+      console.error('Create order mutation error:', error);
+      options.onError?.(error, variables, context);
     },
     onSettled: options.onSettled,
   });
@@ -137,12 +135,12 @@ export const useUpdateOrder = (options = {}) => {
 
   return useMutation({
     mutationFn: async ({ id, orderData }) => {
-      if (!id) throw new Error("Order ID is required for update.");
+      if (!id) throw new Error('Order ID is required for update.');
 
-       const dataToUpdate = {
-         ...orderData,
-         updated_at: new Date().toISOString(),
-       };
+      const dataToUpdate = {
+        ...orderData,
+        updated_at: new Date().toISOString(),
+      };
 
       const { data, error } = await supabase
         .from('order')
@@ -163,8 +161,8 @@ export const useUpdateOrder = (options = {}) => {
       options.onSuccess?.(data, variables, context);
     }, // Comma added
     onError: (error, variables, context) => {
-       console.error(`Update order ${variables.id} mutation error:`, error);
-       options.onError?.(error, variables, context);
+      console.error(`Update order ${variables.id} mutation error:`, error);
+      options.onError?.(error, variables, context);
     },
     onSettled: options.onSettled,
   });
@@ -175,30 +173,33 @@ export const useUpdateOrderStatus = (options = {}) => {
   const queryClient = useQueryClient();
 
   return useMutation({
-     mutationFn: async ({ orderId, status }) => {
-       if (!orderId) throw new Error("Order ID is required for status update.");
+    mutationFn: async ({ orderId, status }) => {
+      if (!orderId) throw new Error('Order ID is required for status update.');
 
-       const { data, error } = await supabase
-         .from('order')
-         .update({ status: status, updated_at: new Date().toISOString() })
-         .eq('id', orderId)
-         .select()
-         .single();
+      const { data, error } = await supabase
+        .from('order')
+        .update({ status: status, updated_at: new Date().toISOString() })
+        .eq('id', orderId)
+        .select()
+        .single();
 
-       if (error) {
-         console.error(`Error updating order status ${orderId}:`, error);
-         throw new Error(error.message);
-       }
-       return data;
-     },
+      if (error) {
+        console.error(`Error updating order status ${orderId}:`, error);
+        throw new Error(error.message);
+      }
+      return data;
+    },
     onSuccess: (data, variables, context) => {
       queryClient.invalidateQueries({ queryKey: ['orders'] });
       queryClient.invalidateQueries({ queryKey: ['order', variables.orderId] });
       options.onSuccess?.(data, variables, context);
     }, // Comma added
     onError: (error, variables, context) => {
-       console.error(`Update order status ${variables.orderId} mutation error:`, error);
-       options.onError?.(error, variables, context);
+      console.error(
+        `Update order status ${variables.orderId} mutation error:`,
+        error
+      );
+      options.onError?.(error, variables, context);
     },
     onSettled: options.onSettled,
   });
@@ -209,30 +210,31 @@ export const useDeleteOrder = (options = {}) => {
   const queryClient = useQueryClient();
 
   return useMutation({
-     mutationFn: async (id) => {
-       if (!id) throw new Error("Order ID is required for deletion.");
+    mutationFn: async (id) => {
+      if (!id) throw new Error('Order ID is required for deletion.');
 
-       const { data, error } = await supabase
-         .from('order')
-         .update({ is_deleted: true, deleted_at: new Date().toISOString() })
-         .eq('id', id)
-         .select()
-         .single();
+      const { data, error } = await supabase
+        .from('order')
+        .update({ is_deleted: true, deleted_at: new Date().toISOString() })
+        .eq('id', id)
+        .select()
+        .single();
 
-       if (error) {
-         console.error(`Error 'deleting' order ${id}:`, error);
-         throw new Error(error.message);
-       }
-       return { success: true, id };
-     },
-    onSuccess: (data, variables, context) => { // variables is the id
+      if (error) {
+        console.error(`Error 'deleting' order ${id}:`, error);
+        throw new Error(error.message);
+      }
+      return { success: true, id };
+    },
+    onSuccess: (data, variables, context) => {
+      // variables is the id
       queryClient.invalidateQueries({ queryKey: ['orders'] });
       queryClient.removeQueries({ queryKey: ['order', variables] });
       options.onSuccess?.(data, variables, context);
     }, // Comma added
     onError: (error, variables, context) => {
-       console.error(`Delete order ${variables} mutation error:`, error);
-       options.onError?.(error, variables, context);
+      console.error(`Delete order ${variables} mutation error:`, error);
+      options.onError?.(error, variables, context);
     },
     onSettled: options.onSettled,
   });

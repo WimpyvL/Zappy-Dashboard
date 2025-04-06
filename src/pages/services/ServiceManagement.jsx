@@ -15,7 +15,7 @@ import {
 // Removed useAppContext import
 import {
   useServices,
-  useAddService,
+  useCreateService, // Corrected hook name
   useUpdateService,
   useDeleteService,
 } from '../../apis/services/hooks'; // Assuming these exist
@@ -41,7 +41,7 @@ const ServiceManagement = () => {
   } = useProducts();
 
   // Mutation hooks
-  const addServiceMutation = useAddService({
+  const addServiceMutation = useCreateService({ // Corrected hook name
     onSuccess: () => setShowAddModal(false), // Close modal on success
     onError: (error) => console.error('Error adding service:', error), // Basic error logging
   });

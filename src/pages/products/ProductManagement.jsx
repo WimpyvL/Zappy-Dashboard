@@ -242,15 +242,15 @@ const ProductManagement = () => {
   // --- Mutation Hooks ---
   const addProductMutation = useCreateProduct({
     onSuccess: () => setShowProductModal(false),
-  }); // Renamed from useAddProduct
+  });
+  const addPlanMutation = useCreateSubscriptionPlan({ // Corrected hook name
+    onSuccess: () => setShowPlanModal(false),
+  });
   const updateProductMutation = useUpdateProduct({
     onSuccess: () => setShowProductModal(false),
   });
   const deleteProductMutation = useDeleteProduct();
-  const addPlanMutation = useAddSubscriptionPlan({
-    onSuccess: () => setShowPlanModal(false),
-  });
-  const updatePlanMutation = useUpdateSubscriptionPlan({
+  const updatePlanMutation = useUpdateSubscriptionPlan({ // This is the correct one for plans
     onSuccess: () => setShowPlanModal(false),
   });
   const deletePlanMutation = useDeleteSubscriptionPlan();

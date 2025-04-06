@@ -114,7 +114,8 @@ const Patients = () => {
   const [selectedPatients, setSelectedPatients] = useState([]);
   const [showBulkActions, setShowBulkActions] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
-  const [editingPatient, setEditingPatient] = useState(null); // State to hold patient being edited
+  const [editingPatientId, setEditingPatientId] = useState(null); // State to hold ID of patient being edited
+  const [showEditModal, setShowEditModal] = useState(false); // Separate state for edit modal visibility
 
   // Effect to show/hide bulk actions based on selection
   useEffect(() => {
@@ -180,14 +181,15 @@ const Patients = () => {
 
   // Handle opening the modal for editing
   const handleEditClick = (patient) => {
-    setEditingPatient(patient);
-    // setShowAddModal(true); // Reuse the same modal state if modal handles both add/edit
+    setEditingPatientId(patient.id); // Store only the ID
+    setShowEditModal(true); // Use separate state to show modal
   };
 
   // Handle closing the modal (for both add and edit)
   const handleCloseModal = () => {
     setShowAddModal(false);
-    setEditingPatient(null);
+    setShowEditModal(false); // Close edit modal
+    setEditingPatientId(null); // Clear editing ID
   };
 
 
@@ -634,14 +636,27 @@ const Patients = () => {
         </div>
       </div>
 
-      {/* Patient Modal (handles both Add and Edit) */}
-      {(showAddModal || editingPatient) && (
+      {/* Add Patient Modal */}
+      {showAddModal && (
         <PatientModal
-          isOpen={showAddModal || !!editingPatient}
-          onClose={handleCloseModal} // Use unified close handler
-          patientToEdit={editingPatient} // Pass patient data for editing
+          isOpen={showAddModal}
+          onClose={handleCloseModal}
+          // No patientData/editingPatientId passed for Add mode
           onSuccess={() => {
-            handleCloseModal(); // Close modal on success
+            handleCloseModal();
+            fetchPatients();
+          }}
+        />
+      )}
+
+       {/* Edit Patient Modal */}
+       {showEditModal && editingPatientId && (
+        <PatientModal
+          isOpen={showEditModal}
+          onClose={handleCloseModal}
+          editingPatientId={editingPatientId} // Pass the ID to the modal
+          onSuccess={() => {
+            handleCloseModal();
             // Refresh the patients list using the hook's refetch function
             fetchPatients();
           }}

@@ -4,16 +4,19 @@ import {
   User,
   Mail,
   Phone,
-  // MapPin, // Removed unused import
   Calendar,
   Tag,
   Building,
 } from 'lucide-react';
 import apiService from '../../utils/apiService';
 import { toast } from 'react-toastify';
+import LoadingSpinner from './patientDetails/common/LoadingSpinner'; // Import a spinner
 
-const PatientModal = ({ isOpen, onClose, patientData, onSuccess }) => {
+// Accept editingPatientId instead of patientData
+const PatientModal = ({ isOpen, onClose, editingPatientId, onSuccess }) => {
+  console.log('PatientModal rendering. isOpen:', isOpen, 'editingPatientId:', editingPatientId); // Add log
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoadingData, setIsLoadingData] = useState(false); // State for loading patient data in edit mode
   const [formData, setFormData] = useState({
     full_name: '',
     email: '',
@@ -29,12 +32,11 @@ const PatientModal = ({ isOpen, onClose, patientData, onSuccess }) => {
     medicalNotes: '',
   });
 
-  // Initialize form data when patientData changes
+  const isEditMode = !!editingPatientId;
+
+  // Effect to fetch data in edit mode or reset form in add mode
   useEffect(() => {
-    if (patientData) {
-      setFormData(patientData);
-    } else {
-      // Reset form when adding a new patient
+    const resetForm = () => {
       setFormData({
         full_name: '',
         email: '',
@@ -49,8 +51,66 @@ const PatientModal = ({ isOpen, onClose, patientData, onSuccess }) => {
         assignedDoctor: '',
         medicalNotes: '',
       });
+    };
+
+    const fetchAndSetPatientData = async () => {
+      if (!editingPatientId) return;
+
+      setIsLoadingData(true);
+      setFormData({ // Reset form slightly before fetch to clear old data if modal reopens quickly
+        full_name: '', email: '', phone: '', address: '', city: '', state: '',
+        zipCode: '', dateOfBirth: '', status: 'active', preferredPharmacy: '',
+        assignedDoctor: '', medicalNotes: '',
+      });
+
+      try {
+        console.log(`Fetching data for patient ID: ${editingPatientId}`);
+        const fetchedPatientData = await apiService.patients.getById(editingPatientId);
+        console.log("Fetched Patient Data:", fetchedPatientData);
+
+        if (fetchedPatientData) {
+           // Explicitly map fields from fetchedPatientData to formData
+           // Ensure dateOfBirth is formatted correctly for the input type="date" (YYYY-MM-DD)
+           const dob = fetchedPatientData.dob || fetchedPatientData.date_of_birth || fetchedPatientData.dateOfBirth || '';
+           const formattedDob = dob ? new Date(dob).toISOString().split('T')[0] : '';
+
+           setFormData({
+             full_name: fetchedPatientData.full_name || `${fetchedPatientData.firstName || ''} ${fetchedPatientData.lastName || ''}`.trim() || '',
+             email: fetchedPatientData.email || '',
+             phone: fetchedPatientData.phone || '',
+             address: fetchedPatientData.address?.street || fetchedPatientData.address || '',
+             city: fetchedPatientData.address?.city || fetchedPatientData.city || '',
+             state: fetchedPatientData.address?.state || fetchedPatientData.state || '',
+             zipCode: fetchedPatientData.address?.zip || fetchedPatientData.zip_code || fetchedPatientData.zipCode || '',
+             dateOfBirth: formattedDob, // Use formatted date
+             status: fetchedPatientData.status || 'active',
+             preferredPharmacy: fetchedPatientData.preferred_pharmacy || fetchedPatientData.preferredPharmacy || '',
+             assignedDoctor: fetchedPatientData.assigned_doctor || fetchedPatientData.assignedDoctor || '',
+             medicalNotes: fetchedPatientData.medical_notes || fetchedPatientData.medicalNotes || '',
+           });
+        } else {
+           toast.error(`Patient data not found for ID: ${editingPatientId}`);
+           resetForm(); // Reset if patient not found
+           onClose(); // Close modal if patient not found
+        }
+      } catch (error) {
+        console.error('Error fetching patient data for edit:', error);
+        toast.error('Failed to load patient data for editing.');
+        resetForm(); // Reset form on error
+        onClose(); // Close modal on error
+      } finally {
+        setIsLoadingData(false);
+      }
+    };
+
+    if (isOpen) {
+      if (isEditMode) {
+        fetchAndSetPatientData();
+      } else {
+        resetForm(); // Reset for Add mode
+      }
     }
-  }, [patientData, isOpen]);
+  }, [editingPatientId, isOpen]); // Depend on ID and open state
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -62,10 +122,11 @@ const PatientModal = ({ isOpen, onClose, patientData, onSuccess }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (isLoadingData) return; // Prevent submission while loading data
     setIsSubmitting(true);
 
     try {
-      // Format data for API
+      // Format data for API (ensure keys match backend expectations)
       const patientPayload = {
         full_name: formData.full_name,
         email: formData.email,
@@ -73,20 +134,19 @@ const PatientModal = ({ isOpen, onClose, patientData, onSuccess }) => {
         address: formData.address,
         city: formData.city,
         state: formData.state,
-        zip_code: formData.zipCode,
-        date_of_birth: formData.dateOfBirth,
+        zip_code: formData.zipCode, // Use snake_case for API
+        date_of_birth: formData.dateOfBirth, // Use snake_case for API
         status: formData.status,
-        preferred_pharmacy: formData.preferredPharmacy,
-        assigned_doctor: formData.assignedDoctor,
-        medical_notes: formData.medicalNotes,
+        preferred_pharmacy: formData.preferredPharmacy, // Use snake_case for API
+        assigned_doctor: formData.assignedDoctor, // Use snake_case for API
+        medical_notes: formData.medicalNotes, // Use snake_case for API
       };
 
-      // Determine if we're creating or updating
       let response;
-      if (patientData && patientData.id) {
+      if (isEditMode) {
         // Update existing patient
         response = await apiService.patients.update(
-          patientData.id,
+          editingPatientId, // Use the ID passed as prop
           patientPayload
         );
         toast.success('Patient updated successfully');
@@ -96,27 +156,27 @@ const PatientModal = ({ isOpen, onClose, patientData, onSuccess }) => {
         toast.success('Patient created successfully');
       }
 
-      // Call onSuccess callback with the response data
       if (onSuccess) {
-        onSuccess(response);
+        onSuccess(response); // Pass response data back if needed
       }
+      onClose(); // Close the modal
 
-      // Close the modal
-      onClose();
     } catch (error) {
       console.error('Error saving patient:', error);
-      toast.error(error.response?.data?.error || 'Failed to save patient');
+      const errorMsg = error.response?.data?.error || error.message || 'Failed to save patient';
+      toast.error(errorMsg);
     } finally {
       setIsSubmitting(false);
     }
   };
 
   // If the modal is not open, render nothing
+  console.log('PatientModal: Checking if isOpen is false. isOpen:', isOpen); // Add log
   if (!isOpen) {
+    console.log('PatientModal: isOpen is false, returning null.'); // Add log
     return null;
   }
 
-  const isEditMode = patientData && patientData.id;
   const modalTitle = isEditMode ? 'Edit Patient' : 'Add New Patient';
   const submitButtonText = isEditMode ? 'Save Changes' : 'Add Patient';
 
@@ -125,7 +185,7 @@ const PatientModal = ({ isOpen, onClose, patientData, onSuccess }) => {
       {/* Semi-transparent backdrop */}
       <div
         className="absolute inset-0 bg-black opacity-50"
-        onClick={onClose}
+        onClick={!isLoadingData && !isSubmitting ? onClose : undefined} // Prevent closing while loading/submitting
       ></div>
 
       {/* Modal content */}
@@ -136,13 +196,21 @@ const PatientModal = ({ isOpen, onClose, patientData, onSuccess }) => {
             className="text-gray-400 hover:text-gray-500"
             onClick={onClose}
             type="button"
+            disabled={isLoadingData || isSubmitting}
           >
             <X className="h-5 w-5" />
           </button>
         </div>
 
         <form onSubmit={handleSubmit}>
-          <div className="p-6 space-y-4">
+           {/* Show loader overlay inside modal while fetching data for edit */}
+           {isLoadingData && isEditMode && (
+             <div className="absolute inset-0 bg-white/80 flex items-center justify-center z-10 rounded-lg">
+               <LoadingSpinner message="Loading patient data..." />
+             </div>
+           )}
+          {/* Dim form while loading, ensure enough padding */}
+          <div className={`p-6 space-y-4 max-h-[70vh] overflow-y-auto ${isLoadingData && isEditMode ? 'opacity-50 pointer-events-none' : ''}`}>
             {/* Patient Personal Info Section */}
             <div>
               <div>
@@ -319,6 +387,21 @@ const PatientModal = ({ isOpen, onClose, patientData, onSuccess }) => {
                 />
               </div>
             </div>
+             {/* Optional: Add Medical Notes Textarea if needed in modal */}
+             {/* <div>
+               <label htmlFor="medicalNotes" className="block text-sm font-medium text-gray-700 mb-1">
+                 Medical Notes
+               </label>
+               <Textarea
+                 id="medicalNotes"
+                 name="medicalNotes"
+                 rows={3}
+                 className="block w-full border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                 placeholder="Add any relevant medical notes..."
+                 value={formData.medicalNotes || ''}
+                 onChange={handleChange}
+               />
+             </div> */}
           </div>
 
           <div className="px-6 py-4 border-t border-gray-200 flex justify-end space-x-3">
@@ -326,14 +409,14 @@ const PatientModal = ({ isOpen, onClose, patientData, onSuccess }) => {
               type="button"
               className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
               onClick={onClose}
-              disabled={isSubmitting}
+              disabled={isSubmitting || isLoadingData} // Disable cancel while loading data too
             >
               Cancel
             </button>
             <button
               type="submit"
               className="px-4 py-2 bg-indigo-600 rounded-md text-sm font-medium text-white hover:bg-indigo-700 disabled:bg-indigo-300"
-              disabled={isSubmitting}
+              disabled={isSubmitting || isLoadingData} // Disable submit while loading data
             >
               {isSubmitting ? 'Saving...' : submitButtonText}
             </button>

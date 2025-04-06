@@ -446,7 +446,6 @@ const Patients = () => {
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Status
                 </th>
-                {/* Removed Risk Level column header */}
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Next Appointment
                 </th>
@@ -493,12 +492,16 @@ const Patients = () => {
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
                         <div>
-                          <div className="text-sm font-medium text-gray-900">
+                          {/* Wrap name in Link */}
+                          <Link
+                            to={`/patients/${patient.id}`}
+                            className="text-sm font-medium text-indigo-600 hover:text-indigo-900 hover:underline"
+                          >
                             {patient.full_name || `${patient.firstName} ${patient.lastName}`} {/* Added fallback */}
                             {patient.isAffiliate && (
                               <AffiliateTag isAffiliate={patient.isAffiliate} />
                             )}
-                          </div>
+                          </Link>
                           <div className="text-sm text-gray-500">
                             {patient.email}
                           </div>
@@ -511,7 +514,6 @@ const Patients = () => {
                     <td className="px-6 py-4 whitespace-nowrap">
                       <StatusBadge status={patient.status} />
                     </td>
-                    {/* Removed Risk Level cell */}
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {patient.next_session_date
                         ? new Date(
@@ -540,7 +542,7 @@ const Patients = () => {
               ) : (
                 <tr>
                   <td
-                    colSpan="6" // Adjusted colspan
+                    colSpan="6"
                     className="px-6 py-4 text-center text-gray-500"
                   >
                     No patients found matching your search criteria.

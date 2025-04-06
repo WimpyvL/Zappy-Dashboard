@@ -8,17 +8,7 @@ import {
   // useArchiveConsultation, // Assuming these hooks exist or will be created
 } from '../../apis/consultations/hooks';
 import { useServices } from '../../apis/services/hooks'; // Import useServices
-// Date Picker Imports
-import { format } from "date-fns";
-import { Calendar as CalendarIcon } from "lucide-react"; // Alias Calendar icon
-import { cn } from "@/lib/utils"; // Assuming cn utility exists
-import { Button } from "@/components/ui/button"; // Assuming Button component exists
-import { Calendar } from "@/components/ui/calendar"; // Assuming Calendar component exists
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover"; // Assuming Popover components exist
+import { DatePicker } from 'antd'; // Import Ant Design DatePicker
 // Other Icons
 import {
   Search,
@@ -101,8 +91,7 @@ const InitialConsultations = () => {
   const [statusFilter, setStatusFilter] = useState('pending'); // Default filter to 'pending'
   const [providerFilter, setProviderFilter] = useState('all'); // State for provider filter
   const [serviceFilter, setServiceFilter] = useState('all'); // State for service filter
-  const [startDate, setStartDate] = useState(null); // State for start date filter
-  const [endDate, setEndDate] = useState(null); // State for end date filter
+  const [dateRange, setDateRange] = useState(null); // State for date range [startDate, endDate]
   const [selectedPatient, setSelectedPatient] = useState(null);
   const [selectedConsultation, setSelectedConsultation] = useState(null);
   const [showConsultationModal, setShowConsultationModal] = useState(false);
@@ -172,31 +161,26 @@ const InitialConsultations = () => {
     const matchesService =
        serviceFilter === 'all' || consultation.service === serviceFilter;
 
-    // Date Range Filter Logic
+    // Date Range Filter Logic using Ant Design's date objects (likely Dayjs)
     let matchesDate = true;
-    if (startDate || endDate) {
-      try {
-        const submittedDate = new Date(consultation.dateSubmitted);
-        // Set time to 0 to compare dates only
-        submittedDate.setHours(0, 0, 0, 0);
-        const start = startDate ? new Date(startDate) : null;
-        if (start) start.setHours(0, 0, 0, 0);
-        const end = endDate ? new Date(endDate) : null;
-        if (end) end.setHours(0, 0, 0, 0);
+    if (dateRange && (dateRange[0] || dateRange[1])) {
+        try {
+            const submittedDate = new Date(consultation.dateSubmitted); // Keep as Date object
+            const start = dateRange[0] ? dateRange[0].startOf('day').toDate() : null; // Get start of day as Date
+            const end = dateRange[1] ? dateRange[1].endOf('day').toDate() : null; // Get end of day as Date
 
-        if (start && end) {
-          matchesDate = submittedDate >= start && submittedDate <= end;
-        } else if (start) {
-          matchesDate = submittedDate >= start;
-        } else if (end) {
-          matchesDate = submittedDate <= end;
+            if (start && end) {
+                matchesDate = submittedDate >= start && submittedDate <= end;
+            } else if (start) {
+                matchesDate = submittedDate >= start;
+            } else if (end) {
+                matchesDate = submittedDate <= end;
+            }
+        } catch (e) {
+            console.error("Error processing date for filtering:", consultation.dateSubmitted, e);
+            matchesDate = false; // Exclude if date is invalid
         }
-      } catch (e) {
-        console.error("Error parsing date for filtering:", consultation.dateSubmitted, e);
-        matchesDate = false; // Exclude if date is invalid
-      }
     }
-
 
     return matchesSearch && matchesStatus && matchesProvider && matchesService && matchesDate;
   });
@@ -390,56 +374,14 @@ const InitialConsultations = () => {
              ))}
            </select>
           </div>
-          {/* Date Range Filter */}
-          <div className="flex items-center space-x-2">
-             <Popover>
-               <PopoverTrigger asChild>
-                 <Button
-                   variant={"outline"}
-                   className={cn(
-                     "w-[150px] justify-start text-left font-normal text-sm",
-                     !startDate && "text-muted-foreground"
-                   )}
-                 >
-                   <CalendarIcon className="mr-2 h-4 w-4" />
-                   {startDate ? format(startDate, "PPP") : <span>Start date</span>}
-                 </Button>
-               </PopoverTrigger>
-               <PopoverContent className="w-auto p-0">
-                 <Calendar
-                   mode="single"
-                   selected={startDate}
-                   onSelect={setStartDate}
-                   initialFocus
-                 />
-               </PopoverContent>
-             </Popover>
-             <span className="text-gray-400">-</span>
-              <Popover>
-               <PopoverTrigger asChild>
-                 <Button
-                   variant={"outline"}
-                   className={cn(
-                     "w-[150px] justify-start text-left font-normal text-sm",
-                     !endDate && "text-muted-foreground"
-                   )}
-                 >
-                   <CalendarIcon className="mr-2 h-4 w-4" />
-                   {endDate ? format(endDate, "PPP") : <span>End date</span>}
-                 </Button>
-               </PopoverTrigger>
-               <PopoverContent className="w-auto p-0">
-                 <Calendar
-                   mode="single"
-                   selected={endDate}
-                   onSelect={setEndDate}
-                   disabled={(date) =>
-                     startDate && date < startDate // Disable dates before start date
-                   }
-                   initialFocus
-                 />
-               </PopoverContent>
-             </Popover>
+          {/* Date Range Filter using Ant Design */}
+           <div className="flex items-center space-x-2">
+             <DatePicker.RangePicker
+               onChange={(dates) => setDateRange(dates)}
+               // You might need to format the value prop if needed, but often null is fine
+               // value={dateRange}
+               className="text-sm" // Adjust styling as needed
+             />
            </div>
       </div>
 

@@ -42,22 +42,27 @@ import {
 } from '../../apis/subscriptionPlans/hooks';
 import { toast } from 'react-toastify'; // Assuming toast notifications
 
-// DosesFormSection remains largely the same as it manages local form state for doses within the modal
+// Component to manage medication doses (Price removed, allowOneTimePurchase added, stripePriceId added)
 const DosesFormSection = ({ doses = [], onChange }) => {
-  const [newDose, setNewDose] = useState({
-    value: '',
-    description: '',
-    allowOneTimePurchase: false,
-  });
+  // Added stripePriceId to state
+  const [newDose, setNewDose] = useState({ value: '', description: '', allowOneTimePurchase: false, stripePriceId: '' });
 
   const handleAddDose = () => {
     if (newDose.value.trim() === '') return;
+    // Added stripePriceId to new dose object
     const updatedDoses = [
       ...doses,
-      { id: `temp_${Date.now()}`, ...newDose }, // Use temporary ID for new doses before saving
+      {
+        id: `temp_${Date.now()}`, // Use timestamp for temporary ID
+        value: newDose.value,
+        description: newDose.description,
+        allowOneTimePurchase: newDose.allowOneTimePurchase,
+        stripePriceId: newDose.stripePriceId // Add stripePriceId
+      }
     ];
     onChange(updatedDoses);
-    setNewDose({ value: '', description: '', allowOneTimePurchase: false });
+    // Reset stripePriceId as well
+    setNewDose({ value: '', description: '', allowOneTimePurchase: false, stripePriceId: '' });
   };
 
   const handleRemoveDose = (doseId) => {
@@ -128,18 +133,30 @@ const DosesFormSection = ({ doses = [], onChange }) => {
                     }
                     className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
                   />
-                  <label
-                    htmlFor={`allowOneTime-${dose.id}`}
-                    className="ml-2 text-xs text-gray-700"
-                  >
-                    Allow One-Time Purchase
-                  </label>
-                </div>
+                   <label
+                     htmlFor={`allowOneTime-${dose.id}`}
+                     className="ml-2 text-xs text-gray-700"
+                   >
+                     Allow One-Time Purchase
+                   </label>
+                 </div>
+                 {/* Stripe Price ID for Subscription Dose */}
+                 <div className="mt-2">
+                    <label className="block text-xs font-medium text-gray-500 mb-1">Stripe Price ID (Subscription)</label>
+                    <input
+                      type="text"
+                      value={dose.stripePriceId || ''}
+                      onChange={(e) => handleDoseChange(e, 'stripePriceId', dose.id)}
+                      placeholder="price_..."
+                      className="block w-full pl-3 pr-3 py-2 text-xs border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 rounded-md bg-gray-100"
+                      // readOnly // Consider making read-only if managed by backend
+                    />
+                 </div>
               </div>
               <button
                 type="button"
                 onClick={() => handleRemoveDose(dose.id)}
-                className="ml-3 p-1 text-red-500 hover:text-red-700 mt-8"
+                className="ml-3 p-1 text-red-500 hover:text-red-700 mt-12" // Adjusted margin
               >
                 <Trash2 className="h-5 w-5" />
               </button>
@@ -195,11 +212,22 @@ const DosesFormSection = ({ doses = [], onChange }) => {
                 htmlFor="allowOneTime-new"
                 className="ml-2 text-xs text-gray-700"
               >
-                Allow One-Time Purchase
-              </label>
-            </div>
+                 Allow One-Time Purchase
+               </label>
+             </div>
+             {/* Stripe Price ID for Subscription Dose */}
+             <div className="mt-1">
+                <label className="block text-xs font-medium text-gray-500 mb-1">Stripe Price ID (Subscription)</label>
+                <input
+                  type="text"
+                  value={newDose.stripePriceId}
+                  onChange={(e) => handleDoseChange(e, 'stripePriceId')}
+                  placeholder="price_..."
+                  className="block w-full pl-3 pr-3 py-2 text-xs border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 rounded-md"
+                />
+             </div>
             {/* Add Button */}
-            <div className="flex justify-end mt-2">
+            <div className="flex justify-end mt-3"> {/* Adjusted margin */}
               <button
                 type="button"
                 onClick={handleAddDose}
@@ -268,12 +296,13 @@ const ProductManagement = () => {
   const [currentPlan, setCurrentPlan] = useState(null);
 
   // --- Form State ---
+  // Initial form state - Product (Added stripePriceId fields)
   const initialProductFormData = {
     name: '',
     type: 'medication',
     description: '',
-    price: 0,
-    oneTimePurchasePrice: 0,
+    price: 0, // For non-med one-time
+    oneTimePurchasePrice: 0, // For med one-time
     active: true,
     requiresPrescription: true,
     category: 'weight-management',
@@ -281,27 +310,29 @@ const ProductManagement = () => {
     stockStatus: 'in-stock',
     interactionWarnings: [],
     doses: [],
-    allowOneTimePurchase: false,
+    allowOneTimePurchase: false, // For non-med one-time flag
     fulfillmentSource: 'compounding_pharmacy',
+    stripePriceId: '', // For non-med one-time price ID
+    stripeOneTimePriceId: '' // For med one-time price ID
   };
-  const [productFormData, setProductFormData] = useState(
-    initialProductFormData
-  );
-  const initialPlanFormData = {
-    name: '',
-    description: '',
-    billingFrequency: 'monthly',
-    deliveryFrequency: 'monthly',
-    price: 0,
-    active: true,
-    discount: 0,
-    allowedProductDoses: [],
-    category: 'weight-management',
-    popularity: 'medium',
-    requiresConsultation: true,
-    additionalBenefits: [],
-  };
-  const [planFormData, setPlanFormData] = useState(initialPlanFormData);
+   const [productFormData, setProductFormData] = useState(initialProductFormData);
+   // Initial form state - Plan (updated for doses, added stripePriceId)
+   const initialPlanFormData = {
+     name: '',
+     description: '',
+     billingFrequency: 'monthly',
+     deliveryFrequency: 'monthly',
+     price: 0,
+     active: true,
+     discount: 0,
+     allowedProductDoses: [],
+     category: 'weight-management',
+     popularity: 'medium',
+     requiresConsultation: true,
+     additionalBenefits: [],
+     stripePriceId: '' // Added Stripe Price ID for the plan itself
+   };
+   const [planFormData, setPlanFormData] = useState(initialPlanFormData);
 
   // --- Derived Data ---
   const productCategories = [
@@ -374,8 +405,11 @@ const ProductManagement = () => {
         (product.type === 'medication'
           ? 'compounding_pharmacy'
           : 'internal_supplement'),
-    });
-    setShowProductModal(true);
+       // Load stripe price IDs into form state
+       stripePriceId: product.stripePriceId || '', // For non-med one-time
+       stripeOneTimePriceId: product.stripeOneTimePriceId || '' // For med one-time
+     });
+     setShowProductModal(true);
   };
 
   const handleAddPlan = () => {
@@ -387,17 +421,15 @@ const ProductManagement = () => {
 
   const handleEditPlan = (plan) => {
     setEditMode(true);
-    setCurrentPlan(plan);
-    setPlanFormData({
-      ...plan,
-      allowedProductDoses: Array.isArray(plan.allowedProductDoses)
-        ? [...plan.allowedProductDoses]
-        : [],
-      additionalBenefits: Array.isArray(plan.additionalBenefits)
-        ? [...plan.additionalBenefits]
-        : [],
-    });
-    setShowPlanModal(true);
+     setCurrentPlan(plan);
+     // Ensure allowedProductDoses is initialized correctly and load stripePriceId
+     setPlanFormData({
+       ...plan,
+       allowedProductDoses: Array.isArray(plan.allowedProductDoses) ? [...plan.allowedProductDoses] : [],
+       additionalBenefits: Array.isArray(plan.additionalBenefits) ? [...plan.additionalBenefits] : [], // Keep this line
+       stripePriceId: plan.stripePriceId || '' // Load plan's stripePriceId
+     });
+     setShowPlanModal(true);
   };
 
   const handleProductInputChange = (e) => {
@@ -481,8 +513,12 @@ const ProductManagement = () => {
           typeof dose.id === 'string' && dose.id.startsWith('temp_')
             ? undefined
             : dose.id,
-      }));
-    }
+         stripePriceId: dose.stripePriceId // Include subscription price ID
+       }));
+     }
+     // Include one-time price IDs
+     submissionData.stripePriceId = submissionData.stripePriceId || '';
+     submissionData.stripeOneTimePriceId = submissionData.stripeOneTimePriceId || '';
     submissionData.active = !!submissionData.active;
     submissionData.requiresPrescription = !!submissionData.requiresPrescription;
     submissionData.allowOneTimePurchase = !!submissionData.allowOneTimePurchase;
@@ -505,6 +541,8 @@ const ProductManagement = () => {
       ? submissionData.allowedProductDoses
       : [];
     delete submissionData.allowedProducts; // Remove old field if present
+    // Ensure stripePriceId is included
+    submissionData.stripePriceId = submissionData.stripePriceId || '';
 
     if (editMode && currentPlan) {
       updatePlanMutation.mutate({
@@ -1067,29 +1105,52 @@ const ProductManagement = () => {
               rows={3}
             />
             {productFormData.type !== 'medication' && (
-              <FormInput
-                label="Price (One-Time)"
-                name="price"
-                type="number"
-                min="0"
-                step="0.01"
-                value={productFormData.price}
-                onChange={handleProductInputChange}
-                prefix="$"
-              />
-            )}
-            {productFormData.type === 'medication' && (
-              <FormInput
-                label="One-Time Purchase Price"
-                name="oneTimePurchasePrice"
-                type="number"
-                min="0"
-                step="0.01"
-                value={productFormData.oneTimePurchasePrice}
-                onChange={handleProductInputChange}
-                prefix="$"
-              />
-            )}
+              <div className="mb-4"> {/* Added wrapper div */}
+                <FormInput
+                  label="Price (One-Time)"
+                  name="price"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={productFormData.price}
+                  onChange={handleProductInputChange}
+                  prefix="$"
+                />
+                 {/* Stripe Price ID for One-Time Purchase (Non-Medication) */}
+                 <div className="mt-2">
+                    <label className="block text-xs font-medium text-gray-500 mb-1">Stripe Price ID (One-Time)</label>
+                    <input
+                      type="text"
+                      name="stripePriceId" // Assuming one price ID for the product's one-time price
+                      value={productFormData.stripePriceId || ''}
+                      onChange={handleProductInputChange}
+                      placeholder="price_..."
+                      className="block w-full pl-3 pr-3 py-2 text-xs border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 rounded-md"
+                    />
+                 </div>
+               </div>
+             )}
+             {productFormData.type === 'medication' && (
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-1">One-Time Purchase Price</label>
+                <div className="relative rounded-md shadow-sm">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"><span className="text-gray-500 sm:text-sm">$</span></div>
+                  <input type="number" name="oneTimePurchasePrice" min="0" step="0.01" className="block w-full pl-7 pr-3 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md" value={productFormData.oneTimePurchasePrice} onChange={handleProductInputChange}/>
+                 </div>
+                 {/* Stripe Price ID for One-Time Purchase (Medication) */}
+                 <div className="mt-2">
+                    <label className="block text-xs font-medium text-gray-500 mb-1">Stripe Price ID (One-Time)</label>
+                    <input
+                      type="text"
+                      name="stripeOneTimePriceId" // Use a distinct name
+                      value={productFormData.stripeOneTimePriceId || ''}
+                      onChange={handleProductInputChange}
+                      placeholder="price_..."
+                      className="block w-full pl-3 pr-3 py-2 text-xs border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 rounded-md"
+                    />
+                 </div>
+               </div>
+             )}
           </div>
           {/* Right Column */}
           <div className="col-span-7">
@@ -1370,7 +1431,16 @@ const ProductManagement = () => {
                 {planFormData.allowedProductDoses?.length || 0} doses selected
               </p>
             </div>
-            <div className="grid grid-cols-2 gap-4">
+             {/* Add Stripe Price ID input for the Plan */}
+             <FormInput
+               label="Stripe Price ID (Plan)"
+               name="stripePriceId"
+               value={planFormData.stripePriceId || ''}
+               onChange={handlePlanInputChange}
+               placeholder="price_..."
+               className="text-xs" // Smaller text for ID field
+             />
+            <div className="grid grid-cols-2 gap-4 mt-4"> {/* Added margin top */}
               <FormCheckbox
                 label="Active"
                 name="active"

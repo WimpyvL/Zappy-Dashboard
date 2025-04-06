@@ -2,11 +2,13 @@ import React from 'react';
 import { Layout, Tabs, Typography } from 'antd';
 import FormsManagement from './pages/forms/FormsManagement';
 import ReferralSettings from './pages/ReferralSettings'; // Import the new component
+import PatientNoteTemplateSettings from './pages/PatientNoteTemplateSettings'; // Import the new component
 import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import {
   FormOutlined,
   UserOutlined,
   GiftOutlined, // Import Gift icon for Referrals
+  SnippetsOutlined, // Import icon for Note Templates
 } from '@ant-design/icons';
 
 const { Title } = Typography;
@@ -22,7 +24,8 @@ const Settings = () => {
     const path = location.pathname;
     if (path.includes('/settings/forms')) return 'forms';
     if (path.includes('/settings/account')) return 'account';
-    if (path.includes('/settings/referrals')) return 'referrals'; // Add referrals tab key
+    if (path.includes('/settings/referrals')) return 'referrals';
+    if (path.includes('/settings/note-templates')) return 'note-templates'; // Add note-templates tab key
     return 'forms'; // Default to forms
   };
 
@@ -69,7 +72,16 @@ const Settings = () => {
                   Referrals
                 </span>
               }
-              key="referrals" // Add referrals tab
+              key="referrals"
+            />
+             <TabPane
+              tab={
+                <span>
+                  <SnippetsOutlined />
+                  Note Templates
+                </span>
+              }
+              key="note-templates" // Add note templates tab
             />
           </Tabs>
         </div>
@@ -83,6 +95,7 @@ const Settings = () => {
             />
             {/* Use ReferralSettings component */}
             <Route path="/referrals" element={<ReferralSettings />} />
+            <Route path="/note-templates" element={<PatientNoteTemplateSettings />} /> {/* Add route for note templates */}
             {/* Update default route or add redirect if needed */}
             <Route path="*" element={<FormsManagement />} />
           </Routes>

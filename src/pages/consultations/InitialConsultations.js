@@ -7,14 +7,18 @@ import {
   useUpdateConsultationStatus,
   // useArchiveConsultation, // Assuming these hooks exist or will be created
 } from '../../apis/consultations/hooks';
+import { useServices } from '../../apis/services/hooks'; // Import useServices
+import { DatePicker } from 'antd'; // Import Ant Design DatePicker
+// Other Icons
 import {
   Search,
   Plus,
   Filter,
-  Calendar,
+  Calendar, // Added Calendar icon import
   Clock,
   CheckCircle,
   AlertTriangle,
+  Briefcase, // Added Briefcase icon
   // FileText, // Removed unused import
   User,
   X,
@@ -32,9 +36,9 @@ const StatusBadge = ({ status }) => {
   // ... (StatusBadge implementation remains the same)
   if (status === 'reviewed') {
     return (
-      <span className="flex items-center px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">
-        <CheckCircle className="h-3 w-3 mr-1" />
-        Reviewed
+      <span className="flex items-center px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800">
+        <Calendar className="h-3 w-3 mr-1" /> {/* Corrected icon name */}
+        Follow-up
       </span>
     );
   } else if (status === 'pending') {
@@ -47,7 +51,7 @@ const StatusBadge = ({ status }) => {
   } else if (status === 'followup') {
     return (
       <span className="flex items-center px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800">
-        <Calendar className="h-3 w-3 mr-1" />
+        <Calendar className="h-3 w-3 mr-1" /> {/* Corrected icon name */}
         Follow-up
       </span>
     );
@@ -84,7 +88,10 @@ const FormCompletedBadge = ({ completed }) => {
 const InitialConsultations = () => {
   // Local state for UI controls
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
+  const [statusFilter, setStatusFilter] = useState('pending'); // Default filter to 'pending'
+  const [providerFilter, setProviderFilter] = useState('all'); // State for provider filter
+  const [serviceFilter, setServiceFilter] = useState('all'); // State for service filter
+  const [dateRange, setDateRange] = useState(null); // State for date range [startDate, endDate]
   const [selectedPatient, setSelectedPatient] = useState(null);
   const [selectedConsultation, setSelectedConsultation] = useState(null);
   const [showConsultationModal, setShowConsultationModal] = useState(false);
@@ -105,6 +112,11 @@ const InitialConsultations = () => {
     isLoading: isLoadingConsultations,
     error: errorConsultations,
   } = useConsultations(); // Fetch consultations
+  const {
+    data: servicesData,
+    isLoading: isLoadingServices,
+    error: errorServices,
+  } = useServices(); // Fetch services for filter
 
   // Mutation hooks
   const updateStatusMutation = useUpdateConsultationStatus({
@@ -119,24 +131,58 @@ const InitialConsultations = () => {
   // Process fetched data
   const patients = patientsData?.data || patientsData || [];
   const allConsultations = consultationsData?.data || consultationsData || [];
+  const allServices = servicesData?.data || servicesData || []; // Process services data
 
-  // Filter consultations based on search and status filter
+  // Get unique providers for filter dropdown
+  const uniqueProviders = [
+    ...new Set(allConsultations.map(c => c.provider).filter(Boolean))
+  ].sort();
+
+  // Filter consultations based on search and filters (status, provider, service, date)
   const filteredConsultations = allConsultations.filter((consultation) => {
     const patientName = consultation.patientName || '';
     const provider = consultation.provider || '';
     const email = consultation.email || '';
-    const preferredMed = consultation.preferredMedication || '';
+    const preferredMed = consultation.preferredMedication || ''; // Keep for search
 
     const matchesSearch =
       patientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       provider.toLowerCase().includes(searchTerm.toLowerCase()) ||
       email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      preferredMed.toLowerCase().includes(searchTerm.toLowerCase());
+      preferredMed.toLowerCase().includes(searchTerm.toLowerCase()); // Keep preferredMed in search
 
     const matchesStatus =
       statusFilter === 'all' || consultation.status === statusFilter;
 
-    return matchesSearch && matchesStatus;
+    const matchesProvider =
+       providerFilter === 'all' || consultation.provider === providerFilter;
+
+    // Assuming consultation.service holds the service name string
+    const matchesService =
+       serviceFilter === 'all' || consultation.service === serviceFilter;
+
+    // Date Range Filter Logic using Ant Design's date objects (likely Dayjs)
+    let matchesDate = true;
+    if (dateRange && (dateRange[0] || dateRange[1])) {
+        try {
+            const submittedDate = new Date(consultation.dateSubmitted); // Keep as Date object
+            const start = dateRange[0] ? dateRange[0].startOf('day').toDate() : null; // Get start of day as Date
+            const end = dateRange[1] ? dateRange[1].endOf('day').toDate() : null; // Get end of day as Date
+
+            if (start && end) {
+                matchesDate = submittedDate >= start && submittedDate <= end;
+            } else if (start) {
+                matchesDate = submittedDate >= start;
+            } else if (end) {
+                matchesDate = submittedDate <= end;
+            }
+        } catch (e) {
+            console.error("Error processing date for filtering:", consultation.dateSubmitted, e);
+            matchesDate = false; // Exclude if date is invalid
+        }
+    }
+
+    return matchesSearch && matchesStatus && matchesProvider && matchesService && matchesDate;
   });
 
   // Handle viewing a consultation
@@ -229,7 +275,7 @@ const InitialConsultations = () => {
   };
 
   // Handle loading state
-  if (isLoadingConsultations || isLoadingPatients) {
+  if (isLoadingConsultations || isLoadingPatients || isLoadingServices) { // Added isLoadingServices
     return (
       <div className="flex justify-center items-center h-screen">
         <Loader2 className="h-16 w-16 animate-spin text-indigo-600" />
@@ -238,12 +284,12 @@ const InitialConsultations = () => {
   }
 
   // Handle error state
-  if (errorConsultations || errorPatients) {
+  if (errorConsultations || errorPatients || errorServices) { // Added errorServices
     return (
       <div className="text-center py-10 text-red-600">
         <AlertTriangle className="h-12 w-12 mx-auto mb-4" />
         <p>Error loading consultation or patient data.</p>
-        {/* <p>{errorConsultations?.message || errorPatients?.message}</p> */}
+        {/* <p>{errorConsultations?.message || errorPatients?.message || errorServices?.message}</p> */}
       </div>
     );
   }
@@ -266,8 +312,8 @@ const InitialConsultations = () => {
       </div>
 
       {/* Search and filters */}
-      <div className="bg-white p-4 rounded-lg shadow mb-6 flex flex-col md:flex-row md:items-center space-y-4 md:space-y-0 md:space-x-4">
-        <div className="flex-1 relative">
+      <div className="bg-white p-4 rounded-lg shadow mb-6 flex flex-col md:flex-row md:items-center space-y-4 md:space-y-0 md:space-x-4 flex-wrap"> {/* Added flex-wrap */}
+        <div className="flex-1 relative min-w-[200px]"> {/* Added min-width */}
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
             <Search className="h-5 w-5 text-gray-400" />
           </div>
@@ -280,6 +326,7 @@ const InitialConsultations = () => {
           />
         </div>
 
+        {/* Status Filter */}
         <div className="flex items-center space-x-2">
           <Filter className="h-5 w-5 text-gray-400" />
           <select
@@ -294,6 +341,48 @@ const InitialConsultations = () => {
             <option value="archived">Archived</option>
           </select>
         </div>
+        {/* Provider Filter Dropdown */}
+        <div className="flex items-center space-x-2">
+           <User className="h-5 w-5 text-gray-400" /> {/* Using User icon for provider */}
+           <select
+             className="block pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
+             value={providerFilter}
+             onChange={(e) => setProviderFilter(e.target.value)}
+           >
+             <option value="all">All Providers</option>
+             {uniqueProviders.map((provider) => (
+               <option key={provider} value={provider}>
+                 {provider}
+               </option>
+             ))}
+           </select>
+         </div>
+         {/* Service Filter Dropdown */}
+         <div className="flex items-center space-x-2">
+            <Briefcase className="h-5 w-5 text-gray-400" /> {/* Using Briefcase icon for service */}
+            <select
+              className="block pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
+              value={serviceFilter}
+              onChange={(e) => setServiceFilter(e.target.value)}
+            >
+              <option value="all">All Services</option>
+              {allServices.map((service) => (
+                // Assuming consultation.service stores the name, so filter value is name
+                <option key={service.id} value={service.name}>
+                  {service.name}
+                </option>
+             ))}
+           </select>
+          </div>
+          {/* Date Range Filter using Ant Design */}
+           <div className="flex items-center space-x-2">
+             <DatePicker.RangePicker
+               onChange={(dates) => setDateRange(dates)}
+               // You might need to format the value prop if needed, but often null is fine
+               // value={dateRange}
+               className="text-sm" // Adjust styling as needed
+             />
+           </div>
       </div>
 
       {/* Consultations list */}
@@ -302,23 +391,17 @@ const InitialConsultations = () => {
           <thead className="bg-gray-50">
             <tr>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Patient
+                Patient / Email
               </th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Email
-              </th>
+              {/* Removed Email column header */}
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Date Submitted
               </th>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Service
               </th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Preferred Medication
-              </th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Preferred Plan
-              </th>
+              {/* Removed Preferred Medication column header */}
+              {/* Removed Preferred Plan column header */}
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Draft Date
               </th>
@@ -328,9 +411,7 @@ const InitialConsultations = () => {
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Status
               </th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Form Completed
-              </th>
+              {/* Removed Form Completed column header */}
               <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Actions
               </th>
@@ -354,24 +435,22 @@ const InitialConsultations = () => {
                             {consultation.patientName || 'N/A'}
                           </Link>
                         </div>
+                         {/* Added email below name */}
+                        <div className="text-xs text-gray-500 mt-1">
+                          {consultation.email || '-'}
+                        </div>
                       </div>
                     </div>
                   </td>
-                  <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {consultation.email || '-'}
-                  </td>
+                  {/* Removed separate Email cell */}
                   <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
                     {formatDate(consultation.dateSubmitted)}
                   </td>
                   <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
                     {consultation.service || '-'}
                   </td>
-                  <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {consultation.preferredMedication || '-'}
-                  </td>
-                  <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {consultation.preferredPlan || '-'}
-                  </td>
+                  {/* Removed Preferred Medication cell */}
+                  {/* Removed Preferred Plan cell */}
                   <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
                     {formatDate(consultation.draftDate)}
                   </td>
@@ -381,18 +460,14 @@ const InitialConsultations = () => {
                   <td className="px-4 py-4 whitespace-nowrap">
                     <StatusBadge status={consultation.status} />
                   </td>
-                  <td className="px-4 py-4 whitespace-nowrap">
-                    <FormCompletedBadge
-                      completed={consultation.formCompleted}
-                    />
-                  </td>
+                  {/* Removed Form Completed cell */}
                   <td className="px-4 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <div className="relative flex justify-end">
                       <button
                         className="text-indigo-600 hover:text-indigo-900 mr-3"
                         onClick={() => handleViewConsultation(consultation)}
                       >
-                        View
+                        Complete Consult {/* Renamed button */}
                       </button>
 
                       <div className="relative">
@@ -420,11 +495,11 @@ const InitialConsultations = () => {
                               <button
                                 onClick={() => handleSendEmail(consultation)}
                                 className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
-                                role="menuitem"
-                              >
-                                <Mail className="h-4 w-4 mr-2 text-gray-500" />
-                                Send Email
-                              </button>
+                                  role="menuitem"
+                                >
+                                  <Calendar className="h-4 w-4 mr-2 text-gray-500" /> {/* Corrected icon name */}
+                                  Mark for Follow-up
+                                </button>
 
                               {consultation.status !== 'archived' && (
                                 <button
@@ -473,7 +548,7 @@ const InitialConsultations = () => {
                                   className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
                                   role="menuitem"
                                 >
-                                  <Calendar className="h-4 w-4 mr-2 text-gray-500" />
+                                  <Calendar className="h-4 w-4 mr-2 text-gray-500" /> {/* Corrected icon name */}
                                   Mark for Follow-up
                                 </button>
                               )}
@@ -488,7 +563,7 @@ const InitialConsultations = () => {
             ) : (
               <tr>
                 <td
-                  colSpan="11"
+                  colSpan="8" // Adjusted colspan again
                   className="px-4 py-4 text-center text-gray-500"
                 >
                   No consultations found matching your search criteria.
@@ -571,8 +646,10 @@ const InitialConsultations = () => {
 
       {/* Consultation Notes Modal (View/Edit Existing) */}
       {showConsultationModal && selectedPatient && selectedConsultation && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-75 flex items-center justify-center z-50 p-4">
-          <div className="max-w-4xl w-full">
+        // Overlay covers screen, centers content horizontally
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-75 flex justify-center z-50">
+          {/* Container fills screen, manages internal layout */}
+          <div className="w-full h-full bg-white flex flex-col overflow-hidden">
             <InitialConsultationNotes
               patient={selectedPatient}
               consultationData={selectedConsultation?.consultationData} // Pass existing data
@@ -583,6 +660,7 @@ const InitialConsultations = () => {
               }
               onClose={handleCloseConsultationModal}
               // Pass mutation hooks if notes component handles saving
+              updateStatusMutation={updateStatusMutation} // Pass down mutation
             />
           </div>
         </div>
@@ -590,8 +668,10 @@ const InitialConsultations = () => {
 
       {/* New Consultation Modal (After Patient Selected) */}
       {showNewConsultationModal && selectedPatient && !selectedConsultation && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-75 flex items-center justify-center z-50 p-4">
-          <div className="max-w-4xl w-full">
+        // Overlay covers screen, centers content horizontally
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-75 flex justify-center z-50">
+           {/* Container fills screen, manages internal layout */}
+          <div className="w-full h-full bg-white flex flex-col overflow-hidden">
             <InitialConsultationNotes
               patient={selectedPatient} // Pass selected patient
               onClose={handleCloseConsultationModal}

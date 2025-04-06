@@ -258,13 +258,16 @@ const DiscountManagement = () => {
         <div className="bg-red-50 border-l-4 border-red-400 p-4 mb-6">
           <div className="flex">
             <div className="flex-shrink-0">
-              <AlertCircle className="h-5 w-5 text-red-400" />
-            </div>
-            <div className="ml-3">
-              <p className="text-sm text-red-700">{error}</p>
-            </div>
-          </div>
-        </div>
+               <AlertCircle className="h-5 w-5 text-red-400" />
+             </div>
+             <div className="ml-3">
+               <p className="text-sm text-red-700">
+                 {/* Safely display error message or fallback */}
+                 {error instanceof Error ? error.message : typeof error === 'string' ? error : 'An unknown error occurred while loading discounts.'}
+               </p>
+             </div>
+           </div>
+         </div>
       )}
 
       {/* Search and filters */}

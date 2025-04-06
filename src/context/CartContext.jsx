@@ -17,8 +17,35 @@ export const CartProvider = ({ children }) => {
   }, [cartItems]);
 
   const addItem = (product, dose, quantity = 1) => {
-    setCartItems((prevItems) => {
-      // Check if the specific dose of the product is already in the cart
+    // --- Determine Correct Price and Purchasability ---
+    let itemPrice = 0;
+    let isPurchasable = false;
+
+    if (product.type === 'medication') {
+      // For medications, check the specific dose
+      if (dose && dose.allowOneTimePurchase) {
+        isPurchasable = true;
+        itemPrice = product.oneTimePurchasePrice || 0; // Use product-level one-time price
+      }
+    } else {
+      // For non-medications (supplements, services), check the product itself
+      if (product.allowOneTimePurchase) {
+        isPurchasable = true;
+        itemPrice = product.price || 0; // Use product-level price
+      }
+    }
+
+    // Only proceed if the item is actually purchasable one-time
+    if (!isPurchasable) {
+      console.warn(`Product ${product.name} ${dose ? `(${dose.value})` : ''} is not available for one-time purchase.`);
+      // Optionally show an alert to the user
+      // alert(`This item is not available for one-time purchase.`);
+      return; // Exit without modifying cart
+    }
+    // --- End Price Logic ---
+
+    setCartItems(prevItems => {
+      // Check if the specific dose/product is already in the cart
       const existingItemIndex = prevItems.findIndex(
         (item) => item.productId === product.id && item.doseId === dose.id
       );
@@ -35,11 +62,16 @@ export const CartProvider = ({ children }) => {
           {
             productId: product.id,
             productName: product.name,
-            doseId: dose.id,
-            doseValue: dose.value,
-            price: dose.price,
-            quantity: quantity,
-            // Add other relevant product details if needed, e.g., image
+            // Use optional chaining for dose properties as non-medications might not have a dose object passed
+             doseId: dose?.id,
+             doseValue: dose?.value,
+             price: itemPrice, // Use the correctly determined price
+             quantity: quantity,
+             type: product.type, // Store type for potential future use
+             // Store relevant Stripe Price IDs
+             stripePriceId: product.type === 'medication' ? product.stripeOneTimePriceId : product.stripePriceId, // One-time purchase Price ID
+             stripeSubscriptionPriceId: dose?.stripePriceId, // Subscription Price ID (from dose)
+             // Add other relevant product details if needed
           },
         ];
       }

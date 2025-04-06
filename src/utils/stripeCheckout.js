@@ -1,17 +1,13 @@
 // utils/stripeCheckout.js
 
 /**
- * Redirects to Stripe Checkout page for subscription management
+ * Redirects to Stripe Checkout page to start a new subscription.
  *
  * @param {string} patientId - The ID of the patient
- * @param {object} planDetails - Details of the subscription plan
- * @param {string} planDetails.name - Name of the plan
- * @param {string} planDetails.description - Description of the plan
- * @param {number} planDetails.price - Price of the plan
- * @param {string} planDetails.medication - Main medication in the plan
- * @returns {Promise} - Promise that resolves after redirect is initiated
+ * @param {string} stripeSubscriptionPriceId - The Stripe Price ID for the subscription plan/dose.
+ * @returns {Promise<boolean>} - Promise that resolves after redirect is initiated
  */
-export const redirectToCheckout = async (patientId, planDetails) => {
+export const redirectToCheckout = async (patientId, stripeSubscriptionPriceId) => {
   try {
     // Call your backend to create a Checkout session
     const response = await fetch('/api/create-checkout-session', {
@@ -19,9 +15,10 @@ export const redirectToCheckout = async (patientId, planDetails) => {
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        patientId,
-        planDetails,
+       body: JSON.stringify({
+         mode: 'subscription', // Explicitly set mode
+         patientId,
+         priceId: stripeSubscriptionPriceId // Send the Price ID
       }),
     });
 
@@ -58,14 +55,16 @@ export const redirectToPaymentCheckout = async (
 ) => {
   try {
     // Prepare line items for the backend
-    // The backend will need to translate these into Stripe's line_items format
-    const lineItems = cartItems.map((item) => ({
-      productId: item.productId,
-      doseId: item.doseId,
-      quantity: item.quantity,
-      price: item.price, // Sending price directly, backend might need to find/create Stripe Price ID
-      name: `${item.productName} ${item.doseValue}`, // Include name for backend/Stripe
-    }));
+     // The backend will need to translate these into Stripe's line_items format
+     // Now sending the stripePriceId (for one-time purchase) instead of raw price
+     const lineItems = cartItems.map(item => ({
+       priceId: item.stripePriceId, // Send the one-time purchase Price ID
+       quantity: item.quantity,
+       // Optionally keep internal IDs for backend reference if needed
+       productId: item.productId,
+       doseId: item.doseId,
+       name: `${item.productName} ${item.doseValue}` // Keep name for display on Stripe page
+     }));
 
     // Call your backend to create a Checkout session in payment mode
     const response = await fetch('/api/create-checkout-session', {
@@ -124,19 +123,50 @@ export const handleCheckoutReturn = async (sessionId) => {
 };
 
 /**
+ * Redirects the user to the Stripe Customer Portal.
+ * Assumes a backend endpoint exists to create the portal session.
+ *
+ * @param {string} patientId - The ID of the patient (used by backend to find Stripe Customer ID)
+ * @returns {Promise<boolean>} - Promise that resolves after redirect is initiated
+ */
+export const redirectToCustomerPortal = async (patientId) => {
+  try {
+    // Call your backend to create a Customer Portal session
+    const response = await fetch('/api/create-customer-portal-session', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ patientId }), // Send patientId to backend
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({ message: 'Network response was not ok' }));
+      throw new Error(errorData.message || 'Failed to create customer portal session');
+    }
+
+    const { url } = await response.json();
+
+    // Redirect to Stripe Customer Portal
+    window.location.href = url;
+
+    return true;
+  } catch (error) {
+    console.error('Error redirecting to customer portal:', error);
+    throw error; // Re-throw the error for the caller to handle
+  }
+};
+
+/**
  * Creates a subscription without redirecting to Stripe
  * This is useful for backend operations or when you already have a payment method
  *
  * @param {string} patientId - The ID of the patient
  * @param {string} paymentMethodId - The ID of the payment method to use
- * @param {object} planDetails - Details of the subscription plan
+ * @param {string} stripeSubscriptionPriceId - The Stripe Price ID for the subscription plan/dose.
  * @returns {Promise<object>} - Promise that resolves with subscription details
  */
-export const createSubscription = async (
-  patientId,
-  paymentMethodId,
-  planDetails
-) => {
+ export const createSubscription = async (patientId, paymentMethodId, stripeSubscriptionPriceId) => {
   try {
     const response = await fetch('/api/subscriptions', {
       method: 'POST',
@@ -146,7 +176,7 @@ export const createSubscription = async (
       body: JSON.stringify({
         patientId,
         paymentMethodId,
-        planDetails,
+        priceId: stripeSubscriptionPriceId // Send the Price ID
       }),
     });
 

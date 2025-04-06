@@ -1,41 +1,91 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { useCart } from '../../context/CartContext'; // Import useCart
-import { useAppContext } from '../../context/AppContext'; // Import useAppContext
-import { useNavigate } from 'react-router-dom';
-import { Dropdown, Menu, Button } from 'antd'; // Import Dropdown, Menu, Button
+import { useCart } from '../../context/CartContext';
+import { useAppContext } from '../../context/AppContext';
+import { useNavigate, Link } from 'react-router-dom';
+import { Dropdown, Button } from 'antd'; // Import Dropdown, Button
+import { debounce } from 'lodash';
 import {
   Bell,
   Search,
   LogOut,
   Settings,
   User,
+  X,
   ChevronDown,
   ShoppingCart,
   UserCheck, // Icon for Patient View
   ShieldCheck, // Icon for Admin View
   Eye, // Generic View icon
-} from 'lucide-react'; // Import ShoppingCart icon and view mode icons
+} from 'lucide-react';
 
 const Header = ({ onToggleCart }) => {
-  // Destructure onToggleCart from props
   const { currentUser, logout } = useAuth();
-  const { getCartItemCount } = useCart(); // Get cart item count function
-  const { viewMode, setViewMode } = useAppContext(); // Get view mode state and SETTER function
+  const { getCartItemCount } = useCart();
+  const { viewMode, setViewMode, patients } = useAppContext(); // Get view mode, setter, and patients
   const navigate = useNavigate();
-  const [dropdownOpen, setDropdownOpen] = useState(false);
-  const dropdownRef = useRef(null);
+  const [userDropdownOpen, setUserDropdownOpen] = useState(false);
+  const userDropdownRef = useRef(null);
+  const searchRef = useRef(null);
+
+  // Search State
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState([]);
+  const [isSearchFocused, setIsSearchFocused] = useState(false);
 
   const handleLogout = () => {
     logout();
     navigate('/login');
   };
 
-  // Close dropdown when clicking outside
+  // Debounced search function
+  const performSearch = useCallback(
+    debounce((query) => {
+      // Ensure patients is an array before filtering
+      if (!query || !Array.isArray(patients)) {
+        setSearchResults([]);
+        return;
+      }
+      const lowerCaseQuery = query.toLowerCase();
+      const results = patients.filter(
+        (patient) =>
+          patient.firstName?.toLowerCase().includes(lowerCaseQuery) ||
+          patient.lastName?.toLowerCase().includes(lowerCaseQuery) ||
+          patient.email?.toLowerCase().includes(lowerCaseQuery) ||
+          `${patient.firstName?.toLowerCase()} ${patient.lastName?.toLowerCase()}`.includes(lowerCaseQuery)
+      );
+      setSearchResults(results.slice(0, 10)); // Limit results
+    }, 300),
+    [patients] // Dependency: re-create if patients array changes
+  );
+
+  // Handle search input change
+  const handleSearchChange = (event) => {
+    const query = event.target.value;
+    setSearchQuery(query);
+    performSearch(query);
+  };
+
+  // Clear search
+  const clearSearch = () => {
+    setSearchQuery('');
+    setSearchResults([]);
+    setIsSearchFocused(false);
+  };
+
+  // Handle clicking a search result
+  const handleResultClick = () => {
+    clearSearch();
+  };
+
+  // Close dropdowns when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-        setDropdownOpen(false);
+      if (userDropdownRef.current && !userDropdownRef.current.contains(event.target)) {
+        setUserDropdownOpen(false);
+      }
+      if (searchRef.current && !searchRef.current.contains(event.target)) {
+        setIsSearchFocused(false);
       }
     };
 
@@ -45,28 +95,67 @@ const Header = ({ onToggleCart }) => {
     };
   }, []);
 
+  const showSearchDropdown = isSearchFocused && searchQuery.length > 0;
+
   return (
-    <header className="bg-white p-4 flex items-center justify-between shadow-sm">
+    <header className="bg-white p-4 flex items-center justify-between shadow-sm relative z-20">
       {/* Search bar */}
-      <div className="flex-1 max-w-xl">
+      <div className="flex-1 max-w-xl" ref={searchRef}>
         <div className="relative">
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
             <Search className="h-5 w-5 text-gray-400" />
           </div>
           <input
             type="text"
-            placeholder="Search..."
-            className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+            placeholder="Search Patients..."
+            className="block w-full pl-10 pr-10 py-2 border border-gray-300 rounded-md leading-5 bg-white focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+            value={searchQuery}
+            onChange={handleSearchChange}
+            onFocus={() => setIsSearchFocused(true)}
           />
+          {searchQuery && (
+             <button
+               type="button"
+               onClick={clearSearch}
+               className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
+               aria-label="Clear search"
+             >
+               <X className="h-4 w-4" />
+             </button>
+           )}
         </div>
+         {/* Search Results Dropdown */}
+         {showSearchDropdown && (
+           <div className="absolute mt-1 w-full max-w-xl bg-white rounded-md shadow-lg border border-gray-200 max-h-60 overflow-y-auto">
+             {searchResults.length > 0 ? (
+               <ul>
+                 {searchResults.map((patient) => (
+                   <li key={patient.id}>
+                     <Link
+                       to={`/patients/${patient.id}`}
+                       onClick={handleResultClick}
+                       className="block px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-700"
+                     >
+                       {patient.firstName} {patient.lastName} ({patient.email})
+                     </Link>
+                   </li>
+                 ))}
+               </ul>
+             ) : (
+               <div className="px-4 py-3 text-sm text-gray-500">
+                 No patients found.
+               </div>
+             )}
+           </div>
+         )}
       </div>
 
       {/* View Mode Dropdown, Notifications, Cart, and user profile */}
-      <div className="flex items-center space-x-4">
+      <div className="flex items-center space-x-4 ml-4"> {/* Added ml-4 */}
         {/* View Mode Dropdown */}
         <Dropdown
-          menu={{ // Changed 'overlay' to 'menu'
-            items: [ // Define items array for menu prop
+          menu={{
+            items: [
               {
                 key: 'admin',
                 icon: <ShieldCheck size={14} />,
@@ -77,9 +166,8 @@ const Header = ({ onToggleCart }) => {
                 icon: <UserCheck size={14} />,
                 label: 'Patient View',
               },
-              // Add other views here if needed
             ],
-            onClick: ({ key }) => setViewMode(key), // onClick handler remains
+            onClick: ({ key }) => setViewMode(key),
           }}
           trigger={['click']}
         >
@@ -95,7 +183,6 @@ const Header = ({ onToggleCart }) => {
         {/* Notifications Button */}
         <button className="relative p-1 text-gray-600 hover:text-gray-900">
           <Bell className="h-6 w-6" />
-          {/* Placeholder for notification count */}
           <span className="absolute top-0 right-0 block h-2 w-2 rounded-full bg-red-500 ring-2 ring-white"></span>
         </button>
 
@@ -114,10 +201,10 @@ const Header = ({ onToggleCart }) => {
         </button>
 
         {/* User Profile Dropdown */}
-        <div className="relative" ref={dropdownRef}>
+        <div className="relative" ref={userDropdownRef}>
           <button
             className="flex items-center space-x-2 focus:outline-none"
-            onClick={() => setDropdownOpen(!dropdownOpen)}
+            onClick={() => setUserDropdownOpen(!userDropdownOpen)}
           >
             <div className="flex items-center">
               <img
@@ -134,12 +221,12 @@ const Header = ({ onToggleCart }) => {
             </div>
           </button>
 
-          {dropdownOpen && (
+          {userDropdownOpen && (
             <div className="origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg py-1 bg-white ring-1 ring-black ring-opacity-5 focus:outline-none z-50">
               <button
                 className="flex items-center px-4 py-2 text-sm text-gray-700 w-full hover:bg-gray-100"
                 onClick={() => {
-                  setDropdownOpen(false);
+                  setUserDropdownOpen(false);
                   navigate('/settings/profile');
                 }}
               >
@@ -149,7 +236,7 @@ const Header = ({ onToggleCart }) => {
               <button
                 className="flex items-center px-4 py-2 text-sm text-gray-700 w-full hover:bg-gray-100"
                 onClick={() => {
-                  setDropdownOpen(false);
+                  setUserDropdownOpen(false);
                   navigate('/settings');
                 }}
               >

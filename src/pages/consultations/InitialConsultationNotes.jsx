@@ -39,9 +39,9 @@ const InitialConsultationNotes = ({
   // --- TEMPORARY MOCK DATA FOR TESTING ---
   // TODO: Remove this when useServices hook provides correct data structure
   const mockServicesWithPlans = [
-    { id: 1, name: 'Weight Management Program', availablePlans: [{ planId: 101, duration: 'Monthly', requiresSubscription: true }, { planId: 102, duration: 'Quarterly', requiresSubscription: true }] },
-    { id: 2, name: 'HRT Consultation', availablePlans: [{ planId: 201, duration: 'One-Time', requiresSubscription: false }] },
-    { id: 3, name: 'General Wellness Check', availablePlans: [] },
+    { id: 1, name: 'Weight Management Program', availablePlans: [{ planId: 101, duration: 'Monthly', requiresSubscription: true }, { planId: 102, duration: 'Quarterly', requiresSubscription: true }], recommendedFollowUp: 'Monthly' }, // Added recommendedFollowUp
+    { id: 2, name: 'HRT Consultation', availablePlans: [{ planId: 201, duration: 'One-Time', requiresSubscription: false }], recommendedFollowUp: '6_months' }, // Added recommendedFollowUp
+    { id: 3, name: 'General Wellness Check', availablePlans: [], recommendedFollowUp: '12_months' }, // Added recommendedFollowUp
   ];
   const mockAllPlans = [
       { id: 101, name: 'Monthly Weight Loss Plan', price: 199.00 },
@@ -88,6 +88,15 @@ const InitialConsultationNotes = ({
     { id: 't2', name: 'Escalate', text: 'Patient tolerating [Medication] well, weight loss plateaued. Escalate dose to [New Dose]. Counsel on potential side effects. Follow up in 1 month.' },
     { id: 't3', name: 'New Pt.', text: 'New patient with BMI [BMI]. Initiate [Medication] at starting dose. Discussed diet/exercise plan. Titrate dose as tolerated. Follow up in 2 weeks.' },
   ];
+
+  // --- Template Data for Patient Message ---
+  const messageTemplates = [
+    { id: 'm1', name: 'Continue Rx', text: 'Continue current medication as prescribed. Maintain diet and exercise. Follow up as scheduled.' },
+    { id: 'm2', name: 'Dose Change', text: 'We are adjusting your medication dose to [New Dose]. Please follow the updated instructions. Contact us with any questions. Follow up in [Timeframe].' },
+    { id: 'm3', name: 'Consult Approved', text: 'Your consultation has been reviewed and approved. Your prescription will be sent to the pharmacy. Please allow 24-48 hours for processing. Follow up as needed.' },
+  ];
+  // --- Temporary State for Testing Template Buttons ---
+  const [showPatientMessageTemplates, setShowPatientMessageTemplates] = useState(true); // Hardcoded true for testing
 
 
   // --- Derived Data & Effects ---
@@ -165,7 +174,9 @@ const InitialConsultationNotes = ({
          setSelectedMedications([]);
          setMessageToPatient('Continue medication as prescribed, diet and exercise');
          setAssessmentPlan('Obesity with good response to [Medication], continue treatment');
-         setFollowUpPlan('Monthly');
+         // Set initial follow-up based on default service (ID 1)
+         const defaultService = getServiceById(1);
+         setFollowUpPlan(defaultService?.recommendedFollowUp || 'Monthly');
          setExpandedMessage(`Dear Patient, ... [Your full message template]`);
          setExpandedAssessment(`[Patient Age/Gender]... [Your full assessment template]`);
     }
@@ -175,8 +186,17 @@ const InitialConsultationNotes = ({
 
   // --- Event Handlers --- (Remain largely the same, but rely on fetched data)
   const handleServiceChange = (e) => {
-    setSelectedServiceId(parseInt(e.target.value));
+    const newServiceId = parseInt(e.target.value);
+    setSelectedServiceId(newServiceId);
     setSelectedMedications([]); // Reset selected meds when service changes
+
+    // Update follow-up plan based on the new service
+    const selectedService = getServiceById(newServiceId);
+    if (selectedService && selectedService.recommendedFollowUp) {
+      setFollowUpPlan(selectedService.recommendedFollowUp);
+    } else {
+      setFollowUpPlan('Monthly'); // Default if not specified
+    }
   };
 
   const handleMedicationSelectionChange = (product) => {
@@ -676,8 +696,28 @@ const InitialConsultationNotes = ({
                     Expand
                   </button>
                 </div>
+                 {/* Conditionally render template buttons for testing */}
+                 {showPatientMessageTemplates && !readOnly && (
+                  <div className="mt-2 space-x-2">
+                    <span className="text-xs font-medium text-gray-600">Templates:</span>
+                    {messageTemplates.map(template => (
+                      <button
+                        key={template.id}
+                        type="button"
+                        // Update both messageToPatient and expandedMessage
+                        onClick={() => {
+                          setMessageToPatient(template.text);
+                          setExpandedMessage(template.text); // Also update the textarea
+                        }}
+                        className="px-2 py-0.5 text-xs bg-gray-200 hover:bg-gray-300 text-gray-800 rounded"
+                      >
+                        {template.name}
+                      </button>
+                    ))}
+                  </div>
+                )}
                 <textarea
-                  className="w-full bg-white p-3 border border-blue-300 rounded-md text-sm italic min-h-32"
+                  className="w-full bg-white p-3 border border-blue-300 rounded-md text-sm italic min-h-32 mt-2" // Added margin top
                   value={expandedMessage}
                   onChange={(e) => setExpandedMessage(e.target.value)}
                   disabled={readOnly}
@@ -721,7 +761,11 @@ const InitialConsultationNotes = ({
                       <button
                         key={template.id}
                         type="button"
-                        onClick={() => setAssessmentPlan(template.text)}
+                         // Update both assessmentPlan and expandedAssessment
+                        onClick={() => {
+                          setAssessmentPlan(template.text);
+                          setExpandedAssessment(template.text); // Also update the textarea
+                        }}
                         className="px-2 py-0.5 text-xs bg-gray-200 hover:bg-gray-300 text-gray-800 rounded"
                       >
                         {template.name}

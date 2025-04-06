@@ -84,7 +84,7 @@ const FormCompletedBadge = ({ completed }) => {
 const InitialConsultations = () => {
   // Local state for UI controls
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
+  const [statusFilter, setStatusFilter] = useState('pending'); // Default filter to 'pending'
   const [selectedPatient, setSelectedPatient] = useState(null);
   const [selectedConsultation, setSelectedConsultation] = useState(null);
   const [showConsultationModal, setShowConsultationModal] = useState(false);
@@ -302,23 +302,17 @@ const InitialConsultations = () => {
           <thead className="bg-gray-50">
             <tr>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Patient
+                Patient / Email
               </th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Email
-              </th>
+              {/* Removed Email column header */}
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Date Submitted
               </th>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Service
               </th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Preferred Medication
-              </th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Preferred Plan
-              </th>
+              {/* Removed Preferred Medication column header */}
+              {/* Removed Preferred Plan column header */}
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Draft Date
               </th>
@@ -328,9 +322,7 @@ const InitialConsultations = () => {
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Status
               </th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Form Completed
-              </th>
+              {/* Removed Form Completed column header */}
               <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Actions
               </th>
@@ -354,24 +346,22 @@ const InitialConsultations = () => {
                             {consultation.patientName || 'N/A'}
                           </Link>
                         </div>
+                         {/* Added email below name */}
+                        <div className="text-xs text-gray-500 mt-1">
+                          {consultation.email || '-'}
+                        </div>
                       </div>
                     </div>
                   </td>
-                  <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {consultation.email || '-'}
-                  </td>
+                  {/* Removed separate Email cell */}
                   <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
                     {formatDate(consultation.dateSubmitted)}
                   </td>
                   <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
                     {consultation.service || '-'}
                   </td>
-                  <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {consultation.preferredMedication || '-'}
-                  </td>
-                  <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {consultation.preferredPlan || '-'}
-                  </td>
+                  {/* Removed Preferred Medication cell */}
+                  {/* Removed Preferred Plan cell */}
                   <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
                     {formatDate(consultation.draftDate)}
                   </td>
@@ -381,18 +371,14 @@ const InitialConsultations = () => {
                   <td className="px-4 py-4 whitespace-nowrap">
                     <StatusBadge status={consultation.status} />
                   </td>
-                  <td className="px-4 py-4 whitespace-nowrap">
-                    <FormCompletedBadge
-                      completed={consultation.formCompleted}
-                    />
-                  </td>
+                  {/* Removed Form Completed cell */}
                   <td className="px-4 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <div className="relative flex justify-end">
                       <button
                         className="text-indigo-600 hover:text-indigo-900 mr-3"
                         onClick={() => handleViewConsultation(consultation)}
                       >
-                        View
+                        Complete Consult {/* Renamed button */}
                       </button>
 
                       <div className="relative">
@@ -488,7 +474,7 @@ const InitialConsultations = () => {
             ) : (
               <tr>
                 <td
-                  colSpan="11"
+                  colSpan="8" // Adjusted colspan again
                   className="px-4 py-4 text-center text-gray-500"
                 >
                   No consultations found matching your search criteria.

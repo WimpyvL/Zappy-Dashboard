@@ -45,13 +45,54 @@ const PatientDetail = () => {
   const [showFollowupNotes, setShowFollowupNotes] = useState(false);
   const [selectedSession, setSelectedSession] = useState(null);
 
-  // Fetch patient data using API
+  // --- Mock Patient Data for UI Testing ---
+  const mockPatientData = {
+      id: patientId || 'mock-123', // Use ID from URL or a mock one
+      firstName: 'Jane',
+      lastName: 'Doe',
+      full_name: 'Jane Doe',
+      email: 'jane.doe@example.com',
+      phone: '555-123-4567',
+      dob: '1985-05-15',
+      gender: 'Female',
+      status: 'active',
+      isAffiliate: false,
+      address: {
+          street: '123 Main St',
+          city: 'Anytown',
+          state: 'CA',
+          zip: '12345',
+          country: 'USA',
+      },
+      hpi: 'Patient reports intermittent headaches for the past 2 weeks.',
+      pmh: 'Migraines, diagnosed 2010. Seasonal allergies.',
+      medications: ['Sumatriptan PRN', 'Loratadine daily'],
+      allergies: ['Penicillin'],
+      subscriptionPlan: 'Monthly Wellness',
+      nextBillingDate: '2025-05-01',
+      subscriptionStartDate: '2024-11-01',
+      paymentMethods: [
+          { id: 'pm_1', type: 'card', brand: 'Visa', last4: '4242', expMonth: 12, expYear: 2026, isDefault: true }
+      ]
+  };
+  // --- End Mock Data ---
+
+  // Fetch patient data using API (Modified for Mock Data)
   useEffect(() => {
     const fetchPatientData = async () => {
+      // --- Temporarily use mock data ---
+      console.log(`Using mock data for patient ID: ${patientId}`);
+      setLoading((prev) => ({ ...prev, patient: true }));
+      await new Promise(resolve => setTimeout(resolve, 300)); // Simulate loading
+      setPatient(mockPatientData);
+      setLoading((prev) => ({ ...prev, patient: false }));
+      // --- End Temporary Mock Data Usage ---
+
+      /* --- Original API Call (Commented Out) ---
       try {
         setLoading((prev) => ({ ...prev, patient: true }));
         const patientResponse = await apiService.patients.getById(patientId);
-        setPatient(patientResponse);
+        setPatient(patientResponse); // Assuming API returns the patient object directly
 
         // Fetch related data in parallel
         // fetchPatientSessions(patientId);
@@ -66,6 +107,7 @@ const PatientDetail = () => {
       } finally {
         setLoading((prev) => ({ ...prev, patient: false }));
       }
+      */ // --- End Original API Call ---
     };
 
     if (patientId) {

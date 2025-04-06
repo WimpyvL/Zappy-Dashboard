@@ -5,6 +5,7 @@ import {
   Filter,
   Plus,
   X,
+  Edit, // Import Edit icon
   MoreHorizontal,
   Calendar,
   Ban,
@@ -113,9 +114,7 @@ const Patients = () => {
   const [selectedPatients, setSelectedPatients] = useState([]);
   const [showBulkActions, setShowBulkActions] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
-  // Note: We might need a separate modal state for editing if PatientModal doesn't handle it internally
-  // const [editingPatient, setEditingPatient] = useState(null);
-  // const [showEditModal, setShowEditModal] = useState(false);
+  const [editingPatient, setEditingPatient] = useState(null); // State to hold patient being edited
 
   // Effect to show/hide bulk actions based on selection
   useEffect(() => {
@@ -178,6 +177,19 @@ const Patients = () => {
     setSearchType('name');
     setCurrentPage(1); // Resetting page triggers refetch via useEffect in usePatients
   };
+
+  // Handle opening the modal for editing
+  const handleEditClick = (patient) => {
+    setEditingPatient(patient);
+    // setShowAddModal(true); // Reuse the same modal state if modal handles both add/edit
+  };
+
+  // Handle closing the modal (for both add and edit)
+  const handleCloseModal = () => {
+    setShowAddModal(false);
+    setEditingPatient(null);
+  };
+
 
   // Generate pagination controls
   const renderPagination = () => {
@@ -444,7 +456,7 @@ const Patients = () => {
                   Patient
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Status
+                  Tags {/* Renamed Header */}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Next Appointment
@@ -512,7 +524,22 @@ const Patients = () => {
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <StatusBadge status={patient.status} />
+                      {/* Render Tags instead of Status */}
+                      <div className="flex flex-wrap gap-1">
+                        {Array.isArray(patient.tags) && patient.tags.length > 0 ? (
+                          patient.tags.map((tag) => (
+                            <span
+                              key={tag.id}
+                              className="px-2 py-0.5 text-xs font-medium rounded-full bg-blue-100 text-blue-800" // Example styling, use tag.color if available
+                              // style={{ backgroundColor: tag.color ? `${tag.color}20` : '#e0e7ff', color: tag.color || '#3730a3' }} // More dynamic color example
+                            >
+                              {tag.name}
+                            </span>
+                          ))
+                        ) : (
+                          <span className="text-xs text-gray-400">No Tags</span>
+                        )}
+                      </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {patient.next_session_date
@@ -532,9 +559,14 @@ const Patients = () => {
                         >
                           View
                         </Link>
-                        <button className="text-gray-500 hover:text-gray-700">
-                          <MoreHorizontal className="h-5 w-5" />
-                        </button>
+                        {/* Add Edit button */}
+                        <button
+                           onClick={() => handleEditClick(patient)}
+                           className="text-gray-500 hover:text-indigo-600 ml-3" // Added margin
+                           title="Edit Patient"
+                         >
+                           <Edit className="h-4 w-4" />
+                         </button>
                       </div>
                     </td>
                   </tr>
@@ -602,12 +634,14 @@ const Patients = () => {
         </div>
       </div>
 
-      {/* Patient Modal */}
-      {showAddModal && (
+      {/* Patient Modal (handles both Add and Edit) */}
+      {(showAddModal || editingPatient) && (
         <PatientModal
-          isOpen={showAddModal}
-          onClose={() => setShowAddModal(false)}
+          isOpen={showAddModal || !!editingPatient}
+          onClose={handleCloseModal} // Use unified close handler
+          patientToEdit={editingPatient} // Pass patient data for editing
           onSuccess={() => {
+            handleCloseModal(); // Close modal on success
             // Refresh the patients list using the hook's refetch function
             fetchPatients();
           }}

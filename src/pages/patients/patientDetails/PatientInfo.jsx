@@ -56,7 +56,9 @@ const PatientInfo = ({ patient }) => {
             <div>
               <p className="text-sm text-gray-500">Address</p>
               <p className="text-sm font-medium">
-                {patient.address || 'No address on file'}
+                {patient.address
+                  ? `${patient.address.street || ''}, ${patient.address.city || ''}, ${patient.address.state || ''} ${patient.address.zip || ''}`.replace(/ ,|, $/g, '') // Format address string, remove trailing/leading commas
+                  : 'No address on file'}
               </p>
             </div>
           </div>

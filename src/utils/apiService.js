@@ -6,6 +6,7 @@ import 'react-toastify/dist/ReactToastify.css';
 // Create axios instance with default config
 const apiClient = axios.create({
   baseURL: process.env.REACT_APP_API_URL,
+  withCredentials: false, // Explicitly prevent sending cookies
   headers: {
     'Content-Type': 'application/json',
     'ngrok-skip-browser-warning': true,
@@ -13,11 +14,14 @@ const apiClient = axios.create({
   timeout: 30000, // 30 seconds timeout
 });
 
-// Request interceptor (Removed adding auth token from localStorage)
+// Request interceptor to add Authorization header if token exists
 apiClient.interceptors.request.use(
   (config) => {
-    // Access token is no longer stored in localStorage.
-    // The response interceptor will handle 401s and use the refreshToken.
+    const token = localStorage.getItem('token');
+    if (token) {
+      config.headers['Authorization'] = `Bearer ${token}`;
+    }
+    // config.headers['ngrok-skip-browser-warning'] = true; // Already set in defaults
     return config;
   },
   (error) => {

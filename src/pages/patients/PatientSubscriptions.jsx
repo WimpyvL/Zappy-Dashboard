@@ -427,9 +427,10 @@ const PatientSubscriptions = ({ patient }) => {
             </p>
             <button
               className="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded hover:bg-indigo-700"
-              onClick={handleSubscriptionManagement}
+              onClick={handleManageSubscriptionViaPortal} // Use the existing portal redirect function
+              disabled={isSubmitting} // Disable while submitting/redirecting
             >
-              Add Subscription
+              {isSubmitting ? 'Redirecting...' : 'Add / Manage Subscription'} {/* Update button text */}
             </button>
           </div>
         )}

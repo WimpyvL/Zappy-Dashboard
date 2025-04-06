@@ -12,7 +12,14 @@ const samplePatients = [
     firstName: 'John',
     lastName: 'Smith',
     email: 'john.smith@example.com',
+    phone: '555-123-4567',
+    address: '123 Main St',
+    city: 'Anytown',
+    state: 'CA',
+    zipCode: '90210',
+    dateOfBirth: '1985-05-15',
     status: 'Active',
+    subscriptionPlanName: 'Monthly Plan', // Added subscription
     tags: ['vip'],
   },
   {
@@ -20,7 +27,14 @@ const samplePatients = [
     firstName: 'Emily',
     lastName: 'Davis',
     email: 'emily.davis@example.com',
+    phone: '555-987-6543',
+    address: '456 Oak Ave',
+    city: 'Somewhere',
+    state: 'NY',
+    zipCode: '10001',
+    dateOfBirth: '1992-11-20',
     status: 'Active',
+    subscriptionPlanName: '3-Month Plan', // Added subscription
     tags: [],
   },
   {
@@ -28,7 +42,14 @@ const samplePatients = [
     firstName: 'Robert',
     lastName: 'Wilson',
     email: 'robert.wilson@example.com',
+    phone: '555-555-5555',
+    address: '789 Pine Ln',
+    city: 'Villagetown',
+    state: 'TX',
+    zipCode: '75001',
+    dateOfBirth: '1978-02-28',
     status: 'Inactive',
+    subscriptionPlanName: null, // Example: No active plan
     tags: ['follow-up'],
   },
 ];

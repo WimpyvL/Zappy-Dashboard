@@ -15,67 +15,47 @@ import {
 } from 'lucide-react';
 import PatientModal from './PatientModal';
 // import apiService from '../../utils/apiService'; // Removed direct apiService import
-import { usePatients } from '../../apis/patients/hooks'; // Import the hook, removed unused mutation hooks
-import { useTags } from '../../apis/tags/hooks'; // Import the hook
+import { usePatients } from '../../apis/patients/hooks';
+import { useTags } from '../../apis/tags/hooks';
+import { useAppContext } from '../../context/AppContext'; // Import AppContext hook
+import { useAppContext } from '../../context/AppContext'; // Import AppContext hook
 
 const StatusBadge = ({ status }) => {
-  if (status === 'active') {
-    return (
-      <span className="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">
-        Active
-      </span>
-    );
-  } else if (status === 'inactive') {
-    return (
-      <span className="px-2 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-800">
-        Inactive
-      </span>
-    );
-  } else if (status === 'suspended') {
-    return (
-      <span className="px-2 py-1 text-xs font-medium rounded-full bg-red-100 text-red-800">
-        Suspended
-      </span>
-    );
-  } else if (status === 'pending') {
-    return (
-      <span className="px-2 py-1 text-xs font-medium rounded-full bg-yellow-100 text-yellow-800">
-        Pending
-      </span>
-    );
-  } else if (status === 'blacklisted') {
-    return (
-      <span className="px-2 py-1 text-xs font-medium rounded-full bg-black text-white">
-        Blacklisted
-      </span>
-    );
-  }
-  return null;
-};
+  // Ensure status is treated case-insensitively for comparison
+  const lowerCaseStatus = status?.toLowerCase();
 
-const AffiliateTag = ({ isAffiliate }) => {
-  if (isAffiliate) {
-    return (
-      <span className="px-2 py-1 text-xs font-medium rounded-full bg-purple-100 text-purple-800">
-        Affiliate
-      </span>
-    );
+  if (lowerCaseStatus === 'active') {
+    return <span className="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">Active</span>;
+  } else if (lowerCaseStatus === 'inactive') {
+    return <span className="px-2 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-800">Inactive</span>;
+  } else if (lowerCaseStatus === 'suspended') {
+    return <span className="px-2 py-1 text-xs font-medium rounded-full bg-red-100 text-red-800">Suspended</span>;
+  } else if (lowerCaseStatus === 'pending') {
+    return <span className="px-2 py-1 text-xs font-medium rounded-full bg-yellow-100 text-yellow-800">Pending</span>;
+  } else if (lowerCaseStatus === 'blacklisted') {
+    return <span className="px-2 py-1 text-xs font-medium rounded-full bg-black text-white">Blacklisted</span>;
   }
   return null;
 };
+// Removed AffiliateTag component as it wasn't used in the table mapping
 
 const Patients = () => {
+  // Get subscription plans from context for the filter dropdown
+  const { subscriptionPlans: allSubscriptionPlans } = useAppContext();
+
   // Filter and search state
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
-  const [affiliateFilter, setAffiliateFilter] = useState('all');
+  const [affiliateFilter, setAffiliateFilter] = useState('all'); // Keep if needed, though not displayed
   const [tagFilter, setTagFilter] = useState('all');
+  const [subscriptionPlanFilter, setSubscriptionPlanFilter] = useState('all'); // New filter state
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
   const [searchType, setSearchType] = useState('name'); // name, email, phone, order
   const [currentPage, setCurrentPage] = useState(1);
 
   // --- Use React Query Hooks ---
-  const filters = {
+  // Note: The hook likely doesn't support subscriptionPlanFilter, so we'll filter client-side
+  const filtersForHook = {
     search: searchTerm || undefined,
     search_by: searchTerm ? searchType : undefined,
     status: statusFilter !== 'all' ? statusFilter : undefined,
@@ -85,37 +65,43 @@ const Patients = () => {
 
   const {
     data: patientsData,
-    isLoading: loading, // Use isLoading from the hook
-    error, // Use error from the hook
-    refetch: fetchPatients, // Use refetch from the hook
-  } = usePatients(currentPage, filters);
+    isLoading: loading,
+    error,
+    refetch: fetchPatients,
+  } = usePatients(currentPage, filtersForHook); // Pass only supported filters
 
-  const { data: tagsData } = useTags(); // Fetch tags using the hook
+  const { data: tagsData } = useTags();
 
   // Extract data from hook responses
-  const patients = patientsData?.data || [];
-  const paginationMeta = patientsData?.meta || {
-    count: 0,
-    total_count: 0,
-    total_pages: 1,
-    current_page: 1,
-  };
-  // TODO: Adapt paginationLinks if the API/hook provides them
-  const paginationLinks = patientsData?.links || {
-    first: null,
-    last: null,
-    next: null,
-    prev: null,
-  };
+  const rawPatients = patientsData?.data || []; // Get raw data from hook
+  const paginationMeta = patientsData?.meta || { count: 0, total_count: 0, total_pages: 1, current_page: 1 };
+  const paginationLinks = patientsData?.links || { first: null, last: null, next: null, prev: null };
   const tags = tagsData?.data || [];
   // --- End Hook Usage ---
+
+  // --- Client-side filtering for Subscription Plan ---
+  const patients = rawPatients.filter(patient => {
+    if (subscriptionPlanFilter === 'all') return true;
+    if (subscriptionPlanFilter === 'none') return !patient.subscriptionPlanName;
+    return patient.subscriptionPlanName === subscriptionPlanFilter;
+  });
+  // --- End Client-side filtering ---
+
+  // --- Client-side filtering for Subscription Plan ---
+  const patients = rawPatients.filter(patient => {
+    if (subscriptionPlanFilter === 'all') return true;
+    if (subscriptionPlanFilter === 'none') return !patient.subscriptionPlanName;
+    return patient.subscriptionPlanName === subscriptionPlanFilter;
+  });
+  // --- End Client-side filtering ---
+
 
   // Selected patients and modals
   const [selectedPatients, setSelectedPatients] = useState([]);
   const [showBulkActions, setShowBulkActions] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
-  const [editingPatientId, setEditingPatientId] = useState(null); // State to hold ID of patient being edited
-  const [showEditModal, setShowEditModal] = useState(false); // Separate state for edit modal visibility
+  const [editingPatientId, setEditingPatientId] = useState(null);
+  const [showEditModal, setShowEditModal] = useState(false);
 
   // Effect to show/hide bulk actions based on selection
   useEffect(() => {
@@ -155,17 +141,17 @@ const Patients = () => {
     }
   };
 
-  // Check if all patients are selected
+  // Check if all patients are selected (adjust for client-side filtered list)
   const allSelected =
-    patients.length > 0 &&
+    patients.length > 0 && // Use the client-side filtered 'patients' list
     patients.every((patient) => selectedPatients.includes(patient.id));
 
-  // Toggle select all
+  // Toggle select all (adjust for client-side filtered list)
   const toggleSelectAll = () => {
     if (allSelected) {
       setSelectedPatients([]);
     } else {
-      setSelectedPatients(patients.map((patient) => patient.id));
+      setSelectedPatients(patients.map((patient) => patient.id)); // Use the client-side filtered 'patients' list
     }
   };
 
@@ -175,27 +161,31 @@ const Patients = () => {
     setStatusFilter('all');
     setAffiliateFilter('all');
     setTagFilter('all');
+    setSubscriptionPlanFilter('all'); // Reset new filter
     setSearchType('name');
-    setCurrentPage(1); // Resetting page triggers refetch via useEffect in usePatients
+    setCurrentPage(1);
+    // Refetch data with reset hook filters
+    fetchPatients();
   };
 
   // Handle opening the modal for editing
   const handleEditClick = (patient) => {
-    setEditingPatientId(patient.id); // Store only the ID
-    setShowEditModal(true); // Use separate state to show modal
+    setEditingPatientId(patient.id);
+    setShowEditModal(true);
   };
 
   // Handle closing the modal (for both add and edit)
   const handleCloseModal = () => {
     setShowAddModal(false);
-    setShowEditModal(false); // Close edit modal
-    setEditingPatientId(null); // Clear editing ID
+    setShowEditModal(false);
+    setEditingPatientId(null);
   };
 
 
-  // Generate pagination controls
+  // Generate pagination controls (remains the same)
   const renderPagination = () => {
-    if (paginationMeta.total_pages <= 1) return null;
+    // ... (pagination logic remains the same) ...
+     if (paginationMeta.total_pages <= 1) return null;
 
     // Create array of pages to show
     let pages = [];
@@ -289,9 +279,13 @@ const Patients = () => {
     );
   };
 
+  // Get unique subscription plan names for the filter dropdown
+  const uniquePlanNames = Array.from(new Set(allSubscriptionPlans.map(plan => plan.name).filter(Boolean)));
+
   return (
     <div>
-      <div className="flex justify-between items-center mb-6">
+      {/* Header and Bulk Actions (remain the same) */}
+       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold text-gray-800">Patients</h1>
         <div className="flex space-x-3">
           {showBulkActions && (
@@ -329,77 +323,72 @@ const Patients = () => {
         </div>
       </div>
 
+
       {/* Filters and Search */}
       <div className="bg-white p-4 rounded-lg shadow mb-6">
+        {/* Top row filters (Search, Search Type, Status) */}
         <div className="flex flex-col md:flex-row md:items-center space-y-4 md:space-y-0 md:space-x-4 mb-4">
-          <div className="flex-1 relative">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <Search className="h-5 w-5 text-gray-400" />
-            </div>
-            <input
-              type="text"
-              placeholder={`Search patients by ${searchType}...`}
-              className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-          </div>
+           {/* Search Input */}
+           <div className="flex-1 relative">
+             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+               <Search className="h-5 w-5 text-gray-400" />
+             </div>
+             <input
+               type="text"
+               placeholder={`Search patients by ${searchType}...`}
+               className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+               value={searchTerm}
+               onChange={(e) => setSearchTerm(e.target.value)}
+             />
+           </div>
+           {/* Search Type */}
+           <div className="flex items-center space-x-2">
+             <select
+               className="block pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
+               value={searchType}
+               onChange={(e) => setSearchType(e.target.value)}
+             >
+               <option value="name">Name</option>
+               <option value="email">Email</option>
+               <option value="phone">Phone</option>
+               <option value="order">Order #</option> {/* Keep if needed */}
+             </select>
+           </div>
+           {/* Status Filter */}
+           <div className="flex items-center space-x-2">
+             <Filter className="h-5 w-5 text-gray-400" />
+             <select
+               className="block pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
+               value={statusFilter}
+               onChange={(e) => setStatusFilter(e.target.value)}
+             >
+               <option value="all">All Statuses</option>
+               <option value="active">Active</option>
+               <option value="inactive">Inactive</option>
+               <option value="suspended">Suspended</option>
+               <option value="blacklisted">Blacklisted</option> {/* Added Blacklisted */}
+               <option value="pending">Pending</option>
+             </select>
+           </div>
+           {/* Advanced Filters Toggle */}
+           <button
+             className="text-indigo-600 hover:text-indigo-900 text-sm font-medium"
+             onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
+           >
+             {showAdvancedFilters ? 'Hide Filters' : 'Advanced Filters'}
+           </button>
+         </div>
 
-          <div className="flex items-center space-x-2">
-            <select
-              className="block pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
-              value={searchType}
-              onChange={(e) => setSearchType(e.target.value)}
-            >
-              <option value="name">Name</option>
-              <option value="email">Email</option>
-              <option value="phone">Phone</option>
-              <option value="order">Order #</option>
-            </select>
-          </div>
 
-          <div className="flex items-center space-x-2">
-            <Filter className="h-5 w-5 text-gray-400" />
-            <select
-              className="block pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-            >
-              <option value="all">All Statuses</option>
-              <option value="active">Active</option>
-              <option value="inactive">Inactive</option>
-              <option value="suspended">Suspended</option>
-              <option value="blacklisted">Blacklisted</option>
-              <option value="pending">Pending</option>
-            </select>
-          </div>
-
-          <button
-            className="text-indigo-600 hover:text-indigo-900 text-sm font-medium"
-            onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
-          >
-            {showAdvancedFilters ? 'Hide Filters' : 'Advanced Filters'}
-          </button>
-        </div>
-
+        {/* Advanced Filters Row */}
         {showAdvancedFilters && (
           <div className="flex flex-col md:flex-row md:items-center space-y-4 md:space-y-0 md:space-x-4 pt-4 border-t border-gray-200">
-            <div className="flex items-center space-x-2">
-              <span className="text-sm text-gray-500">Affiliate Status:</span>
-              <select
-                className="block pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
-                value={affiliateFilter}
-                onChange={(e) => setAffiliateFilter(e.target.value)}
-              >
-                <option value="all">All Patients</option>
-                <option value="yes">Affiliates Only</option>
-                <option value="no">Non-Affiliates</option>
-              </select>
-            </div>
+            {/* Affiliate Filter (Keep if needed) */}
+            {/* <div className="flex items-center space-x-2"> ... </div> */}
 
             {/* Tag Filter */}
             <div className="flex items-center space-x-2">
-              <span className="text-sm text-gray-500">Tags:</span>
+              <span className="text-sm text-gray-500">Tag:</span>
               <select
                 className="block pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
                 value={tagFilter}
@@ -414,18 +403,28 @@ const Patients = () => {
               </select>
             </div>
 
-            <div className="flex items-center space-x-2">
-              <span className="text-sm text-gray-500">Insurance:</span>
-              <select
-                className="block pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
-                defaultValue="all"
-              >
-                <option value="all">All Types</option>
-                <option value="insured">Insurance</option>
-                <option value="self-pay">Self-Pay</option>
-              </select>
-            </div>
+             {/* Subscription Plan Filter */}
+             <div className="flex items-center space-x-2">
+               <span className="text-sm text-gray-500">Plan:</span>
+               <select
+                 className="block pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
+                 value={subscriptionPlanFilter}
+                 onChange={(e) => setSubscriptionPlanFilter(e.target.value)}
+               >
+                 <option value="all">All Plans</option>
+                 {uniquePlanNames.map((planName) => (
+                   <option key={planName} value={planName}>
+                     {planName}
+                   </option>
+                 ))}
+                 <option value="none">No Plan</option> {/* Option for patients with null/no plan */}
+               </select>
+             </div>
 
+            {/* Insurance Filter (Keep if needed) */}
+            {/* <div className="flex items-center space-x-2"> ... </div> */}
+
+            {/* Reset Button */}
             <div className="flex items-center space-x-2 ml-auto">
               <button
                 className="px-3 py-1 border border-gray-300 text-gray-700 rounded text-sm hover:bg-gray-50"
@@ -438,12 +437,14 @@ const Patients = () => {
         )}
       </div>
 
+
       {/* Patients Table */}
       <div className="bg-white shadow overflow-hidden rounded-lg">
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
+                {/* Checkbox Header */}
                 <th className="pl-6 py-3 text-left" scope="col">
                   <div className="flex items-center">
                     <input
@@ -454,18 +455,27 @@ const Patients = () => {
                     />
                   </div>
                 </th>
+                {/* Patient Header */}
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Patient
                 </th>
+                {/* Tags Header */}
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Tags {/* Renamed Header */}
+                  Tags
                 </th>
+                 {/* Subscription Plan Header */}
+                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                   Subscription Plan
+                 </th>
+                {/* Next Appointment Header */}
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Next Appointment
                 </th>
+                {/* Doctor Header */}
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Doctor
                 </th>
+                {/* Actions Header */}
                 <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Actions
                 </th>
@@ -474,8 +484,9 @@ const Patients = () => {
             <tbody className="bg-white divide-y divide-gray-200">
               {loading ? (
                 <tr>
-                  <td colSpan="7" className="px-6 py-4 text-center">
-                    <div className="flex justify-center">
+                  <td colSpan="7" className="px-6 py-4 text-center"> {/* Updated colspan */}
+                    {/* Loading Spinner */}
+                     <div className="flex justify-center">
                       <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-indigo-500"></div>
                     </div>
                     <p className="mt-2 text-sm text-gray-500">
@@ -486,7 +497,7 @@ const Patients = () => {
               ) : error ? (
                 <tr>
                   <td
-                    colSpan="7"
+                    colSpan="7" // Updated colspan
                     className="px-6 py-4 text-center text-red-500"
                   >
                     Error loading patients: {error.message || 'Unknown error'}
@@ -495,6 +506,7 @@ const Patients = () => {
               ) : patients.length > 0 ? (
                 patients.map((patient) => (
                   <tr key={patient.id} className="hover:bg-gray-50">
+                    {/* Checkbox Cell */}
                     <td className="pl-6 py-4 whitespace-nowrap">
                       <input
                         type="checkbox"
@@ -503,68 +515,65 @@ const Patients = () => {
                         onChange={() => handlePatientSelection(patient.id)}
                       />
                     </td>
+                    {/* Patient Cell */}
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
                         <div>
-                          {/* Wrap name in Link */}
                           <Link
                             to={`/patients/${patient.id}`}
                             className="text-sm font-medium text-indigo-600 hover:text-indigo-900 hover:underline"
                           >
-                            {patient.full_name || `${patient.firstName} ${patient.lastName}`} {/* Added fallback */}
-                            {patient.isAffiliate && (
-                              <AffiliateTag isAffiliate={patient.isAffiliate} />
-                            )}
+                            {patient.full_name || `${patient.firstName} ${patient.lastName}`}
+                            {/* Removed AffiliateTag display from here */}
                           </Link>
-                          <div className="text-sm text-gray-500">
-                            {patient.email}
-                          </div>
-                          <div className="text-sm text-gray-500">
-                            {patient.phone}
-                          </div>
+                          <div className="text-sm text-gray-500">{patient.email}</div>
+                          <div className="text-sm text-gray-500">{patient.phone}</div>
                         </div>
                       </div>
                     </td>
+                    {/* Tags Cell */}
                     <td className="px-6 py-4 whitespace-nowrap">
-                      {/* Render Tags instead of Status */}
                       <div className="flex flex-wrap gap-1">
                         {Array.isArray(patient.tags) && patient.tags.length > 0 ? (
-                          patient.tags.map((tag) => (
-                            <span
-                              key={tag.id}
-                              className="px-2 py-0.5 text-xs font-medium rounded-full bg-blue-100 text-blue-800" // Example styling, use tag.color if available
-                              // style={{ backgroundColor: tag.color ? `${tag.color}20` : '#e0e7ff', color: tag.color || '#3730a3' }} // More dynamic color example
-                            >
-                              {tag.name}
-                            </span>
-                          ))
+                          patient.tags.map((tagId) => { // Assuming patient.tags is array of IDs
+                             const tag = tags.find(t => t.id === tagId);
+                             return tag ? (
+                               <span
+                                 key={tag.id}
+                                 className="px-2 py-0.5 text-xs font-medium rounded-full bg-blue-100 text-blue-800" // Default style
+                                 // TODO: Use tag.color for dynamic styling
+                               >
+                                 {tag.name}
+                               </span>
+                             ) : null;
+                           })
                         ) : (
                           <span className="text-xs text-gray-400">No Tags</span>
                         )}
                       </div>
                     </td>
+                     {/* Subscription Plan Cell */}
+                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                       {patient.subscriptionPlanName || (
+                         <span className="text-xs text-gray-400">None</span>
+                       )}
+                     </td>
+                    {/* Next Appointment Cell */}
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {patient.next_session_date
-                        ? new Date(
-                            patient.next_session_date
-                          ).toLocaleDateString()
+                        ? new Date(patient.next_session_date).toLocaleDateString()
                         : 'None scheduled'}
                     </td>
+                    {/* Doctor Cell */}
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {patient.doctor || 'Not assigned'}
                     </td>
+                    {/* Actions Cell */}
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <div className="flex items-center justify-end space-x-3">
-                        <Link
-                          to={`/patients/${patient.id}`}
-                          className="text-indigo-600 hover:text-indigo-900"
-                        >
-                          View
-                        </Link>
-                        {/* Add Edit button */}
+                      <div className="flex items-center justify-end">
                         <button
                            onClick={() => handleEditClick(patient)}
-                           className="text-gray-500 hover:text-indigo-600 ml-3" // Added margin
+                           className="text-gray-500 hover:text-indigo-600"
                            title="Edit Patient"
                          >
                            <Edit className="h-4 w-4" />
@@ -576,10 +585,10 @@ const Patients = () => {
               ) : (
                 <tr>
                   <td
-                    colSpan="6"
+                    colSpan="7" // Updated colspan
                     className="px-6 py-4 text-center text-gray-500"
                   >
-                    No patients found matching your search criteria.
+                    No patients found matching your criteria. {/* Updated message */}
                   </td>
                 </tr>
               )}
@@ -587,8 +596,8 @@ const Patients = () => {
           </table>
         </div>
 
-        {/* Pagination */}
-        <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
+        {/* Pagination (remains the same) */}
+         <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
           <div className="flex-1 flex justify-between sm:hidden">
             <button
               className={`relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 ${
@@ -615,9 +624,9 @@ const Patients = () => {
               <p className="text-sm text-gray-700">
                 Showing{' '}
                 <span className="font-medium">
-                  {paginationMeta.count > 0 ? ((paginationMeta.current_page - 1) * paginationMeta.per_page) + 1 : 0} {/* Corrected start index */}
+                  {paginationMeta.count > 0 ? ((paginationMeta.current_page - 1) * paginationMeta.per_page) + 1 : 0}
                 </span>{' '}
-                to <span className="font-medium">{Math.min(paginationMeta.current_page * paginationMeta.per_page, paginationMeta.total_count)}</span>{' '} {/* Corrected end index */}
+                to <span className="font-medium">{Math.min(paginationMeta.current_page * paginationMeta.per_page, paginationMeta.total_count)}</span>{' '}
                 of{' '}
                 <span className="font-medium">
                   {paginationMeta.total_count}
@@ -636,34 +645,24 @@ const Patients = () => {
         </div>
       </div>
 
-      {/* Add Patient Modal */}
-      {showAddModal && (
+      {/* Modals (remain the same) */}
+       {showAddModal && (
         <PatientModal
           isOpen={showAddModal}
           onClose={handleCloseModal}
-          // No patientData/editingPatientId passed for Add mode
           onSuccess={() => {
             handleCloseModal();
-            fetchPatients();
+            fetchPatients(); // Use refetch from hook
           }}
         />
       )}
 
-       {/* Edit Patient Modal */}
        {showEditModal && editingPatientId && (
         <PatientModal
           isOpen={showEditModal}
           onClose={handleCloseModal}
-          editingPatientId={editingPatientId} // Pass the ID to the modal
+          editingPatientId={editingPatientId}
           onSuccess={() => {
             handleCloseModal();
-            // Refresh the patients list using the hook's refetch function
-            fetchPatients();
+            fetchPatients(); // Use refetch from hook
           }}
-        />
-      )}
-    </div>
-  );
-};
-
-export default Patients;

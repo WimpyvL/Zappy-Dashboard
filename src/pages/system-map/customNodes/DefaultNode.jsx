@@ -1,13 +1,13 @@
 import React, { memo } from 'react';
 import { Handle, Position } from 'reactflow';
-import { Tooltip, Popover, Button } from 'antd'; // Import Popover, Button
+import { Popover, Button } from 'antd'; // Removed Tooltip
 import * as Icons from '@ant-design/icons'; // Import all icons
 
 // Helper to get icon component by name, defaulting to a generic one
 const getIcon = (iconName) => {
   const IconComponent = Icons[iconName] || Icons.AppstoreOutlined;
-  // Apply style directly in the helper
-  return <IconComponent style={{ color: '#595959', marginRight: '8px' }} />;
+  // Use Tailwind classes for styling if possible, or keep inline for simplicity
+  return <IconComponent className="text-gray-600 mr-2" />; // Adjusted styling
 };
 
 // Content for the Popover
@@ -26,49 +26,57 @@ const PopoverContent = ({ data }) => (
 
 // Renamed from ActionNode to DefaultNode
 const DefaultNode = memo(({ data, isConnectable }) => {
-  const NodeIcon = getIcon(data.icon); // Get the icon component based on data.icon
+  const NodeIcon = getIcon(data.icon); // Get the icon component
+
+  // Define common handle style
+  const handleStyle = {
+    width: '8px',
+    height: '8px',
+    background: '#4f46e5', // Indigo color to match target image handles
+    border: 'none',
+  };
 
   return (
     <>
       {/* Input handle (top) */}
-      <Tooltip title="Input">
-         <Handle
-           type="target"
-           position={Position.Top}
-           id="a" // Unique ID for the handle
-           style={{ background: '#555' }}
-           isConnectable={isConnectable}
-         />
-      </Tooltip>
+      <Handle
+        type="target"
+        position={Position.Top}
+        id="a"
+        style={handleStyle}
+        isConnectable={isConnectable}
+      />
 
-      {/* Wrap node content with Popover */}
-      <Popover
-        content={<PopoverContent data={data} />}
-        title={data.label || 'System Element'}
-        trigger="click" // Show on click
-        placement="bottom" // Position below the node
-        // overlayStyle={{ maxWidth: '300px' }} // Optional: constrain width
-      >
-        {/* Node Content - Add cursor pointer */}
-        <div className="react-flow__node-default" style={{ padding: '10px 15px', background: '#fafafa', border: '1px solid #d9d9d9', cursor: 'pointer' }}>
-          <div style={{ display: 'flex', alignItems: 'center' }}>
-              {NodeIcon} {/* Render the dynamic icon */}
-              <span style={{ fontWeight: 500 }}>{data.label || 'System Element'}</span>
-           </div>
-           {/* Description removed from direct display */}
+      {/* Node Card Styling */}
+      <div className="bg-white rounded-md shadow-md border border-gray-200 overflow-hidden">
+        {/* Header */}
+        <div className="p-3 border-b border-gray-100 flex items-center bg-gray-50">
+          {NodeIcon}
+          <span className="font-medium text-sm text-gray-700">{data.label || 'System Element'}</span>
         </div>
-      </Popover>
+
+        {/* Body/Content - Using Popover for details */}
+        <Popover
+          content={<PopoverContent data={data} />}
+          title={data.label || 'System Element'}
+          trigger="click"
+          placement="bottom"
+        >
+          <div className="p-3 text-xs text-gray-600 cursor-pointer min-h-[30px]">
+            {/* Display a snippet or placeholder text */}
+            {data.description ? `${data.description.substring(0, 50)}...` : 'Click for details'}
+          </div>
+        </Popover>
+      </div>
 
       {/* Output handle (bottom) */}
-      <Tooltip title="Output">
-        <Handle
-          type="source"
-          position={Position.Bottom}
-          id="b" // Unique ID for the handle
-          style={{ background: '#555' }}
-          isConnectable={isConnectable}
-        />
-      </Tooltip>
+      <Handle
+        type="source"
+        position={Position.Bottom}
+        id="b"
+        style={handleStyle}
+        isConnectable={isConnectable}
+      />
     </>
   );
 });

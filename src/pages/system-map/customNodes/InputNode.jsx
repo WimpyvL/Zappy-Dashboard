@@ -1,14 +1,14 @@
 import React, { memo } from 'react';
 import { Handle, Position } from 'reactflow';
-import { Tooltip, Popover, Button } from 'antd'; // Import Popover, Button
+import { Popover, Button } from 'antd'; // Removed Tooltip
 import * as Icons from '@ant-design/icons'; // Import all icons
 
 
 // Helper to get icon component by name, defaulting to UserOutlined for inputs
 const getIcon = (iconName) => {
   const IconComponent = Icons[iconName] || Icons.UserOutlined;
-  // Apply style directly in the helper
-  return <IconComponent style={{ color: '#c41d7f', marginRight: '8px' }} />;
+  // Use Tailwind classes
+  return <IconComponent className="text-gray-600 mr-2" />; // Adjusted styling
 };
 
 // Content for the Popover (Can reuse or customize)
@@ -26,37 +26,49 @@ const PopoverContent = ({ data }) => (
 
 // Renamed from TriggerNode to InputNode
 const InputNode = memo(({ data, isConnectable }) => {
-  const NodeIcon = getIcon(data.icon); // Get the icon component based on data.icon
+  const NodeIcon = getIcon(data.icon); // Get the icon component
+
+  // Define common handle style (same as DefaultNode)
+  const handleStyle = {
+    width: '8px',
+    height: '8px',
+    background: '#4f46e5', // Indigo color
+    border: 'none',
+  };
 
   return (
     <>
-      {/* Wrap node content with Popover */}
-      <Popover
-        content={<PopoverContent data={data} />}
-        title={data.label || 'Input Node'}
-        trigger="click" // Show on click
-        placement="bottom" // Position below the node
-      >
-        {/* Node Content - Add cursor pointer */}
-        <div className="react-flow__node-input" style={{ padding: '10px 15px', background: '#fff0f6', border: '1px solid #ffadd2', cursor: 'pointer' }}>
-          <div style={{ display: 'flex', alignItems: 'center' }}>
-              {NodeIcon} {/* Render the dynamic icon */}
-              <span style={{ fontWeight: 500 }}>{data.label || 'Input Node'}</span>
-           </div>
-           {/* Removed description display from here */}
+      {/* Node Card Styling (Consistent with DefaultNode) */}
+      <div className="bg-white rounded-md shadow-md border border-gray-200 overflow-hidden">
+        {/* Header */}
+        <div className="p-3 border-b border-gray-100 flex items-center bg-gray-50">
+          {NodeIcon}
+          <span className="font-medium text-sm text-gray-700">{data.label || 'Input Node'}</span>
         </div>
-      </Popover>
 
-      {/* Output handle (bottom) */}
-      <Tooltip title="Output">
-        <Handle
-          type="source"
-          position={Position.Bottom}
-          id="b" // Unique ID for the handle
-          style={{ background: '#555' }}
-          isConnectable={isConnectable}
-        />
-      </Tooltip>
+        {/* Body/Content - Using Popover for details */}
+        <Popover
+          content={<PopoverContent data={data} />}
+          title={data.label || 'Input Node'}
+          trigger="click"
+          placement="bottom"
+        >
+          <div className="p-3 text-xs text-gray-600 cursor-pointer min-h-[30px]">
+            {/* Display a snippet or placeholder text */}
+            {data.description ? `${data.description.substring(0, 50)}...` : 'Click for details'}
+          </div>
+        </Popover>
+      </div>
+
+      {/* Output handle (bottom) - Input nodes typically only have source handles */}
+      <Handle
+        type="source"
+        position={Position.Bottom}
+        id="b"
+        style={handleStyle}
+        isConnectable={isConnectable}
+      />
+      {/* Note: Input nodes usually don't have a target handle, but if needed, add one similarly */}
     </>
   );
 });

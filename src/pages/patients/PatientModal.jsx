@@ -6,94 +6,89 @@ import {
   Phone,
   Calendar,
   Tag,
-  Building,
+  // Building, // Removed unused icon
 } from 'lucide-react';
-// Removed apiService import
 import { toast } from 'react-toastify';
-// Removed LoadingSpinner import as we won't show loading state for mock data
-import { useAppContext } from '../../context/AppContext'; // Import context hook
+import { useCreatePatient, useUpdatePatient, usePatientById } from '../../apis/patients/hooks'; // Import actual hooks
 
 // Accept editingPatientId prop
 const PatientModal = ({ isOpen, onClose, editingPatientId, onSuccess }) => {
-  const { patients, updatePatient, createPatient } = useAppContext(); // Get patients and potentially mock update/create functions
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  // Removed isLoadingData state
-  const [formData, setFormData] = useState({ // Initial empty state
-    // Use consistent naming if possible, matching context data structure helps
-    firstName: '',
-    lastName: '',
+  // Use actual mutation hooks
+  const createPatientMutation = useCreatePatient();
+  const updatePatientMutation = useUpdatePatient();
+
+  // Fetch patient data if in edit mode
+  const { data: patientDataForEdit, isLoading: isLoadingData } = usePatientById(editingPatientId, {
+    enabled: !!editingPatientId && isOpen, // Only fetch when modal is open and in edit mode
+  });
+
+  // Removed context usage for mock functions/data
+  // const { patients, updatePatient, createPatient } = useAppContext();
+
+  // Use mutation loading state instead of local isSubmitting
+  const isSubmitting = createPatientMutation.isPending || updatePatientMutation.isPending;
+
+  const [formData, setFormData] = useState({ // Initial empty state - use snake_case for DB consistency
+    first_name: '',
+    last_name: '',
     email: '',
     phone: '',
-    // Assuming address fields are flat in mock data or handle nested if needed
-    address: '',
-    city: '',
+    street_address: '',
+    city_name: '', // Changed from city
     state: '',
-    zipCode: '',
-    dateOfBirth: '', // Keep as string YYYY-MM-DD
-    status: 'Active', // Match mock data status values
-    // Add fields if they exist in mock data, otherwise remove
-    // preferredPharmacy: '',
+    zip_code: '',
+    date_of_birth: '', // Keep as string YYYY-MM-DD
+    status: 'active', // Use lowercase status consistent with DB/API
+    // Removed unused fields like preferredPharmacy, assignedDoctor, medicalNotes
     // assignedDoctor: '',
     // medicalNotes: '',
   });
 
   const isEditMode = !!editingPatientId;
 
-  // Effect to load mock data in edit mode or reset form in add mode
+  // Effect to load patient data in edit mode or reset form in add mode
   useEffect(() => {
     const resetForm = () => {
       setFormData({
-        firstName: '', lastName: '', email: '', phone: '', address: '', city: '',
-        state: '', zipCode: '', dateOfBirth: '', status: 'Active',
-        // Reset other fields if added
+        first_name: '', last_name: '', email: '', phone: '', street_address: '', city_name: '', // Changed city
+        state: '', zip_code: '', date_of_birth: '', status: 'active',
       });
-    };
-
-    const loadMockPatientData = () => {
-      if (!editingPatientId) return;
-
-      console.log(`Finding mock data for patient ID: ${editingPatientId}`);
-      const patientToEdit = patients.find(p => p.id === editingPatientId);
-
-      if (patientToEdit) {
-        console.log("Found Mock Patient Data:", patientToEdit);
-        // Map mock data fields to formData state
-        // Handle potential date formatting if mock data has full ISO strings
-        let formattedDob = '';
-        if (patientToEdit.dateOfBirth) { // Assuming mock data has dateOfBirth field
-           try {
-             formattedDob = new Date(patientToEdit.dateOfBirth).toISOString().split('T')[0];
-             if (!/^\d{4}-\d{2}-\d{2}$/.test(formattedDob)) formattedDob = '';
-           } catch { formattedDob = ''; }
-        }
-
-        setFormData({
-          firstName: patientToEdit.firstName || '',
-          lastName: patientToEdit.lastName || '',
-          email: patientToEdit.email || '',
-          phone: patientToEdit.phone || '', // Add if exists in mock
-          address: patientToEdit.address || '', // Add if exists in mock
-          city: patientToEdit.city || '', // Add if exists in mock
-          state: patientToEdit.state || '', // Add if exists in mock
-          zipCode: patientToEdit.zipCode || '', // Add if exists in mock
-          dateOfBirth: formattedDob,
-          status: patientToEdit.status || 'Active',
-          // Map other fields if they exist in mock data
-        });
-      } else {
-        toast.error(`Mock patient data not found for ID: ${editingPatientId}`);
-        onClose(); // Close modal if patient not found in mock data
-      }
     };
 
     if (isOpen) {
       if (isEditMode) {
-        loadMockPatientData();
+        if (patientDataForEdit) {
+          // Map fetched data fields to formData state
+          let formattedDob = '';
+          if (patientDataForEdit.date_of_birth) {
+             try {
+               formattedDob = new Date(patientDataForEdit.date_of_birth).toISOString().split('T')[0];
+               if (!/^\d{4}-\d{2}-\d{2}$/.test(formattedDob)) formattedDob = '';
+             } catch { formattedDob = ''; }
+          }
+          setFormData({
+            first_name: patientDataForEdit.first_name || '',
+            last_name: patientDataForEdit.last_name || '',
+            email: patientDataForEdit.email || '',
+            phone: patientDataForEdit.phone || '',
+            street_address: patientDataForEdit.street_address || '',
+            city_name: patientDataForEdit.city_name || '', // Changed from city
+            state: patientDataForEdit.state || '',
+            zip_code: patientDataForEdit.zip_code || '',
+            date_of_birth: formattedDob,
+            status: patientDataForEdit.status || 'active',
+          });
+        } else if (!isLoadingData) {
+          // Handle case where data is loaded but null (patient not found)
+          toast.error(`Patient data not found for ID: ${editingPatientId}`);
+          onClose();
+        }
+        // If isLoadingData is true, we wait for data or error
       } else {
         resetForm(); // Reset for Add mode
       }
     }
-  }, [editingPatientId, isOpen, onClose, patients]); // Add patients to dependency array
+  }, [isOpen, isEditMode, editingPatientId, patientDataForEdit, isLoadingData, onClose]);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -103,70 +98,45 @@ const PatientModal = ({ isOpen, onClose, editingPatientId, onSuccess }) => {
     }));
   };
 
-  // Updated handleSubmit to use mock context functions or log
+  // Updated handleSubmit to use mutation hooks
   const handleSubmit = async (e) => {
     e.preventDefault();
-    // Removed isLoadingData check
-    setIsSubmitting(true);
+    if (isSubmitting) return; // Prevent double submission
+
+    // Prepare payload - ensure keys match DB columns
+    const patientPayload = {
+      first_name: formData.first_name,
+      last_name: formData.last_name,
+      email: formData.email,
+      phone: formData.phone || null, // Handle empty phone
+      street_address: formData.street_address || null,
+      city_name: formData.city_name || null, // Changed from city
+      state: formData.state || null,
+      zip_code: formData.zip_code || null,
+      date_of_birth: formData.date_of_birth || null, // Ensure null if empty
+      status: formData.status,
+      // Add other fields if needed, ensuring they match DB schema
+    };
 
     try {
-      // Prepare payload based on formData state
-      // Ensure keys match what mock update/create functions expect (if they exist)
-      // Or just use the formData directly if functions aren't implemented
-      const patientPayload = {
-        id: isEditMode ? editingPatientId : `p${Date.now()}`, // Generate mock ID for new patients
-        firstName: formData.firstName,
-        lastName: formData.lastName,
-        email: formData.email,
-        phone: formData.phone,
-        address: formData.address,
-        city: formData.city,
-        state: formData.state,
-        zipCode: formData.zipCode,
-        dateOfBirth: formData.dateOfBirth || null,
-        status: formData.status,
-        tags: isEditMode ? patients.find(p => p.id === editingPatientId)?.tags || [] : [], // Preserve existing tags or default to empty
-        // Add other fields if needed
-      };
-
       let result;
       if (isEditMode) {
-        console.log('Attempting to update mock patient:', editingPatientId, patientPayload);
-        if (typeof updatePatient === 'function') {
-          // Assuming updatePatient modifies the context state
-          await updatePatient(editingPatientId, patientPayload); // Use await if it's async
-          result = patientPayload; // Assume success returns the updated data
-          toast.success('Mock Patient updated successfully');
-        } else {
-          console.warn('updatePatient function not available in context for mock update.');
-          toast.info('Mock update logged to console (no context function).');
-          result = patientPayload; // Simulate success
-        }
+        result = await updatePatientMutation.mutateAsync({ id: editingPatientId, patientData: patientPayload });
+        toast.success('Patient updated successfully');
       } else {
-        console.log('Attempting to create mock patient:', patientPayload);
-        if (typeof createPatient === 'function') {
-          // Assuming createPatient modifies the context state
-          await createPatient(patientPayload); // Use await if it's async
-          result = patientPayload; // Assume success returns the created data
-          toast.success('Mock Patient created successfully');
-        } else {
-          console.warn('createPatient function not available in context for mock creation.');
-          toast.info('Mock creation logged to console (no context function).');
-          result = patientPayload; // Simulate success
-        }
+        result = await createPatientMutation.mutateAsync(patientPayload);
+        toast.success('Patient created successfully');
       }
 
       if (onSuccess) {
-        onSuccess(result); // Pass mock result data back
+        onSuccess(result); // Pass back the result from the mutation
       }
       onClose(); // Close the modal
 
     } catch (error) {
-      // This catch block might not be reached if context functions don't throw
-      console.error('Error saving mock patient:', error);
-      toast.error('Failed to save mock patient (check console).');
-    } finally {
-      setIsSubmitting(false);
+      console.error('Error saving patient:', error);
+      toast.error(`Failed to save patient: ${error.message}`);
+      // No finally block needed as isSubmitting comes from mutation state
     }
   };
 
@@ -175,53 +145,48 @@ const PatientModal = ({ isOpen, onClose, editingPatientId, onSuccess }) => {
     return null;
   }
 
-  const modalTitle = isEditMode ? 'Edit Patient (Mock)' : 'Add New Patient (Mock)'; // Update title
+  const modalTitle = isEditMode ? 'Edit Patient' : 'Add New Patient';
   const submitButtonText = isEditMode ? 'Save Changes' : 'Add Patient';
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center p-4 z-50">
-      {/* Semi-transparent backdrop */}
-      <div
-        className="absolute inset-0 bg-black opacity-50"
-        onClick={!isSubmitting ? onClose : undefined} // Allow closing if not submitting
-      ></div>
+    // Modal container with backdrop
+    <div className={`fixed inset-0 flex items-center justify-center p-4 z-50 transition-opacity duration-300 ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
+      {/* Backdrop */}
+      <div className="absolute inset-0 bg-black opacity-50" onClick={!isSubmitting ? onClose : undefined}></div>
 
-      {/* Modal content */}
-      <div className="bg-white rounded-lg shadow-xl max-w-md w-full relative">
+      {/* Modal Content */}
+      <div className={`bg-white rounded-lg shadow-xl max-w-md w-full relative transition-transform duration-300 ${isOpen ? 'scale-100' : 'scale-95'}`}>
         {/* Header */}
         <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
           <h3 className="text-lg font-medium text-gray-900">{modalTitle}</h3>
-          <button
-            className="text-gray-400 hover:text-gray-500"
-            onClick={onClose}
-            type="button"
-            disabled={isSubmitting} // Only disable based on submission state
-          >
+          <button className="text-gray-400 hover:text-gray-500" onClick={onClose} type="button" disabled={isSubmitting}>
             <X className="h-5 w-5" />
           </button>
         </div>
 
         {/* Form Body */}
         <form onSubmit={handleSubmit}>
-           {/* Removed Loader Overlay */}
-           {/* Form Fields Container */}
-          <div className={`p-6 space-y-4 max-h-[70vh] overflow-y-auto`}> {/* Removed conditional styling */}
+          {/* Form Fields Container */}
+          <div className={`p-6 space-y-4 max-h-[70vh] overflow-y-auto ${isLoadingData ? 'opacity-50' : ''}`}>
+            {isLoadingData && (
+              <div className="absolute inset-0 flex items-center justify-center bg-white bg-opacity-75 z-10">
+                {/* Simple loading text or spinner */}
+                <p>Loading patient data...</p>
+              </div>
+            )}
             {/* First Name & Last Name */}
             <div className="grid grid-cols-2 gap-4">
                <div>
                  <label className="block text-sm font-medium text-gray-700 mb-1">First Name *</label>
                  <div className="relative">
-                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                     <User className="h-4 w-4 text-gray-400" />
-                   </div>
-                   <input type="text" name="firstName" className="block w-full pl-10 pr-3 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md" value={formData.firstName || ''} onChange={handleChange} placeholder="First Name" required />
+                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"><User className="h-4 w-4 text-gray-400" /></div>
+                   <input type="text" name="first_name" className="block w-full pl-10 pr-3 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md" value={formData.first_name || ''} onChange={handleChange} placeholder="First Name" required disabled={isLoadingData} />
                  </div>
                </div>
                <div>
                  <label className="block text-sm font-medium text-gray-700 mb-1">Last Name *</label>
                  <div className="relative">
-                   {/* No icon needed for last name usually */}
-                   <input type="text" name="lastName" className="block w-full pl-3 pr-3 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md" value={formData.lastName || ''} onChange={handleChange} placeholder="Last Name" required />
+                   <input type="text" name="last_name" className="block w-full pl-3 pr-3 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md" value={formData.last_name || ''} onChange={handleChange} placeholder="Last Name" required disabled={isLoadingData} />
                  </div>
                </div>
              </div>
@@ -229,20 +194,16 @@ const PatientModal = ({ isOpen, onClose, editingPatientId, onSuccess }) => {
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Email *</label>
               <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Mail className="h-4 w-4 text-gray-400" />
-                </div>
-                <input type="email" name="email" className="block w-full pl-10 pr-3 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md" value={formData.email || ''} onChange={handleChange} placeholder="patient@example.com" required />
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"><Mail className="h-4 w-4 text-gray-400" /></div>
+                <input type="email" name="email" className="block w-full pl-10 pr-3 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md" value={formData.email || ''} onChange={handleChange} placeholder="patient@example.com" required disabled={isLoadingData} />
               </div>
             </div>
             {/* Phone */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
               <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Phone className="h-4 w-4 text-gray-400" />
-                </div>
-                <input type="tel" name="phone" className="block w-full pl-10 pr-3 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md" value={formData.phone || ''} onChange={handleChange} placeholder="(XXX) XXX-XXXX" />
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"><Phone className="h-4 w-4 text-gray-400" /></div>
+                <input type="tel" name="phone" className="block w-full pl-10 pr-3 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md" value={formData.phone || ''} onChange={handleChange} placeholder="(XXX) XXX-XXXX" disabled={isLoadingData} />
               </div>
             </div>
             {/* DOB and Status */}
@@ -250,50 +211,45 @@ const PatientModal = ({ isOpen, onClose, editingPatientId, onSuccess }) => {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Date of Birth</label>
                 <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <Calendar className="h-4 w-4 text-gray-400" />
-                  </div>
-                  <input type="date" name="dateOfBirth" className="block w-full pl-10 pr-3 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md" value={formData.dateOfBirth || ''} onChange={handleChange} />
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"><Calendar className="h-4 w-4 text-gray-400" /></div>
+                  <input type="date" name="date_of_birth" className="block w-full pl-10 pr-3 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md" value={formData.date_of_birth || ''} onChange={handleChange} disabled={isLoadingData} />
                 </div>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
                 <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <Tag className="h-4 w-4 text-gray-400" />
-                  </div>
-                  {/* Update options to match mock data statuses */}
-                  <select name="status" className="block w-full pl-10 pr-3 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md" value={formData.status || 'Active'} onChange={handleChange}>
-                    <option value="Active">Active</option>
-                    <option value="Inactive">Inactive</option>
-                    {/* Add other statuses if present in mock data */}
-                    {/* <option value="Suspended">Suspended</option> */}
-                    {/* <option value="Pending">Pending</option> */}
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"><Tag className="h-4 w-4 text-gray-400" /></div>
+                  <select name="status" className="block w-full pl-10 pr-3 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md" value={formData.status || 'active'} onChange={handleChange} disabled={isLoadingData}>
+                    <option value="active">Active</option>
+                    <option value="inactive">Inactive</option>
+                    <option value="suspended">Suspended</option>
+                    <option value="blacklisted">Blacklisted</option>
+                    <option value="pending">Pending</option>
                   </select>
                 </div>
               </div>
             </div>
             {/* Address */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Address</label>
-              <input type="text" name="address" className="block w-full pl-3 pr-3 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md" value={formData.address || ''} onChange={handleChange} placeholder="Street Address" />
+              <label className="block text-sm font-medium text-gray-700 mb-1">Street Address</label> {/* Changed label */}
+              <input type="text" name="street_address" className="block w-full pl-3 pr-3 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md" value={formData.street_address || ''} onChange={handleChange} placeholder="Street Address" disabled={isLoadingData} /> {/* Changed name and value */}
             </div>
             {/* City, State, Zip */}
             <div className="grid grid-cols-3 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">City</label>
-                <input type="text" name="city" className="block w-full pl-3 pr-3 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md" value={formData.city || ''} onChange={handleChange} />
+                <input type="text" name="city_name" className="block w-full pl-3 pr-3 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md" value={formData.city_name || ''} onChange={handleChange} disabled={isLoadingData} /> {/* Changed name and value */}
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">State</label>
-                <input type="text" name="state" className="block w-full pl-3 pr-3 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md" value={formData.state || ''} onChange={handleChange} />
+                <input type="text" name="state" className="block w-full pl-3 pr-3 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md" value={formData.state || ''} onChange={handleChange} disabled={isLoadingData} />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">ZIP Code</label>
-                <input type="text" name="zipCode" className="block w-full pl-3 pr-3 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md" value={formData.zipCode || ''} onChange={handleChange} />
+                <input type="text" name="zip_code" className="block w-full pl-3 pr-3 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md" value={formData.zip_code || ''} onChange={handleChange} disabled={isLoadingData} />
               </div>
             </div>
-            {/* Remove Preferred Pharmacy, Assigned Doctor, Medical Notes if not in mock data */}
+            {/* Removed unused fields */}
             {/* <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Preferred Pharmacy</label>
               <div className="relative">

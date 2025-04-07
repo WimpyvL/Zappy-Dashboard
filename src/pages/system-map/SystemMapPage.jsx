@@ -17,6 +17,7 @@ import ReactFlow, {
   MiniMap,
   Controls,
   Background,
+  BackgroundVariant, // Import BackgroundVariant
   useReactFlow,
 } from 'reactflow';
 import SystemMapSidebar from './SystemMapSidebar'; // Correct path
@@ -62,7 +63,8 @@ const SystemMapEditor = forwardRef(
     const { screenToFlowPosition, toObject, deleteElements } = useReactFlow();
 
     const onConnect = useCallback(
-      (params) => setEdges((eds) => addEdge(params, eds)),
+      // Add dashed style to new edges
+      (params) => setEdges((eds) => addEdge({ ...params, style: { strokeDasharray: '5 5' } }, eds)),
       [setEdges]
     );
 
@@ -138,10 +140,8 @@ const SystemMapEditor = forwardRef(
           </Button>
         </div>
         <div className="flex flex-grow" ref={reactFlowWrapper}>
-          <div
-            className="flex-grow h-full"
-            style={{ border: '1px solid #eee' }}
-          >
+          {/* Removed border style from this div */}
+          <div className="flex-grow h-full">
             <ReactFlow
               nodes={nodes}
               edges={edges}
@@ -159,7 +159,8 @@ const SystemMapEditor = forwardRef(
             >
               <MiniMap />
               <Controls />
-              <Background />
+              {/* Changed background to dots */}
+              <Background variant={BackgroundVariant.Dots} gap={12} size={1} />
             </ReactFlow>
           </div>
           {/* Sidebar is always rendered */}

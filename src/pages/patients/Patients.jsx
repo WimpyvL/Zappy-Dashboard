@@ -76,7 +76,8 @@ const Patients = () => {
 
   // Extract data from hook responses
   const rawPatients = patientsData?.data || []; // Get raw data from hook
-  const paginationMeta = patientsData?.meta || { count: 0, total_count: 0, total_pages: 1, current_page: 1, per_page: 10 }; // Added default per_page
+  // Corrected default meta structure and property names
+  const paginationMeta = patientsData?.meta || { total: 0, total_pages: 1, current_page: 1, per_page: 10 };
   const paginationLinks = patientsData?.links || { first: null, last: null, next: null, prev: null };
   const tags = tagsData?.data || [];
   // --- End Hook Usage ---
@@ -403,17 +404,19 @@ const Patients = () => {
                       <div className="flex items-center">
                         <div>
                           <Link to={`/patients/${patient.id}`} className="text-sm font-medium text-indigo-600 hover:text-indigo-900 hover:underline">
-                            {patient.full_name || `${patient.firstName} ${patient.lastName}`}
+                            {/* Use correct first_name and last_name properties */}
+                            {`${patient.first_name || ''} ${patient.last_name || ''}`.trim() || 'Unnamed Patient'}
                           </Link>
-                          <div className="text-sm text-gray-500">{patient.email}</div>
-                          <div className="text-sm text-gray-500">{patient.phone}</div>
+                          <div className="text-sm text-gray-500">{patient.email || 'No email'}</div>
+                          <div className="text-sm text-gray-500">{patient.mobile_phone || patient.phone || 'No phone'}</div> {/* Prefer mobile_phone if exists */}
                         </div>
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex flex-wrap gap-1">
-                        {Array.isArray(patient.tags) && patient.tags.length > 0 ? (
-                          patient.tags.map((tagId) => {
+                        {/* Use patient.related_tags based on schema */}
+                        {Array.isArray(patient.related_tags) && patient.related_tags.length > 0 ? (
+                          patient.related_tags.map((tagId) => {
                              const tag = tags.find(t => t.id === tagId);
                              return tag ? (<span key={tag.id} className="px-2 py-0.5 text-xs font-medium rounded-full bg-blue-100 text-blue-800">{tag.name}</span>) : null;
                            })
@@ -464,9 +467,9 @@ const Patients = () => {
           <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
             <div>
               <p className="text-sm text-gray-700">
-                Showing <span className="font-medium">{paginationMeta.count > 0 ? ((paginationMeta.current_page - 1) * paginationMeta.per_page) + 1 : 0}</span>{' '}
-                to <span className="font-medium">{Math.min(paginationMeta.current_page * paginationMeta.per_page, paginationMeta.total_count)}</span>{' '}
-                of <span className="font-medium">{paginationMeta.total_count || 0}</span> results
+                Showing <span className="font-medium">{paginationMeta.total > 0 ? ((paginationMeta.current_page - 1) * paginationMeta.per_page) + 1 : 0}</span>{' '}
+                to <span className="font-medium">{Math.min(paginationMeta.current_page * paginationMeta.per_page, paginationMeta.total)}</span>{' '} {/* Use total */}
+                of <span className="font-medium">{paginationMeta.total || 0}</span> results {/* Use total */}
               </p>
             </div>
             <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">

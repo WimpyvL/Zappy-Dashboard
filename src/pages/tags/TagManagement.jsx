@@ -35,8 +35,9 @@ const TagManagement = () => {
 
 
   const tags = useMemo(() => {
-    return tagsData?.data ?? [];
-  }, [tagsData?.data]);
+    // useTags returns the array directly
+    return tagsData ?? [];
+  }, [tagsData]);
 
   // Tag colors available in the system
   const tagColors = [

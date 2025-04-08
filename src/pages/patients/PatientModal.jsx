@@ -5,11 +5,18 @@ import {
   Mail,
   Phone,
   Calendar,
-  Tag,
+  Tag, // Keep one Tag import
   // Building, // Removed unused icon
+  Briefcase, // For Doctor
+  Ticket, // For Subscription Plan
+  Loader2, // Added Loader icon
 } from 'lucide-react';
 import { toast } from 'react-toastify';
-import { useCreatePatient, useUpdatePatient, usePatientById } from '../../apis/patients/hooks'; // Import actual hooks
+import { useCreatePatient, useUpdatePatient, usePatientById } from '../../apis/patients/hooks'; // Import patient hooks
+import { useTags } from '../../apis/tags/hooks'; // Import tags hook
+import { useSubscriptionPlans } from '../../apis/subscriptionPlans/hooks'; // Import subscription plans hook
+import { useGetUsers } from '../../apis/users/hooks'; // Corrected import name
+import { Select } from 'antd'; // Import Select component from Ant Design
 
 // Accept editingPatientId prop
 const PatientModal = ({ isOpen, onClose, editingPatientId, onSuccess }) => {
@@ -22,8 +29,18 @@ const PatientModal = ({ isOpen, onClose, editingPatientId, onSuccess }) => {
     enabled: !!editingPatientId && isOpen, // Only fetch when modal is open and in edit mode
   });
 
-  // Removed context usage for mock functions/data
-  // const { patients, updatePatient, createPatient } = useAppContext();
+  // Fetch data for dropdowns
+  const { data: tagsData, isLoading: isLoadingTags } = useTags();
+  const { data: plansData, isLoading: isLoadingPlans } = useSubscriptionPlans();
+  // Assuming useGetUsers fetches users who can be assigned as doctors (e.g., practitioners)
+  const { data: usersData, isLoading: isLoadingUsers } = useGetUsers({ role: 'practitioner' }); // Corrected hook name
+
+  const allTags = tagsData || [];
+  const allPlans = plansData || [];
+  const allDoctors = usersData || [];
+
+  // Combined loading state for dropdown data
+  const isLoadingDropdownData = isLoadingTags || isLoadingPlans || isLoadingUsers;
 
   // Use mutation loading state instead of local isSubmitting
   const isSubmitting = createPatientMutation.isPending || updatePatientMutation.isPending;
@@ -39,9 +56,9 @@ const PatientModal = ({ isOpen, onClose, editingPatientId, onSuccess }) => {
     zip_code: '',
     date_of_birth: '', // Keep as string YYYY-MM-DD
     status: 'active', // Use lowercase status consistent with DB/API
-    // Removed unused fields like preferredPharmacy, assignedDoctor, medicalNotes
-    // assignedDoctor: '',
-    // medicalNotes: '',
+    related_tags: [], // Add state for selected tags
+    subscription_plan_id: null, // Add state for selected plan ID
+    assigned_doctor_id: null, // Add state for selected doctor ID
   });
 
   const isEditMode = !!editingPatientId;
@@ -50,8 +67,9 @@ const PatientModal = ({ isOpen, onClose, editingPatientId, onSuccess }) => {
   useEffect(() => {
     const resetForm = () => {
       setFormData({
-        first_name: '', last_name: '', email: '', phone: '', street_address: '', city_name: '', // Changed city
+        first_name: '', last_name: '', email: '', phone: '', street_address: '', city_name: '',
         state: '', zip_code: '', date_of_birth: '', status: 'active',
+        related_tags: [], subscription_plan_id: null, assigned_doctor_id: null, // Reset new fields
       });
     };
 
@@ -66,17 +84,21 @@ const PatientModal = ({ isOpen, onClose, editingPatientId, onSuccess }) => {
                if (!/^\d{4}-\d{2}-\d{2}$/.test(formattedDob)) formattedDob = '';
              } catch { formattedDob = ''; }
           }
+          // Populate form data from fetched patient, accessing profile fields
           setFormData({
             first_name: patientDataForEdit.first_name || '',
             last_name: patientDataForEdit.last_name || '',
             email: patientDataForEdit.email || '',
-            phone: patientDataForEdit.phone || '',
-            street_address: patientDataForEdit.street_address || '',
-            city_name: patientDataForEdit.city_name || '', // Changed from city
-            state: patientDataForEdit.state || '',
-            zip_code: patientDataForEdit.zip_code || '',
-            date_of_birth: formattedDob,
+            phone: patientDataForEdit.mobile_phone || patientDataForEdit.phone || '', // Prefer mobile_phone
+            street_address: patientDataForEdit.profile?.address || '', // Access profile.address
+            city_name: patientDataForEdit.profile?.city || '',       // Access profile.city
+            state: patientDataForEdit.profile?.state || '',         // Access profile.state
+            zip_code: patientDataForEdit.profile?.zip || '',         // Access profile.zip
+            date_of_birth: patientDataForEdit.profile?.dob || formattedDob, // Access profile.dob (Note: form uses date_of_birth)
             status: patientDataForEdit.status || 'active',
+            related_tags: patientDataForEdit.related_tags || [], // Populate tags
+            subscription_plan_id: patientDataForEdit.subscription_plan_id || null, // Populate plan
+            assigned_doctor_id: patientDataForEdit.assigned_doctor_id || null, // Populate doctor
           });
         } else if (!isLoadingData) {
           // Handle case where data is loaded but null (patient not found)
@@ -115,7 +137,9 @@ const PatientModal = ({ isOpen, onClose, editingPatientId, onSuccess }) => {
       zip_code: formData.zip_code || null,
       date_of_birth: formData.date_of_birth || null, // Ensure null if empty
       status: formData.status,
-      // Add other fields if needed, ensuring they match DB schema
+      related_tags: formData.related_tags || [], // Include selected tags
+      subscription_plan_id: formData.subscription_plan_id || null, // Include selected plan
+      assigned_doctor_id: formData.assigned_doctor_id || null, // Include selected doctor
     };
 
     try {
@@ -249,6 +273,68 @@ const PatientModal = ({ isOpen, onClose, editingPatientId, onSuccess }) => {
                 <input type="text" name="zip_code" className="block w-full pl-3 pr-3 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md" value={formData.zip_code || ''} onChange={handleChange} disabled={isLoadingData} />
               </div>
             </div>
+
+            {/* Assigned Doctor Dropdown */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Assigned Doctor</label>
+              <Select
+                style={{ width: '100%' }}
+                placeholder="Select Doctor"
+                value={formData.assigned_doctor_id}
+                onChange={(value) => setFormData(prev => ({ ...prev, assigned_doctor_id: value }))}
+                loading={isLoadingUsers}
+                disabled={isLoadingData || isLoadingDropdownData}
+                allowClear
+              >
+                {allDoctors.map(doc => (
+                  <Select.Option key={doc.id} value={doc.id}>
+                    {`${doc.first_name} ${doc.last_name}`}
+                  </Select.Option>
+                ))}
+              </Select>
+            </div>
+
+            {/* Subscription Plan Dropdown */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Subscription Plan</label>
+              <Select
+                style={{ width: '100%' }}
+                placeholder="Select Plan"
+                value={formData.subscription_plan_id}
+                onChange={(value) => setFormData(prev => ({ ...prev, subscription_plan_id: value }))}
+                loading={isLoadingPlans}
+                disabled={isLoadingData || isLoadingDropdownData}
+                allowClear
+              >
+                {allPlans.map(plan => (
+                  <Select.Option key={plan.id} value={plan.id}>
+                    {plan.name} (${plan.price}/{plan.billing_cycle})
+                  </Select.Option>
+                ))}
+              </Select>
+            </div>
+
+            {/* Tags Multi-Select Dropdown */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Tags</label>
+              <Select
+                mode="multiple"
+                style={{ width: '100%' }}
+                placeholder="Select Tags"
+                value={formData.related_tags}
+                onChange={(values) => setFormData(prev => ({ ...prev, related_tags: values }))}
+                loading={isLoadingTags}
+                disabled={isLoadingData || isLoadingDropdownData}
+                allowClear
+              >
+                {allTags.map(tag => (
+                  <Select.Option key={tag.id} value={tag.id}>
+                    {tag.name}
+                  </Select.Option>
+                ))}
+              </Select>
+            </div>
+
             {/* Removed unused fields */}
             {/* <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Preferred Pharmacy</label>

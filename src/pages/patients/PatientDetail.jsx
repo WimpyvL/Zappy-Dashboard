@@ -16,15 +16,17 @@ import PatientForms from './patientDetails/PatientForms';
 import PatientBilling from './patientDetails/PatientBilling';
 import PatientFollowUpNotes from './patientDetails/PatientFollowUpNotes';
 import PatientDocuments from './patientDetails/PatientDocuments';
-import { useAppContext } from '../../context/AppContext'; // Import context hook
+// Removed useAppContext import
+import { usePatientById } from '../../apis/patients/hooks'; // Import the correct hook
 
 const PatientDetail = () => {
   const { patientId } = useParams();
-  const { patients: contextPatients } = useAppContext(); // Get patients from context
+  // Fetch patient data using the hook
+  const { data: patient, isLoading: isLoadingPatient, error: patientError } = usePatientById(patientId);
 
-  // Loading states for different data types
+  // Loading states for different data types (keep for related data for now)
   const [loading, setLoading] = useState({
-    patient: true,
+    // patient: true, // Handled by isLoadingPatient from hook
     sessions: false,
     orders: false,
     notes: true, // Assume we might load these later
@@ -34,7 +36,7 @@ const PatientDetail = () => {
   });
 
   // Data states
-  const [patient, setPatient] = useState(null);
+  // const [patient, setPatient] = useState(null); // Removed useState for patient, now comes from usePatientById hook
   // Initialize related data as empty arrays, fetch logic can be added later if needed
   const [patientSessions, setPatientSessions] = useState([]);
   const [patientOrders, setPatientOrders] = useState([]);
@@ -48,43 +50,10 @@ const PatientDetail = () => {
   const [showFollowupNotes, setShowFollowupNotes] = useState(false);
   const [selectedSession, setSelectedSession] = useState(null);
 
-  // Removed hardcoded mockPatientData object
-
-  // Fetch patient data from context based on patientId
-  useEffect(() => {
-    setLoading((prev) => ({ ...prev, patient: true }));
-    setPatient(null); // Reset patient data on ID change
-
-    if (patientId && contextPatients.length > 0) {
-      console.log(`Finding patient ${patientId} in context...`);
-      const foundPatient = contextPatients.find(p => p.id === patientId);
-
-      if (foundPatient) {
-        // Simulate loading for context data as well for consistency
-        setTimeout(() => {
-          console.log("Found patient in context:", foundPatient);
-          setPatient(foundPatient);
-          setLoading((prev) => ({ ...prev, patient: false }));
-          // TODO: Fetch related data (sessions, orders, etc.) for this patient if needed
-          // fetchRelatedData(patientId);
-        }, 150); // Short delay
-      } else {
-        console.warn(`Patient with ID ${patientId} not found in context.`);
-        setLoading((prev) => ({ ...prev, patient: false }));
-        // Keep patient as null, the component will render PatientNotFound
-      }
-    } else if (!patientId) {
-       console.error("No patientId provided in URL.");
-       setLoading((prev) => ({ ...prev, patient: false }));
-    } else {
-       // Context patients might not be loaded yet, wait for context update
-       console.log("Waiting for context patients to load...");
-       // setLoading will remain true until contextPatients has data
-    }
-  }, [patientId, contextPatients]); // Depend on patientId and contextPatients
+  // Removed useEffect that relied on contextPatients
 
   // Placeholder for fetching related data (sessions, orders, etc.)
-  // This would likely involve filtering the corresponding arrays from AppContext
+  // TODO: This should ideally be handled by hooks within the specific tab components
   const fetchRelatedData = (id) => {
     console.log(`Fetching related mock data for patient ${id}...`);
     // Example: Filter sessions from context
@@ -104,15 +73,10 @@ const PatientDetail = () => {
     }));
   };
 
-  // Fetch related data when patient is loaded
-  useEffect(() => {
-    if (patient) {
-      fetchRelatedData(patient.id);
-    }
-  }, [patient]);
-
+  // Removed useEffect that called fetchRelatedData
 
   // Data fetching function for documents (can be adapted for mock data later)
+  // TODO: Move document fetching logic into PatientDocuments component using a dedicated hook
   const fetchPatientDocuments = async (id) => {
     // TODO: Adapt this to use mock data from context if needed
     try {
@@ -128,7 +92,6 @@ const PatientDetail = () => {
     }
   };
 
-
   // Event handlers (remain the same)
   const handleOpenFollowupNotes = (session = null) => {
     setSelectedSession(session);
@@ -140,17 +103,24 @@ const PatientDetail = () => {
     setSelectedSession(null);
   };
 
-  // Render loading state while finding patient in context
-  if (loading.patient) {
+  // Render loading state from the hook
+  if (isLoadingPatient) {
     return <LoadingSpinner message="Loading patient data..." />;
   }
 
-  // Render not found state if patient not found in context
+  // Render error state from the hook
+  if (patientError) {
+     // Optionally provide more specific error feedback
+     toast.error(`Error loading patient: ${patientError.message}`);
+     return <PatientNotFound patientId={patientId} message={`Error: ${patientError.message}`} />;
+  }
+
+  // Render not found state if hook finished loading but found no patient
   if (!patient) {
     return <PatientNotFound patientId={patientId} />;
   }
 
-  // Render patient details once found
+  // Render patient details once data is available
   return (
     <div className="space-y-6">
       {/* Back button and page title */}

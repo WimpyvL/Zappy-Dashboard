@@ -9,6 +9,12 @@
   # node_bundler = "esbuild" # Optional: Use esbuild for faster builds if compatible
   # environment = { NODE_VERSION = "18" }
 
+[build.environment]
+  # IMPORTANT: Set these values in the Netlify UI under Site settings > Build & deploy > Environment
+  # REACT_APP_SUPABASE_URL = "YOUR_SUPABASE_URL"
+  # REACT_APP_SUPABASE_ANON_KEY = "YOUR_SUPABASE_ANON_KEY"
+  # Add any other required environment variables here
+
 # Redirect rule for client-side routing (SPA support)
 # This ensures direct links to routes like /system-map work correctly
 [[redirects]]

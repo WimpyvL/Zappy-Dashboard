@@ -59,15 +59,21 @@ export const useCreateTag = (options = {}) => {
 
   return useMutation({
     mutationFn: async (tagData) => {
-      // Assuming schema has 'name', 'created_at', 'updated_at' and maybe 'color'
-      // The ID might be auto-generated if it's UUID, or needs to be provided if VARCHAR
+      // Only include fields that exist in the 'tag' table schema
       const dataToInsert = {
-        ...tagData,
+        name: tagData.name, // Required field
         // Generate ID client-side if it's VARCHAR and required, otherwise let DB handle UUID
         id: tagData.id || tagData.name?.toLowerCase().replace(/\s+/g, '-') || `tag-${Date.now()}`, // Example ID generation if needed
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       };
+
+      // Ensure required 'name' field is present
+      if (!dataToInsert.name) {
+          throw new Error("Tag name is required.");
+      }
+
+      console.log('[useCreateTag] Inserting tag data:', dataToInsert); // Add logging
 
       const { data, error } = await supabase
         .from('tag')

@@ -1,8 +1,9 @@
 // components/patients/components/PatientOrders.jsx
 import React, { useState, useEffect } from 'react'; // Added useState, useEffect
 import { Link } from 'react-router-dom';
-import { Plus, Clock, CheckCircle, XCircle, FileText, Hash } from 'lucide-react'; // Added FileText, Hash
+import { Plus, Clock, CheckCircle, XCircle, FileText, Hash, Loader2 } from 'lucide-react'; // Added FileText, Hash, Loader2
 import LoadingSpinner from './common/LoadingSpinner';
+import { useOrders } from '../../../apis/orders/hooks'; // Import the useOrders hook
 
 const OrderStatusBadge = ({ status }) => {
   return (
@@ -47,42 +48,7 @@ const PaymentStatusBadge = ({ status }) => {
   );
 };
 
-// Mock Order Data (including linkage)
-const mockPatientOrders = [
-  {
-    id: 'ORD-101',
-    orderDate: '2025-03-15',
-    medication: 'Semaglutide 0.5mg',
-    status: 'shipped',
-    pharmacy: 'Compounding Central',
-    paymentStatus: 'paid',
-    invoiceId: 'INV-123', // Link to invoice
-    consultationId: 'CON-001', // Link to consultation
-    trackingNumber: '1Z999AA10123456784',
-  },
-  {
-    id: 'ORD-102',
-    orderDate: '2025-04-01',
-    medication: 'Tirzepatide 5mg',
-    status: 'processing',
-    pharmacy: 'Wellness Pharmacy',
-    paymentStatus: 'paid',
-    invoiceId: 'INV-456',
-    consultationId: 'CON-005',
-    trackingNumber: null,
-  },
-   {
-    id: 'ORD-103',
-    orderDate: '2025-04-10',
-    medication: 'Semaglutide 0.25mg',
-    status: 'pending',
-    pharmacy: 'Compounding Central',
-    paymentStatus: 'pending', // Example of pending payment
-    invoiceId: 'INV-789',
-    consultationId: 'CON-010',
-    trackingNumber: null,
-  },
-];
+// Removed Mock Order Data
 
 // Helper to format date
 const formatDate = (dateString) => {
@@ -96,20 +62,14 @@ const formatDate = (dateString) => {
 };
 
 
-const PatientOrders = ({ patientId }) => { // Removed orders and loading props
-  const [orders, setOrders] = useState([]);
-  const [loading, setLoading] = useState(true);
+const PatientOrders = ({ patientId }) => {
+  // Fetch orders using the hook, filtering by patientId
+  const { data: ordersData, isLoading: loading, error } = useOrders({ client_record_id: patientId });
 
-  // Simulate fetching data
-  useEffect(() => {
-    setLoading(true);
-    // Replace with actual API call: apiService.get(`/api/patients/${patientId}/orders`)
-    setTimeout(() => {
-      setOrders(mockPatientOrders); // Use mock data for now
-      setLoading(false);
-    }, 800); // Simulate network delay
-  }, [patientId]);
+  // The hook returns the array directly or handles the data structure internally
+  const orders = ordersData || [];
 
+  // Removed local state and useEffect for mock data fetching
 
   return (
     <div className="bg-white p-6 rounded-lg shadow">
@@ -127,7 +87,14 @@ const PatientOrders = ({ patientId }) => { // Removed orders and loading props
       </div>
 
       {loading ? (
-        <LoadingSpinner size="small" />
+        <div className="flex justify-center items-center py-8">
+          <Loader2 className="h-6 w-6 animate-spin text-indigo-600" />
+          <span className="ml-2 text-gray-500">Loading orders...</span>
+        </div>
+      ) : error ? (
+         <div className="text-center py-8 text-red-500">
+           Error loading orders: {error.message || 'Unknown error'}
+         </div>
       ) : orders.length > 0 ? (
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">

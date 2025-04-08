@@ -22,7 +22,7 @@ import {
   // FileText, // Removed unused import
   User,
   X,
-  Mail,
+  // Mail, // Removed unused Mail import
   Archive,
   MoreHorizontal,
   Loader2, // Added for loading state
@@ -66,24 +66,7 @@ const StatusBadge = ({ status }) => {
   return null;
 };
 
-const FormCompletedBadge = ({ completed }) => {
-  // ... (FormCompletedBadge implementation remains the same)
-  if (completed) {
-    return (
-      <span className="flex items-center px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">
-        <CheckCircle className="h-3 w-3 mr-1" />
-        Complete
-      </span>
-    );
-  } else {
-    return (
-      <span className="flex items-center px-2 py-1 text-xs font-medium rounded-full bg-red-100 text-red-800">
-        <X className="h-3 w-3 mr-1" />
-        Incomplete
-      </span>
-    );
-  }
-};
+// Removed unused FormCompletedBadge component
 
 const InitialConsultations = () => {
   // Local state for UI controls

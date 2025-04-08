@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../../utils/supabaseClient'; // Import Supabase client
-import auditLogService from '../../utils/auditLogService'; // Keep audit log
+// Removed unused auditLogService import
 
 // Get orders hook using Supabase
 export const useOrders = (currentPage = 1, filters = {}, pageSize = 10) => {
@@ -213,7 +213,8 @@ export const useDeleteOrder = (options = {}) => {
     mutationFn: async (id) => {
       if (!id) throw new Error('Order ID is required for deletion.');
 
-      const { data, error } = await supabase
+      // Removed unused 'data' from destructuring
+      const { error } = await supabase
         .from('order')
         .update({ is_deleted: true, deleted_at: new Date().toISOString() })
         .eq('id', id)

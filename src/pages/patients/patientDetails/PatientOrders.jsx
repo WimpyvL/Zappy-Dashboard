@@ -1,8 +1,8 @@
 // components/patients/components/PatientOrders.jsx
-import React, { useState, useEffect } from 'react'; // Added useState, useEffect
+import React from 'react'; // Removed unused useState, useEffect
 import { Link } from 'react-router-dom';
 import { Plus, Clock, CheckCircle, XCircle, FileText, Hash, Loader2 } from 'lucide-react'; // Added FileText, Hash, Loader2
-import LoadingSpinner from './common/LoadingSpinner';
+// Removed unused LoadingSpinner import
 import { useOrders } from '../../../apis/orders/hooks'; // Import the useOrders hook
 
 const OrderStatusBadge = ({ status }) => {

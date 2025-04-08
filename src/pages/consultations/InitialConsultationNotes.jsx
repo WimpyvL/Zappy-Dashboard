@@ -20,13 +20,15 @@ const InitialConsultationNotes = ({
   console.log('Refining product/dose selection state');
 
   // Fetch necessary data using React Query hooks
+  // Removed unused 'servicesData' variable
   const {
-    data: servicesData,
+    // data: servicesData,
     isLoading: isLoadingServices,
     error: errorServices,
   } = useServices();
+  // Removed unused 'plansData' variable
   const {
-    data: plansData,
+    // data: plansData,
     isLoading: isLoadingPlans,
     error: errorPlans,
   } = useSubscriptionPlans();
@@ -80,7 +82,8 @@ const InitialConsultationNotes = ({
     `[Patient Age/Gender]... [Your full assessment template]`
   );
   // --- Temporary State for Testing Template Buttons ---
-  const [showAssessmentTemplates, setShowAssessmentTemplates] = useState(true); // Hardcoded true for testing
+  // Removed unused setShowAssessmentTemplates
+  const [showAssessmentTemplates] = useState(true); // Hardcoded true for testing
 
   // --- Template Data ---
   const assessmentTemplates = [
@@ -96,7 +99,8 @@ const InitialConsultationNotes = ({
     { id: 'm3', name: 'Consult Approved', text: 'Your consultation has been reviewed and approved. Your prescription will be sent to the pharmacy. Please allow 24-48 hours for processing. Follow up as needed.' },
   ];
   // --- Temporary State for Testing Template Buttons ---
-  const [showPatientMessageTemplates, setShowPatientMessageTemplates] = useState(true); // Hardcoded true for testing
+  // Removed unused setShowPatientMessageTemplates
+  const [showPatientMessageTemplates] = useState(true); // Hardcoded true for testing
 
 
   // --- Derived Data & Effects ---
@@ -360,9 +364,10 @@ const InitialConsultationNotes = ({
 
 
   // --- Styles & Render ---
-  const fullScreenStyles = {
-    /* ... styles ... */
-  };
+  // Removed unused fullScreenStyles
+  // const fullScreenStyles = {
+  //   /* ... styles ... */
+  // };
   const getPlanName = (planId) =>
     allPlans.find((p) => p.id === planId)?.name || `Plan ID ${planId}`;
 

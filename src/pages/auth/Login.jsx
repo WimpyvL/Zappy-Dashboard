@@ -39,7 +39,7 @@ const Login = () => {
     if (isAuthenticated && !authLoading) { // Check loading state
       navigate(location.state?.from?.pathname || '/', { replace: true });
     }
-  }, [isAuthenticated, navigate, location.state]);
+  }, [isAuthenticated, navigate, location.state, authLoading]); // Added authLoading
 
   const togglePasswordVisibility = () => setShowPassword((prev) => !prev);
 

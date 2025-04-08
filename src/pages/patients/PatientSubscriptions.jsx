@@ -18,7 +18,7 @@ import {
 } from 'lucide-react';
 // Import necessary functions from stripeCheckout utility, including the new one
 import {
-  redirectToCheckout,
+  // redirectToCheckout, // Removed unused import
   updateSubscription,
   cancelSubscription,
   redirectToCustomerPortal // Added import

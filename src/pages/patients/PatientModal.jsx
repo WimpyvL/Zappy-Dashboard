@@ -7,9 +7,9 @@ import {
   Calendar,
   Tag, // Keep one Tag import
   // Building, // Removed unused icon
-  Briefcase, // For Doctor
-  Ticket, // For Subscription Plan
-  Loader2, // Added Loader icon
+  // Briefcase, // Removed unused icon
+  // Ticket, // Removed unused icon
+  // Loader2, // Removed unused icon
 } from 'lucide-react';
 import { toast } from 'react-toastify';
 import { useCreatePatient, useUpdatePatient, usePatientById } from '../../apis/patients/hooks'; // Import patient hooks

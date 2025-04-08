@@ -5,9 +5,9 @@ import React, {
   useEffect,
   forwardRef,
   useImperativeHandle,
-  useMemo,
+  // useMemo, // Removed unused import
 } from 'react';
-import { Typography, Divider, Button, Select, Input, Form } from 'antd'; // Removed Modal, Space
+import { Typography, Button, Select } from 'antd'; // Removed Divider, Input, Form, Modal, Space
 import { MenuFoldOutlined, MenuUnfoldOutlined } from '@ant-design/icons'; // Removed Modal icons
 import ReactFlow, {
   ReactFlowProvider,
@@ -27,7 +27,7 @@ import InputNode from './customNodes/InputNode'; // Correct path
 import 'reactflow/dist/style.css';
 
 const { Title, Text } = Typography;
-const { Option } = Select;
+// const { Option } = Select; // Removed unused Option
 
 // Define the node types for the system map outside the component to prevent recreation on each render
 const NODE_TYPES = {
@@ -60,7 +60,8 @@ const SystemMapEditor = forwardRef(
     const reactFlowWrapper = useRef(null);
     const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
     const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
-    const { screenToFlowPosition, toObject, deleteElements } = useReactFlow();
+    // Removed unused deleteElements
+    const { screenToFlowPosition, toObject } = useReactFlow();
 
     const onConnect = useCallback(
       // Add dashed style to new edges

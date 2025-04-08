@@ -1,5 +1,5 @@
 // PatientDetail.jsx
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react'; // Removed unused useEffect
 import { useParams } from 'react-router-dom'; // Removed unused Link import
 import { toast } from 'react-toastify';
 // Removed unused ArrowLeft, Calendar, Plus imports
@@ -38,12 +38,13 @@ const PatientDetail = () => {
   // Data states
   // const [patient, setPatient] = useState(null); // Removed useState for patient, now comes from usePatientById hook
   // Initialize related data as empty arrays, fetch logic can be added later if needed
-  const [patientSessions, setPatientSessions] = useState([]);
-  const [patientOrders, setPatientOrders] = useState([]);
-  const [patientNotes, setPatientNotes] = useState([]);
-  const [patientDocuments, setPatientDocuments] = useState([]);
-  const [patientForms, setPatientForms] = useState([]);
-  const [patientInvoices, setPatientInvoices] = useState([]);
+  // TODO: Remove these states if data is fetched within child components
+  const [patientSessions] = useState([]); // Removed setPatientSessions
+  const [patientOrders] = useState([]); // Removed setPatientOrders
+  const [patientNotes] = useState([]); // Removed setPatientNotes
+  const [patientDocuments, setPatientDocuments] = useState([]); // Keep setPatientDocuments for now due to fetchPatientDocuments
+  const [patientForms] = useState([]); // Removed setPatientForms
+  const [patientInvoices] = useState([]); // Removed setPatientInvoices
 
   // UI states
   const [activeTab, setActiveTab] = useState('info');
@@ -54,9 +55,10 @@ const PatientDetail = () => {
 
   // Placeholder for fetching related data (sessions, orders, etc.)
   // TODO: This should ideally be handled by hooks within the specific tab components
-  const fetchRelatedData = (id) => {
-    console.log(`Fetching related mock data for patient ${id}...`);
-    // Example: Filter sessions from context
+  // Removed unused fetchRelatedData function
+  // const fetchRelatedData = (id) => {
+  //   console.log(`Fetching related mock data for patient ${id}...`);
+  //   // Example: Filter sessions from context
     // const sessions = contextSessions.filter(s => s.patientId === id);
     // setPatientSessions(sessions);
     // setLoading(prev => ({ ...prev, sessions: false }));
@@ -71,7 +73,7 @@ const PatientDetail = () => {
       forms: false,
       invoices: false,
     }));
-  };
+  // }; // Removed closing brace for fetchRelatedData
 
   // Removed useEffect that called fetchRelatedData
 

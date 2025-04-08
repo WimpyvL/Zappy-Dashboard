@@ -6,7 +6,7 @@ import {
   Plus,
   X,
   Edit, // Import Edit icon
-  MoreHorizontal,
+  // MoreHorizontal, // Removed unused icon
   Calendar,
   Ban,
   UserCheck,
@@ -36,7 +36,7 @@ const StatusBadge = ({ status }) => {
   }
   return null;
 };
-// Removed AffiliateTag component as it wasn't used in the table mapping
+// Removed unused StatusBadge component
 
 const Patients = () => {
   // Get subscription plans from context for the filter dropdown

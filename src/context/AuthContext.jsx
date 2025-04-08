@@ -131,6 +131,7 @@ export const AuthProvider = ({ children }) => {
     setLoading(true);
     setError(null);
     try {
+      // Need 'data' here to get the updated user object
       const { data, error: updateError } = await supabase.auth.updateUser({
         data: metadata, // Supabase uses 'data' for user_metadata
       });
@@ -209,7 +210,8 @@ export const AuthProvider = ({ children }) => {
     setError(null);
     try {
       // This assumes the user is already authenticated via the reset link session
-      const { data, error: updatePassError } = await supabase.auth.updateUser({
+      // Removed unused 'data' from destructuring
+      const { error: updatePassError } = await supabase.auth.updateUser({
         password: newPassword,
       });
       if (updatePassError) throw updatePassError;

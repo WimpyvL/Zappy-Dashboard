@@ -8,20 +8,7 @@
 // import { createAuditLog } from '../apis/auditlog/api'; // Commented out direct API import
 import errorHandling from './errorHandling'; // Assuming errorHandling utility exists
 
-// Get user info (example - adapt based on actual AuthContext structure)
-// This is a placeholder; ideally, get user info from AuthContext
-const getCurrentUserEmail = () => {
-  try {
-    const userString = localStorage.getItem('user');
-    if (userString) {
-      const user = JSON.parse(userString);
-      return user?.email || 'unknown@example.com'; // Adjust property name if needed
-    }
-  } catch (e) {
-    console.error('Failed to get user for audit log:', e);
-  }
-  return 'unknown@system.com';
-};
+// Removed unused getCurrentUserEmail function
 
 /**
  * Records an audit log event by sending it to the backend.
@@ -40,7 +27,7 @@ const logAuditEvent = async (action, details = {}, userId = null) => {
   // const logData = { // Removed unused variable
   //   action: action,
   //   details: JSON.stringify(details), // Send details as a JSON string or structured object based on backend expectation
-  //   user: userId || getCurrentUserEmail(), // Get user identifier
+  //   user: userId, // Removed call to getCurrentUserEmail()
   //   timestamp: new Date().toISOString(), // Timestamp can also be set by backend
   // };
 

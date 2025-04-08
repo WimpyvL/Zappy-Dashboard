@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react'; // Added useMemo
 import { useAuth } from '../../context/AuthContext';
 import { useCart } from '../../context/CartContext';
 import { useAppContext } from '../../context/AppContext';
@@ -38,9 +38,9 @@ const Header = ({ onToggleCart }) => {
     navigate('/login');
   };
 
-  // Debounced search function
-  const performSearch = useCallback(
-    debounce((query) => {
+  // Debounced search function using useMemo
+  const performSearch = useMemo(
+    () => debounce((query) => {
       // Ensure patients is an array before filtering
       if (!query || !Array.isArray(patients)) {
         setSearchResults([]);
@@ -56,7 +56,7 @@ const Header = ({ onToggleCart }) => {
       );
       setSearchResults(results.slice(0, 10)); // Limit results
     }, 300),
-    [patients] // Dependency: re-create if patients array changes
+    [patients] // Dependency: re-create if patients array changes or debounce timeout changes
   );
 
   // Handle search input change

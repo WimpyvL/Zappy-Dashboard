@@ -25,7 +25,8 @@ function App() {
     const testSupabaseConnection = async () => {
       try {
         // First check if the test table exists
-        const { data, error } = await supabase
+        // Removed unused 'data' variable from destructuring
+        const { error } = await supabase
           .from('client_record')
           .select('*')
           .limit(1);

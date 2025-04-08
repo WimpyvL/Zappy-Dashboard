@@ -59,18 +59,7 @@ import SystemMapPage from '../pages/system-map/SystemMapPage.jsx'; // Import Sys
 // Paths constants
 import { paths } from './paths.js';
 
-// Import tempo routes if available
-let tempoRoutes = [];
-try {
-  if (import.meta && import.meta.env && import.meta.env.VITE_TEMPO === 'true') {
-    const routes = require('tempo-routes');
-    if (routes && routes.default) {
-      tempoRoutes = routes.default;
-    }
-  }
-} catch (e) {
-  console.log('Tempo routes not available:', e.message);
-}
+// Removed unused tempoRoutes definition and try...catch block
 
 const AppRoutes = () => {
   // Add future flags for React Router v7 compatibility

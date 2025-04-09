@@ -239,7 +239,7 @@ const PatientRecordsPage = ({ showAllHistory = false }) => {
         )}
       </div>
       
-      {/* Action Buttons */}
+      {/* Action Buttons - Removed Export */}
       <div className="mb-6 flex justify-end space-x-3">
         {showAllHistory && (
           <Link 
@@ -249,12 +249,7 @@ const PatientRecordsPage = ({ showAllHistory = false }) => {
             Back to Recent Records
           </Link>
         )}
-        <Link 
-          to="/records/export" 
-          className="inline-flex items-center px-4 py-2 bg-accent3 text-white rounded-md text-sm font-medium hover:bg-accent3/90"
-        >
-          Export Records <ArrowRight className="ml-2 h-4 w-4" />
-        </Link>
+        {/* Export button removed */}
       </div>
       
       {/* Main content */}

@@ -19,4 +19,12 @@ module.exports = {
     },
   },
   plugins: [], // Add plugins if needed
+  // Safelist the dynamic classes used for sidebar active states
+  safelist: [
+    'bg-primary', 'text-primary',
+    'bg-accent1', 'text-accent1',
+    'bg-accent2', 'text-accent2',
+    'bg-accent3', 'text-accent3',
+    'bg-accent4', 'text-accent4',
+  ],
 };

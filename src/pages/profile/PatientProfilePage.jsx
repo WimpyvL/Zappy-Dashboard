@@ -3,8 +3,8 @@ import { useAuth } from '../../context/AuthContext';
 import { useNavigate, Link } from 'react-router-dom'; // Import Link
 import { 
   Loader2, AlertTriangle, User, Bell, Lock, Edit, 
-  CreditCard, FileText, ChevronRight 
-} from 'lucide-react'; // Added CreditCard, FileText, ChevronRight
+  CreditCard, FileText, ChevronRight, ShieldCheck, Building // Added ShieldCheck, Building
+} from 'lucide-react'; 
 import ChildishDrawingElement from '../../components/ui/ChildishDrawingElement'; // Import drawing element
 
 // Placeholder hook for fetching profile data (replace with actual hook)
@@ -21,6 +21,11 @@ const usePatientProfile = (patientId) => {
         city: 'Malibu', // Example
         state: 'CA', // Example
         zip: '90265', // Example
+        // Add mock insurance and pharmacy data
+        preferredPharmacy: 'CVS Pharmacy - 123 Main St, Malibu, CA 90265',
+        insuranceProvider: 'Blue Cross Blue Shield',
+        insurancePolicyId: 'XG123456789',
+        insuranceGroupId: 'BCBSGRP1',
     };
     // Simulate loaded state for mock data
     return { data: mockData, isLoading: false, error: null }; 
@@ -190,7 +195,8 @@ const PatientProfilePage = () => {
              className="flex justify-between items-center p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors group"
            >
              <div className="flex items-center">
-               <CreditCard className="h-5 w-5 mr-3 text-primary" />
+               {/* Changed icon color from primary (Red) to accent2 (Green) */}
+               <CreditCard className="h-5 w-5 mr-3 text-accent2" /> 
                <div>
                  <h3 className="text-sm font-medium text-gray-900 group-hover:text-accent3">Payment Methods</h3>
                  <p className="text-xs text-gray-500">Manage your saved cards</p>
@@ -198,6 +204,66 @@ const PatientProfilePage = () => {
              </div>
              <ChevronRight className="h-5 w-5 text-gray-400 group-hover:text-accent3" />
            </Link>
+         </div>
+      </div>
+
+      {/* Insurance Information Card */}
+      <div className="bg-white rounded-lg shadow overflow-hidden">
+         <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+           <h2 className="text-lg font-medium flex items-center">
+             <ShieldCheck className="h-5 w-5 mr-2 text-accent2" /> Insurance Information
+           </h2>
+           {/* TODO: Link to actual edit page/modal */}
+           <button 
+             onClick={() => alert('Edit Insurance functionality not yet implemented.')} 
+             className="px-3 py-1 border border-gray-300 text-gray-700 text-xs font-medium rounded-md hover:bg-gray-50 transition-colors flex items-center"
+           >
+             <Edit className="h-3 w-3 mr-1" /> Edit Insurance
+           </button>
+         </div>
+         <div className="p-6">
+           {displayData.insuranceProvider ? (
+             <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-3 text-sm">
+               <div className="sm:col-span-1">
+                 <dt className="font-medium text-gray-500">Provider</dt>
+                 <dd className="mt-1 text-gray-900">{displayData.insuranceProvider}</dd>
+               </div>
+               <div className="sm:col-span-1">
+                 <dt className="font-medium text-gray-500">Policy ID</dt>
+                 <dd className="mt-1 text-gray-900">{displayData.insurancePolicyId}</dd>
+               </div>
+               <div className="sm:col-span-1">
+                 <dt className="font-medium text-gray-500">Group ID</dt>
+                 <dd className="mt-1 text-gray-900">{displayData.insuranceGroupId}</dd>
+               </div>
+             </dl>
+           ) : (
+             <p className="text-sm text-gray-500">No insurance information on file.</p>
+           )}
+         </div>
+      </div>
+
+      {/* Preferred Pharmacy Card */}
+      <div className="bg-white rounded-lg shadow overflow-hidden">
+         <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+           <h2 className="text-lg font-medium flex items-center">
+             {/* Changed icon color from primary (Red) to accent2 (Green) */}
+             <Building className="h-5 w-5 mr-2 text-accent2" /> Preferred Pharmacy 
+           </h2>
+           {/* TODO: Link to actual edit page/modal */}
+           <button 
+             onClick={() => alert('Edit Pharmacy functionality not yet implemented.')} 
+             className="px-3 py-1 border border-gray-300 text-gray-700 text-xs font-medium rounded-md hover:bg-gray-50 transition-colors flex items-center"
+           >
+             <Edit className="h-3 w-3 mr-1" /> Edit Pharmacy
+           </button>
+         </div>
+         <div className="p-6">
+           {displayData.preferredPharmacy ? (
+             <p className="text-sm text-gray-900">{displayData.preferredPharmacy}</p>
+           ) : (
+             <p className="text-sm text-gray-500">No preferred pharmacy specified.</p>
+           )}
          </div>
       </div>
     </div>

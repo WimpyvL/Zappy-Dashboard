@@ -434,37 +434,7 @@ const AppRoutes = () => {
         }
       />
       
-      {/* Records Export Page Route */}
-      <Route
-        path="/records/export" // Define the path for records export
-        element={
-          <MainLayout>
-            <div className="p-6">
-              <h2 className="text-xl font-bold text-gray-900">Export Medical Records</h2>
-              <p className="mt-4 text-gray-600">Choose a format to export your complete medical history:</p>
-              <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
-                <button className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 text-left">
-                  <h3 className="font-medium">PDF Format</h3>
-                  <p className="text-sm text-gray-500">Download a printable PDF document</p>
-                </button>
-                <button className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 text-left">
-                  <h3 className="font-medium">CSV Format</h3>
-                  <p className="text-sm text-gray-500">Export data in spreadsheet format</p>
-                </button>
-                <button className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 text-left">
-                  <h3 className="font-medium">JSON Format</h3>
-                  <p className="text-sm text-gray-500">Raw data for developers</p>
-                </button>
-              </div>
-              <div className="mt-8">
-                <Link to="/records" className="text-accent3 hover:underline">
-                  &larr; Back to Records
-                </Link>
-              </div>
-            </div>
-          </MainLayout>
-        }
-      />
+      {/* Records Export Page Route - REMOVED */}
 
       {/* Notifications Page Route */}
       <Route

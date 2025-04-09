@@ -141,7 +141,7 @@ export const logoutItem = {
 
 // Define patient sidebar items (Further Simplified View)
 export const patientSidebarItems = [
-  { title: 'Home', path: '/dashboard', icon: PatientDashboardIcon, color: 'primary' }, 
+  { title: 'Home', path: '/', icon: PatientDashboardIcon, color: 'accent3' }, // Changed color from primary (Red) to accent3 (Blue)
   { title: 'Records', path: '/records', icon: PatientRecordsIcon, color: 'accent3' },
   { title: 'Programs', path: '/program', icon: PatientProgramIcon, color: 'accent4' },
   { title: 'Shop', path: '/shop', icon: ShopIcon, color: 'accent2' },

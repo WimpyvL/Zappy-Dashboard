@@ -29,6 +29,7 @@ import {
   MoreOutlined,
   SearchOutlined,
   RobotOutlined, // Added AI icon
+  UploadOutlined, // Added Import icon
 } from '@ant-design/icons';
 import { useForm } from 'react-hook-form';
 
@@ -105,6 +106,8 @@ const FormsManagementV2 = () => { // Renamed component
   const [currentPageIndex, setCurrentPageIndex] = useState(0);
   const [aiModalVisible, setAiModalVisible] = useState(false); // State for AI modal
   const [isGenerating, setIsGenerating] = useState(false); // Loading state for AI generation
+  const [importModalVisible, setImportModalVisible] = useState(false); // State for Import modal
+  const [importJson, setImportJson] = useState(''); // State for JSON input in import modal
 
   // Mock services data (can be fetched if needed)
   const [services] = useState([
@@ -370,7 +373,8 @@ const FormsManagementV2 = () => { // Renamed component
 
   const handleShareForm = (form) => {
     const baseUrl = window.location.origin;
-    const link = `${baseUrl}/forms/${form.shareLink || form.id}`; // Use slug or ID
+    // Always use the form's unique database ID for the link
+    const link = `${baseUrl}/forms/${form.id}`; 
     setShareLink(link);
     setShareModalVisible(true);
   };
@@ -387,7 +391,8 @@ const FormsManagementV2 = () => { // Renamed component
   };
 
   const handlePreviewForm = (form) => {
-    window.open(`/forms/${form.shareLink || form.id}`, '_blank');
+    // Always use the form's unique database ID for the preview link
+    window.open(`/forms/${form.id}`, '_blank');
   };
 
   // Function to handle AI generation request
@@ -456,6 +461,56 @@ const FormsManagementV2 = () => { // Renamed component
     }
   };
 
+  // Function to handle the actual import logic
+  const handleImportForm = () => {
+    if (!importJson) {
+      message.error('Please paste the form JSON structure.');
+      return;
+    }
+    try {
+      const importedData = JSON.parse(importJson);
+
+      // Basic validation
+      if (!importedData || typeof importedData !== 'object') {
+        throw new Error('Invalid JSON structure.');
+      }
+      if (!importedData.title || !Array.isArray(importedData.pages)) {
+        throw new Error('Missing required fields: title and pages array.');
+      }
+
+      // Add unique IDs to pages and elements
+      const pagesWithIds = importedData.pages.map(page => ({
+        ...page,
+        id: generateRandomId(),
+        elements: (page.elements || []).map(el => ({ ...el, id: generateRandomId() }))
+      }));
+
+      // Prepare form data to load into builder
+      const newFormData = {
+        title: importedData.title,
+        description: importedData.description || '',
+        serviceId: importedData.serviceId || null, // Attempt to carry over serviceId if present
+        form_type: importedData.form_type || 'general', // Attempt to carry over form_type
+        status: 'inactive', // Start imported forms as inactive drafts
+        pages: pagesWithIds,
+        conditionals: importedData.conditionals || [], // Carry over conditionals if present
+        id: generateRandomId(), // Generate new ID for this draft
+        shareLink: importedData.title.toLowerCase().replace(/\s+/g, '-') + '-' + generateRandomId().substring(0,4), // Simple slug
+      };
+
+      setCurrentForm(newFormData);
+      setFormActionType('create'); // Treat import as creating a new form draft
+      setImportModalVisible(false); // Close import modal
+      setImportJson(''); // Clear text area
+      setFormBuilderVisible(true); // Open the builder with the draft
+      message.success('Form structure imported successfully. Review and save.');
+
+    } catch (error) {
+      console.error('Form Import Failed:', error);
+      message.error(`Import Failed: ${error.message}`);
+    }
+  };
+
 
   return (
     <div className="forms-management-container">
@@ -489,8 +544,14 @@ const FormsManagementV2 = () => { // Renamed component
              icon={<RobotOutlined />}
              onClick={() => setAiModalVisible(true)}
            >
-             Generate with AI
-           </Button>
+            Generate with AI
+          </Button>
+          <Button
+            icon={<UploadOutlined />}
+            onClick={() => setImportModalVisible(true)}
+          >
+            Import Form
+          </Button>
         </Space>
       </div>
 
@@ -674,6 +735,40 @@ const FormsManagementV2 = () => { // Renamed component
          </Form>
        </Modal>
 
+      {/* Import Form Modal */}
+      <Modal
+        title="Import Form Structure (JSON)"
+        visible={importModalVisible}
+        onCancel={() => {
+          setImportModalVisible(false);
+          setImportJson(''); // Clear on cancel
+        }}
+        footer={[
+          <Button key="back" onClick={() => {
+            setImportModalVisible(false);
+            setImportJson(''); // Clear on cancel
+          }}>
+            Cancel
+          </Button>,
+          <Button
+            key="submit"
+            type="primary"
+            onClick={handleImportForm} // Call the import handler
+          >
+            Import and Open Builder
+          </Button>,
+        ]}
+        width={800} // Make modal wider for text area
+      >
+        <p className="mb-2">Paste the JSON structure for your form below. Ensure it includes at least a <code>title</code> and a <code>pages</code> array.</p>
+        <Input.TextArea
+          rows={15} // Make text area larger
+          placeholder='{ "title": "My Imported Form", "pages": [ { "id": "page1", "title": "Page 1", "elements": [ ... ] } ] }'
+          value={importJson}
+          onChange={(e) => setImportJson(e.target.value)}
+          style={{ fontFamily: 'monospace' }} // Use monospace font for JSON
+        />
+      </Modal>
 
       {/* CSS for the component */}
       <style jsx>{`

@@ -33,10 +33,11 @@ export const AuthProvider = ({ children }) => {
       } else {
         const user = session?.user ?? null;
         setCurrentUser(user); // Set user if session exists, otherwise null
-        // Determine view mode based on user (simple example: default logged in users to 'patient')
-        // TODO: Implement proper role checking based on user metadata or roles table
-        setViewMode(user ? 'patient' : 'admin');
-        console.log(`AuthContext: Session checked, viewMode set to ${user ? 'patient' : 'admin'}`);
+        // Determine view mode based on user role
+        const userRole = user?.app_metadata?.role; // Check role in app_metadata
+        const determinedViewMode = userRole === 'admin' ? 'admin' : 'patient'; // Default to patient if logged in but not admin
+        setViewMode(determinedViewMode);
+        console.log(`AuthContext: Session checked, user role: ${userRole}, viewMode set to ${determinedViewMode}`);
       }
       setLoading(false);
     };
@@ -51,10 +52,11 @@ export const AuthProvider = ({ children }) => {
       const user = session?.user ?? null;
       setCurrentUser(user);
       setError(null); // Clear errors on auth change
-      // Determine view mode based on user
-      // TODO: Implement proper role checking
-      setViewMode(user ? 'patient' : 'admin');
-      console.log(`AuthContext: Auth state changed, viewMode set to ${user ? 'patient' : 'admin'}`);
+      // Determine view mode based on user role
+      const userRole = user?.app_metadata?.role; // Check role in app_metadata
+      const determinedViewMode = userRole === 'admin' ? 'admin' : 'patient'; // Default to patient if logged in but not admin
+      setViewMode(determinedViewMode);
+      console.log(`AuthContext: Auth state changed, user role: ${userRole}, viewMode set to ${determinedViewMode}`);
       // No need to set loading here as getSession handles initial load
     });
 

@@ -27,12 +27,52 @@ const Sidebar = () => {
       : 'text-indigo-100 hover:bg-indigo-700 hover:text-white';
   };
 
-  // Function to determine if a menu item is active for patient view
-  const isPatientActive = (path, color) => {
-    if (location.pathname === path) {
-      return `bg-${color} text-white shadow-md`;
-    }
-    return 'bg-white text-gray-700 hover:bg-gray-50 shadow-sm';
+  // Function to return specific active/inactive classes for patient view
+  const getPatientNavItemClasses = (path, color) => {
+    const isActive = location.pathname === path;
+    const baseClasses = 'flex items-center px-4 py-3 text-sm font-medium rounded-lg mb-2 transition-all';
+    
+    // Define explicit classes for each color
+    const colorClasses = {
+      primary: {
+        active: 'bg-primary text-white shadow-md',
+        inactive: 'bg-white text-gray-700 hover:bg-gray-50 shadow-sm',
+        icon: 'text-primary'
+      },
+      accent1: {
+        active: 'bg-accent1 text-white shadow-md',
+        inactive: 'bg-white text-gray-700 hover:bg-gray-50 shadow-sm',
+        icon: 'text-accent1'
+      },
+      accent2: {
+        active: 'bg-accent2 text-white shadow-md',
+        inactive: 'bg-white text-gray-700 hover:bg-gray-50 shadow-sm',
+        icon: 'text-accent2'
+      },
+      accent3: {
+        active: 'bg-accent3 text-white shadow-md',
+        inactive: 'bg-white text-gray-700 hover:bg-gray-50 shadow-sm',
+        icon: 'text-accent3'
+      },
+      accent4: {
+        active: 'bg-accent4 text-white shadow-md',
+        inactive: 'bg-white text-gray-700 hover:bg-gray-50 shadow-sm',
+        icon: 'text-accent4'
+      },
+      // Add default fallback if color is missing or invalid
+      default: {
+        active: 'bg-primary text-white shadow-md',
+        inactive: 'bg-white text-gray-700 hover:bg-gray-50 shadow-sm',
+        icon: 'text-primary'
+      }
+    };
+
+    const styles = colorClasses[color] || colorClasses.default;
+    
+    return {
+      link: `${baseClasses} ${isActive ? styles.active : styles.inactive}`,
+      icon: styles.icon
+    };
   };
 
   // Reusable menu item component for admin view
@@ -50,17 +90,17 @@ const Sidebar = () => {
     );
   };
 
-  // Reusable menu item component for patient view
+  // Reusable menu item component for patient view - Updated
   const PatientNavItem = ({ item }) => {
     const Icon = item.icon;
-    const colorClass = item.color || 'primary';
+    const { link: linkClasses, icon: iconClass } = getPatientNavItemClasses(item.path, item.color || 'primary');
 
     return (
       <Link
         to={item.path}
-        className={`flex items-center px-4 py-3 text-sm font-medium rounded-lg mb-2 transition-all ${isPatientActive(item.path, colorClass)}`}
+        className={linkClasses}
       >
-        <div className={`text-${colorClass} mr-3`}>
+        <div className={`${iconClass} mr-3`}>
           <Icon className="h-5 w-5" />
         </div>
         <span>{item.title}</span>

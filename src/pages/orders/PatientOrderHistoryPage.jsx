@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useState } from 'react'; // Import useState
 import { useAuth } from '../../context/AuthContext';
 // import { useMyOrders } from '../../apis/orders/hooks'; // Temporarily disable hook for mock data
 import { Link } from 'react-router-dom';
 import { Loader2, AlertTriangle, Package, CheckCircle, Clock, XCircle, Truck, Info } from 'lucide-react'; // Replaced TruckIcon with Truck, added Info
 import ChildishDrawingElement from '../../components/ui/ChildishDrawingElement'; // Import drawing element
+import OrderDetailModal from '../../components/orders/OrderDetailModal'; // Import the modal
 
 // Helper function to format date
 const formatDate = (dateString) => {
@@ -16,8 +17,8 @@ const formatDate = (dateString) => {
   });
 };
 
-// Enhanced Status Badge Component
-const StatusBadge = ({ status }) => {
+// Enhanced Status Badge Component (Exported)
+export const StatusBadge = ({ status }) => {
   let bgColor, textColor, Icon;
   switch (status?.toLowerCase()) {
     case 'shipped':
@@ -70,6 +71,10 @@ const PatientOrderHistoryPage = () => {
   const { currentUser } = useAuth();
   // Use a default ID for testing if currentUser is null (due to auth bypass)
   const patientId = currentUser?.id || 'dev-patient-id'; 
+  
+  // State for modal
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  const [selectedOrderId, setSelectedOrderId] = useState(null);
 
   // --- MOCK DATA ---
   const mockOrders = [
@@ -106,6 +111,12 @@ const PatientOrderHistoryPage = () => {
   }
   */ // End of original hook logic comment
 
+  
+  const handleRowClick = (orderId) => {
+    setSelectedOrderId(orderId);
+    setIsDetailModalOpen(true);
+  };
+
   // Use mock data
   return (
     <div className="container mx-auto px-4 py-6 relative overflow-hidden pb-10">
@@ -135,10 +146,14 @@ const PatientOrderHistoryPage = () => {
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                 {orders.sort((a, b) => new Date(b.orderDate || b.created_at) - new Date(a.orderDate || a.created_at)).map((order) => ( // Sort by date descending
-                  <tr key={order.id} className="hover:bg-gray-50 transition-colors">
+                  <tr 
+                    key={order.id} 
+                    className="hover:bg-gray-50 transition-colors cursor-pointer" // Add cursor-pointer
+                    onClick={() => handleRowClick(order.id)} // Add onClick handler
+                  >
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{formatDate(order.orderDate || order.created_at)}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{order.orderId || order.id}</td> {/* Display order ID */}
-                    <td className="px-6 py-4 text-sm text-gray-700">{order.medication || order.items?.join(', ') || 'N/A'}</td> {/* Display items */}
+                    <td className="px-6 py-4 text-sm text-gray-700 line-clamp-1">{order.medication || order.items?.join(', ') || 'N/A'}</td> {/* Truncate items */}
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${(order.totalAmount || order.invoiceAmount || 0).toFixed(2)}</td> {/* Display total */}
                     <td className="px-6 py-4 whitespace-nowrap"><StatusBadge status={order.status} /></td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
@@ -169,6 +184,13 @@ const PatientOrderHistoryPage = () => {
           </Link> */}
         </div>
       )}
+      
+      {/* Order Detail Modal */}
+      <OrderDetailModal 
+        orderId={selectedOrderId} 
+        isOpen={isDetailModalOpen} 
+        onClose={() => setIsDetailModalOpen(false)} 
+      />
     </div>
   );
 };

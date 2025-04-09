@@ -1,9 +1,11 @@
 import React from 'react';
 import { Layout, Tabs, Typography } from 'antd';
 import FormsManagement from './pages/forms/FormsManagement';
-import ReferralSettings from './pages/ReferralSettings'; // Import the new component
-import PatientNoteTemplateSettings from './pages/PatientNoteTemplateSettings'; // Import the new component
-import FormsManagementV2 from './pages/forms-v2/FormsManagementV2'; // Import Forms V2
+import ReferralSettings from './pages/ReferralSettings';
+import PatientNoteTemplateSettings from './pages/PatientNoteTemplateSettings';
+import FormsManagementV2 from './pages/forms-v2/FormsManagementV2';
+import LLMSettings from './pages/LLMSettings';
+import PromptSettings from './pages/PromptSettings'; // Import the new Prompt settings component
 import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import {
   FormOutlined,
@@ -11,6 +13,8 @@ import {
   GiftOutlined, // Import Gift icon for Referrals
   SnippetsOutlined, // Import icon for Note Templates
   ExperimentOutlined, // Icon for V2
+  ApiOutlined, // Icon for LLM Settings
+  MessageOutlined, // Icon for Prompts
 } from '@ant-design/icons';
 
 const { Title } = Typography;
@@ -29,6 +33,8 @@ const Settings = () => {
     if (path.includes('/settings/account')) return 'account';
     if (path.includes('/settings/referrals')) return 'referrals';
     if (path.includes('/settings/note-templates')) return 'note-templates';
+    if (path.includes('/settings/llm')) return 'llm';
+    if (path.includes('/settings/prompts')) return 'prompts'; // Add check for Prompts path
     return 'forms'; // Default to original forms
   };
 
@@ -93,7 +99,25 @@ const Settings = () => {
                   Forms V2 (Test)
                 </span>
               }
-              key="forms-v2" // Add forms v2 tab
+              key="forms-v2"
+            />
+            <TabPane
+              tab={
+                <span>
+                  <ApiOutlined />
+                  AI / LLM Settings
+                </span>
+              }
+              key="llm"
+            />
+            <TabPane
+              tab={
+                <span>
+                  <MessageOutlined />
+                  AI Prompts
+                </span>
+              }
+              key="prompts" // Add Prompts tab
             />
           </Tabs>
         </div>
@@ -108,7 +132,9 @@ const Settings = () => {
             />
             {/* Use ReferralSettings component */}
             <Route path="/referrals" element={<ReferralSettings />} />
-            <Route path="/note-templates" element={<PatientNoteTemplateSettings />} /> {/* Add route for note templates */}
+            <Route path="/note-templates" element={<PatientNoteTemplateSettings />} />
+            <Route path="/llm" element={<LLMSettings />} />
+            <Route path="/prompts" element={<PromptSettings />} /> {/* Add route for Prompt settings */}
             {/* Update default route or add redirect if needed */}
             <Route path="*" element={<FormsManagement />} />
           </Routes>

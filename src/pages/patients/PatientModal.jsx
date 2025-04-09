@@ -125,26 +125,32 @@ const PatientModal = ({ isOpen, onClose, editingPatientId, onSuccess }) => {
     e.preventDefault();
     if (isSubmitting) return; // Prevent double submission
 
-    // Prepare payload - ensure keys match DB columns
+    // Prepare payload - only include fields the hooks expect for client_record mapping
     const patientPayload = {
       first_name: formData.first_name,
       last_name: formData.last_name,
       email: formData.email,
-      phone: formData.phone || null, // Handle empty phone
-      street_address: formData.street_address || null,
-      city_name: formData.city_name || null, // Changed from city
-      state: formData.state || null,
-      zip_code: formData.zip_code || null,
-      date_of_birth: formData.date_of_birth || null, // Ensure null if empty
-      status: formData.status,
-      related_tags: formData.related_tags || [], // Include selected tags
-      subscription_plan_id: formData.subscription_plan_id || null, // Include selected plan
-      assigned_doctor_id: formData.assigned_doctor_id || null, // Include selected doctor
+      phone: formData.phone || null, // Mapped to 'phone' in hooks
+      street_address: formData.street_address || null, // Mapped to 'address' in hooks
+      city_name: formData.city_name || null, // Mapped to 'city' in hooks
+      state: formData.state || null, // Mapped to 'state' in hooks
+      zip_code: formData.zip_code || null, // Mapped to 'zip' in hooks
+      date_of_birth: formData.date_of_birth || null, // Mapped to 'date_of_birth' in hooks
+      // Removed fields not directly mapped by hooks to client_record:
+      // status: formData.status,
+      // related_tags: formData.related_tags || [],
+      // subscription_plan_id: formData.subscription_plan_id || null,
+      // assigned_doctor_id: formData.assigned_doctor_id || null,
     };
+
+    // Remove undefined fields before sending
+    Object.keys(patientPayload).forEach(key => patientPayload[key] === undefined && delete patientPayload[key]);
+
 
     try {
       let result;
       if (isEditMode) {
+        console.log('[PatientModal handleSubmit] Payload for update:', JSON.stringify(patientPayload, null, 2)); // ADDED LOG
         result = await updatePatientMutation.mutateAsync({ id: editingPatientId, patientData: patientPayload });
         toast.success('Patient updated successfully');
       } else {

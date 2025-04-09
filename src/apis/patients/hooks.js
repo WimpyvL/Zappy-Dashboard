@@ -103,50 +103,45 @@ export const useCreatePatient = (options = {}) => {
         date_of_birth,  // Use the name from the log
         preferredPharmacy,
         assignedDoctor,
-        medicalNotes,
+        medicalNotes
         // Include any other fields intended for the profile JSONB
-        ...topLevelData // Rest of the data (id, name, email, phone, status etc.)
+        // Removed ...topLevelData as it was unused
       } = patientData;
 
-      // Construct the profile object using expected DB keys, only including fields that have values
-      const profileData = {};
-      if (street_address) profileData.address = street_address; // Map street_address to profile.address
-      if (city_name) profileData.city = city_name;             // Map city_name to profile.city
-      if (state) profileData.state = state;
-      if (zip_code) profileData.zip = zip_code;                // Map zip_code to profile.zip
-      if (date_of_birth) profileData.dob = date_of_birth;      // Map date_of_birth to profile.dob
-      if (preferredPharmacy) profileData.preferred_pharmacy = preferredPharmacy;
-      if (assignedDoctor) profileData.assigned_doctor = assignedDoctor;
-      if (medicalNotes) profileData.medical_notes = medicalNotes;
-      // Add other profile fields as needed
-
-      // Construct the final object for insertion, explicitly picking valid top-level fields
+      // Construct the final object for insertion, mapping directly from input to DB columns
       const dataToInsert = {
         // Valid top-level fields from client_record schema
-        id: topLevelData.id, // Assuming ID might be provided client-side sometimes
-        first_name: topLevelData.first_name,
-        last_name: topLevelData.last_name,
-        email: topLevelData.email,
-        mobile_phone: topLevelData.phone, // Map form 'phone' to 'mobile_phone'
-        status: topLevelData.status,
-        related_tags: topLevelData.related_tags || [], // Add related_tags
-        // subscription_plan_id: topLevelData.subscription_plan_id || null, // REMOVED - Column does not exist
-        // assigned_doctor_id: topLevelData.assigned_doctor_id || null, // REMOVED - Column does not exist
-        // Add other known valid top-level fields from patientData if necessary
-        // e.g., user_id: topLevelData.user_id,
+        first_name: patientData.first_name, // Use patientData directly
+        last_name: patientData.last_name,
+        email: patientData.email,
+        phone: patientData.phone, // Use 'phone' from input
+        address: patientData.street_address, // Map street_address input to address column
+        city: patientData.city_name,       // Map city_name input to city column
+        state: patientData.state,          // Map state input to state column
+        zip: patientData.zip_code,         // Map zip_code input to zip column
+        date_of_birth: patientData.date_of_birth, // Map date_of_birth input to date_of_birth column
+        // insurance_provider: patientData.insurance_provider, // Map if available in patientData
+        // insurance_id: patientData.insurance_id, // Map if available in patientData
 
-        profile: profileData, // Add the structured profile data
-        date_created: topLevelData.date_created || new Date().toISOString(),
-        // Set defaults for boolean fields if necessary
-        is_child_record: topLevelData.is_child_record ?? false,
-        is_active: topLevelData.is_active ?? true,
-        invitation_sent: topLevelData.invitation_sent ?? false,
+        // REMOVED fields not in schema:
+        // status: patientData.status,
+        // related_tags: patientData.related_tags || [],
+        // profile: profileData,
+        // date_created: patientData.date_created || new Date().toISOString(),
+        // is_child_record: patientData.is_child_record ?? false,
+        // is_active: patientData.is_active ?? true,
+        // invitation_sent: patientData.invitation_sent ?? false,
       };
 
-      // Remove the original (incorrect) top-level fields that are now in profile
-      // No need to delete fields if we explicitly constructed dataToInsert
+      // Remove undefined fields to avoid overwriting with null
+      Object.keys(dataToInsert).forEach(key => {
+        if (dataToInsert[key] === undefined) {
+          delete dataToInsert[key];
+        }
+      });
+      // End of dataToInsert object
 
-      console.log('[useCreatePatient] Inserting patient data:', dataToInsert); // Log the final object
+      console.log('[useCreatePatient] FINAL payload before insert:', JSON.stringify(dataToInsert, null, 2)); // Log the final object clearly
 
       const { data, error } = await supabase
         .from('client_record')
@@ -199,47 +194,44 @@ export const useUpdatePatient = (options = {}) => {
         date_of_birth,
         preferredPharmacy,
         assignedDoctor,
-        medicalNotes,
+        medicalNotes
         // Include any other fields intended for the profile JSONB
         ...topLevelUpdates // Rest of the data (name, email, phone, status etc.)
       } = patientData;
 
-      // Construct the profile object for update using expected DB keys, only including fields provided
-      const profileUpdates = {};
-      if (street_address !== undefined) profileUpdates.address = street_address;
-      if (city_name !== undefined) profileUpdates.city = city_name;
-      if (state !== undefined) profileUpdates.state = state;
-      if (zip_code !== undefined) profileUpdates.zip = zip_code;
-      if (date_of_birth !== undefined) profileUpdates.dob = date_of_birth;
-      if (preferredPharmacy !== undefined) profileUpdates.preferred_pharmacy = preferredPharmacy;
-      if (assignedDoctor !== undefined) profileUpdates.assigned_doctor = assignedDoctor;
-      if (medicalNotes !== undefined) profileUpdates.medical_notes = medicalNotes;
-      // Add other profile fields as needed
-
-      // Construct the final object for update, explicitly picking valid top-level fields
+      // Construct the final object for update, mapping directly from input to DB columns
       const dataToUpdate = {
         // Valid top-level fields that can be updated
-        first_name: topLevelUpdates.first_name,
-        last_name: topLevelUpdates.last_name,
-        email: topLevelUpdates.email,
-        mobile_phone: topLevelUpdates.phone, // Map form 'phone' to 'mobile_phone'
-        status: topLevelUpdates.status,
-        related_tags: topLevelUpdates.related_tags, // Add related_tags
-        // subscription_plan_id: topLevelUpdates.subscription_plan_id, // REMOVED - Column does not exist
-        // assigned_doctor_id: topLevelUpdates.assigned_doctor_id, // REMOVED - Column does not exist
-        // Add other known valid top-level fields being updated if necessary
+        first_name: patientData.first_name, // Use patientData directly
+        last_name: patientData.last_name,
+        email: patientData.email,
+        phone: patientData.phone, // Use 'phone' from input
+        address: patientData.street_address, // Map street_address input to address column
+        city: patientData.city_name,       // Map city_name input to city column
+        state: patientData.state,          // Map state input to state column
+        zip: patientData.zip_code,         // Map zip_code input to zip column
+        date_of_birth: patientData.date_of_birth, // Map date_of_birth input to date_of_birth column
+        // insurance_provider: patientData.insurance_provider, // Map if available
+        // insurance_id: patientData.insurance_id, // Map if available
 
-        // Only include profile if there are updates for it
-        ...(Object.keys(profileUpdates).length > 0 && { profile: profileUpdates }),
-        record_modified: new Date().toISOString(), // Add timestamp for modification
+        // REMOVED fields not in schema:
+        // status: patientData.status,
+        // related_tags: patientData.related_tags,
+        // profile: profileUpdates,
+        // related_tags: topLevelUpdates.related_tags,
+        // profile: profileUpdates,
+
+        updated_at: new Date().toISOString(), // Set updated_at timestamp
       };
 
-      // Remove the original (incorrect) top-level fields that are now in profile
-      delete dataToUpdate.id; // Don't update the ID
-      delete dataToUpdate.date_created; // Don't update creation date
-      // No need to delete fields if we explicitly constructed dataToUpdate
+      // Remove undefined fields so they don't overwrite existing data with null
+      Object.keys(dataToUpdate).forEach(key => {
+        if (dataToUpdate[key] === undefined) {
+          delete dataToUpdate[key];
+        }
+      });
 
-      console.log(`[useUpdatePatient] Updating patient ${id} with data:`, dataToUpdate); // Log the final object
+      console.log(`[useUpdatePatient] FINAL payload before update for ${id}:`, JSON.stringify(dataToUpdate, null, 2)); // Log the final object clearly
 
       const { data, error } = await supabase
         .from('client_record')

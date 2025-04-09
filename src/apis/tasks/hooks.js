@@ -306,10 +306,11 @@ export const useAssignees = (options = {}) => {
     queryKey: queryKeys.assignees,
     queryFn: async () => {
       // Fetch users who can be assignees
+      // Note: Querying auth.users directly; names are not available here.
+      // Consider creating a public 'profiles' table linked to auth.users for names.
       const { data, error } = await supabase
-        .from('user') // Target the 'user' table
-        .select('id, first_name, last_name') // Select relevant fields
-        .order('last_name', { ascending: true });
+        .from('users', { schema: 'auth' }) // Target the 'auth.users' table
+        .select('id'); // Select only the ID
 
       if (error) {
         console.error('Error fetching assignees:', error);

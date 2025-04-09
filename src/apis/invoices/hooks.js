@@ -26,7 +26,7 @@ export const useInvoices = (params = {}, pageSize = 10) => {
           *,
           client_record ( id, first_name, last_name )
         `, { count: 'exact' }) // Example join
-        .order('date_created', { ascending: false }) // Order by creation date
+        .order('created_at', { ascending: false }) // Order by creation date
         .range(rangeFrom, rangeTo);
 
       // Apply filters

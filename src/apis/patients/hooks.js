@@ -23,7 +23,7 @@ export const usePatients = (currentPage = 1, filters = {}, pageSize = 10) => {
       let query = supabase
         .from('client_record') // Assuming table name is 'client_record'
         .select('*', { count: 'exact' }) // Select all columns and request total count
-        .order('date_created', { ascending: false }) // Use date_created instead of created_at
+        .order('created_at', { ascending: false }) // Use created_at
         .range(rangeFrom, rangeTo); // Apply pagination
 
       // Apply filters (example: filter by status)

@@ -156,7 +156,8 @@ export const AuthProvider = ({ children }) => {
     setLoading(true);
     setError(null);
     try {
-      const { data, error: passwordError } = await supabase.auth.updateUser({
+      // Removed unused 'data' from destructuring
+      const { error: passwordError } = await supabase.auth.updateUser({
         password: newPassword,
       });
 

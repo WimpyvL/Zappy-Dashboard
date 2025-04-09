@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zappy Health - Simplified Mockup</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Caveat:wght@600&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        :root {
+            --primary: #F85C5C;
+            --accent1: #FFB347; /* Orange */
+            --accent2: #82D173; /* Green */
+            --accent3: #5DA9E9; /* Blue */
+            --accent4: #AC8FE9; /* Purple */
+            --bg-light: #F9FAFB;
+            --card-bg: #FFFFFF;
+            --text-dark: #111827;
+        }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-light);
+            margin: 0;
+            padding: 0;
+            color: var(--text-dark);
+        }
+        
+        .handwritten {
+            font-family: 'Caveat', cursive;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+        
+        .mockup-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+        }
+        
+        .mockup {
+            background-color: white;
+            border-radius: 1rem;
+            overflow: hidden;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+        
+        .mockup-title {
+            padding: 1rem;
+            font-weight: 600;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 60px;
+        }
+        
+        .mockup-content {
+            padding: 1.5rem;
+        }
+        
+        .color-palette {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            justify-content: center;
+        }
+        
+        .color-swatch {
+            width: 5rem;
+            height: 5rem;
+            border-radius: 50%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+            font-size: 0.75rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        
+        .nav-item {
+            display: flex;
+            align-items: center;
+            padding: 1rem;
+            border-radius: 0.75rem;
+            margin-bottom: 0.75rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            background-color: white;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+        
+        .nav-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        
+        .nav-item.active {
+            background-color: var(--primary);
+            color: white;
+        }
+        
+        .nav-item i {
+            font-size: 1.25rem;
+            margin-right: 1rem;
+            width: 1.5rem;
+            text-align: center;
+        }
+        
+        .bottom-nav {
+            display: flex;
+            justify-content: space-around;
+            padding: 1rem;
+            background-color: white;
+            border-radius: 1rem;
+            box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
+        }
+        
+        .bottom-nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+        
+        .bottom-nav-item i {
+            font-size: 1.5rem;
+            margin-bottom: 0.25rem;
+        }
+        
+        .bottom-nav-item.active {
+            color: var(--primary);
+        }
+        
+        .avatar-menu {
+            border-radius: 1rem;
+            overflow: hidden;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        
+        .avatar-header {
+            padding: 1.5rem;
+            background-color: var(--primary);
+            color: white;
+        }
+        
+        .avatar-name {
+            font-weight: 600;
+            font-size: 1.25rem;
+            margin-bottom: 0.25rem;
+        }
+        
+        .avatar-email {
+            font-size: 0.875rem;
+            opacity: 0.9;
+        }
+        
+        .menu-item {
+            display: flex;
+            align-items: center;
+            padding: 1rem 1.5rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            border-bottom: 1px solid #F3F4F6;
+        }
+        
+        .menu-item:hover {
+            background-color: #F9FAFB;
+        }
+        
+        .menu-item i {
+            margin-right: 1rem;
+            width: 1.5rem;
+            text-align: center;
+            font-size: 1.25rem;
+        }
+        
+        .menu-item.accent1 i { color: var(--accent1); }
+        .menu-item.accent2 i { color: var(--accent2); }
+        .menu-item.accent3 i { color: var(--accent3); }
+        .menu-item.accent4 i { color: var(--accent4); }
+        .menu-item.primary i { color: var(--primary); }
+        
+        .phone-mockup {
+            border: 12px solid #374151;
+            border-radius: 2rem;
+            overflow: hidden;
+            width: 300px;
+            height: 600px;
+            margin: 0 auto;
+            position: relative;
+            background-color: white;
+        }
+        
+        .status-bar {
+            height: 40px;
+            background-color: #374151;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 1rem;
+            color: white;
+            font-size: 0.75rem;
+        }
+        
+        .phone-content {
+            height: calc(100% - 40px - 70px);
+            overflow-y: auto;
+            padding: 1rem;
+        }
+        
+        .phone-nav {
+            height: 70px;
+            background-color: white;
+            border-top: 1px solid #E5E7EB;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+        }
+        
+        .phone-nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            font-size: 0.7rem;
+        }
+        
+        .phone-nav-item i {
+            font-size: 1.25rem;
+            margin-bottom: 0.25rem;
+        }
+        
+        .phone-nav-item.active {
+            color: var(--primary);
+        }
+        
+        .phone-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+        
+        .page-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+        
+        .avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: #E5E7EB;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .card {
+            background-color: white;
+            border-radius: 1rem;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+        
+        .card.accent1 { border-left: 4px solid var(--accent1); }
+        .card.accent2 { border-left: 4px solid var(--accent2); }
+        .card.accent3 { border-left: 4px solid var(--accent3); }
+        .card.accent4 { border-left: 4px solid var(--accent4); }
+        
+        .card-title {
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+        
+        .card-text {
+            font-size: 0.875rem;
+            color: #6B7280;
+        }
+        
+        .btn {
+            display: inline-block;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            font-weight: 500;
+            font-size: 0.875rem;
+            cursor: pointer;
+        }
+        
+        .btn-primary {
+            background-color: var(--primary);
+            color: white;
+        }
+        
+        .btn-accent1 {
+            background-color: var(--accent1);
+            color: white;
+        }
+        
+        .btn-accent2 {
+            background-color: var(--accent2);
+            color: white;
+        }
+        
+        .btn-accent3 {
+            background-color: var(--accent3);
+            color: white;
+        }
+        
+        .btn-accent4 {
+            background-color: var(--accent4);
+            color: white;
+        }
+        
+        .doodle {
+            position: absolute;
+            opacity: 0.6;
+            pointer-events: none;
+        }
+        
+        .doodle-1 {
+            top: 10%;
+            left: 5%;
+            transform: rotate(-15deg);
+        }
+        
+        .doodle-2 {
+            bottom: 15%;
+            right: 5%;
+            transform: rotate(10deg);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1 class="text-4xl font-bold mb-2">Zappy Health</h1>
+            <p class="text-xl text-gray-600 mb-4">Simplified Navigation with Accent Colors</p>
+            <p class="handwritten text-3xl text-primary-500 mb-8" style="color: var(--primary);">Adding a human touch to healthcare</p>
+        </div>
+        
+        <div class="color-palette">
+            <div class="color-swatch" style="background-color: var(--primary);">
+                <span>#F85C5C</span>
+                <span>Primary</span>
+            </div>
+            <div class="color-swatch" style="background-color: var(--accent1);">
+                <span>#FFB347</span>
+                <span>Accent 1</span>
+            </div>
+            <div class="color-swatch" style="background-color: var(--accent2);">
+                <span>#82D173</span>
+                <span>Accent 2</span>
+            </div>
+            <div class="color-swatch" style="background-color: var(--accent3);">
+                <span>#5DA9E9</span>
+                <span>Accent 3</span>
+            </div>
+            <div class="color-swatch" style="background-color: var(--accent4);">
+                <span>#AC8FE9</span>
+                <span>Accent 4</span>
+            </div>
+        </div>
+        
+        <div class="mockup-grid">
+            <!-- Simplified Navigation -->
+            <div class="mockup">
+                <div class="mockup-title" style="background-color: var(--primary);">
+                    <span class="text-xl">Main Navigation</span>
+                </div>
+                <div class="mockup-content">
+                    <div class="nav-item active">
+                        <i class="fas fa-home"></i>
+                        <span>Home</span>
+                    </div>
+                    <div class="nav-item">
+                        <i class="fas fa-credit-card"></i>
+                        <span>Subscriptions</span>
+                    </div>
+                    <div class="nav-item">
+                        <i class="fas fa-folder"></i>
+                        <span>Records</span>
+                    </div>
+                    <div class="nav-item">
+                        <i class="fas fa-th-large"></i>
+                        <span>Programs</span>
+                    </div>
+                    <div class="nav-item">
+                        <i class="fas fa-shopping-bag"></i>
+                        <span>Shop</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Avatar Menu -->
+            <div class="mockup">
+                <div class="mockup-title" style="background-color: var(--accent3);">
+                    <span class="text-xl">Profile Menu</span>
+                </div>
+                <div class="mockup-content">
+                    <div class="avatar-menu">
+                        <div class="avatar-header">
+                            <div class="avatar-name">Anthony Smith</div>
+                            <div class="avatar-email">anthony@example.com</div>
+                        </div>
+                        <div class="menu-item accent1">
+                            <i class="fas fa-shopping-cart"></i>
+                            <span>My Orders</span>
+                        </div>
+                        <div class="menu-item accent2">
+                            <i class="fas fa-headset"></i>
+                            <span>Customer Support</span>
+                        </div>
+                        <div class="menu-item accent3">
+                            <i class="fas fa-robot"></i>
+                            <span>My Assistant</span>
+                        </div>
+                        <div class="menu-item accent4">
+                            <i class="fas fa-user-cog"></i>
+                            <span>My Information</span>
+                        </div>
+                        <div class="menu-item primary">
+                            <i class="fas fa-credit-card"></i>
+                            <span>Payment Methods</span>
+                        </div>
+                        <div class="menu-item">
+                            <i class="fas fa-sign-out-alt"></i>
+                            <span>Logout</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Mobile View -->
+            <div class="mockup">
+                <div class="mockup-title" style="background-color: var(--accent2);">
+                    <span class="text-xl">Mobile View</span>
+                </div>
+                <div class="mockup-content">
+                    <div class="phone-mockup">
+                        <div class="status-bar">
+                            <span>4:09</span>
+                            <div>
+                                <i class="fas fa-wifi"></i>
+                                <i class="fas fa-signal"></i>
+                                <i class="fas fa-battery-full"></i>
+                            </div>
+                        </div>
+                        <div class="phone-content">
+                            <div class="phone-header">
+                                <div>
+                                    <div class="page-title">Home</div>
+                                </div>
+                                <div class="avatar">
+                                    <i class="fas fa-user"></i>
+                                </div>
+                            </div>
+                            
+                            <div class="card accent1">
+                                <div class="card-title">Complete your profile</div>
+                                <div class="card-text">We need a few more details to personalize your experience.</div>
+                                <div class="mt-2">
+                                    <button class="btn btn-accent1">Continue</button>
+                                </div>
+                            </div>
+                            
+                            <div class="card accent2">
+                                <div class="card-title">Upcoming appointment</div>
+                                <div class="card-text">Dr. Smith on April 10, 2025 at 10:00 AM</div>
+                                <div class="mt-2">
+                                    <button class="btn btn-accent2">Join Call</button>
+                                </div>
+                            </div>
+                            
+                            <div class="card accent3">
+                                <div class="card-title">Recent order</div>
+                                <div class="card-text">Your supplements have shipped!</div>
+                                <div class="mt-2">
+                                    <button class="btn btn-accent3">Track Order</button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="phone-nav">
+                            <div class="phone-nav-item active">
+                                <i class="fas fa-home"></i>
+                                <span>Home</span>
+                            </div>
+                            <div class="phone-nav-item">
+                                <i class="fas fa-credit-card"></i>
+                                <span>Subscriptions</span>
+                            </div>
+                            <div class="phone-nav-item">
+                                <i class="fas fa-folder"></i>
+                                <span>Records</span>
+                            </div>
+                            <div class="phone-nav-item">
+                                <i class="fas fa-th-large"></i>
+                                <span>Programs</span>
+                            </div>
+                            <div class="phone-nav-item">
+                                <i class="fas fa-shopping-bag"></i>
+                                <span>Shop</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Childish Drawing Elements -->
+            <div class="mockup">
+                <div class="mockup-title" style="background-color: var(--accent4);">
+                    <span class="text-xl">Human Touch Elements</span>
+                </div>
+                <div class="mockup-content">
+                    <div class="mb-4">
+                        <h3 class="text-lg font-semibold mb-2">Handwritten Fonts</h3>
+                        <div class="handwritten text-2xl" style="color: var(--primary);">Welcome back, Anthony!</div>
+                        <div class="handwritten text-xl" style="color: var(--accent2);">Your health journey</div>
+                        <div class="handwritten text-lg" style="color: var(--accent3);">Let's get started</div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <h3 class="text-lg font-semibold mb-2">Accent Colors for Categories</h3>
+                        <div class="flex flex-wrap gap-2">
+                            <span class="px-2 py-1 rounded-full text-white text-sm" style="background-color: var(--primary);">Urgent</span>
+                            <span class="px-2 py-1 rounded-full text-white text-sm" style="background-color: var(--accent1);">Appointments</span>
+                            <span class="px-2 py-1 rounded-full text-white text-sm" style="background-color: var(--accent2);">Wellness</span>
+                            <span class="px-2 py-1 rounded-full text-white text-sm" style="background-color: var(--accent3);">Orders</span>
+                            <span class="px-2 py-1 rounded-full text-white text-sm" style="background-color: var(--accent4);">Programs</span>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <h3 class="text-lg font-semibold mb-2">Simple Illustrations</h3>
+                        <p class="text-gray-600 mb-2">Use simple, childish illustrations as accents rather than main elements:</p>
+                        <ul class="list-disc pl-5 space-y-1 text-gray-700">
+                            <li>Small doodles in empty states</li>
+                            <li>Hand-drawn icons for special features</li>
+                            <li>Watercolor splashes as section backgrounds</li>
+                            <li>Crayon-style progress indicators</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Doodle elements -->
+    <img src="https://i.imgur.com/JYkGYTd.png" alt="Doodle" class="doodle doodle-1" width="100">
+    <img src="https://i.imgur.com/8koYSfY.png" alt="Doodle" class="doodle doodle-2" width="120">
+</body>
+</html>

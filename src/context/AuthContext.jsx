@@ -6,11 +6,13 @@ import React, {
   useCallback,
 } from 'react';
 import { supabase } from '../utils/supabaseClient'; // Import Supabase client
+import { useAppContext } from './AppContext'; // Import AppContext hook
 // Removed apiService and errorHandling imports
 
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
+  const { setViewMode } = useAppContext(); // Get setViewMode from AppContext
   const [currentUser, setCurrentUser] = useState(null);
   const [loading, setLoading] = useState(true); // Start loading true to check initial session
   const [error, setError] = useState(null);
@@ -27,8 +29,15 @@ export const AuthProvider = ({ children }) => {
       if (sessionError) {
         console.error('Error getting session:', sessionError.message);
         setError(sessionError.message);
+        setViewMode('admin'); // Default to admin if error getting session
       } else {
-        setCurrentUser(session?.user ?? null); // Set user if session exists, otherwise null
+        const user = session?.user ?? null;
+        setCurrentUser(user); // Set user if session exists, otherwise null
+        // Determine view mode based on user role
+        const userRole = user?.app_metadata?.role; // Check role in app_metadata
+        const determinedViewMode = userRole === 'admin' ? 'admin' : 'patient'; // Default to patient if logged in but not admin
+        setViewMode(determinedViewMode);
+        console.log(`AuthContext: Session checked, user role: ${userRole}, viewMode set to ${determinedViewMode}`);
       }
       setLoading(false);
     };
@@ -40,8 +49,14 @@ export const AuthProvider = ({ children }) => {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
       console.log('Auth state changed:', _event, session);
-      setCurrentUser(session?.user ?? null);
+      const user = session?.user ?? null;
+      setCurrentUser(user);
       setError(null); // Clear errors on auth change
+      // Determine view mode based on user role
+      const userRole = user?.app_metadata?.role; // Check role in app_metadata
+      const determinedViewMode = userRole === 'admin' ? 'admin' : 'patient'; // Default to patient if logged in but not admin
+      setViewMode(determinedViewMode);
+      console.log(`AuthContext: Auth state changed, user role: ${userRole}, viewMode set to ${determinedViewMode}`);
       // No need to set loading here as getSession handles initial load
     });
 

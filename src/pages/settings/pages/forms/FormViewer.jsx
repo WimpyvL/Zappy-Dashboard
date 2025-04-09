@@ -773,7 +773,7 @@ const FormViewer = () => {
             </span>
             <span className="mx-2 text-gray-400">•</span>
             <span className="px-2 py-1 text-xs font-medium rounded bg-purple-100 text-purple-800">
-              {form.service.name}
+              {form.service?.name || 'N/A'} {/* Safely access service name */}
             </span>
           </div>
         </div>

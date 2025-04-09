@@ -9,6 +9,7 @@ import {
   FileText,
 } from 'lucide-react';
 import { message } from 'antd';
+import ChildishDrawingElement from '../../components/ui/ChildishDrawingElement'; // Import drawing element
 
 // Mock product data - Updated with allowOneTimePurchase flags and oneTimePurchasePrice
 const mockProducts = [
@@ -249,8 +250,8 @@ const ProductCard = ({ product, onAddToCart }) => {
             className={`w-full px-4 py-2 rounded-md text-sm font-medium flex items-center justify-center transition-colors duration-150 ease-in-out ${
               // Feedback style logic
               addedToCartFeedbackId === currentFeedbackId
-                ? 'bg-green-500 text-white'
-                : 'bg-indigo-600 text-white hover:bg-indigo-700 disabled:bg-gray-400 disabled:cursor-not-allowed disabled:text-gray-600'
+                ? 'bg-green-500 text-white' // Keep green for feedback
+                : 'bg-accent3 text-white hover:bg-accent3/90 disabled:bg-gray-400 disabled:cursor-not-allowed disabled:text-gray-600' // Use primary action color
             }`}
           >
             {/* Button Text Logic */}
@@ -342,8 +343,16 @@ const ShopPage = () => {
   }
 
   return (
-    <div className="p-6 bg-gray-50 min-h-screen">
-      <h1 className="text-3xl font-bold text-gray-800 mb-6">Products</h1>
+    <div className="container mx-auto px-4 py-6 relative overflow-hidden pb-10">
+      {/* Decorative elements */}
+      <ChildishDrawingElement type="scribble" color="accent2" position="top-right" size={150} rotation={-10} opacity={0.1} />
+      <ChildishDrawingElement type="watercolor" color="accent1" position="bottom-left" size={180} rotation={20} opacity={0.15} />
+      
+      {/* Page Header */}
+      <div className="border-b border-gray-200 pb-4 mb-6">
+        <h1 className="text-2xl font-bold text-gray-900">Shop</h1>
+        <p className="text-sm font-handwritten text-accent2 mt-1">Explore recommended products and supplements</p>
+      </div>
 
       {/* Search and Filters */}
       <div className="bg-white p-4 rounded-lg shadow mb-6 flex flex-col md:flex-row md:items-center space-y-4 md:space-y-0 md:space-x-4">

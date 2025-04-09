@@ -63,23 +63,27 @@ const FormTable = ({
       title: 'Status',
       dataIndex: 'status',
       key: 'status',
-      render: (status, record) => (
-        <Popconfirm
-          title={`Are you sure you want to ${
-            status === 'active' ? 'deactivate' : 'activate'
-          } this form?`}
-          onConfirm={() => onToggleStatus(record.id, status)}
-          okText="Yes"
-          cancelText="No"
-        >
-          <Tag
-            color={status === 'active' ? 'green' : 'red'}
-            style={{ cursor: 'pointer' }}
-          >
-            {status.charAt(0).toUpperCase() + status.slice(1)}
-          </Tag>
-        </Popconfirm>
-      ),
+      render: (status, record) => {
+        const isActive = status === 'active';
+        const color = isActive ? 'success' : 'error'; // Use Ant Design status colors
+        const text = isActive ? 'Active' : 'Inactive';
+        const actionText = isActive ? 'Deactivate' : 'Activate';
+
+        return (
+          <Tooltip title={`Click to ${actionText}`}>
+            <Popconfirm
+              title={`Are you sure you want to ${actionText.toLowerCase()} this form?`}
+              onConfirm={() => onToggleStatus(record.id, status)}
+              okText="Yes"
+              cancelText="No"
+            >
+              <Tag color={color} style={{ cursor: 'pointer' }}>
+                {text}
+              </Tag>
+            </Popconfirm>
+          </Tooltip>
+        );
+      },
     },
     {
       title: 'Pages',
@@ -111,7 +115,7 @@ const FormTable = ({
       render: (_, record) => (
         <Space>
           <Tooltip title="Edit Form">
-            <Button icon={<EditOutlined />} onClick={() => onEdit(record)} />
+            <Button icon={<EditOutlined />} onClick={() => onEdit(record)} size="small" />
           </Tooltip>
 
           <Dropdown
@@ -139,19 +143,28 @@ const FormTable = ({
                   Preview
                 </Menu.Item>
                 <Menu.Divider />
-                <Menu.Item
-                  key="delete"
-                  icon={<DeleteOutlined />}
-                  danger
-                  onClick={() => onDelete(record.id)}
-                >
-                  Delete
-                </Menu.Item>
+                 <Menu.Item key="toggle-status" onClick={() => onToggleStatus(record.id, record.status)}>
+                   {record.status === 'active' ? 'Deactivate' : 'Activate'}
+                 </Menu.Item>
+                <Menu.Divider />
+                <Popconfirm
+                   title="Are you sure you want to delete this form?"
+                   onConfirm={() => onDelete(record.id)}
+                   okText="Yes"
+                   cancelText="No"
+                   placement="left"
+                 >
+                   <Menu.Item key="delete" icon={<DeleteOutlined />} danger>
+                     Delete
+                   </Menu.Item>
+                 </Popconfirm>
               </Menu>
             }
             trigger={['click']}
           >
-            <Button icon={<MoreOutlined />} />
+             <Tooltip title="More Actions">
+               <Button icon={<MoreOutlined />} size="small" />
+             </Tooltip>
           </Dropdown>
         </Space>
       ),

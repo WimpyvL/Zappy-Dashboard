@@ -91,6 +91,32 @@ export const useOrderById = (id, options = {}) => {
   });
 };
 
+// Hook to fetch orders for a specific patient
+export const useMyOrders = (patientId, options = {}) => {
+  return useQuery({
+    queryKey: ['orders', 'patient', patientId], // Specific query key for patient orders
+    queryFn: async () => {
+      if (!patientId) return []; // Return empty if no patientId
+
+      const { data, error } = await supabase
+        .from('order') // Use the correct table name 'order'
+        .select('*') // Select all columns for now
+        .eq('client_record_id', patientId) // Filter by patient ID (assuming column name)
+        .order('order_date', { ascending: false }); // Order by date
+
+      if (error) {
+        console.error(`Error fetching orders for patient ${patientId}:`, error);
+        throw new Error(error.message);
+      }
+      // No complex mapping needed here for now, just return the data
+      return data || [];
+    },
+    enabled: !!patientId, // Only run query if patientId is truthy
+    ...options,
+  });
+};
+
+
 // Create order hook using Supabase
 export const useCreateOrder = (options = {}) => {
   const queryClient = useQueryClient();

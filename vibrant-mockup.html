@@ -1,0 +1,799 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zappy Health - Vibrant Mockup</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        :root {
+            --primary: #F85C5C;
+            --primary-light: #FF8080;
+            --secondary: #4F46E5;
+            --secondary-light: #818CF8;
+            --text-dark: #111827;
+            --text-medium: #4B5563;
+            --text-light: #9CA3AF;
+            --bg-light: #F9FAFB;
+            --card-bg: #FFFFFF;
+        }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-light);
+            color: var(--text-dark);
+            margin: 0;
+            padding: 0;
+        }
+        
+        .phone-mockup {
+            width: 375px;
+            height: 812px;
+            background-color: white;
+            border-radius: 40px;
+            overflow: hidden;
+            position: relative;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            margin: 2rem auto;
+        }
+        
+        .status-bar {
+            height: 44px;
+            background-color: #6B7280;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 20px;
+            color: white;
+        }
+        
+        .time {
+            font-weight: 600;
+        }
+        
+        .status-icons {
+            display: flex;
+            gap: 6px;
+        }
+        
+        .app-content {
+            height: calc(100% - 44px - 70px);
+            overflow-y: auto;
+            position: relative;
+        }
+        
+        .bottom-nav {
+            height: 70px;
+            background-color: white;
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            border-top: 1px solid #E5E7EB;
+        }
+        
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-medium);
+            font-size: 10px;
+            font-weight: 500;
+        }
+        
+        .nav-item.active {
+            color: var(--primary);
+        }
+        
+        .nav-item i {
+            font-size: 20px;
+            margin-bottom: 4px;
+        }
+        
+        .header {
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .page-title {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--text-dark);
+        }
+        
+        .subtitle {
+            font-size: 16px;
+            color: var(--text-medium);
+            margin-top: 4px;
+            font-weight: 400;
+        }
+        
+        .avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: #E5E7EB;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-dark);
+            font-size: 18px;
+        }
+        
+        .section {
+            margin-bottom: 24px;
+        }
+        
+        .section-title {
+            font-size: 22px;
+            font-weight: 700;
+            margin-bottom: 12px;
+            padding: 0 20px;
+        }
+        
+        .section-subtitle {
+            font-size: 16px;
+            color: var(--text-medium);
+            margin-top: -8px;
+            margin-bottom: 16px;
+            padding: 0 20px;
+        }
+        
+        .card {
+            background-color: var(--card-bg);
+            border-radius: 16px;
+            overflow: hidden;
+            margin: 0 20px 16px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        
+        .card-content {
+            padding: 16px;
+        }
+        
+        .card-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+        
+        .card-text {
+            font-size: 14px;
+            color: var(--text-medium);
+        }
+        
+        .action-card {
+            display: flex;
+            background-color: white;
+            border-radius: 16px;
+            overflow: hidden;
+            margin: 0 20px 16px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        
+        .action-content {
+            flex: 1;
+            padding: 16px;
+        }
+        
+        .action-image {
+            width: 100px;
+            background-size: cover;
+            background-position: center;
+        }
+        
+        .action-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+        
+        .action-subtitle {
+            font-size: 14px;
+            color: var(--text-medium);
+            margin-bottom: 12px;
+        }
+        
+        .btn {
+            display: block;
+            width: 100%;
+            padding: 12px;
+            border-radius: 100px;
+            text-align: center;
+            font-weight: 600;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        
+        .btn-primary {
+            background-color: var(--primary);
+            color: white;
+        }
+        
+        .btn-secondary {
+            background-color: black;
+            color: white;
+        }
+        
+        .btn-outline {
+            background-color: transparent;
+            border: 1px solid var(--text-medium);
+            color: var(--text-dark);
+        }
+        
+        .category-pills {
+            display: flex;
+            gap: 8px;
+            padding: 0 20px;
+            margin-bottom: 20px;
+            overflow-x: auto;
+            scrollbar-width: none;
+        }
+        
+        .category-pills::-webkit-scrollbar {
+            display: none;
+        }
+        
+        .pill {
+            padding: 8px 16px;
+            background-color: white;
+            border-radius: 100px;
+            font-size: 14px;
+            font-weight: 500;
+            white-space: nowrap;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+        }
+        
+        .pill.active {
+            background-color: var(--primary);
+            color: white;
+        }
+        
+        .program-card {
+            position: relative;
+            height: 200px;
+            border-radius: 16px;
+            overflow: hidden;
+            margin: 0 20px 16px;
+        }
+        
+        .program-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .program-overlay {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            padding: 16px;
+            background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
+            color: white;
+        }
+        
+        .program-title {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+        
+        .program-subtitle {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+        
+        .video-card {
+            position: relative;
+            height: 200px;
+            border-radius: 16px;
+            overflow: hidden;
+            margin: 0 8px;
+            flex: 0 0 280px;
+        }
+        
+        .video-thumbnail {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .play-button {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 50px;
+            height: 50px;
+            background-color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .play-button i {
+            color: var(--primary);
+            font-size: 20px;
+            margin-left: 4px;
+        }
+        
+        .video-info {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            padding: 16px;
+            background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
+            color: white;
+        }
+        
+        .video-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+        
+        .video-duration {
+            font-size: 12px;
+            opacity: 0.9;
+            position: absolute;
+            top: 12px;
+            left: 12px;
+            background-color: rgba(0,0,0,0.6);
+            padding: 4px 8px;
+            border-radius: 4px;
+        }
+        
+        .horizontal-scroll {
+            display: flex;
+            overflow-x: auto;
+            padding: 0 20px;
+            margin-bottom: 24px;
+            gap: 12px;
+            scrollbar-width: none;
+        }
+        
+        .horizontal-scroll::-webkit-scrollbar {
+            display: none;
+        }
+        
+        .tabs {
+            display: flex;
+            border-bottom: 1px solid #E5E7EB;
+            margin-bottom: 20px;
+        }
+        
+        .tab {
+            flex: 1;
+            text-align: center;
+            padding: 12px;
+            font-weight: 600;
+            color: var(--text-medium);
+            cursor: pointer;
+        }
+        
+        .tab.active {
+            color: var(--text-dark);
+            border-bottom: 2px solid var(--text-dark);
+        }
+        
+        .product-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+            padding: 0 20px;
+        }
+        
+        .product-card {
+            background-color: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+        
+        .product-image {
+            height: 120px;
+            background-color: #F3F4F6;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .product-info {
+            padding: 12px;
+        }
+        
+        .product-name {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+        
+        .product-price {
+            font-size: 14px;
+            color: var(--text-medium);
+        }
+        
+        .badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+            margin-bottom: 8px;
+        }
+        
+        .badge-primary {
+            background-color: var(--primary-light);
+            color: white;
+        }
+        
+        .badge-secondary {
+            background-color: var(--secondary-light);
+            color: white;
+        }
+        
+        .badge-outline {
+            border: 1px solid var(--text-light);
+            color: var(--text-medium);
+        }
+        
+        .avatar-menu {
+            position: absolute;
+            top: 70px;
+            right: 20px;
+            width: 250px;
+            background-color: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            z-index: 100;
+        }
+        
+        .avatar-menu-header {
+            padding: 16px;
+            border-bottom: 1px solid #E5E7EB;
+        }
+        
+        .avatar-menu-name {
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+        
+        .avatar-menu-email {
+            font-size: 12px;
+            color: var(--text-medium);
+        }
+        
+        .avatar-menu-item {
+            padding: 12px 16px;
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+        }
+        
+        .avatar-menu-item:hover {
+            background-color: #F3F4F6;
+        }
+        
+        .avatar-menu-item i {
+            width: 20px;
+            margin-right: 12px;
+            color: var(--text-medium);
+        }
+        
+        .divider {
+            height: 1px;
+            background-color: #E5E7EB;
+            margin: 8px 0;
+        }
+        
+        /* Mockup navigation */
+        .mockup-nav {
+            display: flex;
+            justify-content: space-between;
+            padding: 20px;
+            background-color: #4338ca;
+            color: white;
+        }
+        
+        .mockup-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .mockup-title {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        
+        .mockup-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(375px, 1fr));
+            gap: 40px;
+            justify-items: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="mockup-container">
+        <div class="mockup-title">
+            <h1 class="text-3xl font-bold mb-2">Zappy Health - Vibrant Design Mockup</h1>
+            <p class="text-gray-600">Inspired by modern health apps with a focus on simplicity and engagement</p>
+        </div>
+        
+        <div class="mockup-grid">
+            <!-- Home Screen -->
+            <div class="phone-mockup">
+                <div class="status-bar">
+                    <div class="time">4:09</div>
+                    <div class="status-icons">
+                        <i class="fas fa-signal"></i>
+                        <i class="fas fa-wifi"></i>
+                        <i class="fas fa-battery-full"></i>
+                    </div>
+                </div>
+                
+                <div class="app-content">
+                    <div class="header">
+                        <div>
+                            <div class="page-title">Welcome back,</div>
+                            <div class="page-title">Anthony</div>
+                        </div>
+                        <div class="avatar">
+                            <i class="fas fa-user"></i>
+                        </div>
+                    </div>
+                    
+                    <div class="section">
+                        <div class="action-card" style="border-left: 4px solid #F85C5C;">
+                            <div class="action-content">
+                                <div class="badge badge-primary">Action Required</div>
+                                <div class="action-title">Complete your intake form</div>
+                                <div class="action-subtitle">This helps us personalize your care</div>
+                                <button class="btn btn-primary">Continue</button>
+                            </div>
+                            <div class="action-image" style="background-image: url('https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=200&q=80');"></div>
+                        </div>
+                        
+                        <div class="action-card" style="border-left: 4px solid #818CF8;">
+                            <div class="action-content">
+                                <div class="badge badge-secondary">Upcoming</div>
+                                <div class="action-title">Video consultation</div>
+                                <div class="action-subtitle">Tomorrow at 10:00 AM</div>
+                                <button class="btn btn-secondary">Join Session</button>
+                            </div>
+                            <div class="action-image" style="background-image: url('https://images.unsplash.com/photo-1559839734-2b71ea197ec2?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=200&q=80');"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="section">
+                        <div class="section-title">My Programs</div>
+                        <div class="section-subtitle">Track your progress</div>
+                        
+                        <div class="program-card">
+                            <img src="https://images.unsplash.com/photo-1517836357463-d25dfeac3438?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=400&q=80" class="program-image">
+                            <div class="program-overlay">
+                                <div class="program-title">Weight Management</div>
+                                <div class="program-subtitle">Week 3 of 12 • 25% Complete</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="section">
+                        <div class="section-title">Recent Orders</div>
+                        <div class="card">
+                            <div class="card-content">
+                                <div class="flex justify-between items-center mb-3">
+                                    <div class="badge badge-outline">Processing</div>
+                                    <div class="text-sm text-gray-500">April 5, 2025</div>
+                                </div>
+                                <div class="card-title">Order #ZAP-1005</div>
+                                <div class="card-text">Supplement Pack</div>
+                                <div class="mt-4 flex justify-between items-center">
+                                    <div class="text-sm font-medium">$49.99</div>
+                                    <button class="text-sm text-indigo-600 font-medium">Track Order</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="section">
+                        <div class="section-title">Recommended for You</div>
+                        <div class="horizontal-scroll">
+                            <div class="video-card">
+                                <img src="https://images.unsplash.com/photo-1551076805-e1869033e561?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=300&q=80" class="video-thumbnail">
+                                <div class="video-duration">3 min</div>
+                                <div class="play-button">
+                                    <i class="fas fa-play"></i>
+                                </div>
+                                <div class="video-info">
+                                    <div class="video-title">Healthy Meal Prep Tips</div>
+                                </div>
+                            </div>
+                            
+                            <div class="video-card">
+                                <img src="https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=300&q=80" class="video-thumbnail">
+                                <div class="video-duration">5 min</div>
+                                <div class="play-button">
+                                    <i class="fas fa-play"></i>
+                                </div>
+                                <div class="video-info">
+                                    <div class="video-title">Quick Morning Workout</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bottom-nav">
+                    <div class="nav-item active">
+                        <i class="fas fa-home"></i>
+                        <span>Home</span>
+                    </div>
+                    <div class="nav-item">
+                        <i class="fas fa-credit-card"></i>
+                        <span>Subscriptions</span>
+                    </div>
+                    <div class="nav-item">
+                        <i class="fas fa-folder"></i>
+                        <span>Records</span>
+                    </div>
+                    <div class="nav-item">
+                        <i class="fas fa-th-large"></i>
+                        <span>Programs</span>
+                    </div>
+                    <div class="nav-item">
+                        <i class="fas fa-shopping-bag"></i>
+                        <span>Shop</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Programs Screen -->
+            <div class="phone-mockup">
+                <div class="status-bar">
+                    <div class="time">4:09</div>
+                    <div class="status-icons">
+                        <i class="fas fa-signal"></i>
+                        <i class="fas fa-wifi"></i>
+                        <i class="fas fa-battery-full"></i>
+                    </div>
+                </div>
+                
+                <div class="app-content">
+                    <div class="header">
+                        <div>
+                            <div class="page-title">Programs</div>
+                            <div class="subtitle">Explore and learn.</div>
+                        </div>
+                        <div class="avatar">
+                            <i class="fas fa-user"></i>
+                        </div>
+                    </div>
+                    
+                    <div class="section">
+                        <div class="section-title">Get help with...</div>
+                        <div class="category-pills">
+                            <div class="pill active">Weight Loss</div>
+                            <div class="pill">Nutrition</div>
+                            <div class="pill">Hair Loss</div>
+                            <div class="pill">Better Sleep</div>
+                            <div class="pill">Skin Care</div>
+                        </div>
+                    </div>
+                    
+                    <div class="section">
+                        <div class="section-title">Better Health</div>
+                        <div class="section-subtitle">Long-lasting satisfaction.</div>
+                        
+                        <div class="horizontal-scroll">
+                            <div class="video-card">
+                                <img src="https://images.unsplash.com/photo-1490645935967-10de6ba17061?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=300&q=80" class="video-thumbnail">
+                                <div class="video-duration">1 min</div>
+                                <div class="play-button">
+                                    <i class="fas fa-play"></i>
+                                </div>
+                                <div class="video-info">
+                                    <div class="badge badge-outline">Nutrition</div>
+                                    <div class="video-title">Healthy Eating Habits</div>
+                                </div>
+                            </div>
+                            
+                            <div class="video-card">
+                                <img src="https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=300&q=80" class="video-thumbnail">
+                                <div class="video-duration">1 min</div>
+                                <div class="play-button">
+                                    <i class="fas fa-play"></i>
+                                </div>
+                                <div class="video-info">
+                                    <div class="badge badge-outline">Fitness</div>
+                                    <div class="video-title">Morning Stretches</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="section">
+                        <div class="section-title">Lose Weight</div>
+                        <div class="section-subtitle">Feel fit and strong.</div>
+                        
+                        <div class="horizontal-scroll">
+                            <div class="video-card">
+                                <img src="https://images.unsplash.com/photo-1517836357463-d25dfeac3438?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=300&q=80" class="video-thumbnail">
+                                <div class="video-duration">1 min</div>
+                                <div class="play-button">
+                                    <i class="fas fa-play"></i>
+                                </div>
+                                <div class="video-info">
+                                    <div class="badge badge-outline">Weight Loss</div>
+                                    <div class="video-title">Workouts for Beginners</div>
+                                </div>
+                            </div>
+                            
+                            <div class="video-card">
+                                <img src="https://images.unsplash.com/photo-1532384748853-8f54a8f476e2?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=300&q=80" class="video-thumbnail">
+                                <div class="video-duration">14 slides</div>
+                                <div class="play-button">
+                                    <i class="fas fa-play"></i>
+                                </div>
+                                <div class="video-info">
+                                    <div class="badge badge-outline">Tutorial</div>
+                                    <div class="video-title">Meal Planning Guide</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bottom-nav">
+                    <div class="nav-item">
+                        <i class="fas fa-home"></i>
+                        <span>Home</span>
+                    </div>
+                    <div class="nav-item">
+                        <i class="fas fa-credit-card"></i>
+                        <span>Subscriptions</span>
+                    </div>
+                    <div class="nav-item">
+                        <i class="fas fa-folder"></i>
+                        <span>Records</span>
+                    </div>
+                    <div class="nav-item active">
+                        <i class="fas fa-th-large"></i>
+                        <span>Programs</span>
+                    </div>
+                    <div class="nav-item">
+                        <i class="fas fa-shopping-bag"></i>
+                        <span>Shop</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Shop Screen -->
+            <div class="phone-mockup">
+                <div class="status-bar">
+                    <div class="time">4:09</div>
+                    <div class="status-icons">
+                        <i class="fas fa-signal"></i>
+                        <i class="fas fa-wifi"></i>
+                        <i class="fas fa-battery-full"></i>
+                    </div>
+                </div>
+                
+                <div class="app-content">
+                    <div class="header">
+                        <div class="page-title">Shop</div>
+                        <div>

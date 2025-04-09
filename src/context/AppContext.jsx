@@ -1,4 +1,4 @@
-import React, { createContext, useState, useContext, useCallback } from 'react'; // Removed useEffect
+import React, { createContext, useState, useContext, useCallback, useEffect } from 'react';
 
 // Create context
 const AppContext = createContext();
@@ -6,8 +6,16 @@ const AppContext = createContext();
 // Removed all Mock Data (samplePatients, sampleSessions, etc.)
 
 export const AppProvider = ({ children }) => {
-  // State for view mode simulation
-  const [viewMode, setViewMode] = useState('admin'); // 'admin' or 'patient'
+  // State for view mode simulation, initialized from localStorage or default to 'admin'
+  const [viewMode, setViewMode] = useState(() => {
+    try {
+      const storedViewMode = localStorage.getItem('appViewMode');
+      return storedViewMode === 'patient' ? 'patient' : 'admin'; // Default to 'admin' if invalid or not found
+    } catch (error) {
+      console.error("Error reading localStorage for viewMode", error);
+      return 'admin';
+    }
+  });
 
   // NOTE: Removed state for patients, sessions, orders, products, services, plans, tags, documents, forms, invoices
   // It's assumed this data will be fetched and managed via React Query hooks (e.g., usePatients, useOrders)
@@ -213,15 +221,25 @@ export const AppProvider = ({ children }) => {
   };
 
   // --- View Mode Setter ---
+  // Persist viewMode to localStorage whenever it changes
+  useEffect(() => {
+    try {
+      localStorage.setItem('appViewMode', viewMode);
+      console.log(`Persisted view mode to localStorage: ${viewMode}`);
+    } catch (error) {
+      console.error("Error writing viewMode to localStorage", error);
+    }
+  }, [viewMode]);
+
   // Changed from toggleViewMode to setViewMode to accept a specific mode
   const handleSetViewMode = useCallback((newMode) => {
     if (newMode === 'admin' || newMode === 'patient') {
       setViewMode(newMode);
-      console.log(`Switched view mode to: ${newMode}`);
+      // No need to log here, useEffect will log persistence
     } else {
       console.warn(`Invalid view mode attempted: ${newMode}`);
     }
-  }, []); // No dependency needed as setViewMode from useState is stable
+  }, []); // setViewMode from useState is stable
 
   // --- Context Provider Value ---
   const contextValue = {

@@ -19,7 +19,7 @@ import {
   MoreOutlined,
 } from '@ant-design/icons';
 
-const FormTable = ({
+const FormTableV2 = ({ // Renamed component
   forms,
   loading,
   onEdit,
@@ -197,4 +197,4 @@ const FormTable = ({
   );
 };
 
-export default FormTable;
+export default FormTableV2; // Renamed export

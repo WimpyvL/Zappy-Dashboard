@@ -10,14 +10,26 @@ import {
   Settings,
   LogOut,
   ClipboardList,
-  // Layers, // Removed unused import
   Tag,
   Percent,
   Hash,
-  MessageSquare, // Import icon for Messages
-  History, // Import icon for Audit Log
-  // Workflow, // Removed Automations icon
-  Map, // Import icon for System Map
+  MessageSquare,
+  History,
+  Map,
+  // Patient view icons
+  LayoutDashboard as PatientDashboardIcon,
+  User as PatientProfileIcon,
+  ShoppingCart as PatientOrdersIcon,
+  CalendarCheck as PatientSessionsIcon,
+  MessageSquare as PatientMessagesIcon,
+  LayoutGrid as PatientProgramIcon,
+  FolderClock as PatientRecordsIcon,
+  CreditCard,
+  Store as ShopIcon,
+  Headphones, // For Customer Support
+  Bot as AssistantIcon, // For My Assistant
+  CreditCard as PaymentIcon, // For Payment Methods
+  UserCog, // For My Information
 } from 'lucide-react';
 
 import { paths } from './paths'; // Ensure paths are imported
@@ -126,3 +138,20 @@ export const logoutItem = {
   icon: LogOut,
   action: () => console.log('Logging out...'),
 };
+
+// Define patient sidebar items (Further Simplified View)
+export const patientSidebarItems = [
+  { title: 'Home', path: '/dashboard', icon: PatientDashboardIcon, color: 'primary' }, 
+  { title: 'Records', path: '/records', icon: PatientRecordsIcon, color: 'accent3' },
+  { title: 'Programs', path: '/program', icon: PatientProgramIcon, color: 'accent4' },
+  { title: 'Shop', path: '/shop', icon: ShopIcon, color: 'accent2' },
+];
+
+// Define profile dropdown menu items (Simplified)
+export const profileMenuItems = [
+  { title: 'My Account', path: '/profile', icon: UserCog, color: 'accent4' }, // Central hub for profile, payment, plan
+  { title: 'My Orders', path: '/my-orders', icon: PatientOrdersIcon, color: 'accent1' }, // Keep orders separate
+  { title: 'Help Center', path: '/support', icon: Headphones, color: 'accent2' }, // Central support link
+];
+
+// Note: Logout item is handled separately in Sidebar.js

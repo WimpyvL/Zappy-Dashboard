@@ -1,207 +1,139 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '../../utils/supabaseClient'; // Import Supabase client
+import { useMutation } from '@tanstack/react-query';
 import { toast } from 'react-toastify';
 
-// Removed Mock Data
+// Placeholder hook to simulate fetching a customer portal session URL
+export const useCreateCustomerPortalSession = (options = {}) => {
+  return useMutation({
+    mutationFn: async () => {
+      // In a real app, this would make an API call to your backend:
+      // const response = await fetch('/api/create-customer-portal-session', { method: 'POST' });
+      // const data = await response.json();
+      // if (!response.ok) throw new Error(data.error || 'Failed to create portal session');
+      // return data; // Should contain { url: '...' }
 
-// Define query keys
-const queryKeys = {
-  all: ['subscriptionPlans'],
-  lists: (params = {}) => [...queryKeys.all, 'list', { params }],
-  details: (id) => [...queryKeys.all, 'detail', id],
-};
-
-// Get subscription plans hook using Supabase
-export const useSubscriptionPlans = (params = {}) => {
-  return useQuery({
-    queryKey: queryKeys.lists(params),
-    queryFn: async () => {
-      let query = supabase
-        .from('subscription_plans') // ASSUMING table name is 'subscription_plans'
-        .select('*')
-        .order('name', { ascending: true }); // Example order
-
-      // Apply filters if any
-      if (params.active !== undefined) {
-        query = query.eq('active', params.active);
-      }
-      // Add other filters as needed
-
-      const { data, error } = await query;
-
-      if (error) {
-        console.error('Error fetching subscription plans:', error);
-        throw new Error(error.message);
-      }
-      // Map data if needed (e.g., parse JSONB fields if stored as strings)
-      const mappedData = data?.map(plan => ({
-          ...plan,
-          // Ensure allowedProductDoses is an array
-          allowedProductDoses: Array.isArray(plan.allowed_product_doses) ? plan.allowed_product_doses : [],
-      })) || [];
-      return mappedData; // Return data array
+      // Simulate success after a short delay
+      await new Promise(resolve => setTimeout(resolve, 500)); 
+      console.log("Simulating backend call to create Stripe Billing Portal session...");
+      
+      // Return a mock URL (won't actually work)
+      return { url: 'https://billing.stripe.com/p/session/test_mock_session_url' }; 
     },
+    onSuccess: (data, variables, context) => {
+      // Redirect the user to the Stripe Billing Portal URL
+      if (data?.url) {
+        window.location.href = data.url;
+      } else {
+         toast.error('Could not retrieve subscription management link.');
+      }
+      options.onSuccess?.(data, variables, context);
+    },
+    onError: (error, variables, context) => {
+      toast.error(`Error accessing subscription management: ${error.message || 'Unknown error'}`);
+      options.onError?.(error, variables, context);
+    },
+    onSettled: options.onSettled,
   });
 };
 
-// Get subscription plan by ID hook using Supabase
-export const useSubscriptionPlanById = (id, options = {}) => {
-  return useQuery({
-    queryKey: queryKeys.details(id),
-    queryFn: async () => {
-      if (!id) return null;
+// Placeholder hook for fetching subscription details (if needed separately)
+// This was previously defined inline in PatientBillingPage.jsx
+export const useMySubscription = (patientId, options = {}) => {
+   // --- MOCK DATA ---
+   const mockSubscription = {
+       planName: 'Monthly Wellness Plan',
+       status: 'Active',
+       nextBillingDate: '2025-05-05T00:00:00Z',
+       amount: 299.00,
+   };
+   // --- END MOCK DATA ---
 
-      const { data, error } = await supabase
-        .from('subscription_plans') // ASSUMING table name is 'subscription_plans'
-        .select('*')
-        .eq('id', id)
-        .single();
-
-      if (error) {
-        console.error(`Error fetching subscription plan ${id}:`, error);
-        if (error.code === 'PGRST116') return null; // Not found
-        throw new Error(error.message);
-      }
-       // Map data if needed
-       const mappedData = data ? {
-           ...data,
-           allowedProductDoses: Array.isArray(data.allowed_product_doses) ? data.allowed_product_doses : [],
-       } : null;
-      return mappedData;
-    },
-    enabled: !!id,
-    ...options,
-  });
+   // Simulate fetching data
+   return { data: mockSubscription, isLoading: false, error: null, ...options };
 };
 
-// Create subscription plan hook using Supabase
-// Renamed from useAddSubscriptionPlan to useCreateSubscriptionPlan
+// Placeholder hook for fetching invoices (if needed separately)
+// This was previously defined inline in PatientBillingPage.jsx
+export const useMyInvoices = (patientId, options = {}) => {
+    // --- MOCK DATA ---
+    const mockInvoices = [
+        { id: 'inv-1', invoiceId: 'INV-1001', createdAt: '2025-04-05T14:00:00Z', invoiceAmount: 299.00, status: 'Paid' },
+        { id: 'inv-2', invoiceId: 'INV-0988', createdAt: '2025-03-15T16:30:00Z', invoiceAmount: 299.00, status: 'Paid' },
+        { id: 'inv-3', invoiceId: 'INV-0950', createdAt: '2025-03-01T11:00:00Z', invoiceAmount: 150.00, status: 'Paid' },
+    ];
+     // --- END MOCK DATA ---
+
+    // Simulate fetching data
+    return { data: mockInvoices, isLoading: false, error: null, ...options };
+};
+
+// --- Placeholder Admin Hooks ---
+
+// Placeholder hook for fetching ALL subscription plans (admin view)
+export const useSubscriptionPlans = (options = {}) => {
+    // Simulate fetching data
+    const mockPlans = [
+        { id: 'plan_monthly', name: 'Monthly Wellness Plan', price: 299.00, interval: 'month', status: 'active' },
+        { id: 'plan_annual', name: 'Annual Wellness Plan', price: 2999.00, interval: 'year', status: 'active' },
+    ];
+    return { data: mockPlans, isLoading: false, error: null, ...options };
+};
+
+// Placeholder hook for creating a subscription plan (admin view)
 export const useCreateSubscriptionPlan = (options = {}) => {
-  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (planData) => {
-      // Map frontend fields to DB columns if needed
-      const dataToInsert = {
-        ...planData,
-        created_at: new Date().toISOString(), // Assuming timestamp columns
-        updated_at: new Date().toISOString(),
-        active: planData.active ?? true,
-        allowed_product_doses: planData.allowedProductDoses || [], // Assuming JSONB column
-        // Map other fields like billingFrequency -> billing_frequency if needed
-        billing_frequency: planData.billingFrequency,
-        delivery_frequency: planData.deliveryFrequency,
-      };
-      // Remove frontend-specific fields
-      delete dataToInsert.billingFrequency;
-      delete dataToInsert.deliveryFrequency;
-      delete dataToInsert.allowedProductDoses;
-
-
-      const { data, error } = await supabase
-        .from('subscription_plans') // ASSUMING table name is 'subscription_plans'
-        .insert(dataToInsert)
-        .select()
-        .single();
-
-      if (error) {
-        console.error('Error creating subscription plan:', error);
-        throw new Error(error.message);
-      }
-      return data;
+      console.log("Simulating create subscription plan:", planData);
+      await new Promise(resolve => setTimeout(resolve, 500));
+      // Simulate returning the created plan (with a mock ID)
+      return { ...planData, id: `plan_${Date.now()}` };
     },
-    onSuccess: (data, variables, context) => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.lists() });
-      toast.success('Subscription plan created successfully');
-      options.onSuccess?.(data, variables, context);
-    },
-    onError: (error, variables, context) => {
-      toast.error(`Error creating plan: ${error.message || 'Unknown error'}`);
-      options.onError?.(error, variables, context);
-    },
-    onSettled: options.onSettled,
+     onSuccess: (data, variables, context) => {
+       toast.success('Subscription plan created (mock)');
+       options.onSuccess?.(data, variables, context);
+     },
+     onError: (error, variables, context) => {
+       toast.error(`Error creating plan: ${error.message || 'Unknown error'}`);
+       options.onError?.(error, variables, context);
+     },
   });
 };
 
-// Update subscription plan hook using Supabase
+// Placeholder hook for updating a subscription plan (admin view)
 export const useUpdateSubscriptionPlan = (options = {}) => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async ({ id, planData }) => {
-      if (!id) throw new Error("Plan ID is required for update.");
-
-      const dataToUpdate = {
-        ...planData,
-        updated_at: new Date().toISOString(),
-        allowed_product_doses: planData.allowedProductDoses, // Assuming JSONB
-        billing_frequency: planData.billingFrequency,
-        delivery_frequency: planData.deliveryFrequency,
-      };
-      delete dataToUpdate.id;
-      delete dataToUpdate.created_at;
-      delete dataToUpdate.billingFrequency;
-      delete dataToUpdate.deliveryFrequency;
-      delete dataToUpdate.allowedProductDoses;
-
-
-      const { data, error } = await supabase
-        .from('subscription_plans') // ASSUMING table name is 'subscription_plans'
-        .update(dataToUpdate)
-        .eq('id', id)
-        .select()
-        .single();
-
-      if (error) {
-        console.error(`Error updating subscription plan ${id}:`, error);
-        throw new Error(error.message);
-      }
-      return data;
-    },
-    onSuccess: (data, variables, context) => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.lists() });
-      queryClient.invalidateQueries({ queryKey: queryKeys.details(variables.id) });
-      toast.success('Subscription plan updated successfully');
-      options.onSuccess?.(data, variables, context);
-    },
-    onError: (error, variables, context) => {
-      toast.error(`Error updating plan: ${error.message || 'Unknown error'}`);
-      options.onError?.(error, variables, context);
-    },
-    onSettled: options.onSettled,
-  });
+   return useMutation({
+     mutationFn: async ({ id, planData }) => {
+       console.log(`Simulating update subscription plan ${id}:`, planData);
+       await new Promise(resolve => setTimeout(resolve, 500));
+       // Simulate returning the updated plan
+       return { ...planData, id };
+     },
+      onSuccess: (data, variables, context) => {
+        toast.success('Subscription plan updated (mock)');
+        options.onSuccess?.(data, variables, context);
+      },
+      onError: (error, variables, context) => {
+        toast.error(`Error updating plan: ${error.message || 'Unknown error'}`);
+        options.onError?.(error, variables, context);
+      },
+   });
 };
 
-// Delete subscription plan hook using Supabase
+// Placeholder hook for deleting a subscription plan (admin view)
 export const useDeleteSubscriptionPlan = (options = {}) => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async (id) => {
-      if (!id) throw new Error("Plan ID is required for deletion.");
-
-      const { error } = await supabase
-        .from('subscription_plans') // ASSUMING table name is 'subscription_plans'
-        .delete()
-        .eq('id', id);
-
-      if (error) {
-        console.error(`Error deleting subscription plan ${id}:`, error);
-         // Handle foreign key constraint errors if needed
-         if (error.code === '23503') {
-           throw new Error(`Cannot delete plan: It might be linked to other records.`);
-         }
-        throw new Error(error.message);
-      }
-      return { success: true, id };
-    },
-    onSuccess: (data, variables, context) => { // variables is the id
-      queryClient.invalidateQueries({ queryKey: queryKeys.lists() });
-      queryClient.removeQueries({ queryKey: queryKeys.details(variables) });
-      toast.success('Subscription plan deleted successfully');
-      options.onSuccess?.(data, variables, context);
-    },
-    onError: (error, variables, context) => {
-      toast.error(`Error deleting plan: ${error.message || 'Unknown error'}`);
-      options.onError?.(error, variables, context);
-    },
-    onSettled: options.onSettled,
-  });
+   return useMutation({
+     mutationFn: async (id) => {
+       console.log(`Simulating delete subscription plan ${id}`);
+       await new Promise(resolve => setTimeout(resolve, 500));
+       // Simulate success
+       return { success: true, id };
+     },
+      onSuccess: (data, variables, context) => {
+        toast.success('Subscription plan deleted (mock)');
+        options.onSuccess?.(data, variables, context);
+      },
+      onError: (error, variables, context) => {
+        toast.error(`Error deleting plan: ${error.message || 'Unknown error'}`);
+        options.onError?.(error, variables, context);
+      },
+   });
 };

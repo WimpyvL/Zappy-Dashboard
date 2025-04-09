@@ -20,10 +20,7 @@ export const useNotes = (patientId, params = {}, options = {}) => {
 
       let query = supabase
         .from('notes') // ASSUMING table name is 'notes'
-        .select(`
-          *,
-          user ( id, first_name, last_name )
-        `) // Example join to get author name
+        .select(`*`) // Temporarily removing the join to isolate the issue
         .eq('client_record_id', patientId) // Filter by patient
         .order('created_at', { ascending: false }); // Order by creation date
 
@@ -38,9 +35,10 @@ export const useNotes = (patientId, params = {}, options = {}) => {
       }
 
       // Map data if needed (e.g., format author name)
+      // Adjust mapping - authorName will be 'Unknown' since we removed the join
       const mappedData = data?.map(note => ({
           ...note,
-          authorName: note.user ? `${note.user.first_name || ''} ${note.user.last_name || ''}`.trim() : 'System',
+          authorName: 'Unknown', // Set default since author info is not joined
       })) || [];
 
       return mappedData; // Return array of notes
@@ -62,8 +60,8 @@ export const useNoteById = (noteId, options = {}) => {
         .from('notes') // ASSUMING table name is 'notes'
         .select(`
           *,
-          user ( id, first_name, last_name )
-        `) // Example join
+          author_id ( id, first_name, last_name ) 
+        `) // Trying 'author_id' as the foreign key column name
         .eq('id', noteId)
         .single();
 
@@ -75,7 +73,8 @@ export const useNoteById = (noteId, options = {}) => {
        // Map data if needed
        const mappedData = data ? {
            ...data,
-           authorName: data.user ? `${data.user.first_name || ''} ${data.user.last_name || ''}`.trim() : 'System',
+           // Adjust mapping to use the data structure returned by the corrected join
+           authorName: data.author_id ? `${data.author_id.first_name || ''} ${data.author_id.last_name || ''}`.trim() : 'System',
        } : null;
 
       return mappedData;

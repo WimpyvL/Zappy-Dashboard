@@ -6,9 +6,10 @@ import { toast } from 'react-toastify';
 
 // Define query keys
 const queryKeys = {
-  all: ['forms'], // Using 'forms' as the general key for questionnaires
-  lists: (params = {}) => [...queryKeys.all, 'list', { params }],
-  details: (id) => [...queryKeys.all, 'detail', id],
+  all: ['forms'], // Key for questionnaire templates
+  lists: (params = {}) => [...queryKeys.all, 'list', { params }], // Key for list of templates
+  details: (id) => [...queryKeys.all, 'detail', id], // Key for template detail
+  patientForms: (patientId, params = {}) => [...queryKeys.all, 'patient', patientId, { params }], // Key for patient's form requests/submissions
 };
 
 // Hook to fetch all forms (questionnaires) using Supabase
@@ -36,6 +37,49 @@ export const useForms = (params = {}) => {
     },
   });
 };
+
+// Hook to fetch form requests/submissions for a specific patient
+export const useGetPatientForms = (patientId, params = {}, options = {}) => {
+  return useQuery({
+    queryKey: queryKeys.patientForms(patientId, params),
+    queryFn: async () => {
+      if (!patientId) return []; // Return empty if no patientId
+
+      let query = supabase
+        .from('form_requests') // ASSUMING table name is 'form_requests'
+        .select(`
+          *, 
+          questionnaire ( id, name ) 
+        `) // Join with questionnaire to get form name
+        .eq('client_record_id', patientId) // Filter by patient
+        .order('created_at', { ascending: false }); // Order by creation date
+
+      // Add other filters from params if needed
+      if (params.status) { 
+        query = query.eq('status', params.status); 
+      }
+
+      const { data, error } = await query;
+
+      if (error) {
+        console.error(`Error fetching forms for patient ${patientId}:`, error);
+        throw new Error(error.message);
+      }
+
+      // Map data to include questionnaire name directly
+      const mappedData = data?.map(req => ({
+          ...req,
+          name: req.questionnaire?.name || 'Unknown Form', // Use questionnaire name
+      })) || [];
+
+      return mappedData; // Return array of form requests/submissions
+    },
+    enabled: !!patientId, // Only run query if patientId is truthy
+    keepPreviousData: true,
+    ...options,
+  });
+};
+
 
 // Hook to fetch a specific form (questionnaire) by ID using Supabase
 // This might need to fetch related questions as well depending on requirements

@@ -1,16 +1,9 @@
 import { createClient } from '@supabase/supabase-js';
 
-// Use environment variables provided during the build process
-const supabaseUrl = process.env.REACT_APP_SUPABASE_URL;
-const supabaseAnonKey = process.env.REACT_APP_SUPABASE_ANON_KEY;
-
-if (!supabaseUrl || !supabaseAnonKey) {
-  console.error(
-    'Supabase URL or Anon Key is missing. Make sure REACT_APP_SUPABASE_URL and REACT_APP_SUPABASE_ANON_KEY environment variables are set.'
-  );
-  // Optionally throw an error or handle this case appropriately
-  // For now, we'll proceed, but the client might fail if keys are missing during runtime.
-}
+// Use hardcoded credentials instead of environment variables
+const supabaseUrl = 'https://htvivqlvivmxgrbpwrje.supabase.co';
+const supabaseAnonKey =
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh0dml2cWx2aXZteGdyYnB3cmplIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDIxNTM0MjcsImV4cCI6MjA1NzcyOTQyN30.WxsjlBlh7XfHzoeEFSrkGnyn738jihRfLOL4xsQRLJU';
 
 // Create a single supabase client for interacting with your database
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
@@ -21,7 +14,6 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   },
 });
 
-// Export the URL and key for other components that might need them (optional)
-// Note: These will be undefined if the env vars are not set at build time
+// Export the URL and key for other components that might need them
 export const SUPABASE_URL = supabaseUrl;
 export const SUPABASE_ANON_KEY = supabaseAnonKey;

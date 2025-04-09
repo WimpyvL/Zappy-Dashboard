@@ -19,7 +19,24 @@ import { usePatients } from '../../apis/patients/hooks';
 import { useTags } from '../../apis/tags/hooks';
 import { useAppContext } from '../../context/AppContext'; // Import AppContext hook
 
-// Removed unused StatusBadge component definition
+const StatusBadge = ({ status }) => {
+  // Ensure status is treated case-insensitively for comparison
+  const lowerCaseStatus = status?.toLowerCase();
+
+  if (lowerCaseStatus === 'active') {
+    return <span className="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">Active</span>;
+  } else if (lowerCaseStatus === 'inactive') {
+    return <span className="px-2 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-800">Inactive</span>;
+  } else if (lowerCaseStatus === 'suspended') {
+    return <span className="px-2 py-1 text-xs font-medium rounded-full bg-red-100 text-red-800">Suspended</span>;
+  } else if (lowerCaseStatus === 'pending') {
+    return <span className="px-2 py-1 text-xs font-medium rounded-full bg-yellow-100 text-yellow-800">Pending</span>;
+  } else if (lowerCaseStatus === 'blacklisted') {
+    return <span className="px-2 py-1 text-xs font-medium rounded-full bg-black text-white">Blacklisted</span>;
+  }
+  return null;
+};
+// Removed unused StatusBadge component
 
 const Patients = () => {
   // Get subscription plans from context for the filter dropdown

@@ -33,7 +33,7 @@ const PatientTabs = ({
   patientSessions,
   patientOrders,
   patientNotes,
-  patientDocuments,
+  // patientDocuments, // Removed prop
   patientForms,
 }) => {
   return (
@@ -71,7 +71,7 @@ const PatientTabs = ({
           onClick={() => setActiveTab('documents')}
           icon={File}
           label="Documents"
-          count={patientDocuments.length}
+          // count={patientDocuments.length} // Removed count display
         />
         <TabButton
           active={activeTab === 'forms'}

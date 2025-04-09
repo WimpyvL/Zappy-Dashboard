@@ -1,5 +1,5 @@
 // PatientDetail.jsx
-import React, { useState } from 'react'; // Removed unused useEffect
+import React, { useState, useCallback } from 'react'; // Removed unused useEffect, Added useCallback
 import { useParams } from 'react-router-dom'; // Removed unused Link import
 import { toast } from 'react-toastify';
 // Removed unused ArrowLeft, Calendar, Plus imports
@@ -30,7 +30,7 @@ const PatientDetail = () => {
     sessions: false,
     orders: false,
     notes: true, // Assume we might load these later
-    documents: true,
+    // documents: true, // Removed, handled by PatientDocuments component
     forms: true,
     invoices: true,
   });
@@ -42,7 +42,7 @@ const PatientDetail = () => {
   const [patientSessions] = useState([]); // Removed setPatientSessions
   const [patientOrders] = useState([]); // Removed setPatientOrders
   const [patientNotes] = useState([]); // Removed setPatientNotes
-  const [patientDocuments, setPatientDocuments] = useState([]); // Keep setPatientDocuments for now due to fetchPatientDocuments
+  // const [patientDocuments, setPatientDocuments] = useState([]); // Removed, handled by PatientDocuments component
   const [patientForms] = useState([]); // Removed setPatientForms
   const [patientInvoices] = useState([]); // Removed setPatientInvoices
 
@@ -51,48 +51,23 @@ const PatientDetail = () => {
   const [showFollowupNotes, setShowFollowupNotes] = useState(false);
   const [selectedSession, setSelectedSession] = useState(null);
 
+  // Define refreshPatient using useCallback to stabilize its reference
+  const refreshPatient = useCallback(async () => {
+    // This function currently does nothing as it relies on mock data/context
+    // In a real scenario, it would likely trigger a refetch of the patient data
+    // e.g., queryClient.invalidateQueries(['patient', patientId]);
+    console.warn("Refresh patient called. Adapt for actual data fetching if needed.");
+    // Since usePatientById handles fetching, maybe this isn't needed,
+    // or should trigger an invalidation via queryClient if using React Query fully.
+  }, []); // Empty dependency array means the function reference is stable
+
   // Removed useEffect that relied on contextPatients
 
   // Placeholder for fetching related data (sessions, orders, etc.)
   // TODO: This should ideally be handled by hooks within the specific tab components
-  // Removed unused fetchRelatedData function
-  // const fetchRelatedData = (id) => {
-  //   console.log(`Fetching related mock data for patient ${id}...`);
-  //   // Example: Filter sessions from context
-    // const sessions = contextSessions.filter(s => s.patientId === id);
-    // setPatientSessions(sessions);
-    // setLoading(prev => ({ ...prev, sessions: false }));
-    // Similarly for orders, notes, documents, forms, invoices...
-    // For now, just set loading to false for related data
-    setLoading(prev => ({
-      ...prev,
-      sessions: false,
-      orders: false,
-      notes: false,
-      documents: false,
-      forms: false,
-      invoices: false,
-    }));
-  // }; // Removed closing brace for fetchRelatedData
+  // Removed unused fetchRelatedData function and the stray setLoading call within it
 
-  // Removed useEffect that called fetchRelatedData
-
-  // Data fetching function for documents (can be adapted for mock data later)
-  // TODO: Move document fetching logic into PatientDocuments component using a dedicated hook
-  const fetchPatientDocuments = async (id) => {
-    // TODO: Adapt this to use mock data from context if needed
-    try {
-      setLoading((prev) => ({ ...prev, documents: true }));
-      const response = await apiService.get(
-        `/api/v1/admin/patients/${id}/documents`
-      );
-      setPatientDocuments(response.data || []);
-    } catch (error) {
-      console.error('Error fetching patient documents:', error);
-    } finally {
-      setLoading((prev) => ({ ...prev, documents: false }));
-    }
-  };
+  // Removed fetchPatientDocuments function - now handled within PatientDocuments component
 
   // Event handlers (remain the same)
   const handleOpenFollowupNotes = (session = null) => {
@@ -137,7 +112,7 @@ const PatientDetail = () => {
         patientSessions={patientSessions}
         patientOrders={patientOrders}
         patientNotes={patientNotes}
-        patientDocuments={patientDocuments}
+        // patientDocuments={patientDocuments} // Removed, handled by PatientDocuments component
         patientForms={patientForms}
       />
 
@@ -174,9 +149,9 @@ const PatientDetail = () => {
       {activeTab === 'documents' && (
         <PatientDocuments
           patientId={patientId}
-          documents={patientDocuments} // Pass related data
-          loading={loading.documents}
-          fetchDocuments={() => fetchPatientDocuments(patientId)} // Keep API call for now, or adapt
+          // documents={patientDocuments} // Removed, handled by PatientDocuments component
+          // loading={loading.documents} // Removed, handled by PatientDocuments component
+          // fetchDocuments={() => fetchPatientDocuments(patientId)} // Removed, handled by PatientDocuments component
         />
       )}
 
@@ -193,13 +168,7 @@ const PatientDetail = () => {
           patient={patient} // Pass the found patient object
           invoices={patientInvoices} // Pass related data
           loading={loading.invoices}
-          // Adapt refreshPatient if needed for mock data, or disable/remove
-          refreshPatient={async () => {
-             console.warn("Refresh patient called, but using mock data. No API call made.");
-             // Optionally re-find from context if needed, though unlikely necessary
-             // const refreshedPatient = contextPatients.find(p => p.id === patientId);
-             // if (refreshedPatient) setPatient(refreshedPatient);
-          }}
+          refreshPatient={refreshPatient} // Pass the stable useCallback version
         />
       )}
 

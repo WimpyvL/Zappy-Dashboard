@@ -1,5 +1,5 @@
 // components/patients/components/PatientDocuments.jsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react'; // Import useEffect
 import { Upload, CheckCircle, Clock, XCircle } from 'lucide-react';
 import { toast } from 'react-toastify';
 import apiService from '../../../utils/apiService';
@@ -200,12 +200,50 @@ const DocumentStatusBadge = ({ status }) => {
 };
 
 const PatientDocuments = ({
-  patientId,
-  documents,
-  loading,
-  fetchDocuments,
+  patientId, // Removed unused documents, loading, fetchDocuments props
 }) => {
-  const [uploadingDocument, setUploadingDocument] = useState(false);
+  const [isUploadingFormVisible, setIsUploadingFormVisible] = useState(false); // Renamed state for clarity
+  const [isLoading, setIsLoading] = useState(true); // Local loading state
+  const [documents, setDocuments] = useState([]); // Local documents state - THIS IS CORRECT, it's the local state declaration
+
+  // Fetch documents when component mounts or patientId changes
+  useEffect(() => {
+    const fetchDocumentsData = async () => {
+      if (!patientId) return; // Don't fetch if no ID
+      setIsLoading(true);
+      try {
+        const response = await apiService.get(
+          `/api/v1/admin/patients/${patientId}/documents`
+        );
+        setDocuments(response.data || []);
+      } catch (error) {
+        console.error('Error fetching patient documents:', error);
+        toast.error('Failed to load documents.');
+        setDocuments([]); // Set to empty array on error
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchDocumentsData();
+  }, [patientId]); // Dependency array ensures fetch runs when patientId changes
+
+  // Function to manually refresh documents (e.g., after upload/delete)
+  const refreshDocuments = async () => {
+    setIsLoading(true);
+    try {
+      const response = await apiService.get(
+        `/api/v1/admin/patients/${patientId}/documents`
+      );
+      setDocuments(response.data || []);
+    } catch (error) {
+      console.error('Error refreshing patient documents:', error);
+      toast.error('Failed to refresh documents.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
 
   const formatDate = (dateString) => {
     if (!dateString) return 'Not available';
@@ -223,7 +261,7 @@ const PatientDocuments = ({
         `/api/v1/admin/patients/${patientId}/documents/${docId}`
       );
       toast.success('Document deleted successfully');
-      fetchDocuments(); // Refresh documents list
+      refreshDocuments(); // Use local refresh function
     } catch (error) {
       console.error('Failed to delete document:', error);
       toast.error('Failed to delete document');
@@ -236,24 +274,24 @@ const PatientDocuments = ({
         <h2 className="text-lg font-medium text-gray-900">Patient Documents</h2>
         <button
           className="px-3 py-1 text-sm bg-indigo-600 text-white rounded-md hover:bg-indigo-700 flex items-center"
-          onClick={() => setUploadingDocument(true)}
+          onClick={() => setIsUploadingFormVisible(true)} // Use renamed state setter
         >
           <Upload className="h-4 w-4 mr-1" />
           Upload Document
         </button>
       </div>
 
-      {uploadingDocument && (
+      {isUploadingFormVisible && ( // Use renamed state variable
         <DocumentUploadForm
           patientId={patientId}
-          onCancel={() => setUploadingDocument(false)}
-          onSuccess={fetchDocuments}
+          onCancel={() => setIsUploadingFormVisible(false)} // Use renamed state setter
+          onSuccess={refreshDocuments} // Use local refresh function
         />
       )}
 
-      {loading ? (
+      {isLoading ? ( // Use local loading state
         <LoadingSpinner size="small" />
-      ) : documents && documents.length > 0 ? (
+      ) : documents && documents.length > 0 ? ( // Use local documents state
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
@@ -276,7 +314,7 @@ const PatientDocuments = ({
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {documents.map((doc) => (
+              {documents.map((doc) => ( // Use local documents state
                 <tr key={doc.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4 whitespace-nowrap">
                     <DocumentTypeBadge type={doc.type} />

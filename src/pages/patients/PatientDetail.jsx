@@ -3,7 +3,7 @@ import React, { useState, useCallback } from 'react'; // Removed unused useEffec
 import { useParams } from 'react-router-dom'; // Removed unused Link import
 import { toast } from 'react-toastify';
 // Removed unused ArrowLeft, Calendar, Plus imports
-import apiService from '../../utils/apiService';
+// import apiService from '../../utils/apiService'; // Removed unused import
 import LoadingSpinner from './patientDetails/common/LoadingSpinner';
 import PatientNotFound from './patientDetails/common/PatientNotFound';
 import PatientHeader from './patientDetails/PatientHeader';
@@ -25,7 +25,7 @@ const PatientDetail = () => {
   const { data: patient, isLoading: isLoadingPatient, error: patientError } = usePatientById(patientId);
 
   // Loading states for different data types (keep for related data for now)
-  const [loading, setLoading] = useState({
+  const [loading] = useState({ // Removed unused setLoading
     // patient: true, // Handled by isLoadingPatient from hook
     sessions: false,
     orders: false,

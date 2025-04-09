@@ -455,7 +455,7 @@ const FormsManagement = () => {
           setFormBuilderVisible(false);
           setCurrentForm(null); // Clear current form when closing builder
         }}
-        visible={formBuilderVisible}
+        open={formBuilderVisible} // Changed 'visible' to 'open'
         extra={
           <Space>
             <Button onClick={() => setFormBuilderVisible(false)}>Cancel</Button>
@@ -470,7 +470,7 @@ const FormsManagement = () => {
             </Button>
           </Space>
         }
-        bodyStyle={{ padding: 0 }}
+        styles={{ body: { padding: 0 } }} // Changed 'bodyStyle' to 'styles.body'
       >
         {currentForm && ( // Only render builder content if currentForm is set
           <div className="form-builder-container">

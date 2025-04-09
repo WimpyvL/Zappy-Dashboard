@@ -19,7 +19,7 @@ import {
 
 const { Title } = Typography;
 const { Content } = Layout;
-const { TabPane } = Tabs;
+// Removed unused TabPane import
 
 const Settings = () => {
   const navigate = useNavigate();
@@ -55,71 +55,72 @@ const Settings = () => {
             onChange={handleTabChange}
             tabPosition="top"
             className="mb-6 bg-white p-4 rounded shadow-sm"
-          >
-            <TabPane
-              tab={
-                <span>
-                  <FormOutlined />
-                  Forms
-                </span>
-              }
-              key="forms"
-            />
-            <TabPane
-              tab={
-                <span>
-                  <UserOutlined />
-                  Account
-                </span>
-              }
-              key="account"
-            />
-            <TabPane
-              tab={
-                <span>
-                  <GiftOutlined />
-                  Referrals
-                </span>
-              }
-              key="referrals"
-            />
-             <TabPane
-              tab={
-                <span>
-                  <SnippetsOutlined />
-                  Note Templates
-                </span>
-              }
-              key="note-templates"
-            />
-             <TabPane
-              tab={
-                <span>
-                  <ExperimentOutlined />
-                  Forms V2 (Test)
-                </span>
-              }
-              key="forms-v2"
-            />
-            <TabPane
-              tab={
-                <span>
-                  <ApiOutlined />
-                  AI / LLM Settings
-                </span>
-              }
-              key="llm"
-            />
-            <TabPane
-              tab={
-                <span>
-                  <MessageOutlined />
-                  AI Prompts
-                </span>
-              }
-              key="prompts" // Add Prompts tab
-            />
-          </Tabs>
+            items={[
+              {
+                key: 'forms',
+                label: (
+                  <span>
+                    <FormOutlined />
+                    Forms
+                  </span>
+                ),
+              },
+              {
+                key: 'account',
+                label: (
+                  <span>
+                    <UserOutlined />
+                    Account
+                  </span>
+                ),
+              },
+              {
+                key: 'referrals',
+                label: (
+                  <span>
+                    <GiftOutlined />
+                    Referrals
+                  </span>
+                ),
+              },
+              {
+                key: 'note-templates',
+                label: (
+                  <span>
+                    <SnippetsOutlined />
+                    Note Templates
+                  </span>
+                ),
+              },
+              {
+                key: 'forms-v2',
+                label: (
+                  <span>
+                    <ExperimentOutlined />
+                    Forms V2 (Test)
+                  </span>
+                ),
+              },
+              {
+                key: 'llm',
+                label: (
+                  <span>
+                    <ApiOutlined />
+                    AI / LLM Settings
+                  </span>
+                ),
+              },
+              {
+                key: 'prompts',
+                label: (
+                  <span>
+                    <MessageOutlined />
+                    AI Prompts
+                  </span>
+                ),
+              },
+            ]}
+          />
         </div>
 
         <div className="bg-white p-6 rounded shadow-sm min-h-[600px] mt-4">

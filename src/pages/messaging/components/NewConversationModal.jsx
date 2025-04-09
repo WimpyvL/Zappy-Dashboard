@@ -90,7 +90,7 @@ const NewConversationModal = ({ visible, onClose, onSubmitSuccess }) => {
   return (
     <Modal
       title="New Message"
-      visible={visible}
+      open={visible} // Changed 'visible' to 'open'
       onCancel={onClose}
       footer={[
         <Button key="back" onClick={onClose} disabled={isLoading}>

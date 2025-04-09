@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react'; // Added useMemo
+import React, { useState, useRef, useEffect, useMemo } from 'react'; // Added useMemo, Removed useCallback
 import { useAuth } from '../../context/AuthContext';
 import { useCart } from '../../context/CartContext';
 import { useAppContext } from '../../context/AppContext';

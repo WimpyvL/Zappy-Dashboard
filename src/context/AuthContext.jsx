@@ -225,8 +225,7 @@ export const AuthProvider = ({ children }) => {
     setError(null);
     try {
       // This assumes the user is already authenticated via the reset link session
-      // Removed unused 'data' from destructuring
-      const { error: updatePassError } = await supabase.auth.updateUser({
+      const { error: updatePassError } = await supabase.auth.updateUser({ // Removed unused 'data' from destructuring
         password: newPassword,
       });
       if (updatePassError) throw updatePassError;

@@ -19,15 +19,15 @@ export const useConsultations = (params = {}, pageSize = 10) => {
     queryKey: queryKeys.lists(params),
     queryFn: async () => {
       let query = supabase
-        .from('consultations') // ASSUMING table name is 'consultations'
+        .from('consultations')
         .select(
           `
           *,
-          client_record ( id, first_name, last_name )
-        `,
+          patients ( id, first_name, last_name )
+        `, // Join with 'patients' table
           { count: 'exact' }
-        ) // Example join
-        .order('datesubmitted', { ascending: false }) // Fixed column name to lowercase
+        )
+        .order('submitted_at', { ascending: false }) // Use correct column name
         .range(rangeFrom, rangeTo);
 
       // Apply filters
@@ -35,7 +35,7 @@ export const useConsultations = (params = {}, pageSize = 10) => {
         query = query.eq('status', params.status);
       }
       if (params.patientId) {
-        query = query.eq('patientId', params.patientId); // Adjust column name if needed
+        query = query.eq('patient_id', params.patientId); // Use correct foreign key 'patient_id'
       }
       // Add other filters as needed
 
@@ -50,8 +50,9 @@ export const useConsultations = (params = {}, pageSize = 10) => {
       const mappedData =
         data?.map((consult) => ({
           ...consult,
-          patientName: consult.client_record
-            ? `${consult.client_record.first_name || ''} ${consult.client_record.last_name || ''}`.trim()
+          // Use the correct joined table name 'patients'
+          patientName: consult.patients
+            ? `${consult.patients.first_name || ''} ${consult.patients.last_name || ''}`.trim()
             : 'N/A',
         })) || [];
 
@@ -77,13 +78,13 @@ export const useConsultationById = (id, options = {}) => {
       if (!id) return null;
 
       const { data, error } = await supabase
-        .from('consultations') // ASSUMING table name is 'consultations'
+        .from('consultations')
         .select(
           `
           *,
-          client_record ( id, first_name, last_name )
-        `
-        ) // Example join
+          patients ( id, first_name, last_name )
+        ` // Join with 'patients' table
+        )
         .eq('id', id)
         .single();
 
@@ -92,12 +93,13 @@ export const useConsultationById = (id, options = {}) => {
         if (error.code === 'PGRST116') return null; // Not found
         throw new Error(error.message);
       }
-      // Map data if needed
-      const mappedData = data
-        ? {
+       // Map data if needed
+       const mappedData = data
+         ? {
             ...data,
-            patientName: data.client_record
-              ? `${data.client_record.first_name || ''} ${data.client_record.last_name || ''}`.trim()
+            // Use the correct joined table name 'patients'
+            patientName: data.patients
+              ? `${data.patients.first_name || ''} ${data.patients.last_name || ''}`.trim()
               : 'N/A',
           }
         : null;

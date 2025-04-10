@@ -329,7 +329,7 @@ export const useTaskablePatients = (options = {}) => {
     queryKey: queryKeys.taskablePatients,
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('client_record')
+        .from('patients')
         .select('id, first_name, last_name') // Select relevant fields
         .order('last_name', { ascending: true });
 

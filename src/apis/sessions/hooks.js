@@ -20,7 +20,7 @@ export const useSessions = (params = {}, pageSize = 10) => {
     queryKey: queryKeys.lists(params),
     queryFn: async () => {
       let query = supabase
-        .from('session') // Assuming table name is 'session'
+        .from('sessions') // Assuming table name is 'session'
         .select('*', { count: 'exact' })
         .order('created_at', { ascending: false }) // Example order
         .range(rangeFrom, rangeTo);
@@ -69,7 +69,7 @@ export const useSessionById = (id, options = {}) => {
       if (!id) return null;
 
       const { data, error } = await supabase
-        .from('session')
+        .from('sessions')
         .select('*')
         .eq('id', id)
         .single();
@@ -106,7 +106,7 @@ export const useCreateSession = (options = {}) => {
       };
 
       const { data, error } = await supabase
-        .from('session')
+        .from('sessions')
         .insert(dataToInsert)
         .select()
         .single();
@@ -143,7 +143,7 @@ export const useUpdateSession = (options = {}) => {
       };
 
       const { data, error } = await supabase
-        .from('session')
+        .from('sessions')
         .update(dataToUpdate)
         .eq('id', id)
         .select()
@@ -180,9 +180,9 @@ export const useUpdateSessionStatus = (options = {}) => {
       if (!sessionId)
         throw new Error('Session ID is required for status update.');
 
-      // Assuming 'status' is a column in the 'session' table
+      // Assuming 'status' is a column in the 'sessions' table
       const { data, error } = await supabase
-        .from('session')
+        .from('sessions')
         .update({ status: status, updated_at: new Date().toISOString() })
         .eq('id', sessionId)
         .select()
@@ -221,7 +221,7 @@ export const useDeleteSession = (options = {}) => {
     mutationFn: async (id) => {
       if (!id) throw new Error('Session ID is required for deletion.');
 
-      const { error } = await supabase.from('session').delete().eq('id', id);
+      const { error } = await supabase.from('sessions').delete().eq('id', id);
 
       if (error) {
         console.error(`Error deleting session ${id}:`, error);

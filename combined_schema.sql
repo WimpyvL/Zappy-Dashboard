@@ -24,7 +24,7 @@ CREATE TABLE IF NOT EXISTS client_record (
 -- Create consultations table (from 20240322000001)
 CREATE TABLE IF NOT EXISTS consultations (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  client_id UUID REFERENCES client_record(id),
+  patient_id UUID REFERENCES patients(id), -- Changed client_id to patient_id and reference to patients(id)
   consultation_type TEXT NOT NULL,
   status TEXT NOT NULL DEFAULT 'pending',
   dateSubmitted TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
@@ -93,7 +93,7 @@ CREATE TABLE IF NOT EXISTS pb_tasks (
   due_date TIMESTAMP WITH TIME ZONE,
   completed BOOLEAN DEFAULT false,
   user_id UUID REFERENCES auth.users(id) ON DELETE SET NULL,
-  client_record_id UUID REFERENCES client_record(id) ON DELETE SET NULL,
+  patient_id UUID REFERENCES patients(id) ON DELETE SET NULL, -- Changed client_record_id to patient_id and reference to patients(id)
   priority TEXT,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
@@ -152,7 +152,7 @@ CREATE TABLE IF NOT EXISTS questionnaire (
 -- Create insurance_records table (from 20240322000014)
 CREATE TABLE IF NOT EXISTS insurance_records (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  client_record_id UUID REFERENCES client_record(id) ON DELETE SET NULL,
+  patient_id UUID REFERENCES patients(id) ON DELETE SET NULL, -- Changed client_record_id to patient_id and reference to patients(id)
   provider_name TEXT NOT NULL,
   policy_number TEXT,
   group_number TEXT,
@@ -181,7 +181,7 @@ CREATE TABLE IF NOT EXISTS insurance_documents (
 -- Create pb_invoices table (from 20240322000015)
 CREATE TABLE IF NOT EXISTS pb_invoices (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  client_record_id UUID REFERENCES client_record(id) ON DELETE SET NULL,
+  patient_id UUID REFERENCES patients(id) ON DELETE SET NULL, -- Changed client_record_id to patient_id and reference to patients(id)
   status TEXT DEFAULT 'pending',
   pb_invoice_id TEXT,
   pb_invoice_metadata JSONB,
@@ -200,7 +200,7 @@ CREATE TABLE IF NOT EXISTS pb_invoices (
 -- Note: Assumes 'auth.users' table exists
 CREATE TABLE IF NOT EXISTS notes (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  client_record_id UUID REFERENCES client_record(id) ON DELETE CASCADE,
+  patient_id UUID REFERENCES patients(id) ON DELETE CASCADE, -- Changed client_record_id to patient_id and reference to patients(id)
   user_id UUID REFERENCES auth.users(id) ON DELETE SET NULL,
   note_type TEXT,
   title TEXT,
@@ -223,7 +223,7 @@ CREATE TABLE public.notifications (
 -- Create orders table (Proposed)
 CREATE TABLE IF NOT EXISTS orders (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  client_record_id UUID REFERENCES client_record(id) ON DELETE SET NULL,
+  patient_id UUID REFERENCES patients(id) ON DELETE SET NULL, -- Changed client_record_id to patient_id and reference to patients(id)
   order_date TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   status TEXT DEFAULT 'pending', -- e.g., pending, processing, shipped, completed, cancelled
   total_amount DECIMAL(10, 2) NOT NULL DEFAULT 0.00,
@@ -250,7 +250,7 @@ CREATE TABLE IF NOT EXISTS order_items (
 -- Note: Assumes 'auth.users' table exists for provider_id
 CREATE TABLE IF NOT EXISTS sessions (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  client_record_id UUID REFERENCES client_record(id) ON DELETE SET NULL,
+  patient_id UUID REFERENCES patients(id) ON DELETE SET NULL, -- Changed client_record_id to patient_id and reference to patients(id)
   provider_id UUID REFERENCES auth.users(id) ON DELETE SET NULL, -- Link to the provider/user conducting the session
   service_id UUID REFERENCES services(id) ON DELETE SET NULL, -- Optional link to the specific service provided
   consultation_id UUID REFERENCES consultations(id) ON DELETE SET NULL, -- Optional link to a related consultation

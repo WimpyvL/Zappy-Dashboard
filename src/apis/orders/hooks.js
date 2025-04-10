@@ -11,7 +11,7 @@ export const useOrders = (currentPage = 1, filters = {}, pageSize = 10) => {
     queryKey: ['orders', currentPage, filters, pageSize],
     queryFn: async () => {
       let query = supabase
-        .from('order') // Use quoted table name if needed, or adjust if different
+        .from('orders') // Use quoted table name if needed, or adjust if different
         .select('*', { count: 'exact' }) // Select all columns without join
         .order('order_date', { ascending: false })
         .range(rangeFrom, rangeTo);
@@ -66,7 +66,7 @@ export const useOrderById = (id, options = {}) => {
       if (!id) return null;
 
       const { data, error } = await supabase
-        .from('order')
+        .from('orders')
         .select('*') // Select without join
         .eq('id', id)
         .single();
@@ -99,7 +99,7 @@ export const useMyOrders = (patientId, options = {}) => {
       if (!patientId) return []; // Return empty if no patientId
 
       const { data, error } = await supabase
-        .from('order') // Use the correct table name 'order'
+        .from('orders') // Use the correct table name 'orders'
         .select('*') // Select all columns for now
         .eq('client_record_id', patientId) // Filter by patient ID (assuming column name)
         .order('order_date', { ascending: false }); // Order by date
@@ -132,7 +132,7 @@ export const useCreateOrder = (options = {}) => {
       };
 
       const { data, error } = await supabase
-        .from('order')
+        .from('orders')
         .insert(dataToInsert)
         .select()
         .single();
@@ -169,7 +169,7 @@ export const useUpdateOrder = (options = {}) => {
       };
 
       const { data, error } = await supabase
-        .from('order')
+        .from('orders')
         .update(dataToUpdate)
         .eq('id', id)
         .select()
@@ -203,7 +203,7 @@ export const useUpdateOrderStatus = (options = {}) => {
       if (!orderId) throw new Error('Order ID is required for status update.');
 
       const { data, error } = await supabase
-        .from('order')
+        .from('orders')
         .update({ status: status, updated_at: new Date().toISOString() })
         .eq('id', orderId)
         .select()
@@ -241,7 +241,7 @@ export const useDeleteOrder = (options = {}) => {
 
       // Removed unused 'data' from destructuring
       const { error } = await supabase
-        .from('order')
+        .from('orders')
         .update({ is_deleted: true, deleted_at: new Date().toISOString() })
         .eq('id', id)
         .select()

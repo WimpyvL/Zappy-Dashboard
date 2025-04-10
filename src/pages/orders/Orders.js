@@ -16,12 +16,14 @@ import {
   Calendar,
   Loader2, // Added for loading state
 } from 'lucide-react';
+import ChildishDrawingElement from '../../components/ui/ChildishDrawingElement'; // Import drawing element
 
 const StatusBadge = ({ status, holdReason }) => {
   if (status === 'shipped') {
     return (
       <div>
-        <span className="flex items-center px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">
+        {/* Use accent2 for shipped */}
+        <span className="flex items-center px-2 py-1 text-xs font-medium rounded-full bg-accent2/10 text-accent2">
           <CheckCircle className="h-3 w-3 mr-1" />
           Shipped
         </span>
@@ -30,7 +32,8 @@ const StatusBadge = ({ status, holdReason }) => {
   } else if (status === 'processing') {
     return (
       <div>
-        <span className="flex items-center px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800">
+        {/* Use accent3 for processing */}
+        <span className="flex items-center px-2 py-1 text-xs font-medium rounded-full bg-accent3/10 text-accent3">
           <TruckIcon className="h-3 w-3 mr-1" />
           Processing
         </span>
@@ -39,18 +42,21 @@ const StatusBadge = ({ status, holdReason }) => {
   } else if (status === 'pending') {
     return (
       <div>
-        <span className="flex items-center px-2 py-1 text-xs font-medium rounded-full bg-yellow-100 text-yellow-800">
+        {/* Use accent4 for pending */}
+        <span className="flex items-center px-2 py-1 text-xs font-medium rounded-full bg-accent4/10 text-accent4">
           <Clock className="h-3 w-3 mr-1" />
           Pending
         </span>
+        {/* Use accent1 for hold reason */}
         {holdReason && (
-          <p className="text-xs text-red-500 mt-1">{holdReason}</p>
+          <p className="text-xs text-accent1 mt-1">{holdReason}</p>
         )}
       </div>
     );
   } else if (status === 'cancelled') {
     return (
       <div>
+        {/* Keep gray for cancelled */}
         <span className="flex items-center px-2 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-800">
           <XCircle className="h-3 w-3 mr-1" />
           Cancelled
@@ -139,7 +145,8 @@ const Orders = () => {
   if (isLoadingOrders || isLoadingSessions) {
     return (
       <div className="flex justify-center items-center h-screen">
-        <Loader2 className="h-16 w-16 animate-spin text-indigo-600" />
+        {/* Use primary color for spinner */}
+        <Loader2 className="h-16 w-16 animate-spin text-primary" />
       </div>
     );
   }
@@ -156,11 +163,16 @@ const Orders = () => {
   }
 
   return (
-    <div>
-      <div className="flex justify-between items-center mb-6">
+    <div className="relative overflow-hidden pb-10"> {/* Add relative positioning and padding */}
+      {/* Add childish drawing elements */}
+      <ChildishDrawingElement type="doodle" color="accent2" position="top-right" size={100} rotation={10} opacity={0.1} />
+      <ChildishDrawingElement type="scribble" color="accent4" position="bottom-left" size={120} rotation={-5} opacity={0.1} />
+
+      <div className="flex justify-between items-center mb-6 relative z-10"> {/* Added z-index */}
         <h1 className="text-2xl font-bold text-gray-800">Orders</h1>
+        {/* Use primary color for Create Order button */}
         <button
-          className="px-4 py-2 bg-indigo-600 text-white rounded-md flex items-center hover:bg-indigo-700"
+          className="px-4 py-2 bg-primary text-white rounded-md flex items-center hover:bg-primary/90"
           onClick={() => setShowCreateModal(true)}
         >
           <Plus className="h-5 w-5 mr-2" />
@@ -169,17 +181,18 @@ const Orders = () => {
       </div>
 
       {/* Alerts for orders requiring attention */}
+      {/* Use accent4 for alert */}
       {pendingOrders.some(
         (order) => order.holdReason === 'Awaiting follow-up appointment'
       ) && (
-        <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6 rounded shadow">
+        <div className="bg-accent4/5 border-l-4 border-accent4 p-4 mb-6 rounded shadow">
           <div className="flex items-center">
             <div className="flex-shrink-0">
-              <AlertTriangle className="h-5 w-5 text-yellow-400" />
+              <AlertTriangle className="h-5 w-5 text-accent4" />
             </div>
             <div className="ml-3">
-              <p className="text-sm text-yellow-700">
-                <span className="font-medium">
+              <p className="text-sm text-accent4/80">
+                <span className="font-medium text-accent4">
                   {
                     pendingOrders.filter(
                       (order) =>
@@ -192,9 +205,10 @@ const Orders = () => {
               </p>
             </div>
             <div className="ml-auto">
+              {/* Use accent4 for link */}
               <Link
                 to="/sessions"
-                className="text-sm font-medium text-yellow-700 underline"
+                className="text-sm font-medium text-accent4 underline hover:text-accent4/80"
               >
                 View Sessions
               </Link>
@@ -212,7 +226,7 @@ const Orders = () => {
           <input
             type="text"
             placeholder="Search by patient or medication..."
-            className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+            className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white focus:outline-none focus:ring-primary focus:border-primary"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
@@ -221,7 +235,7 @@ const Orders = () => {
         <div className="flex items-center space-x-2">
           <Filter className="h-5 w-5 text-gray-400" />
           <select
-            className="block pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
+            className="block pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm rounded-md"
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
           >
@@ -298,9 +312,10 @@ const Orders = () => {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="text-sm font-medium text-gray-900">
+                            {/* Use primary color for link hover */}
                             <Link
                               to={`/patients/${order.patientId}`} // Assuming patientId is available
-                              className="hover:text-indigo-600"
+                              className="hover:text-primary"
                             >
                               {order.patientName || 'N/A'}
                             </Link>
@@ -345,11 +360,12 @@ const Orders = () => {
                           {order.pharmacy || 'N/A'}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                          {/* Use accent3 for Process button */}
                           <button
                             onClick={() =>
                               handleStatusUpdate(order.id, 'processing')
                             }
-                            className={`text-indigo-600 hover:text-indigo-900 mr-3 ${
+                            className={`text-accent3 hover:text-accent3/80 mr-3 ${
                               isProcessing
                                 ? 'opacity-50 cursor-not-allowed'
                                 : ''
@@ -364,11 +380,12 @@ const Orders = () => {
                             ) : null}
                             Process
                           </button>
+                          {/* Use accent1 for Cancel button */}
                           <button
                             onClick={() =>
                               handleStatusUpdate(order.id, 'cancelled')
                             }
-                            className={`text-red-600 hover:text-red-900 ${
+                            className={`text-accent1 hover:text-accent1/80 ${
                               isCancelling
                                 ? 'opacity-50 cursor-not-allowed'
                                 : ''
@@ -458,9 +475,10 @@ const Orders = () => {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="text-sm font-medium text-gray-900">
+                            {/* Use primary color for link hover */}
                             <Link
                               to={`/patients/${order.patientId}`} // Assuming patientId is available
-                              className="hover:text-indigo-600"
+                              className="hover:text-primary"
                             >
                               {order.patientName || 'N/A'}
                             </Link>
@@ -479,11 +497,12 @@ const Orders = () => {
                           {order.pharmacy || 'N/A'}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                          {/* Use accent2 for Mark as Shipped button */}
                           <button
                             onClick={() =>
                               handleStatusUpdate(order.id, 'shipped')
                             } // Assuming backend handles tracking number
-                            className={`text-indigo-600 hover:text-indigo-900 mr-3 ${
+                            className={`text-accent2 hover:text-accent2/80 mr-3 ${
                               isShipping ? 'opacity-50 cursor-not-allowed' : ''
                             }`}
                             disabled={isMutating}
@@ -493,11 +512,12 @@ const Orders = () => {
                             ) : null}
                             Mark as Shipped
                           </button>
+                          {/* Use accent1 for Cancel button */}
                           <button
                             onClick={() =>
                               handleStatusUpdate(order.id, 'cancelled')
                             }
-                            className={`text-red-600 hover:text-red-900 ${
+                            className={`text-accent1 hover:text-accent1/80 ${
                               isCancelling
                                 ? 'opacity-50 cursor-not-allowed'
                                 : ''
@@ -575,12 +595,13 @@ const Orders = () => {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm font-medium text-gray-900">
-                          <Link
-                            to={`/patients/${order.patientId}`} // Assuming patientId is available
-                            className="hover:text-indigo-600"
-                          >
-                            {order.patientName || 'N/A'}
-                          </Link>
+                            {/* Use primary color for link hover */}
+                            <Link
+                              to={`/patients/${order.patientId}`} // Assuming patientId is available
+                              className="hover:text-primary"
+                            >
+                              {order.patientName || 'N/A'}
+                            </Link>
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
@@ -591,15 +612,17 @@ const Orders = () => {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         {order.trackingNumber ? (
+                          <> {/* Optional: Use a fragment if needed, or just place comment before <a> */}
+                          {/* Use primary color for tracking link */}
                           <a
                             href={`https://tracking.example.com/${order.trackingNumber}`} // Replace with actual tracking URL if available
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-indigo-600 hover:text-indigo-900"
+                            className="text-primary hover:text-primary/80"
                           >
                             {order.trackingNumber}
                           </a>
-                        ) : (
+                        </>                        ) : (
                           'Not available'
                         )}
                       </td>
@@ -648,7 +671,7 @@ const Orders = () => {
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Patient
                 </label>
-                <select className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
+                <select className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm rounded-md">
                   <option value="">Select a patient</option>
                   {/* Populate with fetched patients */}
                 </select>
@@ -658,7 +681,7 @@ const Orders = () => {
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Medication
                 </label>
-                <select className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
+                <select className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm rounded-md">
                   <option value="">Select a medication</option>
                   {/* Populate with fetched products/medications */}
                 </select>
@@ -668,7 +691,7 @@ const Orders = () => {
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Pharmacy
                 </label>
-                <select className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
+                <select className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm rounded-md">
                   <option value="">Select a pharmacy</option>
                   {/* Populate with fetched pharmacies */}
                 </select>
@@ -678,7 +701,7 @@ const Orders = () => {
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Linked Session (Optional)
                 </label>
-                <select className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
+                <select className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm rounded-md">
                   <option value="">Select a session</option>
                   {/* Populate with fetched sessions */}
                 </select>
@@ -690,7 +713,7 @@ const Orders = () => {
                 </label>
                 <textarea
                   rows="3"
-                  className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
+                  className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm rounded-md"
                   placeholder="Add any notes about this order..."
                 ></textarea>
               </div>
@@ -703,15 +726,15 @@ const Orders = () => {
               >
                 Cancel
               </button>
+              {/* Use primary color for Create Order button */}
               <button
-                className="px-4 py-2 bg-indigo-600 rounded-md text-sm font-medium text-white hover:bg-indigo-700"
-                onClick={() => {
-                  // TODO: Implement order creation logic using useCreateOrder mutation hook
-                  setShowCreateModal(false);
-                }}
+                className="px-4 py-2 bg-primary rounded-md text-sm font-medium text-white hover:bg-primary/90"
+                // Simplified onClick handler
+                onClick={() => setShowCreateModal(false)}
               >
                 Create Order
               </button>
+              {/* TODO: Re-add order creation logic using useCreateOrder mutation hook later */}
             </div>
           </div>
         </div>

@@ -10,6 +10,7 @@ import {
   AlertCircle,
   Loader,
 } from 'lucide-react';
+import ChildishDrawingElement from '../../components/ui/ChildishDrawingElement'; // Import drawing element
 import {
   useCreateDiscount,
   useDeleteDiscount,
@@ -75,13 +76,13 @@ const DiscountManagement = () => {
 
     let discountStatus = '';
     if (discount.status !== 'Active') {
-      discountStatus = 'inactive';
+      discountStatus = 'inactive'; // Keep gray
     } else if (startDate > now) {
-      discountStatus = 'scheduled';
+      discountStatus = 'scheduled'; // Use accent3
     } else if (endDate && endDate < now) {
-      discountStatus = 'expired';
+      discountStatus = 'expired'; // Use accent1
     } else {
-      discountStatus = 'active';
+      discountStatus = 'active'; // Use accent2
     }
 
     const matchesStatus =
@@ -239,13 +240,18 @@ const DiscountManagement = () => {
   };
 
   return (
-    <div>
-      <div className="flex justify-between items-center mb-6">
+    <div className="relative overflow-hidden pb-10"> {/* Add relative positioning and padding */}
+      {/* Add childish drawing elements */}
+      <ChildishDrawingElement type="scribble" color="accent2" position="top-right" size={110} rotation={-5} opacity={0.1} />
+      <ChildishDrawingElement type="watercolor" color="accent4" position="bottom-left" size={130} rotation={10} opacity={0.1} />
+
+      <div className="flex justify-between items-center mb-6 relative z-10"> {/* Added z-index */}
         <h1 className="text-2xl font-bold text-gray-800">
           Discount Management
         </h1>
+        {/* Use primary color for Add Discount button */}
         <button
-          className="px-4 py-2 bg-indigo-600 text-white rounded-md flex items-center hover:bg-indigo-700 cursor-pointer"
+          className="px-4 py-2 bg-primary text-white rounded-md flex items-center hover:bg-primary/90 cursor-pointer"
           onClick={handleAddDiscount}
         >
           <Plus className="h-5 w-5 mr-2" />
@@ -279,7 +285,7 @@ const DiscountManagement = () => {
           <input
             type="text"
             placeholder="Search discounts by name or code..."
-            className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+            className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white focus:outline-none focus:ring-primary focus:border-primary"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
@@ -287,7 +293,7 @@ const DiscountManagement = () => {
 
         <div className="flex items-center space-x-2">
           <select
-            className="block pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
+            className="block pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm rounded-md"
             value={typeFilter}
             onChange={(e) => setTypeFilter(e.target.value)}
           >
@@ -299,7 +305,7 @@ const DiscountManagement = () => {
 
         <div className="flex items-center space-x-2">
           <select
-            className="block pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
+            className="block pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm rounded-md"
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
           >
@@ -316,7 +322,8 @@ const DiscountManagement = () => {
       <div className="bg-white shadow overflow-hidden rounded-lg">
         {isLoading && !showAddModal && !showEditModal ? (
           <div className="flex justify-center items-center p-8">
-            <Loader className="h-8 w-8 text-indigo-500 animate-spin" />
+            {/* Use primary color for spinner */}
+            <Loader className="h-8 w-8 text-primary animate-spin" />
             <span className="ml-2">Loading discounts...</span>
           </div>
         ) : (
@@ -368,10 +375,11 @@ const DiscountManagement = () => {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center">
+                          {/* Use primary color for icons */}
                           {discount.discount_type === 'percentage' ? (
-                            <Percent className="h-4 w-4 text-indigo-500 mr-1.5" />
+                            <Percent className="h-4 w-4 text-primary mr-1.5" />
                           ) : (
-                            <DollarSign className="h-4 w-4 text-indigo-500 mr-1.5" />
+                            <DollarSign className="h-4 w-4 text-primary mr-1.5" />
                           )}
                           <span className="text-sm font-medium">
                             {formatDiscountValue(discount)}
@@ -382,8 +390,14 @@ const DiscountManagement = () => {
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
+                        {/* Apply Zappy colors to status badge */}
                         <span
-                          className={`px-2 py-1 text-xs font-medium rounded-full ${status.style}`}
+                          className={`px-2 py-1 text-xs font-medium rounded-full ${
+                            status.text === 'Active' ? 'bg-accent2/10 text-accent2' :
+                            status.text === 'Scheduled' ? 'bg-accent3/10 text-accent3' :
+                            status.text === 'Expired' ? 'bg-accent1/10 text-accent1' :
+                            'bg-gray-100 text-gray-800' // Inactive
+                          }`}
                         >
                           {status.text}
                         </span>
@@ -418,14 +432,16 @@ const DiscountManagement = () => {
                         )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        {/* Use accent3 for Edit button */}
                         <button
-                          className="text-indigo-600 hover:text-indigo-900 mr-3 cursor-pointer"
+                          className="text-accent3 hover:text-accent3/80 mr-3 cursor-pointer"
                           onClick={() => handleEditDiscount(discount)}
                         >
                           <Edit className="h-5 w-5" />
                         </button>
+                        {/* Use accent1 for Delete button */}
                         <button
-                          className="text-red-600 hover:text-red-900 cursor-pointer"
+                          className="text-accent1 hover:text-accent1/80 cursor-pointer"
                           onClick={() => handleDeleteDiscount(discount.id)}
                         >
                           <Trash2 className="h-5 w-5" />
@@ -475,7 +491,7 @@ const DiscountManagement = () => {
                   <input
                     type="text"
                     name="name"
-                    className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
+                    className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm rounded-md"
                     value={formData.name}
                     onChange={handleInputChange}
                     required
@@ -489,7 +505,7 @@ const DiscountManagement = () => {
                   <input
                     type="text"
                     name="code"
-                    className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
+                    className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm rounded-md"
                     value={formData.code}
                     onChange={handleInputChange}
                     placeholder="e.g. SPRING25"
@@ -504,7 +520,7 @@ const DiscountManagement = () => {
                   <textarea
                     name="description"
                     rows="3"
-                    className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
+                    className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm rounded-md"
                     value={formData.description}
                     onChange={handleInputChange}
                   ></textarea>
@@ -517,7 +533,7 @@ const DiscountManagement = () => {
                     </label>
                     <select
                       name="discount_type"
-                      className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
+                      className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm rounded-md"
                       value={formData.discount_type}
                       onChange={handleInputChange}
                     >
@@ -549,7 +565,7 @@ const DiscountManagement = () => {
                             ? '100'
                             : '1000'
                         }
-                        className="block w-full pl-7 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
+                        className="block w-full pl-7 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm rounded-md"
                         value={formData.value}
                         onChange={handleInputChange}
                       />
@@ -562,7 +578,7 @@ const DiscountManagement = () => {
                     <input
                       type="checkbox"
                       name="status"
-                      className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                      className="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded"
                       checked={formData.status === 'Active'}
                       onChange={handleInputChange}
                     />
@@ -581,7 +597,7 @@ const DiscountManagement = () => {
                     <input
                       type="date"
                       name="valid_from"
-                      className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
+                      className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm rounded-md"
                       value={formData.valid_from}
                       onChange={handleInputChange}
                       required
@@ -594,7 +610,7 @@ const DiscountManagement = () => {
                     <input
                       type="date"
                       name="valid_until"
-                      className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
+                      className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm rounded-md"
                       value={formData.valid_until}
                       onChange={handleInputChange}
                     />
@@ -609,7 +625,7 @@ const DiscountManagement = () => {
                     type="number"
                     name="usage_limit"
                     min="0"
-                    className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
+                    className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm rounded-md"
                     value={formData.usage_limit || ''}
                     onChange={handleInputChange}
                     placeholder="Leave empty for unlimited"
@@ -624,7 +640,7 @@ const DiscountManagement = () => {
                     type="number"
                     name="usage_limit_per_user"
                     min="0"
-                    className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
+                    className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm rounded-md"
                     value={formData.usage_limit_per_user || ''}
                     onChange={handleInputChange}
                     placeholder="Leave empty for unlimited"
@@ -637,7 +653,7 @@ const DiscountManagement = () => {
                   </label>
                   <select
                     name="requirement"
-                    className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
+                    className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm rounded-md"
                     value={formData.requirement}
                     onChange={handleInputChange}
                   >
@@ -660,15 +676,15 @@ const DiscountManagement = () => {
                       <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                         <span className="text-gray-500 sm:text-sm">$</span>
                       </div>
-                      <input
-                        type="number"
-                        name="min_purchase"
-                        min="0"
-                        step="0.01"
-                        className="block w-full pl-7 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
-                        value={formData.min_purchase}
-                        onChange={handleInputChange}
-                      />
+                        <input
+                          type="number"
+                          name="min_purchase"
+                          min="0"
+                          step="0.01"
+                          className="block w-full pl-7 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm rounded-md"
+                          value={formData.min_purchase}
+                          onChange={handleInputChange}
+                        />
                     </div>
                   </div>
                 )}
@@ -682,8 +698,9 @@ const DiscountManagement = () => {
               >
                 Cancel
               </button>
+              {/* Use primary color for Add Discount button */}
               <button
-                className="px-4 py-2 bg-indigo-600 rounded-md text-sm font-medium text-white hover:bg-indigo-700 cursor-pointer"
+                className="px-4 py-2 bg-primary rounded-md text-sm font-medium text-white hover:bg-primary/90 cursor-pointer"
                 onClick={handleSubmit}
                 disabled={
                   !formData.name || !formData.code || createDiscount.isPending
@@ -730,7 +747,7 @@ const DiscountManagement = () => {
                   <input
                     type="text"
                     name="name"
-                    className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
+                    className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm rounded-md"
                     value={formData.name}
                     onChange={handleInputChange}
                     required
@@ -744,7 +761,7 @@ const DiscountManagement = () => {
                   <input
                     type="text"
                     name="code"
-                    className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
+                    className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm rounded-md"
                     value={formData.code}
                     onChange={handleInputChange}
                     placeholder="e.g. SPRING25"
@@ -759,7 +776,7 @@ const DiscountManagement = () => {
                   <textarea
                     name="description"
                     rows="3"
-                    className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
+                    className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm rounded-md"
                     value={formData.description}
                     onChange={handleInputChange}
                   ></textarea>
@@ -772,7 +789,7 @@ const DiscountManagement = () => {
                     </label>
                     <select
                       name="discount_type"
-                      className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
+                      className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm rounded-md"
                       value={formData.discount_type}
                       onChange={handleInputChange}
                     >
@@ -804,7 +821,7 @@ const DiscountManagement = () => {
                             ? '100'
                             : '1000'
                         }
-                        className="block w-full pl-7 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
+                        className="block w-full pl-7 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm rounded-md"
                         value={formData.value}
                         onChange={handleInputChange}
                       />
@@ -817,7 +834,7 @@ const DiscountManagement = () => {
                     <input
                       type="checkbox"
                       name="status"
-                      className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                      className="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded"
                       checked={formData.status === 'Active'}
                       onChange={handleInputChange}
                     />
@@ -836,7 +853,7 @@ const DiscountManagement = () => {
                     <input
                       type="date"
                       name="valid_from"
-                      className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
+                      className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm rounded-md"
                       value={formData.valid_from}
                       onChange={handleInputChange}
                       required
@@ -849,7 +866,7 @@ const DiscountManagement = () => {
                     <input
                       type="date"
                       name="valid_until"
-                      className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
+                      className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm rounded-md"
                       value={formData.valid_until}
                       onChange={handleInputChange}
                     />
@@ -864,7 +881,7 @@ const DiscountManagement = () => {
                     type="number"
                     name="usage_limit"
                     min="0"
-                    className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
+                    className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm rounded-md"
                     value={formData.usage_limit || ''}
                     onChange={handleInputChange}
                     placeholder="Leave empty for unlimited"
@@ -879,7 +896,7 @@ const DiscountManagement = () => {
                     type="number"
                     name="usage_limit_per_user"
                     min="0"
-                    className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
+                    className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm rounded-md"
                     value={formData.usage_limit_per_user || ''}
                     onChange={handleInputChange}
                     placeholder="Leave empty for unlimited"
@@ -892,7 +909,7 @@ const DiscountManagement = () => {
                   </label>
                   <select
                     name="requirement"
-                    className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
+                    className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm rounded-md"
                     value={formData.requirement}
                     onChange={handleInputChange}
                   >
@@ -915,15 +932,15 @@ const DiscountManagement = () => {
                       <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                         <span className="text-gray-500 sm:text-sm">$</span>
                       </div>
-                      <input
-                        type="number"
-                        name="min_purchase"
-                        min="0"
-                        step="0.01"
-                        className="block w-full pl-7 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
-                        value={formData.min_purchase}
-                        onChange={handleInputChange}
-                      />
+                        <input
+                          type="number"
+                          name="min_purchase"
+                          min="0"
+                          step="0.01"
+                          className="block w-full pl-7 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm rounded-md"
+                          value={formData.min_purchase}
+                          onChange={handleInputChange}
+                        />
                     </div>
                   </div>
                 )}
@@ -937,8 +954,9 @@ const DiscountManagement = () => {
               >
                 Cancel
               </button>
+              {/* Use primary color for Save Changes button */}
               <button
-                className="px-4 py-2 bg-indigo-600 rounded-md text-sm font-medium text-white hover:bg-indigo-700 cursor-pointer"
+                className="px-4 py-2 bg-primary rounded-md text-sm font-medium text-white hover:bg-primary/90 cursor-pointer"
                 onClick={handleSubmit}
                 disabled={
                   !formData.name || !formData.code || updateDiscount.isPending

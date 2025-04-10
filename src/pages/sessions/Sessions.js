@@ -13,31 +13,36 @@ import {
   RefreshCw,
   Loader2, // Added for loading state
 } from 'lucide-react';
+import ChildishDrawingElement from '../../components/ui/ChildishDrawingElement'; // Import drawing element
 
 const StatusBadge = ({ status }) => {
   if (status === 'completed') {
     return (
-      <span className="flex items-center px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">
+      // Use accent2 for completed
+      <span className="flex items-center px-2 py-1 text-xs font-medium rounded-full bg-accent2/10 text-accent2">
         <CheckCircle className="h-3 w-3 mr-1" />
         Completed
       </span>
     );
   } else if (status === 'scheduled') {
     return (
-      <span className="flex items-center px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800">
+      // Use accent3 for scheduled
+      <span className="flex items-center px-2 py-1 text-xs font-medium rounded-full bg-accent3/10 text-accent3">
         <Clock className="h-3 w-3 mr-1" />
         Scheduled
       </span>
     );
   } else if (status === 'missed') {
     return (
-      <span className="flex items-center px-2 py-1 text-xs font-medium rounded-full bg-red-100 text-red-800">
+      // Use accent1 for missed
+      <span className="flex items-center px-2 py-1 text-xs font-medium rounded-full bg-accent1/10 text-accent1">
         <XCircle className="h-3 w-3 mr-1" />
         Missed
       </span>
     );
   } else if (status === 'cancelled') {
     return (
+      // Keep gray for cancelled
       <span className="flex items-center px-2 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-800">
         <XCircle className="h-3 w-3 mr-1" />
         Cancelled
@@ -47,17 +52,17 @@ const StatusBadge = ({ status }) => {
   return null;
 };
 
-// Using product category styling from reusable components
+// Using Zappy accent colors for CategoryBadge
 const CategoryBadge = ({ category }) => {
-  // Map the category to appropriate style
+  // Map the category to Zappy accent colors
   const categoryStyles = {
-    medication: 'bg-blue-100 text-blue-800',
-    supplement: 'bg-green-100 text-green-800',
-    service: 'bg-purple-100 text-purple-800',
-    // Add more categories as needed
+    medical: 'bg-accent1/10 text-accent1', // Example: accent1 for medical
+    psych: 'bg-accent4/10 text-accent4', // Example: accent4 for psych
+    service: 'bg-accent2/10 text-accent2', // Example: accent2 for service
+    // Add more categories as needed, cycling through accent1-4
   };
 
-  const style = categoryStyles[category] || 'bg-gray-100 text-gray-800';
+  const style = categoryStyles[category?.toLowerCase()] || 'bg-gray-100 text-gray-800'; // Use lowercase category for matching
   const displayCategory = category
     ? category.charAt(0).toUpperCase() + category.slice(1)
     : 'Unknown';
@@ -177,7 +182,8 @@ const Sessions = () => {
   if (isLoadingSessions) {
     return (
       <div className="flex justify-center items-center h-screen">
-        <Loader2 className="h-16 w-16 animate-spin text-indigo-600" />
+        {/* Use primary color for spinner */}
+        <Loader2 className="h-16 w-16 animate-spin text-primary" />
       </div>
     );
   }
@@ -194,18 +200,24 @@ const Sessions = () => {
   }
 
   return (
-    <div>
-      <div className="flex justify-between items-center mb-6">
+    <div className="relative overflow-hidden pb-10"> {/* Add relative positioning and padding */}
+      {/* Add childish drawing elements */}
+      <ChildishDrawingElement type="scribble" color="accent3" position="top-right" size={110} rotation={5} opacity={0.1} />
+      <ChildishDrawingElement type="watercolor" color="accent1" position="bottom-left" size={130} rotation={-10} opacity={0.1} />
+
+      <div className="flex justify-between items-center mb-6 relative z-10"> {/* Added z-index */}
         <h1 className="text-2xl font-bold text-gray-800">Sessions</h1>
         <div className="flex space-x-3">
           <div className="bg-white rounded-md shadow px-4 py-2 flex items-center">
             <span className="text-sm font-medium text-gray-600 mr-3">
-              <span className="text-indigo-600">{activeSessionsCount}</span>{' '}
+              {/* Use primary color for count */}
+              <span className="text-primary">{activeSessionsCount}</span>{' '}
               active sessions
             </span>
           </div>
+          {/* Use primary color for Schedule Session button */}
           <button
-            className="px-4 py-2 bg-indigo-600 text-white rounded-md flex items-center hover:bg-indigo-700"
+            className="px-4 py-2 bg-primary text-white rounded-md flex items-center hover:bg-primary/90"
             onClick={() => setShowScheduleModal(true)}
           >
             <Plus className="h-5 w-5 mr-2" />
@@ -224,7 +236,7 @@ const Sessions = () => {
             <input
               type="text"
               placeholder="Search patient name..."
-              className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+              className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white focus:outline-none focus:ring-primary focus:border-primary"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
@@ -234,7 +246,7 @@ const Sessions = () => {
             <div className="flex items-center space-x-2">
               <Filter className="h-5 w-5 text-gray-400" />
               <select
-                className="block pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
+                className="block pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm rounded-md"
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
               >
@@ -271,7 +283,7 @@ const Sessions = () => {
                   </label>
                   <input
                     type="date"
-                    className="block w-full pl-3 pr-3 py-2 text-sm border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 rounded-md"
+                    className="block w-full pl-3 pr-3 py-2 text-sm border-gray-300 focus:outline-none focus:ring-primary focus:border-primary rounded-md"
                     value={dateRange.start}
                     onChange={(e) =>
                       setDateRange({ ...dateRange, start: e.target.value })
@@ -282,7 +294,7 @@ const Sessions = () => {
                   <label className="block text-xs text-gray-500 mb-1">To</label>
                   <input
                     type="date"
-                    className="block w-full pl-3 pr-3 py-2 text-sm border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 rounded-md"
+                    className="block w-full pl-3 pr-3 py-2 text-sm border-gray-300 focus:outline-none focus:ring-primary focus:border-primary rounded-md"
                     value={dateRange.end}
                     onChange={(e) =>
                       setDateRange({ ...dateRange, end: e.target.value })
@@ -297,7 +309,7 @@ const Sessions = () => {
                 Session Type
               </label>
               <select
-                className="block w-full pl-3 pr-10 py-2 text-sm border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 rounded-md"
+                className="block w-full pl-3 pr-10 py-2 text-sm border-gray-300 focus:outline-none focus:ring-primary focus:border-primary rounded-md"
                 value={typeFilter}
                 onChange={(e) => setTypeFilter(e.target.value)}
               >
@@ -313,7 +325,7 @@ const Sessions = () => {
                 Provider
               </label>
               <select
-                className="block w-full pl-3 pr-10 py-2 text-sm border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 rounded-md"
+                className="block w-full pl-3 pr-10 py-2 text-sm border-gray-300 focus:outline-none focus:ring-primary focus:border-primary rounded-md"
                 value={providerFilter}
                 onChange={(e) => setProviderFilter(e.target.value)}
               >
@@ -331,7 +343,7 @@ const Sessions = () => {
                 Order Status (Placeholder)
               </label>
               <select
-                className="block w-full pl-3 pr-10 py-2 text-sm border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 rounded-md"
+                className="block w-full pl-3 pr-10 py-2 text-sm border-gray-300 focus:outline-none focus:ring-primary focus:border-primary rounded-md"
                 value={orderStatusFilter}
                 onChange={(e) => setOrderStatusFilter(e.target.value)}
               >
@@ -444,9 +456,10 @@ const Sessions = () => {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm font-medium text-gray-900">
+                          {/* Use primary color for link hover */}
                           <Link
                             to={`/patients/${session.patientId}`} // Assuming patientId exists
-                            className="hover:text-indigo-600"
+                            className="hover:text-primary"
                           >
                             {session.patientName || 'N/A'}
                           </Link>
@@ -469,12 +482,13 @@ const Sessions = () => {
                         {session.doctor || 'N/A'}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-3">
+                        {/* Use accent2 for Complete button */}
                         {session.status === 'scheduled' && (
                           <button
                             onClick={() =>
                               handleStatusUpdate(session.id, 'completed')
                             }
-                            className={`text-green-600 hover:text-green-900 ${isCompleting ? 'opacity-50 cursor-not-allowed' : ''}`}
+                            className={`text-accent2 hover:text-accent2/80 ${isCompleting ? 'opacity-50 cursor-not-allowed' : ''}`}
                             disabled={isMutating}
                           >
                             {isCompleting ? (
@@ -483,20 +497,21 @@ const Sessions = () => {
                             Complete
                           </button>
                         )}
+                        {/* Use accent3 for Reschedule/Follow-up buttons */}
                         {session.status === 'missed' && (
-                          <button className="text-indigo-600 hover:text-indigo-900">
+                          <button className="text-accent3 hover:text-accent3/80">
                             Reschedule{' '}
                             {/* TODO: Implement Reschedule Modal/Logic */}
                           </button>
                         )}
                         {session.status === 'completed' &&
                           session.followUpNeeded && (
-                            <button className="text-indigo-600 hover:text-indigo-900">
+                            <button className="text-accent3 hover:text-accent3/80">
                               Schedule Follow-Up{' '}
                               {/* TODO: Implement Follow-up Logic */}
                             </button>
                           )}
-                        {/* Always show Review Note button? Adjust logic as needed */}
+                        {/* Keep Review Note gray */}
                         <button className="text-gray-600 hover:text-gray-900">
                           Review Note{' '}
                           {/* TODO: Link to note or implement review logic */}
@@ -542,7 +557,7 @@ const Sessions = () => {
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Patient
                 </label>
-                <select className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
+                <select className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm rounded-md">
                   <option value="">Select a patient</option>
                   {/* Populate with fetched patients */}
                 </select>
@@ -558,7 +573,7 @@ const Sessions = () => {
                       id="medical"
                       name="sessionType"
                       type="radio"
-                      className="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300"
+                      className="focus:ring-primary h-4 w-4 text-primary border-gray-300"
                       defaultChecked
                     />
                     <label
@@ -573,7 +588,7 @@ const Sessions = () => {
                       id="psych"
                       name="sessionType"
                       type="radio"
-                      className="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300"
+                      className="focus:ring-primary h-4 w-4 text-primary border-gray-300"
                     />
                     <label
                       htmlFor="psych"
@@ -589,7 +604,7 @@ const Sessions = () => {
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Doctor
                 </label>
-                <select className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
+                <select className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm rounded-md">
                   <option value="">Select a doctor</option>
                   {/* Populate with fetched providers */}
                 </select>
@@ -601,7 +616,7 @@ const Sessions = () => {
                 </label>
                 <input
                   type="datetime-local"
-                  className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
+                  className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm rounded-md"
                 />
               </div>
 
@@ -611,7 +626,7 @@ const Sessions = () => {
                 </label>
                 <textarea
                   rows="3"
-                  className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
+                  className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm rounded-md"
                   placeholder="Add any relevant notes about this session..."
                 ></textarea>
               </div>
@@ -624,8 +639,9 @@ const Sessions = () => {
               >
                 Cancel
               </button>
+              {/* Use primary color for Schedule button */}
               <button
-                className="px-4 py-2 bg-indigo-600 rounded-md text-sm font-medium text-white hover:bg-indigo-700"
+                className="px-4 py-2 bg-primary rounded-md text-sm font-medium text-white hover:bg-primary/90"
                 onClick={() => {
                   // TODO: Implement session scheduling logic using useCreateSession mutation hook
                   setShowScheduleModal(false);

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import ChildishDrawingElement from '../../components/ui/ChildishDrawingElement'; // Import drawing element
 
 // Helper function to format date
 const formatDate = (dateString) => {
@@ -12,12 +13,12 @@ const formatDate = (dateString) => {
   });
 };
 
-// Custom Spinner component for loading states
+// Custom Spinner component using primary color
 const Spinner = () => (
-  <div className="inline-block h-5 w-5 animate-spin rounded-full border-2 border-solid border-current border-r-transparent align-[-0.125em] motion-reduce:animate-[spin_1.5s_linear_infinite]"></div>
+  <div className="inline-block h-5 w-5 animate-spin rounded-full border-2 border-solid border-primary border-r-transparent align-[-0.125em] motion-reduce:animate-[spin_1.5s_linear_infinite]"></div>
 );
 
-// SVG icons
+// SVG icons (keep as is, or replace with Lucide if preferred)
 const PlusIcon = () => (
   <svg
     className="h-5 w-5"
@@ -313,12 +314,17 @@ const InvoicePage = () => {
   };
 
   return (
-    <div className="">
-      <div className="flex justify-between items-center mb-6">
+    <div className="relative overflow-hidden pb-10"> {/* Add relative positioning and padding */}
+      {/* Add childish drawing elements */}
+      <ChildishDrawingElement type="watercolor" color="accent3" position="top-right" size={100} rotation={-15} opacity={0.1} />
+      <ChildishDrawingElement type="doodle" color="accent1" position="bottom-left" size={110} rotation={5} opacity={0.1} />
+
+      <div className="flex justify-between items-center mb-6 relative z-10"> {/* Added z-index */}
         <h1 className="text-2xl font-bold text-gray-800">Invoices</h1>
+        {/* Use primary color for Create Invoice button */}
         <button
           onClick={() => setShowCreateModal(true)}
-          className="px-4 py-2 bg-indigo-600 text-white rounded-md flex items-center hover:bg-indigo-700"
+          className="px-4 py-2 bg-primary text-white rounded-md flex items-center hover:bg-primary/90"
         >
           <PlusIcon className="h-5 w-5 mr-2" />
           Create Invoice
@@ -331,10 +337,11 @@ const InvoicePage = () => {
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
             <SearchIcon className="h-5 w-5 text-gray-400" />
           </div>
+          {/* Use primary color for focus ring in className below */}
           <input
             type="text"
             placeholder="Search invoices by name, email, or ID..."
-            className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+            className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white focus:outline-none focus:ring-primary focus:border-primary"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
@@ -488,18 +495,19 @@ const InvoicePage = () => {
                       {invoice.invoiceId}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
+                      {/* Apply Zappy colors to status badge */}
                       <span
-                        className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full 
+                        className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full
                           ${
                             invoice.status === 'Paid'
-                              ? 'bg-green-100 text-green-800'
+                              ? 'bg-accent2/10 text-accent2' // accent2 for Paid
                               : invoice.status === 'Pending'
-                                ? 'bg-yellow-100 text-yellow-800'
+                                ? 'bg-accent4/10 text-accent4' // accent4 for Pending
                                 : invoice.status === 'Refunded'
-                                  ? 'bg-blue-100 text-blue-800'
+                                  ? 'bg-accent3/10 text-accent3' // accent3 for Refunded
                                   : invoice.status === 'Partially Paid'
-                                    ? 'bg-indigo-100 text-indigo-800'
-                                    : 'bg-red-100 text-red-800'
+                                    ? 'bg-primary/10 text-primary' // primary for Partially Paid
+                                    : 'bg-accent1/10 text-accent1' // accent1 for Cancelled/Other
                           }`}
                       >
                         {invoice.status}
@@ -530,21 +538,24 @@ const InvoicePage = () => {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <div className="flex justify-end space-x-2">
+                        {/* Use primary color for View link */}
                         <Link
                           to={`/invoices/${invoice.id}`}
-                          className="text-indigo-600 hover:text-indigo-900"
+                          className="text-primary hover:text-primary/80"
                         >
                           View
                         </Link>
+                        {/* Use accent2 for Pay button */}
                         {invoice.status === 'Pending' && (
-                          <button className="text-green-600 hover:text-green-900">
+                          <button className="text-accent2 hover:text-accent2/80">
                             Pay
                           </button>
                         )}
+                        {/* Use accent3 for Refund button */}
                         {(invoice.status === 'Paid' ||
                           invoice.status === 'Partially Paid') &&
                           !invoice.refunded && (
-                            <button className="text-blue-600 hover:text-blue-900">
+                            <button className="text-accent3 hover:text-accent3/80">
                               Refund
                             </button>
                           )}
@@ -606,7 +617,7 @@ const InvoicePage = () => {
                     name="name"
                     value={newInvoice.name}
                     onChange={handleGeneralInputChange} // Corrected function name
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-primary focus:border-primary"
                     required
                   />
                 </div>
@@ -622,7 +633,7 @@ const InvoicePage = () => {
                     // onChange={handleInputChange} // Removed duplicate
                     // className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" // Removed duplicate
                     onChange={handleGeneralInputChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-primary focus:border-primary"
                     required
                   />
                 </div>
@@ -639,7 +650,7 @@ const InvoicePage = () => {
                          placeholder="Description"
                          value={item.description}
                          onChange={(e) => handleLineItemChange(index, 'description', e.target.value)}
-                         className="flex-grow px-2 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                         className="flex-grow px-2 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-primary focus:border-primary"
                          required={index === 0} // Only first line required description
                        />
                        <input
@@ -648,7 +659,7 @@ const InvoicePage = () => {
                          min="1"
                          value={item.quantity}
                          onChange={(e) => handleLineItemChange(index, 'quantity', e.target.value)}
-                         className="w-16 px-2 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                         className="w-16 px-2 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-primary focus:border-primary"
                          required
                        />
                        <input
@@ -658,23 +669,25 @@ const InvoicePage = () => {
                          step="0.01"
                          value={item.unitPrice}
                          onChange={(e) => handleLineItemChange(index, 'unitPrice', e.target.value)}
-                         className="w-24 px-2 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                         className="w-24 px-2 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-primary focus:border-primary"
                          required={index === 0} // Only first line required price
                        />
+                       {/* Use accent1 for remove button */}
                        <button
                          type="button"
                          onClick={() => removeLineItem(index)}
-                         className={`text-red-500 hover:text-red-700 p-1 ${newInvoice.lineItems.length <= 1 ? 'opacity-50 cursor-not-allowed' : ''}`}
+                         className={`text-accent1 hover:text-accent1/80 p-1 ${newInvoice.lineItems.length <= 1 ? 'opacity-50 cursor-not-allowed' : ''}`}
                          disabled={newInvoice.lineItems.length <= 1}
                        >
                          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                        </button>
                      </div>
                    ))}
+                   {/* Use primary color for Add Line Item button */}
                    <button
                      type="button"
                      onClick={addLineItem}
-                     className="text-sm text-indigo-600 hover:text-indigo-800 flex items-center"
+                     className="text-sm text-primary hover:text-primary/80 flex items-center"
                    >
                      <PlusIcon className="h-4 w-4 mr-1" /> Add Line Item
                    </button>
@@ -695,7 +708,7 @@ const InvoicePage = () => {
                     name="dueDate"
                     value={newInvoice.dueDate}
                     onChange={handleGeneralInputChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-primary focus:border-primary"
                     required
                   />
                 </div>
@@ -709,9 +722,10 @@ const InvoicePage = () => {
                 >
                   Cancel
                 </button>
+                {/* Use primary color for Create Invoice button */}
                 <button
                   type="submit"
-                  className="px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700"
+                  className="px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-primary hover:bg-primary/90"
                 >
                   Create Invoice
                 </button>

@@ -15,6 +15,7 @@ import {
   Loader2, // Added
   AlertTriangle, // Added for error display
 } from 'lucide-react';
+import ChildishDrawingElement from '../../components/ui/ChildishDrawingElement'; // Import drawing element
 
 import {
   PageHeader,
@@ -104,7 +105,7 @@ const DosesFormSection = ({ doses = [], onChange }) => {
                     value={dose.value}
                     onChange={(e) => handleDoseChange(e, 'value', dose.id)}
                     placeholder="e.g., 10mg"
-                    className="block w-full pl-3 pr-3 py-2 text-sm border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 rounded-md"
+                    className="block w-full pl-3 pr-3 py-2 text-sm border-gray-300 focus:outline-none focus:ring-primary focus:border-primary rounded-md"
                   />
                 </div>
                 {/* Description */}
@@ -119,7 +120,7 @@ const DosesFormSection = ({ doses = [], onChange }) => {
                       handleDoseChange(e, 'description', dose.id)
                     }
                     placeholder="Description for this dose"
-                    className="block w-full pl-3 pr-3 py-2 text-sm border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 rounded-md"
+                    className="block w-full pl-3 pr-3 py-2 text-sm border-gray-300 focus:outline-none focus:ring-primary focus:border-primary rounded-md"
                   />
                 </div>
                 {/* Allow One-Time Purchase */}
@@ -131,7 +132,7 @@ const DosesFormSection = ({ doses = [], onChange }) => {
                     onChange={(e) =>
                       handleDoseChange(e, 'allowOneTimePurchase', dose.id)
                     }
-                    className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                    className="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded"
                   />
                    <label
                      htmlFor={`allowOneTime-${dose.id}`}
@@ -148,7 +149,7 @@ const DosesFormSection = ({ doses = [], onChange }) => {
                       value={dose.stripePriceId || ''}
                       onChange={(e) => handleDoseChange(e, 'stripePriceId', dose.id)}
                       placeholder="price_..."
-                      className="block w-full pl-3 pr-3 py-2 text-xs border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 rounded-md bg-gray-100"
+                      className="block w-full pl-3 pr-3 py-2 text-xs border-gray-300 focus:outline-none focus:ring-primary focus:border-primary rounded-md bg-gray-100"
                       // readOnly // Consider making read-only if managed by backend
                     />
                  </div>
@@ -183,7 +184,7 @@ const DosesFormSection = ({ doses = [], onChange }) => {
                 value={newDose.value}
                 onChange={(e) => handleDoseChange(e, 'value')}
                 placeholder="e.g., 10mg"
-                className="block w-full pl-3 pr-3 py-2 text-sm border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 rounded-md"
+                className="block w-full pl-3 pr-3 py-2 text-sm border-gray-300 focus:outline-none focus:ring-primary focus:border-primary rounded-md"
               />
             </div>
             {/* Description */}
@@ -196,7 +197,7 @@ const DosesFormSection = ({ doses = [], onChange }) => {
                 value={newDose.description}
                 onChange={(e) => handleDoseChange(e, 'description')}
                 placeholder="Description for this dose"
-                className="block w-full pl-3 pr-3 py-2 text-sm border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 rounded-md"
+                className="block w-full pl-3 pr-3 py-2 text-sm border-gray-300 focus:outline-none focus:ring-primary focus:border-primary rounded-md"
               />
             </div>
             {/* Allow One-Time Purchase */}
@@ -206,7 +207,7 @@ const DosesFormSection = ({ doses = [], onChange }) => {
                 id="allowOneTime-new"
                 checked={newDose.allowOneTimePurchase}
                 onChange={(e) => handleDoseChange(e, 'allowOneTimePurchase')}
-                className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                className="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded"
               />
               <label
                 htmlFor="allowOneTime-new"
@@ -223,15 +224,16 @@ const DosesFormSection = ({ doses = [], onChange }) => {
                   value={newDose.stripePriceId}
                   onChange={(e) => handleDoseChange(e, 'stripePriceId')}
                   placeholder="price_..."
-                  className="block w-full pl-3 pr-3 py-2 text-xs border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 rounded-md"
+                  className="block w-full pl-3 pr-3 py-2 text-xs border-gray-300 focus:outline-none focus:ring-primary focus:border-primary rounded-md"
                 />
              </div>
             {/* Add Button */}
             <div className="flex justify-end mt-3"> {/* Adjusted margin */}
+              {/* Use primary color for Add Dose button */}
               <button
                 type="button"
                 onClick={handleAddDose}
-                className="px-4 py-2 bg-indigo-600 text-white rounded-md flex items-center text-sm hover:bg-indigo-700"
+                className="px-4 py-2 bg-primary text-white rounded-md flex items-center text-sm hover:bg-primary/90"
                 disabled={!newDose.value.trim()}
               >
                 <Plus className="h-4 w-4 mr-1" /> Add Dose
@@ -616,7 +618,8 @@ const ProductManagement = () => {
   if (isLoading) {
     return (
       <div className="flex justify-center items-center p-8 h-64">
-        <Loader2 className="h-8 w-8 animate-spin text-indigo-600" />
+        {/* Use primary color for spinner */}
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
   }
@@ -631,22 +634,27 @@ const ProductManagement = () => {
   }
 
   return (
-    <div>
+    <div className="relative overflow-hidden pb-10"> {/* Add relative positioning and padding */}
+      {/* Add childish drawing elements */}
+      <ChildishDrawingElement type="watercolor" color="accent1" position="top-right" size={120} rotation={-15} opacity={0.1} />
+      <ChildishDrawingElement type="scribble" color="accent3" position="bottom-left" size={100} rotation={5} opacity={0.1} />
+
       <PageHeader title="Product & Subscription Management" />
       {/* Tabs */}
-      <div className="mb-6">
+      <div className="mb-6 relative z-10"> {/* Added z-index */}
         <div className="border-b border-gray-200">
           <nav className="flex -mb-px">
+            {/* Use primary color for active tab */}
             <button
               onClick={() => setActiveTab('products')}
-              className={`py-4 px-6 text-sm font-medium ${activeTab === 'products' ? 'border-b-2 border-indigo-500 text-indigo-600' : 'text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}
+              className={`py-4 px-6 text-sm font-medium ${activeTab === 'products' ? 'border-b-2 border-primary text-primary' : 'text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}
             >
               <Package className="h-4 w-4 inline-block mr-1" />
               Products
             </button>
             <button
               onClick={() => setActiveTab('plans')}
-              className={`py-4 px-6 text-sm font-medium ${activeTab === 'plans' ? 'border-b-2 border-indigo-500 text-indigo-600' : 'text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}
+              className={`py-4 px-6 text-sm font-medium ${activeTab === 'plans' ? 'border-b-2 border-primary text-primary' : 'text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}
             >
               <Tag className="h-4 w-4 inline-block mr-1" />
               Subscription Plans
@@ -710,8 +718,9 @@ const ProductManagement = () => {
           },
         ]}
       >
+        {/* Use primary color for Add button */}
         <button
-          className="px-4 py-2 bg-indigo-600 text-white rounded-md flex items-center hover:bg-indigo-700"
+          className="px-4 py-2 bg-primary text-white rounded-md flex items-center hover:bg-primary/90"
           onClick={activeTab === 'products' ? handleAddProduct : handleAddPlan}
         >
           <Plus className="h-5 w-5 mr-2" />
@@ -851,8 +860,9 @@ const ProductManagement = () => {
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                         {(!product.currentDose || product.isFirstDose) && (
                           <>
+                            {/* Use accent3 for Edit button */}
                             <button
-                              className="text-indigo-600 hover:text-indigo-900 mr-3 disabled:opacity-50"
+                              className="text-accent3 hover:text-accent3/80 mr-3 disabled:opacity-50"
                               onClick={() =>
                                 handleEditProduct(
                                   allProducts.find((p) => p.id === product.id)
@@ -862,8 +872,9 @@ const ProductManagement = () => {
                             >
                               <Edit className="h-5 w-5" />
                             </button>
+                            {/* Use accent1 for Delete button */}
                             <button
-                              className="text-red-600 hover:text-red-900 disabled:opacity-50"
+                              className="text-accent1 hover:text-accent1/80 disabled:opacity-50"
                               onClick={() => handleDeleteProduct(product.id)}
                               disabled={
                                 isMutating ||
@@ -996,15 +1007,17 @@ const ProductManagement = () => {
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                      {/* Use accent3 for Edit button */}
                       <button
-                        className="text-indigo-600 hover:text-indigo-900 mr-3 disabled:opacity-50"
+                        className="text-accent3 hover:text-accent3/80 mr-3 disabled:opacity-50"
                         onClick={() => handleEditPlan(plan)}
                         disabled={isMutating}
                       >
                         <Edit className="h-5 w-5" />
                       </button>
+                      {/* Use accent1 for Delete button */}
                       <button
-                        className="text-red-600 hover:text-red-900 disabled:opacity-50"
+                        className="text-accent1 hover:text-accent1/80 disabled:opacity-50"
                         onClick={() => handleDeletePlan(plan.id)}
                         disabled={
                           isMutating || deletePlanMutation.variables === plan.id
@@ -1113,9 +1126,9 @@ const ProductManagement = () => {
                   min="0"
                   step="0.01"
                   value={productFormData.price}
-                  onChange={handleProductInputChange}
-                  prefix="$"
-                />
+                    onChange={handleProductInputChange}
+                    prefix="$"
+                  />
                  {/* Stripe Price ID for One-Time Purchase (Non-Medication) */}
                  <div className="mt-2">
                     <label className="block text-xs font-medium text-gray-500 mb-1">Stripe Price ID (One-Time)</label>
@@ -1125,7 +1138,7 @@ const ProductManagement = () => {
                       value={productFormData.stripePriceId || ''}
                       onChange={handleProductInputChange}
                       placeholder="price_..."
-                      className="block w-full pl-3 pr-3 py-2 text-xs border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 rounded-md"
+                      className="block w-full pl-3 pr-3 py-2 text-xs border-gray-300 focus:outline-none focus:ring-primary focus:border-primary rounded-md"
                     />
                  </div>
                </div>
@@ -1135,7 +1148,7 @@ const ProductManagement = () => {
                 <label className="block text-sm font-medium text-gray-700 mb-1">One-Time Purchase Price</label>
                 <div className="relative rounded-md shadow-sm">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"><span className="text-gray-500 sm:text-sm">$</span></div>
-                  <input type="number" name="oneTimePurchasePrice" min="0" step="0.01" className="block w-full pl-7 pr-3 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md" value={productFormData.oneTimePurchasePrice} onChange={handleProductInputChange}/>
+                  <input type="number" name="oneTimePurchasePrice" min="0" step="0.01" className="block w-full pl-7 pr-3 py-2 text-base border-gray-300 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm rounded-md" value={productFormData.oneTimePurchasePrice} onChange={handleProductInputChange}/>
                  </div>
                  {/* Stripe Price ID for One-Time Purchase (Medication) */}
                  <div className="mt-2">
@@ -1146,7 +1159,7 @@ const ProductManagement = () => {
                       value={productFormData.stripeOneTimePriceId || ''}
                       onChange={handleProductInputChange}
                       placeholder="price_..."
-                      className="block w-full pl-3 pr-3 py-2 text-xs border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 rounded-md"
+                      className="block w-full pl-3 pr-3 py-2 text-xs border-gray-300 focus:outline-none focus:ring-primary focus:border-primary rounded-md"
                     />
                  </div>
                </div>
@@ -1236,7 +1249,7 @@ const ProductManagement = () => {
                           onChange={() =>
                             handleServiceSelectionChange(service.id)
                           }
-                          className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                          className="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded"
                         />
                         <label
                           htmlFor={`service-assoc-${service.id}`}
@@ -1405,7 +1418,7 @@ const ProductManagement = () => {
                               onChange={() =>
                                 handleDoseSelectionChange(product.id, dose.id)
                               }
-                              className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                              className="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded"
                             />
                             <label
                               htmlFor={`dose-select-${product.id}-${dose.id}`}

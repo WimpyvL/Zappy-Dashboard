@@ -185,19 +185,7 @@ export const useUpdatePatient = (options = {}) => {
     mutationFn: async ({ id, patientData }) => {
       if (!id) throw new Error('Patient ID is required for update.');
 
-      // Separate profile data from top-level fields for update using the names revealed in the log
-      const {
-        street_address,
-        city_name,
-        state,
-        zip_code,
-        date_of_birth,
-        preferredPharmacy,
-        assignedDoctor,
-        medicalNotes
-        // Include any other fields intended for the profile JSONB
-        ...topLevelUpdates // Rest of the data (name, email, phone, status etc.)
-      } = patientData;
+      // Removed the unnecessary destructuring block that was causing syntax errors
 
       // Construct the final object for update, mapping directly from input to DB columns
       const dataToUpdate = {

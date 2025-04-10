@@ -27,37 +27,30 @@ import {
   MoreHorizontal,
   Loader2, // Added for loading state
 } from 'lucide-react';
+import ChildishDrawingElement from '../../components/ui/ChildishDrawingElement'; // Import drawing element
 // Import the consultation notes component
 import InitialConsultationNotes from './InitialConsultationNotes';
 
-// StatusBadge and FormCompletedBadge remain the same
+// StatusBadge using Zappy colors
 
 const StatusBadge = ({ status }) => {
-  // ... (StatusBadge implementation remains the same)
-  if (status === 'reviewed') {
+  if (status === 'reviewed' || status === 'followup') { // Combine reviewed and followup
     return (
-      <span className="flex items-center px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800">
-        <Calendar className="h-3 w-3 mr-1" /> {/* Corrected icon name */}
+      <span className="flex items-center px-2 py-1 text-xs font-medium rounded-full bg-accent3/10 text-accent3"> {/* Use accent3 */}
+        <Calendar className="h-3 w-3 mr-1" />
         Follow-up
       </span>
     );
   } else if (status === 'pending') {
     return (
-      <span className="flex items-center px-2 py-1 text-xs font-medium rounded-full bg-yellow-100 text-yellow-800">
+      <span className="flex items-center px-2 py-1 text-xs font-medium rounded-full bg-accent4/10 text-accent4"> {/* Use accent4 */}
         <Clock className="h-3 w-3 mr-1" />
         Pending
       </span>
     );
-  } else if (status === 'followup') {
-    return (
-      <span className="flex items-center px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800">
-        <Calendar className="h-3 w-3 mr-1" /> {/* Corrected icon name */}
-        Follow-up
-      </span>
-    );
   } else if (status === 'archived') {
     return (
-      <span className="flex items-center px-2 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-800">
+      <span className="flex items-center px-2 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-800"> {/* Keep gray */}
         <Archive className="h-3 w-3 mr-1" />
         Archived
       </span>
@@ -261,7 +254,8 @@ const InitialConsultations = () => {
   if (isLoadingConsultations || isLoadingPatients || isLoadingServices) { // Added isLoadingServices
     return (
       <div className="flex justify-center items-center h-screen">
-        <Loader2 className="h-16 w-16 animate-spin text-indigo-600" />
+        {/* Use primary color for spinner */}
+        <Loader2 className="h-16 w-16 animate-spin text-primary" />
       </div>
     );
   }
@@ -278,14 +272,19 @@ const InitialConsultations = () => {
   }
 
   return (
-    <div>
-      <div className="flex justify-between items-center mb-6">
+    <div className="relative overflow-hidden pb-10"> {/* Add relative positioning and padding */}
+      {/* Add childish drawing elements */}
+      <ChildishDrawingElement type="watercolor" color="accent2" position="top-right" size={120} rotation={-10} opacity={0.1} />
+      <ChildishDrawingElement type="doodle" color="accent4" position="bottom-left" size={100} rotation={15} opacity={0.1} />
+
+      <div className="flex justify-between items-center mb-6 relative z-10"> {/* Added z-index */}
         <h1 className="text-2xl font-bold text-gray-800">
           Initial Consultations
         </h1>
         <div className="flex">
+          {/* Use primary color for New Consultation button */}
           <button
-            className="px-4 py-2 bg-indigo-600 text-white rounded-md flex items-center hover:bg-indigo-700"
+            className="px-4 py-2 bg-primary text-white rounded-md flex items-center hover:bg-primary/90"
             onClick={handleOpenNewConsultationModal} // Updated handler
           >
             <Plus className="h-5 w-5 mr-2" />
@@ -303,7 +302,7 @@ const InitialConsultations = () => {
           <input
             type="text"
             placeholder="Search by patient, email, medication or provider name..."
-            className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+            className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white focus:outline-none focus:ring-primary focus:border-primary"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
@@ -313,7 +312,7 @@ const InitialConsultations = () => {
         <div className="flex items-center space-x-2">
           <Filter className="h-5 w-5 text-gray-400" />
           <select
-            className="block pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
+            className="block pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm rounded-md"
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
           >
@@ -328,7 +327,7 @@ const InitialConsultations = () => {
         <div className="flex items-center space-x-2">
            <User className="h-5 w-5 text-gray-400" /> {/* Using User icon for provider */}
            <select
-             className="block pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
+             className="block pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm rounded-md"
              value={providerFilter}
              onChange={(e) => setProviderFilter(e.target.value)}
            >
@@ -344,7 +343,7 @@ const InitialConsultations = () => {
          <div className="flex items-center space-x-2">
             <Briefcase className="h-5 w-5 text-gray-400" /> {/* Using Briefcase icon for service */}
             <select
-              className="block pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
+              className="block pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm rounded-md"
               value={serviceFilter}
               onChange={(e) => setServiceFilter(e.target.value)}
             >
@@ -406,14 +405,16 @@ const InitialConsultations = () => {
                 <tr key={consultation.id} className="hover:bg-gray-50">
                   <td className="px-4 py-4 whitespace-nowrap">
                     <div className="flex items-center">
-                      <div className="flex-shrink-0 h-8 w-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-500">
+                      {/* Use accent1 for avatar */}
+                      <div className="flex-shrink-0 h-8 w-8 rounded-full bg-accent1/10 flex items-center justify-center text-accent1">
                         <User className="h-4 w-4" />
                       </div>
                       <div className="ml-3">
                         <div className="text-sm font-medium text-gray-900">
+                          {/* Use primary color for link hover */}
                           <Link
                             to={`/patients/${consultation.patientId}`}
-                            className="hover:text-indigo-600"
+                            className="hover:text-primary"
                           >
                             {consultation.patientName || 'N/A'}
                           </Link>
@@ -446,8 +447,9 @@ const InitialConsultations = () => {
                   {/* Removed Form Completed cell */}
                   <td className="px-4 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <div className="relative flex justify-end">
+                      {/* Use primary color for Complete Consult button */}
                       <button
-                        className="text-indigo-600 hover:text-indigo-900 mr-3"
+                        className="text-primary hover:text-primary/80 mr-3"
                         onClick={() => handleViewConsultation(consultation)}
                       >
                         Complete Consult {/* Renamed button */}
@@ -577,7 +579,7 @@ const InitialConsultations = () => {
                 <input
                   type="text"
                   placeholder="Search patients..."
-                  className="block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                  className="block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-primary focus:border-primary"
                   // Use a separate search term for this modal if needed, or reuse main one
                   // value={patientSearchTerm}
                   // onChange={(e) => setPatientSearchTerm(e.target.value)}
@@ -601,7 +603,8 @@ const InitialConsultations = () => {
                           handleSelectPatientForNewConsultation(patient)
                         }
                       >
-                        <div className="flex-shrink-0 h-10 w-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-500">
+                        {/* Use accent1 for avatar */}
+                        <div className="flex-shrink-0 h-10 w-10 rounded-full bg-accent1/10 flex items-center justify-center text-accent1">
                           <User className="h-6 w-6" />
                         </div>
                         <div className="ml-4">
@@ -691,7 +694,7 @@ const InitialConsultations = () => {
                 </label>
                 <input
                   type="text"
-                  className="block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                  className="block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-primary focus:border-primary"
                   defaultValue={`Consultation Follow-up for ${selectedConsultation.patientName}`}
                 />
               </div>
@@ -701,7 +704,7 @@ const InitialConsultations = () => {
                 </label>
                 <textarea
                   rows={10}
-                  className="block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                  className="block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-primary focus:border-primary"
                   value={emailContent}
                   onChange={(e) => setEmailContent(e.target.value)}
                 />
@@ -714,8 +717,9 @@ const InitialConsultations = () => {
               >
                 Cancel
               </button>
+              {/* Use primary color for Send Email button */}
               <button
-                className="px-4 py-2 bg-indigo-600 rounded-md text-sm font-medium text-white hover:bg-indigo-700"
+                className="px-4 py-2 bg-primary rounded-md text-sm font-medium text-white hover:bg-primary/90"
                 onClick={handleConfirmSendEmail}
               >
                 Send Email

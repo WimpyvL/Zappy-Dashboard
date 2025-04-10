@@ -39,82 +39,98 @@ export const sidebarItems = [
     title: 'Dashboard',
     path: '/',
     icon: Home,
+    color: 'primary', // Added color
   },
   {
     title: 'Patients',
     path: '/patients',
     icon: Users,
+    color: 'accent1', // Added color
   },
   {
     title: 'Consultations',
     path: '/consultations',
     icon: UserPlus,
+    color: 'accent2', // Added color
   },
   {
     title: 'Sessions',
     path: '/sessions',
     icon: Calendar,
+    color: 'accent3', // Added color
   },
   {
     title: 'Orders',
     path: '/orders',
     icon: Package,
+    color: 'accent4', // Added color
   },
   {
     title: 'Products',
     path: '/products',
     icon: Pill,
+    color: 'primary', // Added color
   },
   // Removed Product Services item
   {
     title: 'Discounts',
     path: '/discounts',
     icon: Percent,
+    color: 'accent1', // Added color
   },
   {
     title: 'Invoices',
     path: '/invoices',
-    icon: FileText, // Changed from Percent to FileText which is more appropriate for invoices
+    icon: FileText,
+    color: 'accent2', // Added color
   },
   {
     title: 'Tasks',
     path: '/tasks',
     icon: ClipboardList,
+    color: 'accent3', // Added color
   },
   {
     title: 'Providers',
     path: '/providers',
     icon: UserPlus,
+    color: 'accent4', // Added color
   },
   {
     title: 'Pharmacies',
     path: '/pharmacies',
     icon: Building,
+    color: 'primary', // Added color
   },
   {
     title: 'Insurance',
     path: '/insurance',
     icon: FileText,
+    color: 'accent1', // Added color
   },
   {
     title: 'Services',
     path: '/services',
     icon: Tag,
+    color: 'accent2', // Added color
   },
   {
     title: 'Tags',
     path: '/tags',
     icon: Hash,
+    color: 'accent3', // Added color
   },
   {
     title: 'Messages',
-    path: '/messages', // Define path for messages
+    path: '/messages',
     icon: MessageSquare,
+    color: 'accent4', // Added color
   },
   {
-    title: 'System Map', // Updated title
-    path: '/system-map', // Updated path
-    icon: Map, // Updated icon
+    title: 'System Map',
+    path: '/system-map',
+    icon: Map,
+    color: 'primary', // Added color
   },
 ];
 
@@ -122,13 +138,15 @@ export const sidebarItems = [
 export const settingsItems = [
   {
     title: 'Settings',
-    path: paths.settings, // Use path constant
+    path: paths.settings,
     icon: Settings,
+    color: 'accent1', // Added color
   },
   {
     title: 'Audit Log',
-    path: paths.auditlog, // Use path constant
+    path: paths.auditlog,
     icon: History,
+    color: 'accent2', // Added color
   },
 ];
 

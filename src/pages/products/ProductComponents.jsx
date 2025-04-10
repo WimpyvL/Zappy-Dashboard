@@ -1,18 +1,19 @@
 // Reusable components for the Product Management module
 
 import React from 'react';
+import PropTypes from 'prop-types'; // Import PropTypes
 import { Search, Plus, Edit, Trash2, Check, X } from 'lucide-react';
 
-// Define badge styles as objects to avoid string interpolation in JSX
+// Define badge styles using Zappy accent colors
 const typeBadgeStyles = {
-  medication: 'bg-blue-100 text-blue-800',
-  supplement: 'bg-green-100 text-green-800',
-  service: 'bg-purple-100 text-purple-800',
+  medication: 'bg-accent1/10 text-accent1', // Example: accent1
+  supplement: 'bg-accent2/10 text-accent2', // Example: accent2
+  service: 'bg-accent4/10 text-accent4', // Example: accent4
 };
 
 const statusBadgeStyles = {
-  active: 'bg-green-100 text-green-800',
-  inactive: 'bg-red-100 text-red-800',
+  active: 'bg-accent2/10 text-accent2', // Example: accent2
+  inactive: 'bg-accent1/10 text-accent1', // Example: accent1
 };
 
 // Generic Badge component
@@ -24,11 +25,12 @@ export const Badge = ({ className, children }) => (
 
 // Tab Button component
 export const TabButton = ({ isActive, onClick, children }) => (
+  // Use primary color for active tab
   <button
     onClick={onClick}
     className={
       isActive
-        ? 'py-4 px-6 text-sm font-medium border-b-2 border-indigo-500 text-indigo-600 cursor-pointer'
+        ? 'py-4 px-6 text-sm font-medium border-b-2 border-primary text-primary cursor-pointer'
         : 'py-4 px-6 text-sm font-medium text-gray-500 hover:text-gray-700 hover:border-gray-300 cursor-pointer'
     }
   >
@@ -40,9 +42,10 @@ export const TabButton = ({ isActive, onClick, children }) => (
 export const PageHeader = ({ title, onAddClick, addButtonText = 'Add' }) => (
   <div className="flex justify-between items-center mb-6">
     <h1 className="text-2xl font-bold text-gray-800">{title}</h1>
+    {/* Use primary color for Add button */}
     {onAddClick && (
       <button
-        className="px-4 py-2 bg-indigo-600 text-white rounded-md flex items-center hover:bg-indigo-700 cursor-pointer"
+        className="px-4 py-2 bg-primary text-white rounded-md flex items-center hover:bg-primary/90 cursor-pointer"
         onClick={onAddClick}
       >
         <Plus className="h-5 w-5 mr-2" />
@@ -58,16 +61,18 @@ export const SearchAndFilters = ({
   onSearchChange,
   placeholder = 'Search...',
   filters = [],
-}) => (
+}) => { // Changed to curly braces
+  return ( // Added explicit return
   <div className="bg-white p-4 rounded-lg shadow mb-6 flex flex-col md:flex-row md:items-center space-y-4 md:space-y-0 md:space-x-4">
     <div className="flex-1 relative">
       <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
         <Search className="h-5 w-5 text-gray-400" />
       </div>
+      {/* Use primary color for focus ring */}
       <input
         type="text"
         placeholder={placeholder}
-        className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+        className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white focus:outline-none focus:ring-primary focus:border-primary"
         value={searchTerm}
         onChange={(e) => onSearchChange(e.target.value)}
       />
@@ -75,9 +80,10 @@ export const SearchAndFilters = ({
 
     {filters.map((filter, index) => (
       <div key={index} className="flex items-center space-x-2">
+        {/* Use primary color for focus ring */}
         {filter.icon && <filter.icon className="h-5 w-5 text-gray-400" />}
         <select
-          className="block pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
+          className="block pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm rounded-md"
           value={filter.value}
           onChange={(e) => filter.onChange(e.target.value)}
         >
@@ -90,7 +96,8 @@ export const SearchAndFilters = ({
       </div>
     ))}
   </div>
-);
+  ); // Added closing parenthesis for return
+}; // Added closing brace for function body
 
 // Product Table component
 export const ProductTable = ({ products, onEdit, onDelete }) => (
@@ -154,14 +161,16 @@ export const ProductTable = ({ products, onEdit, onDelete }) => (
                 </Badge>
               </td>
               <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                {/* Use accent3 for Edit button */}
                 <button
-                  className="text-indigo-600 hover:text-indigo-900 mr-3 cursor-pointer"
+                  className="text-accent3 hover:text-accent3/80 mr-3 cursor-pointer"
                   onClick={() => onEdit(product)}
                 >
                   <Edit className="h-5 w-5" />
                 </button>
+                {/* Use accent1 for Delete button */}
                 <button
-                  className="text-red-600 hover:text-red-900 cursor-pointer"
+                  className="text-accent1 hover:text-accent1/80 cursor-pointer"
                   onClick={() => onDelete(product.id)}
                 >
                   <Trash2 className="h-5 w-5" />
@@ -254,14 +263,16 @@ export const SubscriptionPlansTable = ({
                 </Badge>
               </td>
               <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                {/* Use accent3 for Edit button */}
                 <button
-                  className="text-indigo-600 hover:text-indigo-900 mr-3 cursor-pointer"
+                  className="text-accent3 hover:text-accent3/80 mr-3 cursor-pointer"
                   onClick={() => onEdit(plan)}
                 >
                   <Edit className="h-5 w-5" />
                 </button>
+                {/* Use accent1 for Delete button */}
                 <button
-                  className="text-red-600 hover:text-red-900 cursor-pointer"
+                  className="text-accent1 hover:text-accent1/80 cursor-pointer"
                   onClick={() => onDelete(plan.id)}
                 >
                   <Trash2 className="h-5 w-5" />
@@ -295,10 +306,11 @@ export const FormInput = ({
     <label className="block text-sm font-medium text-gray-700 mb-1">
       {label} {required && <span className="text-red-500">*</span>}
     </label>
+    {/* Use primary color for focus ring */}
     <input
       type={type}
       name={name}
-      className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
+      className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm rounded-md"
       value={value}
       onChange={onChange}
       placeholder={placeholder}
@@ -320,9 +332,10 @@ export const FormSelect = ({
     <label className="block text-sm font-medium text-gray-700 mb-1">
       {label} {required && <span className="text-red-500">*</span>}
     </label>
+    {/* Use primary color for focus ring */}
     <select
       name={name}
-      className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
+      className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm rounded-md"
       value={value}
       onChange={onChange}
       required={required}
@@ -350,10 +363,11 @@ export const FormTextarea = ({
     <label className="block text-sm font-medium text-gray-700 mb-1">
       {label} {required && <span className="text-red-500">*</span>}
     </label>
+    {/* Use primary color for focus ring */}
     <textarea
       name={name}
       rows={rows}
-      className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
+      className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm rounded-md"
       value={value}
       onChange={onChange}
       placeholder={placeholder}
@@ -363,21 +377,44 @@ export const FormTextarea = ({
 );
 
 // Form Checkbox component
-export const FormCheckbox = ({ label, name, checked, onChange }) => (
-  <div className="flex items-center mb-4">
-    <input
-      id={name}
-      name={name}
-      type="checkbox"
-      className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
-      checked={checked}
-      onChange={onChange}
-    />
-    <label htmlFor={name} className="ml-2 block text-sm text-gray-700">
-      {label}
-    </label>
-  </div>
-);
+// Form Checkbox component
+export const FormCheckbox = ({ label, name, checked, onChange }) => {
+  // It's generally assumed 'name' will be unique in the form context.
+  // If using React 18+, consider `React.useId()` for a guaranteed unique ID
+  // const id = React.useId(); // Example if using React 18+
+
+  return (
+    <div className="flex items-center mb-4">
+      <input
+        id={name} // Use name for id, ensure it's unique where used
+        name={name}
+        type="checkbox"
+        // Styling uses Tailwind utilities for size, color, focus, border, and rounding
+        className="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded"
+        checked={checked}
+        onChange={onChange}
+      />
+      {label && ( // Conditionally render label only if provided
+        <label htmlFor={name} className="ml-2 block text-sm text-gray-700">
+          {label}
+        </label>
+      )}
+    </div>
+  );
+};
+
+// Define PropTypes for type checking and documentation
+FormCheckbox.propTypes = {
+  label: PropTypes.string, // Label is optional now
+  name: PropTypes.string.isRequired,
+  checked: PropTypes.bool.isRequired,
+  onChange: PropTypes.func.isRequired,
+};
+
+// Optional: Default props if needed, though `isRequired` covers most cases here
+// FormCheckbox.defaultProps = {
+//   label: '',
+// };
 
 // Modal component
 export const Modal = ({
@@ -405,8 +442,6 @@ export const Modal = ({
         </div>
 
         <div className="p-6 overflow-y-auto max-h-[calc(100vh-12rem)]">
-          {' '}
-          {/* Added overflow-y-auto and max-height */}
           {children}
         </div>
 
@@ -417,8 +452,9 @@ export const Modal = ({
           >
             Cancel
           </button>
+          {/* Use primary color for Submit button */}
           <button
-            className="cursor-pointer px-4 py-2 bg-indigo-600 rounded-md text-sm font-medium text-white hover:bg-indigo-700"
+            className="cursor-pointer px-4 py-2 bg-primary rounded-md text-sm font-medium text-white hover:bg-primary/90"
             onClick={onSubmit}
           >
             {submitText}
@@ -430,17 +466,19 @@ export const Modal = ({
 };
 
 // Product Selection Item for subscription plans
+// Product Selection Item for subscription plans
 export const ProductSelectionItem = ({ product, isSelected, onSelect }) => (
+  // Use primary color for selected state
   <div
     className={`flex items-center p-2 rounded cursor-pointer ${
-      isSelected ? 'bg-indigo-100' : 'hover:bg-gray-100'
+      isSelected ? 'bg-primary/10' : 'hover:bg-gray-100'
     }`}
     onClick={onSelect}
   >
     <div className="flex items-center gap-x-2">
       <div
         className={`w-5 h-5 aspect-square flex items-center justify-center rounded-full border ${
-          isSelected ? 'bg-indigo-600 border-indigo-600' : 'border-gray-300'
+          isSelected ? 'bg-primary border-primary' : 'border-gray-300'
         }`}
       >
         {isSelected && <Check className="h-3 w-3 text-white" />}

@@ -150,7 +150,8 @@ const ProviderDashboard = () => {
   if (isLoadingPatients || isLoadingSessions || isLoadingOrders) {
     return (
       <div className="flex justify-center items-center h-screen">
-        <Loader2 className="h-16 w-16 animate-spin text-indigo-600" />
+        {/* Use primary color for spinner */}
+        <Loader2 className="h-16 w-16 animate-spin text-primary" />
       </div>
     );
   }
@@ -195,6 +196,7 @@ const ProviderDashboard = () => {
         </Link>
 
         <Link to="/sessions" className="block">
+          {/* Use accent3 color */}
           <div className="bg-white rounded-lg shadow p-6 h-full hover:shadow-md transition-shadow border-t-4 border-accent3">
             <div className="flex items-center mb-2">
               <Calendar className="h-5 w-5 text-accent3 mr-2" />
@@ -212,6 +214,7 @@ const ProviderDashboard = () => {
         </Link>
 
         <Link to="/orders" className="block">
+          {/* Use accent2 color */}
           <div className="bg-white rounded-lg shadow p-6 h-full hover:shadow-md transition-shadow border-t-4 border-accent2">
             <div className="flex items-center mb-2">
               <Package className="h-5 w-5 text-accent2 mr-2" />
@@ -229,6 +232,7 @@ const ProviderDashboard = () => {
         </Link>
 
         <Link to="/consultations" className="block">
+          {/* Use accent1 color */}
           <div className="bg-white rounded-lg shadow p-6 h-full hover:shadow-md transition-shadow border-t-4 border-accent1">
             <div className="flex items-center mb-2">
               <MessageSquare className="h-5 w-5 text-accent1 mr-2" />
@@ -257,6 +261,7 @@ const ProviderDashboard = () => {
               <Calendar className="h-5 w-5 text-accent3 mr-2" />
               Today's Sessions
             </h2>
+            {/* Use accent3 color for link */}
             <Link
               to="/sessions"
               className="text-sm text-accent3 hover:text-accent3/80"
@@ -270,8 +275,8 @@ const ProviderDashboard = () => {
                 {todaySessions.map((session) => (
                   <li key={session.id} className="py-4">
                     <div className="flex items-center">
-                      <div className="flex-shrink-0 h-10 w-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-500">
-                        {/* Assuming patientName exists on session object */}
+                      {/* Use accent3 color for avatar placeholder */}
+                      <div className="flex-shrink-0 h-10 w-10 rounded-full bg-accent3/10 flex items-center justify-center text-accent3">
                         {session.patientName?.charAt(0) || '?'}
                       </div>
                       <div className="ml-4 flex-1">
@@ -288,7 +293,8 @@ const ProviderDashboard = () => {
                         </div>
                         <p className="text-sm text-gray-500">{session.type}</p>
                       </div>
-                      <button className="ml-4 px-3 py-1 bg-indigo-600 text-white text-sm rounded hover:bg-indigo-700">
+                      {/* Use primary color for button */}
+                      <button className="ml-4 px-3 py-1 bg-primary text-white text-sm rounded hover:bg-primary/90">
                         Join
                       </button>
                     </div>
@@ -311,6 +317,7 @@ const ProviderDashboard = () => {
               <Clock className="h-5 w-5 text-accent4 mr-2" />
               Tasks
             </h2>
+            {/* Use accent4 color for link */}
             <Link
               to="/tasks"
               className="text-sm text-accent4 hover:text-accent4/80"
@@ -373,6 +380,7 @@ const ProviderDashboard = () => {
               <UserPlus className="h-5 w-5 text-accent1 mr-2" />
               Initial Consultations
             </h2>
+            {/* Use accent1 color for link */}
             <Link
               to="/consultations"
               className="text-sm text-accent1 hover:text-accent1/80"
@@ -386,7 +394,8 @@ const ProviderDashboard = () => {
                 {pendingConsultations.map((consultation) => (
                   <li key={consultation.id} className="py-4">
                     <div className="flex items-center">
-                      <div className="flex-shrink-0 h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-500">
+                      {/* Use accent1 color for avatar placeholder */}
+                      <div className="flex-shrink-0 h-10 w-10 rounded-full bg-accent1/10 flex items-center justify-center text-accent1">
                         <UserPlus className="h-5 w-5" />
                       </div>
                       <div className="ml-4 flex-1">
@@ -405,9 +414,10 @@ const ProviderDashboard = () => {
                           ).toLocaleDateString()}
                         </p>
                       </div>
+                      {/* Use primary color for button */}
                       <Link
                         to={`/consultations/${consultation.id}`}
-                        className="ml-4 px-3 py-1 border border-indigo-500 text-indigo-500 text-sm rounded hover:bg-indigo-50"
+                        className="ml-4 px-3 py-1 border border-primary text-primary text-sm rounded hover:bg-primary/5"
                       >
                         Review
                       </Link>
@@ -432,6 +442,7 @@ const ProviderDashboard = () => {
               <FileText className="h-5 w-5 text-accent2 mr-2" />
               Pending Forms
             </h2>
+            {/* Use accent2 color for button */}
             <button className="text-sm text-accent2 hover:text-accent2/80">
               Send Reminders
             </button>
@@ -440,7 +451,8 @@ const ProviderDashboard = () => {
             <ul className="divide-y divide-gray-200">
               <li className="py-4">
                 <div className="flex items-center">
-                  <div className="flex-shrink-0 h-10 w-10 rounded-full bg-yellow-100 flex items-center justify-center text-yellow-500">
+                  {/* Use accent2 color for avatar placeholder */}
+                  <div className="flex-shrink-0 h-10 w-10 rounded-full bg-accent2/10 flex items-center justify-center text-accent2">
                     <FileText className="h-5 w-5" />
                   </div>
                   <div className="ml-4 flex-1">
@@ -449,14 +461,16 @@ const ProviderDashboard = () => {
                       Jane Smith - Due in 2 days
                     </p>
                   </div>
-                  <button className="text-indigo-600 hover:text-indigo-900 text-sm">
+                  {/* Use primary color for button */}
+                  <button className="text-primary hover:text-primary/80 text-sm">
                     Remind
                   </button>
                 </div>
               </li>
               <li className="py-4">
                 <div className="flex items-center">
-                  <div className="flex-shrink-0 h-10 w-10 rounded-full bg-red-100 flex items-center justify-center text-red-500">
+                  {/* Use primary color for avatar placeholder */}
+                  <div className="flex-shrink-0 h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
                     <AlertTriangle className="h-5 w-5" />
                   </div>
                   <div className="ml-4 flex-1">
@@ -465,7 +479,8 @@ const ProviderDashboard = () => {
                       Robert Johnson - Overdue
                     </p>
                   </div>
-                  <button className="text-indigo-600 hover:text-indigo-900 text-sm">
+                  {/* Use primary color for button */}
+                  <button className="text-primary hover:text-primary/80 text-sm">
                     Remind
                   </button>
                 </div>

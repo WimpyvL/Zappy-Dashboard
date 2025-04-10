@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef, useEffect } from 'react'; // Import useRef and useEffect
 import { useAuth } from '../../context/AuthContext';
 import { useAppContext } from '../../context/AppContext';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
@@ -14,8 +14,11 @@ const Sidebar = () => {
   const { logout } = useAuth();
   const { viewMode } = useAppContext(); // Get viewMode
   const navigate = useNavigate();
+  const navRef = useRef(null); // Ref for the scrollable nav element
+  const scrollKey = 'sidebarScrollPos'; // Key for sessionStorage
 
   const handleLogout = () => {
+    sessionStorage.removeItem(scrollKey); // Clear scroll position on logout
     logout();
     navigate('/login');
   };
@@ -108,50 +111,47 @@ const Sidebar = () => {
     );
   };
 
-  return viewMode === 'admin' ? (
-    // Admin sidebar - keep the original dark design
-    <div className="bg-indigo-900 text-white w-64 flex flex-col h-full">
-      <div className="p-4">
-        <h1 className="text-2xl font-bold">Zappy Health</h1>
-      </div>
+  // Determine items based on viewMode
+  const currentSidebarItems = viewMode === 'admin' ? [...adminSidebarItems, ...settingsItems] : patientSidebarItems;
+  const sidebarKeyPrefix = viewMode === 'admin' ? 'admin' : 'patient';
 
-      <nav className="px-2 py-4 space-y-1"> 
-        {adminSidebarItems.map((item) => (
-          <AdminNavItem key={`admin-${item.path}`} item={item} />
-        ))}
-        
-        <div className="pt-4">
-          <hr className="border-indigo-800" />
-        </div>
-        {settingsItems.map((item) => (
-          <AdminNavItem key={item.path} item={item} />
-        ))}
-      </nav>
+  // Effect to restore scroll position on mount
+  useEffect(() => {
+    const savedScrollPos = sessionStorage.getItem(scrollKey);
+    if (savedScrollPos && navRef.current) {
+      navRef.current.scrollTop = parseInt(savedScrollPos, 10);
+      // Optional: Remove after restoring if you only want it restored once per session start
+      // sessionStorage.removeItem(scrollKey);
+    }
 
-      <div className="p-4 mt-auto">
-        <button
-          className="flex items-center text-indigo-100 hover:text-white px-4 py-2 text-sm font-medium rounded-md hover:bg-indigo-700 w-full"
-          onClick={() => handleLogout()}
-        >
-          <logoutItem.icon className="mr-3 h-5 w-5" />
-          {logoutItem.title}
-        </button>
-      </div>
-    </div>
-  ) : (
-    // Patient sidebar - new light design with accent colors
+    // Cleanup function to save scroll position on unmount/navigation
+    return () => {
+      if (navRef.current) {
+        sessionStorage.setItem(scrollKey, navRef.current.scrollTop);
+      }
+    };
+  }, []); // Empty dependency array ensures this runs once on mount and cleanup on unmount
+
+  // Use the light theme structure for both views
+  return (
     <div className="bg-gray-50 w-64 flex flex-col h-full border-r border-gray-200">
       <div className="p-4 border-b border-gray-200">
+        {/* Use primary color for title regardless of view mode */}
         <h1 className="text-2xl font-bold text-primary">Zappy Health</h1>
-        <p className="text-sm text-gray-500 font-handwritten mt-1">Your health journey</p>
+        {/* Optionally show subtitle only for patient view */}
+        {viewMode === 'patient' && (
+          <p className="text-sm text-gray-500 font-handwritten mt-1">Your health journey</p>
+        )}
       </div>
 
-      <nav className="px-3 py-6"> 
-        {patientSidebarItems.map((item) => (
-          <PatientNavItem key={`patient-${item.path}`} item={item} />
+      {/* Render items using PatientNavItem for consistent styling - Added overflow-y-auto and ref */}
+      <nav ref={navRef} className="flex-1 px-3 py-6 space-y-1 overflow-y-auto">
+        {currentSidebarItems.map((item) => (
+          <PatientNavItem key={`${sidebarKeyPrefix}-${item.path}`} item={item} />
         ))}
       </nav>
 
+      {/* Logout button with consistent light theme styling */}
       <div className="p-4 mt-auto border-t border-gray-200">
         <button
           className="flex items-center text-gray-600 hover:text-gray-900 px-4 py-2 text-sm font-medium rounded-lg hover:bg-gray-100 w-full"

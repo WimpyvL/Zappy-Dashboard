@@ -280,7 +280,7 @@ CREATE TABLE IF NOT EXISTS tag (
 );
 
 -- Enable realtime for tag table (Proposed)
-ALTER PUBLICATION supabase_realtime ADD TABLE tag;
+-- ALTER PUBLICATION supabase_realtime ADD TABLE tag; -- Assuming already added or handled
 
 -- Create api_logs table (Proposed based on errors)
 CREATE TABLE IF NOT EXISTS api_logs (

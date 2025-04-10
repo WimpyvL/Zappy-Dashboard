@@ -21,7 +21,7 @@ export const usePatients = (currentPage = 1, filters = {}, pageSize = 10) => {
     queryKey: ['patients', currentPage, filters, pageSize],
     queryFn: async () => {
       let query = supabase
-        .from('client_record') // Assuming table name is 'client_record'
+        .from('patients') // Changed table name to 'patients'
         .select('*', { count: 'exact' }) // Select all columns and request total count
         .order('created_at', { ascending: false }) // Use created_at
         .range(rangeFrom, rangeTo); // Apply pagination
@@ -69,7 +69,7 @@ export const usePatientById = (id, options = {}) => {
       if (!id) return null; // Don't fetch if no ID is provided
 
       const { data, error } = await supabase
-        .from('client_record')
+        .from('patients') // Changed table name to 'patients'
         .select('*')
         .eq('id', id)
         .single(); // Use .single() if expecting one record or null
@@ -144,7 +144,7 @@ export const useCreatePatient = (options = {}) => {
       console.log('[useCreatePatient] FINAL payload before insert:', JSON.stringify(dataToInsert, null, 2)); // Log the final object clearly
 
       const { data, error } = await supabase
-        .from('client_record')
+        .from('patients') // Changed table name to 'patients'
         .insert(dataToInsert)
         .select() // Select the newly created record
         .single(); // Expecting a single record back
@@ -222,7 +222,7 @@ export const useUpdatePatient = (options = {}) => {
       console.log(`[useUpdatePatient] FINAL payload before update for ${id}:`, JSON.stringify(dataToUpdate, null, 2)); // Log the final object clearly
 
       const { data, error } = await supabase
-        .from('client_record')
+        .from('patients') // Changed table name to 'patients'
         .update(dataToUpdate)
         .eq('id', id)
         .select() // Select the updated record
@@ -267,7 +267,7 @@ export const useDeletePatient = (options = {}) => {
       if (!id) throw new Error('Patient ID is required for deletion.');
 
       const { error } = await supabase
-        .from('client_record')
+        .from('patients') // Changed table name to 'patients'
         .delete()
         .eq('id', id);
 

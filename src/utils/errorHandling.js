@@ -1,4 +1,6 @@
 // utils/errorHandling.js
+import auditLogService from './auditLogService'; // Import the audit log service
+
 /**
  * Utility functions for handling API errors consistently across the application
  */
@@ -122,22 +124,28 @@ export const getFormErrors = (error) => {
  * @param {Object} error - Error object
  * @param {String} context - Context where the error occurred
  */
-export const logError = (error, context = '') => {
-  // In development, log to console
-  if (process.env.NODE_ENV === 'development') {
-    console.error(`Error in ${context}:`, error);
+export const logError = (error, context = 'Unknown Context') => { // Added default context
+  // Always log to console regardless of environment for visibility during testing
+  console.error(`Error in ${context}:`, error);
+
+  // Also log the error to the backend using the audit log service
+  // We pass the error object and the context. We don't pass userId here,
+  // auditLogService.logError might fetch it if needed, or it might be null.
+  // We also don't pass additionalDetails here, but could enhance this later.
+  if (error instanceof Error) { // Ensure we have an Error object
+      auditLogService.logError(error, context);
+  } else {
+      // If it's not an Error object, create one to ensure message/stack are captured
+      auditLogService.logError(new Error(getErrorMessage(error)), context, { originalError: error });
   }
 
-  // In production, you might want to log to an error tracking service
-  // like Sentry, LogRocket, etc.
-  if (process.env.NODE_ENV === 'production') {
+
+  // In production, you might still want to log to an external service like Sentry
+  // if (process.env.NODE_ENV === 'production') {
     // Example of Sentry integration:
     // import * as Sentry from '@sentry/react';
     // Sentry.captureException(error, { extra: { context } });
-
-    // For now, we'll just log to console in all environments
-    console.error(`Error in ${context}:`, error);
-  }
+  // }
 };
 
 /**

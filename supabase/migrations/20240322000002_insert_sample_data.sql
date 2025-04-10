@@ -7,12 +7,12 @@ VALUES
 ON CONFLICT (email) DO NOTHING;
 
 -- Insert sample products
-INSERT INTO products (name, description, price, category, sku, inventory_count)
+INSERT INTO products (name, description, price, category, sku, stock_quantity) -- Changed inventory_count to stock_quantity
 VALUES
   ('Vitamin D Supplement', 'High-quality vitamin D supplement, 60 capsules', 24.99, 'Supplements', 'VIT-D-001', 100),
   ('Blood Pressure Monitor', 'Digital blood pressure monitor for home use', 89.99, 'Devices', 'BP-MON-002', 50),
-  ('Allergy Medication', 'Non-drowsy allergy relief, 30 tablets', 19.99, 'Medications', 'ALG-MED-003', 75)
-ON CONFLICT (sku) DO NOTHING;
+  ('Allergy Medication', 'Non-drowsy allergy relief, 30 tablets', 19.99, 'Medications', 'ALG-MED-003', 75);
+-- Removed ON CONFLICT (sku) DO NOTHING;
 
 -- Insert sample services
 INSERT INTO services (name, description, price, duration, category)

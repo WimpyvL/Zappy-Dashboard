@@ -87,7 +87,7 @@ const InitialConsultations = () => {
     data: consultationsData,
     isLoading: isLoadingConsultations,
     error: errorConsultations,
-  } = useConsultations(); // Fetch consultations
+  } = useConsultations({ searchTerm }); // Pass searchTerm to hook
   const {
     data: servicesData,
     isLoading: isLoadingServices,
@@ -114,18 +114,18 @@ const InitialConsultations = () => {
     ...new Set(allConsultations.map(c => c.provider).filter(Boolean))
   ].sort();
 
-  // Filter consultations based on search and filters (status, provider, service, date)
+  // Filter consultations based on filters (status, provider, service, date) - Search is now handled server-side
   const filteredConsultations = allConsultations.filter((consultation) => {
-    const patientName = consultation.patientName || '';
-    const provider = consultation.provider || '';
-    const email = consultation.email || '';
-    const preferredMed = consultation.preferredMedication || ''; // Keep for search
+    // const patientName = consultation.patientName || ''; // No longer needed for search
+    // const provider = consultation.provider || ''; // No longer needed for search
+    // const email = consultation.email || ''; // No longer needed for search
+    // const preferredMed = consultation.preferredMedication || ''; // No longer needed for search
 
-    const matchesSearch =
-      patientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      provider.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      preferredMed.toLowerCase().includes(searchTerm.toLowerCase()); // Keep preferredMed in search
+    // const matchesSearch = // Removed frontend search logic
+    //   patientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    //   provider.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    //   email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    //   preferredMed.toLowerCase().includes(searchTerm.toLowerCase());
 
     const matchesStatus =
       statusFilter === 'all' || consultation.status === statusFilter;
@@ -155,10 +155,11 @@ const InitialConsultations = () => {
         } catch (e) {
             console.error("Error processing date for filtering:", consultation.dateSubmitted, e);
             matchesDate = false; // Exclude if date is invalid
-        }
+      }
     }
 
-    return matchesSearch && matchesStatus && matchesProvider && matchesService && matchesDate;
+    // Return based on filters only
+    return matchesStatus && matchesProvider && matchesService && matchesDate;
   });
 
   // Handle viewing a consultation

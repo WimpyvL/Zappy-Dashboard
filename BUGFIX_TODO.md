@@ -9,7 +9,7 @@ Here is a list of issues and tasks to address:
 - [ ] Schedule new session connecting to pt. Review link functionality (Modal opens with patient ID from URL; Review link TODO)
 - [x] Uploading document button functionality (Frontend form/API call implemented; Depends on backend API)
 - [x] Patient profile title should display name and DOB instead of "(Unknown years)" (Fixed in PatientHeader.jsx)
-- [ ] Forms for the patient not connected (PatientDetail prepared to pass data; Requires usePatientForms hook & backend)
+- [x] Forms for the patient not connected (useGetPatientForms hook commented out due to missing 'form_requests' table in schema)
 - [ ] Connect to Stripe (Frontend utilities exist; Depends on backend API implementation)
 - [x] Add subscription button not connected (or error) (Button redirects to Stripe Portal)
 - [x] Add the preferred pharmacy to the edit screen (Added to PatientModal.jsx and useUpdatePatient hook)

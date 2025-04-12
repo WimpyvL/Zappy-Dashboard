@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Eye, EyeOff, Check, X } from 'lucide-react';
-import apiService from '../../utils/apiService'; // Import apiService
+// import apiService from '../../utils/apiService'; // Removed apiService import
+import { useAuth } from '../../context/AuthContext'; // Import useAuth
 
 const Signup = () => {
   const navigate = useNavigate();
+  const { register: registerUser } = useAuth(); // Get register function from context
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -110,8 +112,39 @@ const Signup = () => {
     }
 
     try {
-      // Use the actual API service call
-      await apiService.auth.register(payload); // Assuming register handles the payload structure
+      // Use the register function from AuthContext
+      const { success, error: registrationError, user, session } = await registerUser(
+        payload.email,
+        payload.password,
+        {
+          data: { // Supabase uses 'data' for metadata
+            first_name: payload.firstName,
+            last_name: payload.lastName,
+            role: payload.role, // Include role in metadata
+            // referral_code: payload.referralCode, // Include referral code if needed
+          },
+          // You might need to configure email confirmation redirect URL here if needed
+          // options: { emailRedirectTo: '...' }
+        }
+      );
+
+      if (!success) {
+        throw new Error(registrationError || 'Registration failed');
+      }
+
+      // Handle successful registration (e.g., navigate or show message)
+      // Check if email confirmation is needed (user exists but no session)
+      if (user && !session) {
+         // Navigate to login with a message prompting email check
+         navigate('/login', {
+           state: { message: 'Registration successful! Please check your email to confirm your account before logging in.' },
+         });
+      } else {
+         // If session exists (auto-login or no confirmation needed), navigate to dashboard or login
+         navigate('/login', {
+           state: { message: 'Account created successfully! Please log in.' },
+         });
+      }
 
       // Reset form (optional, as we navigate away)
       // setFormData({ ...initial state... });
@@ -122,12 +155,9 @@ const Signup = () => {
       });
     } catch (error) {
       console.error('Registration error:', error);
-      // Display specific error from API if available, otherwise generic message
-      const apiErrorMessage = error.response?.data?.error || error.message;
+      // Display specific error from Supabase or generic message
       setErrors({
-        form:
-          apiErrorMessage ||
-          'Registration failed. Please check your details or try again later.',
+        form: error.message || 'Registration failed. Please check your details or try again later.',
       });
     } finally {
       setIsLoading(false);

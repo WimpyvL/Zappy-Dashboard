@@ -38,7 +38,9 @@ export const useForms = (params = {}) => {
   });
 };
 
-// Hook to fetch form requests/submissions for a specific patient
+// TODO: This hook relies on a 'form_requests' table which is not defined in the current schema (final_optimized_schema.sql).
+// Commenting out until the table and its relation to 'patients' (FK likely 'patient_id') are defined.
+/*
 export const useGetPatientForms = (patientId, params = {}, options = {}) => {
   return useQuery({
     queryKey: queryKeys.patientForms(patientId, params),
@@ -79,6 +81,7 @@ export const useGetPatientForms = (patientId, params = {}, options = {}) => {
     ...options,
   });
 };
+*/
 
 
 // Hook to fetch a specific form (questionnaire) by ID using Supabase

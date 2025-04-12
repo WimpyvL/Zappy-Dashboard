@@ -12,7 +12,9 @@ const queryKeys = {
 
 // Get sessions hook using Supabase
 export const useSessions = (params = {}, pageSize = 10) => {
-  const currentPage = params.page || 1;
+  // Extract searchTerm and other filters from params
+  const { page, status, patientId, searchTerm, ...otherFilters } = params;
+  const currentPage = page || 1;
   const rangeFrom = (currentPage - 1) * pageSize;
   const rangeTo = rangeFrom + pageSize - 1;
 
@@ -30,13 +32,23 @@ export const useSessions = (params = {}, pageSize = 10) => {
         .range(rangeFrom, rangeTo);
 
       // Apply filters
-      if (params.patientId) {
-        query = query.eq('client_record_id', params.patientId);
+      if (patientId) {
+        // Assuming the FK column is patient_id based on other hooks
+        query = query.eq('patient_id', patientId);
       }
-      if (params.status) {
-        query = query.eq('status', params.status); // Assuming 'status' column exists
+      if (status) {
+        query = query.eq('status', status); // Assuming 'status' column exists
       }
-      // Add other filters as needed
+      // Add server-side search filter
+      if (searchTerm) {
+        // Adjust columns to search as needed (e.g., provider name if joined, notes)
+        query = query.or(
+          `patients.first_name.ilike.%${searchTerm}%,patients.last_name.ilike.%${searchTerm}%` // Search joined patient name
+          // Add other searchable fields like session_notes if they exist
+          // `,session_notes.ilike.%${searchTerm}%`
+        );
+      }
+      // Add other filters as needed based on otherFilters
 
       const { data, error, count } = await query;
 

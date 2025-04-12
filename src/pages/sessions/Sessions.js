@@ -124,7 +124,7 @@ const Sessions = () => {
     data: sessionsData,
     isLoading: isLoadingSessions,
     error: errorSessions,
-  } = useSessions(); // Assuming useSessions fetches all sessions or handles pagination/filtering
+  } = useSessions({ searchTerm }); // Pass searchTerm to hook
 
   // Mutation hook for updating status
   const updateSessionStatusMutation = useUpdateSessionStatus({
@@ -163,13 +163,13 @@ const Sessions = () => {
   // Get today's date as a string for highlighting
   const today = new Date().toDateString();
 
-  // Filter sessions based on search and filters
+  // Filter sessions based on filters (status, type, provider, date) - Search is now handled server-side
   const filteredSessions = allSessions
     .filter((session) => {
-      const patientName = session.patientName || '';
-      const matchesSearch = patientName
-        .toLowerCase()
-        .includes(searchTerm.toLowerCase());
+      // const patientName = session.patientName || ''; // No longer needed for search
+      // const matchesSearch = patientName // Removed frontend search logic
+      //   .toLowerCase()
+      //   .includes(searchTerm.toLowerCase());
       const matchesType = typeFilter === 'all' || session.type === typeFilter;
       const matchesStatus =
         statusFilter === 'all' ||
@@ -195,8 +195,8 @@ const Sessions = () => {
         }
       }
 
+      // Return based on filters only
       return (
-        matchesSearch &&
         matchesType &&
         matchesStatus &&
         matchesProvider &&

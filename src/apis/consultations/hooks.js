@@ -11,7 +11,9 @@ const queryKeys = {
 
 // Get consultations hook using Supabase
 export const useConsultations = (params = {}, pageSize = 10) => {
-  const currentPage = params.page || 1;
+  // Extract searchTerm and other filters from params
+  const { page, status, patientId, searchTerm, ...otherFilters } = params;
+  const currentPage = page || 1;
   const rangeFrom = (currentPage - 1) * pageSize;
   const rangeTo = rangeFrom + pageSize - 1;
 
@@ -31,13 +33,21 @@ export const useConsultations = (params = {}, pageSize = 10) => {
         .range(rangeFrom, rangeTo);
 
       // Apply filters
-      if (params.status) {
-        query = query.eq('status', params.status);
+      if (status) {
+        query = query.eq('status', status);
       }
-      if (params.patientId) {
-        query = query.eq('patient_id', params.patientId); // Use correct foreign key 'patient_id'
+      if (patientId) {
+        query = query.eq('patient_id', patientId); // Use correct foreign key 'patient_id'
       }
-      // Add other filters as needed
+      // Add server-side search filter
+      if (searchTerm) {
+        // Adjust columns to search as needed (e.g., provider_notes, client_notes?)
+        // Assuming 'provider' column exists based on InitialConsultations.js filter logic
+        query = query.or(
+          `patients.first_name.ilike.%${searchTerm}%,patients.last_name.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%,provider.ilike.%${searchTerm}%`
+        );
+      }
+      // Add other filters as needed based on otherFilters
 
       const { data, error, count } = await query;
 

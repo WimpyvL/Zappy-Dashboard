@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
+import { Link } from 'react-router-dom'; // Added Link import
+import { Select } from 'antd'; // Import Ant Design Select
 import {
   Search,
   Plus,
@@ -13,6 +15,7 @@ import {
   Download,
   Info,
   Filter,
+  Loader2, // Added Loader2
 } from 'lucide-react';
 import { toast } from 'react-toastify';
 
@@ -25,9 +28,11 @@ import {
   useUploadInsuranceDocument,
   useDeleteInsuranceDocument,
 } from '../../apis/insurances/hooks';
+import { usePatients } from '../../apis/patients/hooks'; // Import usePatients hook
 
 const StatusBadge = ({ status }) => {
-  if (status === 'verified' || status === 'prior_auth_approved') {
+  // ... (StatusBadge component remains the same) ...
+    if (status === 'verified' || status === 'prior_auth_approved') {
     return (
       <span className="flex items-center px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">
         <CheckCircle className="h-3 w-3 mr-1" />
@@ -70,9 +75,9 @@ const InsuranceDocumentation = () => {
   const [showViewModal, setShowViewModal] = useState(false);
   const [selectedRecordId, setSelectedRecordId] = useState(null);
   const [activeTab, setActiveTab] = useState('info');
+  // Updated formData state for the modal
   const [formData, setFormData] = useState({
-    patient_id: '',
-    patientName: '', // For display purposes only
+    patientId: null, // Changed from patient_id, store ID
     provider: '',
     policy_number: '',
     group_number: '',
@@ -87,12 +92,17 @@ const InsuranceDocumentation = () => {
     status: 'pending',
     notes: '',
   });
+  const [selectedPatientName, setSelectedPatientName] = useState(''); // State to hold display name for modal
 
   // Fetch insurance records with React Query
   const { data: insuranceRecordsData, isLoading } = useInsuranceRecords({
     search: searchTerm,
     status: statusFilter !== 'all' ? statusFilter : undefined,
   });
+
+  // Fetch Patients for dropdown
+  const { data: patientsData, isLoading: isLoadingPatients } = usePatients();
+  const allPatients = patientsData?.data || [];
 
   const insuranceRecords = insuranceRecordsData?.data || [];
 
@@ -235,13 +245,24 @@ const InsuranceDocumentation = () => {
       return matchesSearch && matchesStatus;
     });
 
-  // Handle form input changes
+  // Handle form input changes (for non-patient fields)
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
     setFormData({
       ...formData,
       [name]: type === 'checkbox' ? checked : value,
     });
+  };
+
+  // Handle patient selection from dropdown
+  const handlePatientSelect = (value) => {
+    const selectedPatient = allPatients.find(p => p.id === value);
+    setFormData(prev => ({
+      ...prev,
+      patientId: value,
+      // You might want to fetch/set other patient details if needed
+    }));
+    setSelectedPatientName(selectedPatient ? `${selectedPatient.first_name || ''} ${selectedPatient.last_name || ''}`.trim() : '');
   };
 
   // Handle new log input changes
@@ -255,9 +276,8 @@ const InsuranceDocumentation = () => {
 
   // Handle adding a new insurance record
   const handleAddRecord = () => {
-    setFormData({
-      patient_id: '',
-      patientName: '',
+    setFormData({ // Reset form state
+      patientId: null,
       provider: '',
       policy_number: '',
       group_number: '',
@@ -268,20 +288,15 @@ const InsuranceDocumentation = () => {
       prior_auth_expiry_date: null,
       notes: '',
     });
+    setSelectedPatientName(''); // Reset display name
     setShowRecordModal(true);
   };
 
   // Handle viewing a record
   const handleViewRecord = (record) => {
     console.log('Opening modal for record:', record);
-
-    // First set the record ID to trigger the query
     setSelectedRecordId(record.id);
-
-    // Set default tab
     setActiveTab('info');
-
-    // Add small delay to ensure states are updated
     setTimeout(() => {
       setShowViewModal(true);
       console.log('Modal should be visible now');
@@ -290,25 +305,26 @@ const InsuranceDocumentation = () => {
 
   // Handle form submission
   const handleSubmit = () => {
+    if (!formData.patientId) {
+      toast.error("Please select a patient.");
+      return;
+    }
     // Prepare data for API
     const apiData = {
-      patient_id: formData.patient_id,
-      provider: formData.provider,
+      patient_id: formData.patientId, // Use patientId from state
+      provider_name: formData.provider, // Use correct column name from schema
       policy_number: formData.policy_number,
       group_number: formData.group_number,
-      verification_status: formData.verification_status,
-      coverage_type: formData.coverage_type,
-      coverage_details: formData.coverage_details,
-      prior_auth_status:
-        formData.verification_status === 'not_applicable'
-          ? null
-          : formData.prior_auth_status,
-      prior_auth_expiry_date: formData.prior_auth_expiry_date,
+      status: formData.verification_status, // Use correct column name from schema
+      coverage_type: formData.coverage_type, // Assuming this column exists
+      coverage_details: formData.coverage_details, // Assuming this column exists
+      // prior_auth_status: // This needs mapping based on schema
+      // prior_auth_expiry_date: formData.prior_auth_expiry_date, // Needs mapping
       notes: formData.notes,
       // Handle self-pay option
       ...(formData.coverage_type === 'Self-Pay' && {
-        verification_status: 'not_applicable',
-        provider: 'N/A',
+        status: 'not_applicable', // Use ENUM value if applicable
+        provider_name: 'N/A',
         policy_number: 'N/A',
         group_number: 'N/A',
       }),
@@ -322,53 +338,44 @@ const InsuranceDocumentation = () => {
   const handleAddLog = () => {
     if (!newLog.notes.trim() || !selectedRecordId) return;
 
-    // Get current verification history and add new log
     const currentHistory = selectedRecord?.verification_history
       ? parseVerificationHistory(selectedRecord.verification_history)
       : [];
 
     const newLogEntry = {
       status: newLog.status,
-      user: 'Current User', // In a real app, this would be the logged-in user
+      user: 'Current User',
       notes: newLog.notes,
       timestamp: new Date().toISOString(),
     };
 
-    // Prepare updated history for API
     const updatedHistory = JSON.stringify([...currentHistory, newLogEntry]);
 
-    // Determine if status should be updated based on log entry
     let statusUpdates = {};
     if (['verified', 'denied', 'not_applicable'].includes(newLog.status)) {
       statusUpdates = {
-        verification_status: newLog.status,
-        verified_at: new Date().toISOString(),
+        status: newLog.status, // Update the main status column
+        verification_date: new Date().toISOString(), // Update verification date
       };
     }
 
-    // Handle prior auth status updates
-    if (['prior_auth_approved', 'prior_auth_denied'].includes(newLog.status)) {
-      statusUpdates = {
-        ...statusUpdates,
-        prior_auth_status:
-          newLog.status === 'prior_auth_approved' ? 'approved' : 'denied',
-      };
-    }
+    // TODO: Handle prior auth status updates based on actual schema columns
+    // if (['prior_auth_approved', 'prior_auth_denied'].includes(newLog.status)) {
+    //   statusUpdates = {
+    //     ...statusUpdates,
+    //     prior_auth_status: newLog.status === 'prior_auth_approved' ? 'approved' : 'denied',
+    //   };
+    // }
 
-    // Update record via API using mutation
     updateRecordMutation.mutate({
       id: selectedRecordId,
       recordData: {
-        verification_history: updatedHistory,
+        verification_history: updatedHistory, // Assuming this column exists
         ...statusUpdates,
       },
     });
 
-    // Clear form
-    setNewLog({
-      status: 'pending',
-      notes: '',
-    });
+    setNewLog({ status: 'pending', notes: '' });
   };
 
   // Handle document upload
@@ -376,17 +383,15 @@ const InsuranceDocumentation = () => {
     const file = event.target.files[0];
     if (!file || !selectedRecordId) return;
 
-    const formData = new FormData();
-    formData.append('document', file);
-    formData.append('document_type', 'card'); // Default type, can be made selectable
-
-    uploadDocumentMutation.mutate({ formData, recordId: selectedRecordId });
+    // Use the correct foreign key: insurance_policy_id
+    uploadDocumentMutation.mutate({ recordId: selectedRecordId, file });
   };
 
   // Handle document deletion
-  const handleDeleteDocument = (documentId) => {
-    if (!documentId || !selectedRecordId) return;
-    deleteDocumentMutation.mutate({ documentId, recordId: selectedRecordId });
+  const handleDeleteDocument = (documentId, storagePath) => { // Pass storagePath
+    if (!documentId || !selectedRecordId || !storagePath) return;
+    // Pass recordId for invalidation, documentId for DB, storagePath for Storage
+    deleteDocumentMutation.mutate({ recordId: selectedRecordId, documentId, storagePath });
   };
 
   // Loading state
@@ -460,7 +465,8 @@ const InsuranceDocumentation = () => {
       <div className="bg-white shadow overflow-hidden rounded-lg">
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
-            <tr>
+            {/* ... table headers ... */}
+             <tr>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Patient
               </th>
@@ -595,14 +601,24 @@ const InsuranceDocumentation = () => {
                 <div>
                   <div className="mb-4">
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Patient ID *
+                      Patient *
                     </label>
-                    <input
-                      type="text"
-                      name="patient_id"
-                      className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
-                      value={formData.patient_id}
-                      onChange={handleInputChange}
+                    {/* Replace input with Select */}
+                    <Select
+                      showSearch
+                      style={{ width: '100%' }}
+                      placeholder="Search or Select Patient"
+                      optionFilterProp="children"
+                      value={formData.patientId} // Bind value to patientId
+                      onChange={handlePatientSelect} // Use new handler
+                      filterOption={(input, option) =>
+                        (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
+                      }
+                      loading={isLoadingPatients}
+                      options={allPatients.map(p => ({
+                        value: p.id,
+                        label: `${p.first_name || ''} ${p.last_name || ''}`.trim() || `ID: ${p.id}`
+                      }))}
                       required
                     />
                   </div>
@@ -614,9 +630,9 @@ const InsuranceDocumentation = () => {
                     <input
                       type="text"
                       name="patientName"
-                      className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
-                      value={formData.patientName}
-                      onChange={handleInputChange}
+                      className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 bg-gray-100 sm:text-sm rounded-md" // Added bg-gray-100
+                      value={selectedPatientName} // Display selected name
+                      readOnly // Make read-only
                     />
                   </div>
 
@@ -793,16 +809,18 @@ const InsuranceDocumentation = () => {
 
               <div className="px-6 py-4 border-t border-gray-200 flex justify-end space-x-3">
                 <button
+                  type="button"
                   className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
                   onClick={() => setShowRecordModal(false)}
                 >
                   Cancel
                 </button>
                 <button
+                  type="button" // Changed to type="button" to prevent implicit form submission
                   className="px-4 py-2 bg-indigo-600 rounded-md text-sm font-medium text-white hover:bg-indigo-700"
-                  onClick={handleSubmit}
+                  onClick={handleSubmit} // Call explicit submit handler
                   disabled={
-                    !formData.patient_id || createRecordMutation.isPending
+                    !formData.patientId || createRecordMutation.isPending // Check patientId
                   }
                 >
                   {createRecordMutation.isPending
@@ -1219,7 +1237,7 @@ const InsuranceDocumentation = () => {
                                   )}
                                   <button
                                     className="p-1 text-gray-400 hover:text-red-600"
-                                    onClick={() => handleDeleteDocument(doc.id)}
+                                    onClick={() => handleDeleteDocument(doc.id, doc.storage_path)} // Pass storage_path
                                     disabled={deleteDocumentMutation.isPending}
                                   >
                                     <Trash2 className="h-4 w-4" />

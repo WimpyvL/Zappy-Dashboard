@@ -70,14 +70,17 @@ export const useCreateService = (options = {}) => {
   return useMutation({
     mutationFn: async (serviceData) => {
       // Add timestamps, default values etc. based on your actual 'services' table schema
+      // Map frontend fields to DB columns
       const dataToInsert = {
-        ...serviceData,
-        created_at: new Date().toISOString(), // Assuming created_at column
-        updated_at: new Date().toISOString(), // Assuming updated_at column
-        active: serviceData.active ?? true,
-        // Ensure complex fields are handled (assuming JSONB for now)
-        associated_products: serviceData.associatedProducts || [],
-        available_plans: serviceData.availablePlans || [],
+        name: serviceData.name,
+        description: serviceData.description,
+        price: serviceData.price,
+        duration_minutes: serviceData.duration_minutes,
+        category: serviceData.category,
+        is_active: serviceData.active ?? true, // Corrected column name
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        // TODO: Handle associated_products and available_plans if they are separate tables/relations
       };
 
       const { data, error } = await supabase
@@ -109,16 +112,23 @@ export const useCreateService = (options = {}) => {
 export const useUpdateService = (options = {}) => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, serviceData }) => {
+    // The argument received from mutate is the object { id: ..., name: ..., description: ... }
+    mutationFn: async (updatePayload) => {
+      const { id, ...serviceDataFromForm } = updatePayload; // Extract id, the rest is the form data
       if (!id) throw new Error("Service ID is required for update.");
+
+      // Construct dataToUpdate using properties directly from the form data payload
       const dataToUpdate = {
-        ...serviceData,
+        name: serviceDataFromForm.name,
+        description: serviceDataFromForm.description,
+        price: serviceDataFromForm.price,
+        duration_minutes: serviceDataFromForm.duration_minutes,
+        category: serviceDataFromForm.category,
+        is_active: serviceDataFromForm.active, // Use the 'active' field from formData directly
         updated_at: new Date().toISOString(),
-        // Ensure complex fields are handled (assuming JSONB for now)
-        associated_products: serviceData.associatedProducts,
-        available_plans: serviceData.availablePlans,
+        // TODO: Handle associated_products and available_plans if they are separate tables/relations
       };
-      // Remove fields that shouldn't be updated directly if necessary
+      // Remove fields that shouldn't be updated directly (like id, created_at if they exist in serviceDataFromForm)
       delete dataToUpdate.id;
       delete dataToUpdate.created_at;
 

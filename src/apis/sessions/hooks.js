@@ -20,8 +20,12 @@ export const useSessions = (params = {}, pageSize = 10) => {
     queryKey: queryKeys.lists(params),
     queryFn: async () => {
       let query = supabase
-        .from('sessions') // Assuming table name is 'session'
-        .select('*', { count: 'exact' })
+        .from('sessions') // Assuming table name is 'sessions'
+        // Join with patients table to get name
+        .select(`
+          *,
+          patients ( id, first_name, last_name )
+        `, { count: 'exact' })
         .order('created_at', { ascending: false }) // Example order
         .range(rangeFrom, rangeTo);
 
@@ -41,10 +45,16 @@ export const useSessions = (params = {}, pageSize = 10) => {
         throw new Error(error.message);
       }
 
+      // Map data to include patientName from joined table
       const mappedData =
         data?.map((session) => ({
           ...session,
-          patientName: 'N/A', // We'll need to fetch patient names separately
+          // Construct patientName from the joined 'patients' data
+          patientName: session.patients
+            ? `${session.patients.first_name || ''} ${session.patients.last_name || ''}`.trim()
+            : 'N/A',
+          // Ensure patientId is correctly mapped if the foreign key is different
+          patientId: session.client_record_id || session.patient_id || session.patients?.id // Adjust based on actual FK column name
         })) || [];
 
       return {

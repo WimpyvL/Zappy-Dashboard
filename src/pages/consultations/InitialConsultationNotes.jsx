@@ -301,44 +301,65 @@ const InitialConsultationNotes = ({
         communication: { messageToPatient, assessmentPlan, followUpPlan, expandedMessage, expandedAssessment },
       };
 
-     console.log("Submitting consultation for approval and invoicing:", submissionPayload);
+     // --- Distinguish between creating a new consultation and updating/approving an existing one ---
+     if (currentConsultationId) {
+       // --- Logic for EXISTING consultation (Approve/Invoice) ---
+       console.log(`Approving/Invoicing existing consultation ${currentConsultationId}:`, submissionPayload);
+       try {
+         // Call the backend endpoint to handle approval and invoicing for existing consultation
+         const response = await fetch(`/api/consultations/${currentConsultationId}/approve-and-invoice`, {
+           method: 'POST',
+           headers: {
+             'Content-Type': 'application/json',
+             // Add authorization headers if needed
+           },
+           body: JSON.stringify(submissionPayload),
+         });
 
-     if (!currentConsultationId) {
-        // Try to get ID from prop if not in consultationData (for new notes)
-        // This part might need adjustment based on how new consultation IDs are handled
-        toast.error("Error: Consultation ID is missing. Cannot submit.");
-        console.error("Consultation ID missing.");
-        return;
-     }
+         if (!response.ok) {
+           const errorData = await response.json().catch(() => ({ message: 'Failed to approve consultation and send invoice.' }));
+           throw new Error(errorData.message || 'API request failed');
+         }
 
-     try {
-        // Call the new backend endpoint to handle approval and invoicing
-        const response = await fetch(`/api/consultations/${currentConsultationId}/approve-and-invoice`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                // Add authorization headers if needed
-            },
-            body: JSON.stringify(submissionPayload),
-        });
+         toast.success("Consultation approved successfully! An invoice will be sent to the patient.");
+         if (onClose) onClose();
 
-        if (!response.ok) {
-            // Handle API errors (e.g., display error message)
-            const errorData = await response.json().catch(() => ({ message: 'Failed to approve consultation and send invoice.' }));
-            throw new Error(errorData.message || 'API request failed');
-        }
+       } catch (error) {
+         console.error("Error submitting existing consultation for invoicing:", error);
+         toast.error(`Error: ${error.message || 'Could not submit consultation.'}`);
+       }
 
-        // If successful:
-        toast.success("Consultation approved successfully! An invoice will be sent to the patient.");
-        // TODO: Potentially update the consultation status locally or refetch data
-        if (onClose) onClose();
+     } else {
+       // --- Logic for NEW consultation (Create) ---
+       console.log("Creating new consultation:", submissionPayload);
+       // TODO: Implement API call to create a new consultation record
+       try {
+         // Placeholder for the actual API call to create a consultation
+         // const response = await fetch('/api/consultations', {
+         //   method: 'POST',
+         //   headers: { 'Content-Type': 'application/json' },
+         //   body: JSON.stringify(submissionPayload),
+         // });
+         // if (!response.ok) {
+         //   const errorData = await response.json().catch(() => ({ message: 'Failed to create consultation.' }));
+         //   throw new Error(errorData.message || 'API request failed');
+         // }
+         // const newConsultation = await response.json(); // Get the newly created consultation with its ID
 
-     } catch (error) {
-        console.error("Error submitting consultation for invoicing:", error);
-        toast.error(`Error: ${error.message || 'Could not submit consultation.'}`);
-        // Handle fetch errors or API errors shown to the user
-     }
-  };
+         // --- Placeholder Success ---
+         await new Promise(resolve => setTimeout(resolve, 500)); // Simulate network delay
+         console.log("Placeholder: New consultation created successfully.");
+         toast.success("Consultation submitted successfully! (Placeholder)");
+         // --- End Placeholder ---
+
+         if (onClose) onClose();
+
+       } catch (error) {
+         console.error("Error creating new consultation:", error);
+         toast.error(`Error: ${error.message || 'Could not create consultation.'}`);
+       }
+     } // End of else block for new consultation logic
+  }; // End of handleSubmit function
 
   const handleEdit = () => {
     if (!updateStatusMutation || !consultationId) {

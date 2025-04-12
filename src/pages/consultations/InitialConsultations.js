@@ -168,6 +168,8 @@ const InitialConsultations = () => {
       id: consultation.patientId,
       name: consultation.patientName,
       email: consultation.email,
+      // Include DOB from the joined data in the fallback
+      dob: consultation.patients?.date_of_birth, // Use optional chaining
       // Add other necessary patient fields if available
     };
     setSelectedPatient(patient);

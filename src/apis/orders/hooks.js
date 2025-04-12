@@ -12,7 +12,11 @@ export const useOrders = (currentPage = 1, filters = {}, pageSize = 10) => {
     queryFn: async () => {
       let query = supabase
         .from('orders') // Use quoted table name if needed, or adjust if different
-        .select('*', { count: 'exact' }) // Select all columns without join
+        // Join with patients table (assuming FK is client_record_id)
+        .select(`
+          *,
+          patients!inner(id, first_name, last_name)
+        `, { count: 'exact' })
         .order('order_date', { ascending: false })
         .range(rangeFrom, rangeTo);
 
@@ -23,10 +27,11 @@ export const useOrders = (currentPage = 1, filters = {}, pageSize = 10) => {
       if (filters.patientId) {
         query = query.eq('client_record_id', filters.patientId);
       }
-      // Add search filter if needed (similar to usePatients)
+      // Add search filter if needed (adjust based on actual schema and join)
       if (filters.search) {
+        // Use the joined table alias 'patients' for patient name fields
         query = query.or(
-          `medication.ilike.%${filters.search}%,pharmacy.ilike.%${filters.search}%,client_record.first_name.ilike.%${filters.search}%,client_record.last_name.ilike.%${filters.search}%`
+          `medication.ilike.%${filters.search}%,pharmacy.ilike.%${filters.search}%,patients.first_name.ilike.%${filters.search}%,patients.last_name.ilike.%${filters.search}%`
         );
       }
 
@@ -37,11 +42,16 @@ export const useOrders = (currentPage = 1, filters = {}, pageSize = 10) => {
         throw new Error(error.message);
       }
 
-      // Map data without relying on the join
+      // Map data to include patientName from joined table
       const mappedData =
         data?.map((order) => ({
           ...order,
-          patientName: 'N/A', // We'll need to fetch patient names separately
+          // Construct patientName from the joined 'patients' data
+          patientName: order.patients
+            ? `${order.patients.first_name || ''} ${order.patients.last_name || ''}`.trim()
+            : 'N/A',
+          // Ensure patientId is correctly mapped if the foreign key is different
+          patientId: order.client_record_id || order.patient_id || order.patients?.id // Adjust based on actual FK column name
         })) || [];
 
       return {

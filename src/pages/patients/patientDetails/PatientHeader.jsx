@@ -19,6 +19,27 @@ const PatientHeader = ({ patient, patientId }) => {
     return age;
   };
 
+  // Format date for display (e.g., Jan 1, 1990)
+  const formatDate = (dateString) => {
+    if (!dateString) return 'Unknown DOB';
+    try {
+      const date = new Date(dateString);
+      // Add check for invalid date object after parsing
+      if (isNaN(date.getTime())) {
+          return 'Invalid DOB';
+      }
+      return new Intl.DateTimeFormat('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+      }).format(date);
+    } catch (e) {
+        console.error("Error formatting date:", e);
+        return 'Invalid DOB Format';
+    }
+  };
+
+
   return (
     <div className="flex justify-between items-center">
       <div>
@@ -32,7 +53,7 @@ const PatientHeader = ({ patient, patientId }) => {
         <h1 className="text-2xl font-bold text-gray-800 mt-1">
           {patient.name}{' '}
           <span className="text-lg font-normal text-gray-500">
-            ({calculateAge(patient.dob)} years)
+            ({formatDate(patient.dob)}) {/* Changed to display formatted DOB */}
           </span>
         </h1>
       </div>

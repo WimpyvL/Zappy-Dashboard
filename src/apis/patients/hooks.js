@@ -201,13 +201,14 @@ export const useUpdatePatient = (options = {}) => {
         date_of_birth: patientData.date_of_birth, // Map date_of_birth input to date_of_birth column
         // insurance_provider: patientData.insurance_provider, // Map if available
         // insurance_id: patientData.insurance_id, // Map if available
+        status: patientData.status, // ADDED status
+        related_tags: patientData.related_tags, // ADDED related_tags
+        subscription_plan_id: patientData.subscription_plan_id, // ADDED subscription plan ID
+        assigned_doctor_id: patientData.assigned_doctor_id, // ADDED assigned doctor ID
+        preferred_pharmacy: patientData.preferred_pharmacy, // ADDED preferred pharmacy
 
         // REMOVED fields not in schema:
-        // status: patientData.status,
-        // related_tags: patientData.related_tags,
-        // profile: profileUpdates,
-        // related_tags: topLevelUpdates.related_tags,
-        // profile: profileUpdates,
+        // profile: profileUpdates, // Profile JSONB updates would need separate handling if required
 
         updated_at: new Date().toISOString(), // Set updated_at timestamp
       };

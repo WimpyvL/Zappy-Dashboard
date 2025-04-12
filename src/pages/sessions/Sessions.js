@@ -1,5 +1,7 @@
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState, useEffect } from 'react'; // Added useEffect
+import { Link, useLocation } from 'react-router-dom'; // Added useLocation
+import { Select, DatePicker, TimePicker, Input, Form } from 'antd'; // Import Ant Design components
+import { usePatients, usePatientById } from '../../apis/patients/hooks'; // Import patient hooks
 // Removed useAppContext import
 import { useSessions, useUpdateSessionStatus } from '../../apis/sessions/hooks'; // Assuming hooks exist
 import {
@@ -84,6 +86,38 @@ const Sessions = () => {
   const [dateRange, setDateRange] = useState({ start: '', end: '' });
   const [showFilters, setShowFilters] = useState(false);
   const [showScheduleModal, setShowScheduleModal] = useState(false);
+  const [preselectedPatientId, setPreselectedPatientId] = useState(null); // State to hold patient ID from URL
+  // State for the schedule session modal form
+  const [scheduleFormData, setScheduleFormData] = useState({
+    patientId: null,
+    sessionType: 'medical',
+    doctorId: null,
+    dateTime: null,
+    notes: '',
+  });
+
+  // Get location and query parameters
+  const location = useLocation();
+
+  // Effect to check for patientId in query params and open modal
+  useEffect(() => {
+    const queryParams = new URLSearchParams(location.search);
+    const patientIdFromUrl = queryParams.get('patientId');
+    if (patientIdFromUrl) {
+      setPreselectedPatientId(patientIdFromUrl); // Store the ID
+      setShowScheduleModal(true); // Open the modal
+      // Optional: Clear the patientId from URL after processing to prevent modal reopening on refresh
+      // This might have unintended side effects if the user navigates back/forward.
+      // Consider the desired UX carefully before uncommenting.
+      // window.history.replaceState({}, document.title, location.pathname);
+    } else {
+      // Reset if navigating to the page without a patientId
+      setPreselectedPatientId(null);
+      // Ensure modal doesn't stay open if navigated away and back without ID
+      // setShowScheduleModal(false); // Be careful with this, might close modal unexpectedly
+    }
+  }, [location.search]); // Re-run if the search query changes
+
 
   // Fetch data using React Query hooks
   const {
@@ -103,6 +137,16 @@ const Sessions = () => {
       // Show error notification
     },
   });
+
+  // Fetch patients for the dropdown
+  const { data: patientsData, isLoading: isLoadingPatients } = usePatients(); // Fetch all patients
+  const allPatients = patientsData?.data || patientsData || [];
+
+  // Fetch details of the preselected patient if an ID exists
+  const { data: preselectedPatientDetails, isLoading: isLoadingPreselectedPatient } = usePatientById(preselectedPatientId, {
+    enabled: !!preselectedPatientId, // Only fetch if preselectedPatientId is truthy
+  });
+
 
   // Use fetched data or default empty arrays
   const allSessions = sessionsData?.data || sessionsData || []; // Adapt based on API response structure
@@ -557,10 +601,33 @@ const Sessions = () => {
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Patient
                 </label>
-                <select className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm rounded-md">
-                  <option value="">Select a patient</option>
-                  {/* Populate with fetched patients */}
-                </select>
+                <Select
+                  showSearch
+                  style={{ width: '100%' }}
+                  placeholder={preselectedPatientId ? (isLoadingPreselectedPatient ? "Loading..." : (preselectedPatientDetails?.name || `ID: ${preselectedPatientId}`)) : "Search or Select Patient"}
+                  optionFilterProp="children"
+                  value={preselectedPatientId || undefined} // Use undefined for placeholder to show
+                  onChange={(value) => {
+                     // Handle patient selection only if not pre-selected
+                     if (!preselectedPatientId) {
+                       setScheduleFormData(prev => ({ ...prev, patientId: value }));
+                     }
+                  }}
+                  filterOption={(input, option) =>
+                    (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
+                  }
+                  loading={isLoadingPatients || (preselectedPatientId && isLoadingPreselectedPatient)}
+                  disabled={!!preselectedPatientId} // Disable if pre-selected from URL
+                  options={
+                    preselectedPatientId && preselectedPatientDetails
+                      ? [{ value: preselectedPatientId, label: preselectedPatientDetails.name || `ID: ${preselectedPatientId}` }] // Show only preselected if available
+                      : allPatients.map(p => ({
+                          value: p.id,
+                          // Combine first and last name for label
+                          label: `${p.first_name || ''} ${p.last_name || ''}`.trim() || `ID: ${p.id}`
+                        }))
+                  }
+                />
               </div>
 
               <div>
@@ -573,8 +640,10 @@ const Sessions = () => {
                       id="medical"
                       name="sessionType"
                       type="radio"
+                      value="medical" // Add value
+                      checked={scheduleFormData.sessionType === 'medical'} // Connect to state
+                      onChange={(e) => setScheduleFormData(prev => ({ ...prev, sessionType: e.target.value }))} // Add onChange
                       className="focus:ring-primary h-4 w-4 text-primary border-gray-300"
-                      defaultChecked
                     />
                     <label
                       htmlFor="medical"
@@ -588,6 +657,9 @@ const Sessions = () => {
                       id="psych"
                       name="sessionType"
                       type="radio"
+                      value="psych" // Add value
+                      checked={scheduleFormData.sessionType === 'psych'} // Connect to state
+                      onChange={(e) => setScheduleFormData(prev => ({ ...prev, sessionType: e.target.value }))} // Add onChange
                       className="focus:ring-primary h-4 w-4 text-primary border-gray-300"
                     />
                     <label
@@ -604,7 +676,12 @@ const Sessions = () => {
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Doctor
                 </label>
-                <select className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm rounded-md">
+                {/* TODO: Replace with searchable Select and fetch doctors */}
+                <select
+                  className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm rounded-md"
+                  value={scheduleFormData.doctorId || ''} // Connect to state
+                  onChange={(e) => setScheduleFormData(prev => ({ ...prev, doctorId: e.target.value || null }))} // Add onChange
+                >
                   <option value="">Select a doctor</option>
                   {/* Populate with fetched providers */}
                 </select>
@@ -614,9 +691,12 @@ const Sessions = () => {
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Date & Time
                 </label>
+                {/* TODO: Consider using Ant Design DatePicker + TimePicker for better UX */}
                 <input
                   type="datetime-local"
                   className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm rounded-md"
+                  value={scheduleFormData.dateTime || ''} // Connect to state
+                  onChange={(e) => setScheduleFormData(prev => ({ ...prev, dateTime: e.target.value || null }))} // Add onChange
                 />
               </div>
 
@@ -626,8 +706,10 @@ const Sessions = () => {
                 </label>
                 <textarea
                   rows="3"
-                  className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm rounded-md"
+                  className="block w-full pl-3 pr-3 py-2 text-base border-gray-300 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm rounded-md" // Adjusted padding
                   placeholder="Add any relevant notes about this session..."
+                  value={scheduleFormData.notes} // Connect to state
+                  onChange={(e) => setScheduleFormData(prev => ({ ...prev, notes: e.target.value }))} // Add onChange
                 ></textarea>
               </div>
             </div>
@@ -643,8 +725,14 @@ const Sessions = () => {
               <button
                 className="px-4 py-2 bg-primary rounded-md text-sm font-medium text-white hover:bg-primary/90"
                 onClick={() => {
+                  const finalData = {
+                    ...scheduleFormData,
+                    patientId: preselectedPatientId || scheduleFormData.patientId // Ensure patientId is set
+                  };
+                  console.log("Scheduling session with data:", finalData);
                   // TODO: Implement session scheduling logic using useCreateSession mutation hook
-                  setShowScheduleModal(false);
+                  // e.g., createSessionMutation.mutate(finalData);
+                  setShowScheduleModal(false); // Close modal after logging/attempting schedule
                 }}
               >
                 Schedule

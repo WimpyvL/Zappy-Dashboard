@@ -317,12 +317,12 @@ const PatientSubscriptions = ({ patient }) => {
                     <button
                       className="px-3 py-1 bg-white border border-gray-300 text-sm font-medium rounded text-gray-700 hover:bg-gray-50 flex items-center disabled:opacity-50"
                       onClick={handleManageSubscriptionViaPortal} // Use portal redirect
-                      disabled={isSubmitting || paymentStatus === 'cancelled'}
-                    >
-                      <Edit className="h-4 w-4 mr-1" /> Manage
-                    </button>
-                    {/* Cancel Button */}
-                    <button
+                       disabled={isSubmitting || paymentStatus === 'cancelled'}
+                     >
+                       <Edit className="h-4 w-4 mr-1" /> Manage Billing
+                     </button>
+                     {/* Cancel Button */}
+                     <button
                       className="px-3 py-1 bg-white border border-gray-300 text-sm font-medium rounded text-red-700 hover:bg-gray-50 flex items-center disabled:opacity-50"
                       onClick={handleCancelSubscription}
                       disabled={isSubmitting || paymentStatus === 'cancelled'}

@@ -23,8 +23,8 @@ export const useConsultations = (params = {}, pageSize = 10) => {
         .select(
           `
           *,
-          patients ( id, first_name, last_name )
-        `, // Join with 'patients' table
+          patients ( id, first_name, last_name, date_of_birth )
+        `, // Join with 'patients' table, ADDED date_of_birth
           { count: 'exact' }
         )
         .order('submitted_at', { ascending: false }) // Use correct column name

@@ -59,6 +59,7 @@ const PatientModal = ({ isOpen, onClose, editingPatientId, onSuccess }) => {
     related_tags: [], // Add state for selected tags
     subscription_plan_id: null, // Add state for selected plan ID
     assigned_doctor_id: null, // Add state for selected doctor ID
+    preferred_pharmacy: '', // Add state for preferred pharmacy
   });
 
   const isEditMode = !!editingPatientId;
@@ -99,6 +100,7 @@ const PatientModal = ({ isOpen, onClose, editingPatientId, onSuccess }) => {
             related_tags: patientDataForEdit.related_tags || [], // Populate tags
             subscription_plan_id: patientDataForEdit.subscription_plan_id || null, // Populate plan
             assigned_doctor_id: patientDataForEdit.assigned_doctor_id || null, // Populate doctor
+            preferred_pharmacy: patientDataForEdit.preferred_pharmacy || '', // Populate pharmacy
           });
         } else if (!isLoadingData) {
           // Handle case where data is loaded but null (patient not found)
@@ -136,14 +138,15 @@ const PatientModal = ({ isOpen, onClose, editingPatientId, onSuccess }) => {
       state: formData.state || null, // Mapped to 'state' in hooks
       zip_code: formData.zip_code || null, // Mapped to 'zip' in hooks
       date_of_birth: formData.date_of_birth || null, // Mapped to 'date_of_birth' in hooks
-      // Removed fields not directly mapped by hooks to client_record:
-      // status: formData.status,
-      // related_tags: formData.related_tags || [],
-      // subscription_plan_id: formData.subscription_plan_id || null,
-      // assigned_doctor_id: formData.assigned_doctor_id || null,
+      // Include fields needed for update, mapping from formData
+      status: formData.status,
+      related_tags: formData.related_tags || [],
+      subscription_plan_id: formData.subscription_plan_id || null,
+      assigned_doctor_id: formData.assigned_doctor_id || null,
+      preferred_pharmacy: formData.preferred_pharmacy || null, // Add preferred pharmacy
     };
 
-    // Remove undefined fields before sending
+    // Remove undefined fields before sending (important for updates to not overwrite with null)
     Object.keys(patientPayload).forEach(key => patientPayload[key] === undefined && delete patientPayload[key]);
 
 
@@ -341,16 +344,25 @@ const PatientModal = ({ isOpen, onClose, editingPatientId, onSuccess }) => {
               </Select>
             </div>
 
-            {/* Removed unused fields */}
-            {/* <div>
+            {/* Preferred Pharmacy Input */}
+            <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Preferred Pharmacy</label>
               <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                {/* TODO: Consider adding an icon if one is available and relevant (e.g., Hospital) */}
+                {/* <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                   <Building className="h-4 w-4 text-gray-400" />
-                </div>
-                <input type="text" name="preferredPharmacy" className="block w-full pl-10 pr-3 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md" value={formData.preferredPharmacy || ''} onChange={handleChange} placeholder="Preferred Pharmacy" />
+                </div> */}
+                <input
+                  type="text"
+                  name="preferred_pharmacy" // Use snake_case name
+                  className="block w-full pl-3 pr-3 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md" // Removed pl-10 as icon is commented out
+                  value={formData.preferred_pharmacy || ''} // Use snake_case value
+                  onChange={handleChange}
+                  placeholder="Preferred Pharmacy Name"
+                  disabled={isLoadingData}
+                />
               </div>
-            </div> */}
+            </div>
              {/* Optional: Add Medical Notes Textarea if needed in modal */}
              {/* <div>
                <label htmlFor="medicalNotes" className="block text-sm font-medium text-gray-700 mb-1">

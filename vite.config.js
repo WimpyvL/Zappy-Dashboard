@@ -12,4 +12,9 @@ export default defineConfig({
     // @ts-ignore
     allowedHosts: process.env.TEMPO === 'true' ? true : undefined,
   },
+  resolve: {
+    alias: {
+      '@': '/src',
+    },
+  },
 });

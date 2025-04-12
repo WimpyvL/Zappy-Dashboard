@@ -21,11 +21,10 @@ function App() {
     const connectionStatus = debugSupabaseConnection();
     console.log('Supabase connection status:', connectionStatus);
 
-    // Test Supabase connection with error handling
+    // Test Supabase connection with error handling and fallback
     const testSupabaseConnection = async () => {
       try {
-        // First check if the test table exists
-        // Removed unused 'data' variable from destructuring
+        // First check if the client_record table exists
         const { error } = await supabase
           .from('client_record')
           .select('*')
@@ -33,6 +32,19 @@ function App() {
 
         if (error) {
           console.error('Supabase connection test error:', error.message);
+
+          // If the table doesn't exist, try another table as fallback
+          console.log('Trying fallback table...');
+          const { error: fallbackError } = await supabase
+            .from('users')
+            .select('*')
+            .limit(1);
+
+          if (fallbackError) {
+            console.error('Fallback table error:', fallbackError.message);
+          } else {
+            console.log('Supabase connection successful using fallback table');
+          }
         } else {
           console.log('Supabase connection test successful');
         }

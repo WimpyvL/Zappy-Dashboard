@@ -11,6 +11,17 @@ import { CartProvider } from './context/CartContext';
 import { NotificationsProvider } from './contexts/NotificationsContext';
 import ErrorBoundary from './components/common/ErrorBoundary';
 
+// Make environment variables available globally
+if (typeof window !== 'undefined') {
+  window.env = {
+    VITE_SUPABASE_URL:
+      process.env.REACT_APP_SUPABASE_URL || process.env.VITE_SUPABASE_URL,
+    VITE_SUPABASE_ANON_KEY:
+      process.env.REACT_APP_SUPABASE_ANON_KEY ||
+      process.env.VITE_SUPABASE_ANON_KEY,
+  };
+}
+
 // Instantiate QueryClient (moved from App.js)
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -30,7 +41,9 @@ root.render(
   <React.StrictMode>
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
-        <AppProvider> {/* AppProvider now wraps AuthProvider */}
+        <AppProvider>
+          {' '}
+          {/* AppProvider now wraps AuthProvider */}
           <AuthProvider>
             <CartProvider>
               <NotificationsProvider>

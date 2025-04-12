@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { Select } from 'antd'; // Import Ant Design Select
+import { usePatients } from '../../apis/patients/hooks'; // Import usePatients hook
 import ChildishDrawingElement from '../../components/ui/ChildishDrawingElement'; // Import drawing element
+import { toast } from 'react-toastify'; // Import toast for potential errors
 
 // Helper function to format date
 const formatDate = (dateString) => {
@@ -76,29 +79,30 @@ const InvoicePage = () => {
     direction: 'desc',
   });
   const [showCreateModal, setShowCreateModal] = useState(false);
-  // State for new invoice modal, including line items
+  // State for new invoice modal, including line items and patientId
   const [newInvoice, setNewInvoice] = useState({
-    name: '',
+    patientId: null, // Changed from name
     email: '',
     dueDate: '',
-    lineItems: [{ description: '', quantity: 1, unitPrice: '' }], // Start with one empty line item
+    lineItems: [{ description: '', quantity: 1, unitPrice: '' }],
   });
-  const [invoiceTotal, setInvoiceTotal] = useState(0); // State to hold calculated total
+  const [invoiceTotal, setInvoiceTotal] = useState(0);
 
-  // Mock data - replace with actual API call
+  // Fetch Patients for dropdown
+  const { data: patientsData, isLoading: isLoadingPatients } = usePatients();
+  const allPatients = patientsData?.data || [];
+
+  // Mock data - replace with actual API call for invoices
   useEffect(() => {
-    // Simulate API call
     const fetchInvoices = async () => {
       try {
-        // Simulating delay for API call
         await new Promise((resolve) => setTimeout(resolve, 1000));
-
-        // Mock data
         const mockInvoices = [
-          {
+          // ... (mock invoice data remains the same) ...
+           {
             id: 'INV-001',
             createdAt: '2025-02-15T10:30:00',
-            name: 'John Doe',
+            name: 'John Doe', // Keep name for display in table for now
             email: 'john@example.com',
             invoiceId: 'INV-001',
             status: 'Paid',
@@ -125,53 +129,8 @@ const InvoicePage = () => {
             refunded: false,
             updatedAt: '2025-02-10T09:15:00',
           },
-          {
-            id: 'INV-003',
-            createdAt: '2025-01-25T15:45:00',
-            name: 'Robert Johnson',
-            email: 'robert@example.com',
-            invoiceId: 'INV-003',
-            status: 'Refunded',
-            invoiceAmount: 399.99,
-            amountPaid: 399.99,
-            dueAmount: 0,
-            refundedAmount: 399.99,
-            paymentDate: '2025-01-28T11:30:00',
-            refunded: true,
-            updatedAt: '2025-02-05T16:20:00',
-          },
-          {
-            id: 'INV-004',
-            createdAt: '2025-01-20T13:10:00',
-            name: 'Sarah Williams',
-            email: 'sarah@example.com',
-            invoiceId: 'INV-004',
-            status: 'Partially Paid',
-            invoiceAmount: 599.99,
-            amountPaid: 300.0,
-            dueAmount: 299.99,
-            refundedAmount: 0,
-            paymentDate: '2025-01-25T10:15:00',
-            refunded: false,
-            updatedAt: '2025-01-25T10:15:00',
-          },
-          {
-            id: 'INV-005',
-            createdAt: '2025-01-15T11:20:00',
-            name: 'Michael Brown',
-            email: 'michael@example.com',
-            invoiceId: 'INV-005',
-            status: 'Cancelled',
-            invoiceAmount: 499.99,
-            amountPaid: 0,
-            dueAmount: 0,
-            refundedAmount: 0,
-            paymentDate: null,
-            refunded: false,
-            updatedAt: '2025-01-18T09:30:00',
-          },
+           // ... other mock invoices ...
         ];
-
         setInvoices(mockInvoices);
         setLoading(false);
       } catch (error) {
@@ -179,7 +138,6 @@ const InvoicePage = () => {
         setLoading(false);
       }
     };
-
     fetchInvoices();
   }, []);
 
@@ -195,8 +153,6 @@ const InvoicePage = () => {
   // Sort and filter invoices
   const sortedInvoices = React.useMemo(() => {
     let sortableInvoices = [...invoices];
-
-    // Filter based on search term
     if (searchTerm) {
       sortableInvoices = sortableInvoices.filter(
         (invoice) =>
@@ -205,8 +161,6 @@ const InvoicePage = () => {
           invoice.invoiceId.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
-
-    // Sort
     if (sortConfig.key) {
       sortableInvoices.sort((a, b) => {
         if (a[sortConfig.key] < b[sortConfig.key]) {
@@ -223,7 +177,6 @@ const InvoicePage = () => {
 
   // --- New Invoice Modal Handlers ---
 
-  // Calculate total whenever line items change
   useEffect(() => {
     const total = newInvoice.lineItems.reduce((sum, item) => {
       const quantity = parseFloat(item.quantity) || 0;
@@ -233,14 +186,24 @@ const InvoicePage = () => {
     setInvoiceTotal(total);
   }, [newInvoice.lineItems]);
 
-
-  // Handle general input changes (name, email, dueDate)
+  // Handle general input changes (email, dueDate)
   const handleGeneralInputChange = (e) => {
     const { name, value } = e.target;
     setNewInvoice((prev) => ({ ...prev, [name]: value }));
   };
 
-  // Handle changes within a specific line item
+  // Handle patient selection
+  const handlePatientSelect = (value) => {
+    const selectedPatient = allPatients.find(p => p.id === value);
+    setNewInvoice(prev => ({
+      ...prev,
+      patientId: value,
+      email: selectedPatient?.email || '', // Auto-fill email
+      // Keep name field for display in table for now, or remove if not needed
+      name: selectedPatient ? `${selectedPatient.first_name || ''} ${selectedPatient.last_name || ''}`.trim() : '',
+    }));
+  };
+
   const handleLineItemChange = (index, field, value) => {
     setNewInvoice((prev) => {
       const updatedLineItems = [...prev.lineItems];
@@ -249,7 +212,6 @@ const InvoicePage = () => {
     });
   };
 
-  // Add a new empty line item
   const addLineItem = () => {
     setNewInvoice((prev) => ({
       ...prev,
@@ -260,52 +222,50 @@ const InvoicePage = () => {
     }));
   };
 
-  // Remove a line item by index
   const removeLineItem = (index) => {
-    if (newInvoice.lineItems.length <= 1) return; // Keep at least one line
+    if (newInvoice.lineItems.length <= 1) return;
     setNewInvoice((prev) => ({
       ...prev,
       lineItems: prev.lineItems.filter((_, i) => i !== index),
     }));
   };
 
-
-  // Handle create invoice submission
   const handleCreateInvoice = (e) => {
     e.preventDefault();
-    // In a real app, you would make an API call here with line items
+    if (!newInvoice.patientId) {
+      toast.error("Please select a patient.");
+      return;
+    }
     const submissionData = {
       ...newInvoice,
-      lineItems: newInvoice.lineItems.filter(item => item.description && item.unitPrice), // Filter out empty lines
+      lineItems: newInvoice.lineItems.filter(item => item.description && item.unitPrice),
       totalAmount: invoiceTotal,
     };
-    console.log('Creating invoice with line items:', submissionData);
+    console.log('Creating invoice with data:', submissionData);
 
-    // --- Mock adding to list (replace with API call) ---
+    // --- Mock adding to list (replace with API call using submissionData.patientId) ---
+    const selectedPatient = allPatients.find(p => p.id === submissionData.patientId);
     const newInvoiceObj = {
       id: `INV-00${invoices.length + 1}`,
       createdAt: new Date().toISOString(),
-      name: submissionData.name,
+      patientId: submissionData.patientId, // Store patientId
+      name: selectedPatient ? `${selectedPatient.first_name || ''} ${selectedPatient.last_name || ''}`.trim() : 'Unknown Patient', // Get name for display
       email: submissionData.email,
       invoiceId: `INV-00${invoices.length + 1}`,
       status: 'Pending',
-      invoiceAmount: submissionData.totalAmount, // Use calculated total
+      invoiceAmount: submissionData.totalAmount,
       amountPaid: 0,
       dueAmount: submissionData.totalAmount,
       refundedAmount: 0,
       paymentDate: null,
       refunded: false,
       updatedAt: new Date().toISOString(),
-      // Store line items if needed for display later (optional)
-      // lineItems: submissionData.lineItems
     };
     setInvoices([newInvoiceObj, ...invoices]);
     // --- End Mock ---
 
-
-    // Reset form and close modal
     setNewInvoice({
-      name: '',
+      patientId: null, // Reset patientId
       email: '',
       dueDate: '',
       lineItems: [{ description: '', quantity: 1, unitPrice: '' }],
@@ -314,14 +274,12 @@ const InvoicePage = () => {
   };
 
   return (
-    <div className="relative overflow-hidden pb-10"> {/* Add relative positioning and padding */}
-      {/* Add childish drawing elements */}
+    <div className="relative overflow-hidden pb-10">
       <ChildishDrawingElement type="watercolor" color="accent3" position="top-right" size={100} rotation={-15} opacity={0.1} />
       <ChildishDrawingElement type="doodle" color="accent1" position="bottom-left" size={110} rotation={5} opacity={0.1} />
 
-      <div className="flex justify-between items-center mb-6 relative z-10"> {/* Added z-index */}
+      <div className="flex justify-between items-center mb-6 relative z-10">
         <h1 className="text-2xl font-bold text-gray-800">Invoices</h1>
-        {/* Use primary color for Create Invoice button */}
         <button
           onClick={() => setShowCreateModal(true)}
           className="px-4 py-2 bg-primary text-white rounded-md flex items-center hover:bg-primary/90"
@@ -331,13 +289,11 @@ const InvoicePage = () => {
         </button>
       </div>
 
-      {/* Search and filters */}
       <div className="bg-white p-4 rounded-lg shadow mb-6 flex items-center space-x-4">
         <div className="flex-1 relative">
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
             <SearchIcon className="h-5 w-5 text-gray-400" />
           </div>
-          {/* Use primary color for focus ring in className below */}
           <input
             type="text"
             placeholder="Search invoices by name, email, or ID..."
@@ -348,12 +304,12 @@ const InvoicePage = () => {
         </div>
       </div>
 
-      {/* Invoices Table */}
       <div className="bg-white shadow-md rounded-lg overflow-hidden">
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
-              <tr>
+              {/* ... table headers ... */}
+               <tr>
                 <th
                   className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
                   onClick={() => requestSort('createdAt')}
@@ -495,19 +451,18 @@ const InvoicePage = () => {
                       {invoice.invoiceId}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      {/* Apply Zappy colors to status badge */}
                       <span
                         className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full
                           ${
                             invoice.status === 'Paid'
-                              ? 'bg-accent2/10 text-accent2' // accent2 for Paid
+                              ? 'bg-accent2/10 text-accent2'
                               : invoice.status === 'Pending'
-                                ? 'bg-accent4/10 text-accent4' // accent4 for Pending
+                                ? 'bg-accent4/10 text-accent4'
                                 : invoice.status === 'Refunded'
-                                  ? 'bg-accent3/10 text-accent3' // accent3 for Refunded
+                                  ? 'bg-accent3/10 text-accent3'
                                   : invoice.status === 'Partially Paid'
-                                    ? 'bg-primary/10 text-primary' // primary for Partially Paid
-                                    : 'bg-accent1/10 text-accent1' // accent1 for Cancelled/Other
+                                    ? 'bg-primary/10 text-primary'
+                                    : 'bg-accent1/10 text-accent1'
                           }`}
                       >
                         {invoice.status}
@@ -538,20 +493,17 @@ const InvoicePage = () => {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <div className="flex justify-end space-x-2">
-                        {/* Use primary color for View link */}
                         <Link
                           to={`/invoices/${invoice.id}`}
                           className="text-primary hover:text-primary/80"
                         >
                           View
                         </Link>
-                        {/* Use accent2 for Pay button */}
                         {invoice.status === 'Pending' && (
                           <button className="text-accent2 hover:text-accent2/80">
                             Pay
                           </button>
                         )}
-                        {/* Use accent3 for Refund button */}
                         {(invoice.status === 'Paid' ||
                           invoice.status === 'Partially Paid') &&
                           !invoice.refunded && (
@@ -612,13 +564,22 @@ const InvoicePage = () => {
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Customer Name
                   </label>
-                  <input
-                    type="text"
-                    name="name"
-                    value={newInvoice.name}
-                    onChange={handleGeneralInputChange} // Corrected function name
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-primary focus:border-primary"
-                    required
+                  <Select
+                    showSearch
+                    style={{ width: '100%' }}
+                    placeholder="Search or Select Patient"
+                    optionFilterProp="children"
+                    value={newInvoice.patientId} // Bind value to patientId
+                    onChange={handlePatientSelect} // Use updated handler
+                    filterOption={(input, option) =>
+                      (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
+                    }
+                    loading={isLoadingPatients}
+                    options={allPatients.map(p => ({
+                      value: p.id,
+                      label: `${p.first_name || ''} ${p.last_name || ''}`.trim() || `ID: ${p.id}`
+                    }))}
+                    required // Add required attribute if needed by form validation
                   />
                 </div>
 
@@ -629,10 +590,8 @@ const InvoicePage = () => {
                   <input
                     type="email"
                     name="email"
-                    value={newInvoice.email}
-                    // onChange={handleInputChange} // Removed duplicate
-                    // className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" // Removed duplicate
-                    onChange={handleGeneralInputChange}
+                    value={newInvoice.email} // Value is now set by handlePatientSelect
+                    onChange={handleGeneralInputChange} // Keep for manual edits if needed
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-primary focus:border-primary"
                     required
                   />

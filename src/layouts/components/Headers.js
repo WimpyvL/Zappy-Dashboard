@@ -6,7 +6,7 @@ import NotificationsCenter from '../../components/notifications/NotificationsCen
 import { useNavigate, Link } from 'react-router-dom';
 import { Dropdown, Button, Menu, Avatar } from 'antd';
 import { profileMenuItems } from '../../constants/SidebarItems';
-import { debounce } from 'lodash';
+// import { debounce } from 'lodash'; // No longer needed for client-side search
 import {
   Bell,
   Search,
@@ -32,63 +32,47 @@ const Header = ({ onToggleCart }) => {
 
   // Search State
   const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState([]);
-  const [isSearchFocused, setIsSearchFocused] = useState(false);
+  // const [searchResults, setSearchResults] = useState([]); // No longer needed
+  // const [isSearchFocused, setIsSearchFocused] = useState(false); // No longer needed
 
   const handleLogout = () => {
     logout();
     navigate('/login');
   };
 
-  // Debounced search function using useMemo
-  const performSearch = useMemo(
-    () => debounce((query) => {
-      // Ensure patients is an array before filtering
-      if (!query || !Array.isArray(patients)) {
-        setSearchResults([]);
-        return;
-      }
-      const lowerCaseQuery = query.toLowerCase();
-      const results = patients.filter(
-        (patient) =>
-          patient.firstName?.toLowerCase().includes(lowerCaseQuery) ||
-          patient.lastName?.toLowerCase().includes(lowerCaseQuery) ||
-          patient.email?.toLowerCase().includes(lowerCaseQuery) ||
-          `${patient.firstName?.toLowerCase()} ${patient.lastName?.toLowerCase()}`.includes(lowerCaseQuery)
-      );
-      setSearchResults(results.slice(0, 10)); // Limit results
-    }, 300),
-    [patients] // Dependency: re-create if patients array changes or debounce timeout changes
-  );
+  // Removed unused performSearch function
 
   // Handle search input change
   const handleSearchChange = (event) => {
-    const query = event.target.value;
-    setSearchQuery(query);
-    performSearch(query);
+    setSearchQuery(event.target.value);
+    // performSearch(query); // Removed client-side search trigger
   };
 
-  // Clear search
+  // Handle search submission (e.g., pressing Enter)
+  const handleSearchSubmit = (event) => {
+    event.preventDefault(); // Prevent default form submission
+    if (searchQuery.trim()) {
+      navigate(`/patients?search=${encodeURIComponent(searchQuery.trim())}`);
+      // Optionally clear search after navigation
+      // setSearchQuery('');
+    }
+  };
+
+  // Clear search input
   const clearSearch = () => {
     setSearchQuery('');
-    setSearchResults([]);
-    setIsSearchFocused(false);
   };
 
-  // Handle clicking a search result
-  const handleResultClick = () => {
-    clearSearch();
-  };
-
-  // Close dropdowns when clicking outside
+  // Close dropdowns when clicking outside (Keep user dropdown logic)
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (userDropdownRef.current && !userDropdownRef.current.contains(event.target)) {
         setUserDropdownOpen(false);
       }
-      if (searchRef.current && !searchRef.current.contains(event.target)) {
-        setIsSearchFocused(false);
-      }
+      // Removed search dropdown logic from click outside handler
+      // if (searchRef.current && !searchRef.current.contains(event.target)) {
+      //   setIsSearchFocused(false);
+      // }
     };
 
     document.addEventListener('mousedown', handleClickOutside);
@@ -97,61 +81,39 @@ const Header = ({ onToggleCart }) => {
     };
   }, []);
 
-  const showSearchDropdown = isSearchFocused && searchQuery.length > 0;
+  // const showSearchDropdown = isSearchFocused && searchQuery.length > 0; // Removed
 
   return (
     <header className="bg-white p-4 flex items-center justify-between shadow-sm relative z-20">
       {/* Search bar - only shown for admin view */}
       {viewMode === 'admin' && (
-        <div className="flex-1 max-w-xl" ref={searchRef}>
-        <div className="relative">
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <Search className="h-5 w-5 text-gray-400" />
-          </div>
-          <input
-            type="text"
-            placeholder="Search Patients..."
-            className="block w-full pl-10 pr-10 py-2 border border-gray-300 rounded-md leading-5 bg-white focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-            value={searchQuery}
-            onChange={handleSearchChange}
-            onFocus={() => setIsSearchFocused(true)}
-          />
-          {searchQuery && (
-             <button
+        // Wrap in a form for submission handling
+        <form className="flex-1 max-w-xl" onSubmit={handleSearchSubmit} ref={searchRef}>
+          <div className="relative">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <Search className="h-5 w-5 text-gray-400" />
+            </div>
+            <input
+              type="search" // Use type="search" for better semantics and potential browser features
+              placeholder="Search Patients..."
+              className="block w-full pl-10 pr-10 py-2 border border-gray-300 rounded-md leading-5 bg-white focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+              value={searchQuery}
+              onChange={handleSearchChange}
+              // onFocus={() => setIsSearchFocused(true)} // Removed focus handler
+            />
+            {searchQuery && (
+              <button
                type="button"
                onClick={clearSearch}
                className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
                aria-label="Clear search"
              >
-               <X className="h-4 w-4" />
-             </button>
-           )}
-        </div>
-         {/* Search Results Dropdown */}
-         {showSearchDropdown && (
-           <div className="absolute mt-1 w-full max-w-xl bg-white rounded-md shadow-lg border border-gray-200 max-h-60 overflow-y-auto">
-             {searchResults.length > 0 ? (
-               <ul>
-                 {searchResults.map((patient) => (
-                   <li key={patient.id}>
-                     <Link
-                       to={`/patients/${patient.id}`}
-                       onClick={handleResultClick}
-                       className="block px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-700"
-                     >
-                       {patient.firstName} {patient.lastName} ({patient.email})
-                     </Link>
-                   </li>
-                 ))}
-               </ul>
-             ) : (
-               <div className="px-4 py-3 text-sm text-gray-500">
-                 No patients found.
-               </div>
-             )}
-           </div>
-         )}
-        </div>
+                <X className="h-4 w-4" />
+              </button>
+            )}
+          </div>
+          {/* Removed Search Results Dropdown */}
+        </form>
       )}
 
       {/* View Mode Dropdown, Notifications, Cart, and user profile */}

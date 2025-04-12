@@ -1,9 +1,12 @@
-import React, { useState, useEffect } from 'react'; // Added useEffect
-import { Link, useLocation } from 'react-router-dom'; // Added useLocation
-import { Select, DatePicker, TimePicker, Input, Form } from 'antd'; // Import Ant Design components
-import { usePatients, usePatientById } from '../../apis/patients/hooks'; // Import patient hooks
+import React, { useState, useEffect } from 'react';
+import { Link, useLocation } from 'react-router-dom';
+import { Select, DatePicker, TimePicker, Input, Form, Radio } from 'antd';
+import dayjs from 'dayjs'; // Import dayjs for Ant Design DatePicker v5+
+import { toast } from 'react-toastify'; // Import toast for notifications
+import { usePatients, usePatientById } from '../../apis/patients/hooks';
+import { useGetUsers } from '../../apis/users/hooks';
 // Removed useAppContext import
-import { useSessions, useUpdateSessionStatus } from '../../apis/sessions/hooks'; // Assuming hooks exist
+import { useSessions, useUpdateSessionStatus, useCreateSession } from '../../apis/sessions/hooks'; // Import create hook
 import {
   Search,
   Filter,
@@ -141,6 +144,20 @@ const Sessions = () => {
   // Fetch patients for the dropdown
   const { data: patientsData, isLoading: isLoadingPatients } = usePatients(); // Fetch all patients
   const allPatients = patientsData?.data || patientsData || [];
+
+  // Fetch doctors/providers for the dropdown
+  const { data: providersData, isLoading: isLoadingProviders } = useGetUsers({ role: 'practitioner' }); // Assuming role filter works
+  const allProviders = providersData || [];
+
+  // Create session mutation
+  const createSessionMutation = useCreateSession({
+    onSuccess: () => {
+      setShowScheduleModal(false); // Close modal on success
+      // Optionally reset form state here if needed
+      setScheduleFormData({ patientId: null, sessionType: 'medical', doctorId: null, dateTime: null, notes: '' });
+    },
+    // onError handled globally by the hook (toast)
+  });
 
   // Fetch details of the preselected patient if an ID exists
   const { data: preselectedPatientDetails, isLoading: isLoadingPreselectedPatient } = usePatientById(preselectedPatientId, {
@@ -634,9 +651,17 @@ const Sessions = () => {
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Session Type
                 </label>
-                <div className="flex space-x-4">
-                  <div className="flex items-center">
-                    <input
+                {/* Use Ant Design Radio Group */}
+                <Radio.Group
+                  onChange={(e) => setScheduleFormData(prev => ({ ...prev, sessionType: e.target.value }))}
+                  value={scheduleFormData.sessionType}
+                >
+                  <Radio value="medical">Medical</Radio>
+                  <Radio value="psych">Psych</Radio>
+                </Radio.Group>
+                {/* <div className="flex space-x-4"> */}
+                  {/* <div className="flex items-center"> */}
+                    {/* <input
                       id="medical"
                       name="sessionType"
                       type="radio"
@@ -644,16 +669,16 @@ const Sessions = () => {
                       checked={scheduleFormData.sessionType === 'medical'} // Connect to state
                       onChange={(e) => setScheduleFormData(prev => ({ ...prev, sessionType: e.target.value }))} // Add onChange
                       className="focus:ring-primary h-4 w-4 text-primary border-gray-300"
-                    />
-                    <label
+                    /> */}
+                    {/* <label
                       htmlFor="medical"
                       className="ml-2 block text-sm text-gray-700"
                     >
-                      Medical
-                    </label>
-                  </div>
-                  <div className="flex items-center">
-                    <input
+                      Medical */}
+                    {/* </label> */}
+                  {/* </div> */}
+                  {/* <div className="flex items-center"> */}
+                    {/* <input
                       id="psych"
                       name="sessionType"
                       type="radio"
@@ -661,8 +686,8 @@ const Sessions = () => {
                       checked={scheduleFormData.sessionType === 'psych'} // Connect to state
                       onChange={(e) => setScheduleFormData(prev => ({ ...prev, sessionType: e.target.value }))} // Add onChange
                       className="focus:ring-primary h-4 w-4 text-primary border-gray-300"
-                    />
-                    <label
+                    /> */}
+                    {/* <label
                       htmlFor="psych"
                       className="ml-2 block text-sm text-gray-700"
                     >
@@ -676,27 +701,40 @@ const Sessions = () => {
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Doctor
                 </label>
-                {/* TODO: Replace with searchable Select and fetch doctors */}
-                <select
-                  className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm rounded-md"
-                  value={scheduleFormData.doctorId || ''} // Connect to state
-                  onChange={(e) => setScheduleFormData(prev => ({ ...prev, doctorId: e.target.value || null }))} // Add onChange
-                >
-                  <option value="">Select a doctor</option>
-                  {/* Populate with fetched providers */}
-                </select>
+                <Select
+                  showSearch
+                  style={{ width: '100%' }}
+                  placeholder="Select Doctor"
+                  optionFilterProp="children"
+                  value={scheduleFormData.doctorId} // Connect to state
+                  onChange={(value) => setScheduleFormData(prev => ({ ...prev, doctorId: value }))} // Add onChange
+                  filterOption={(input, option) =>
+                    (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
+                  }
+                  loading={isLoadingProviders}
+                  options={allProviders.map(p => ({
+                    value: p.id,
+                    label: `${p.first_name || ''} ${p.last_name || ''}`.trim() || `ID: ${p.id}`
+                  }))}
+                />
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Date & Time
                 </label>
-                {/* TODO: Consider using Ant Design DatePicker + TimePicker for better UX */}
-                <input
-                  type="datetime-local"
-                  className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm rounded-md"
-                  value={scheduleFormData.dateTime || ''} // Connect to state
-                  onChange={(e) => setScheduleFormData(prev => ({ ...prev, dateTime: e.target.value || null }))} // Add onChange
+                {/* Use Ant Design DatePicker */}
+                <DatePicker
+                  showTime // Enable time selection
+                  style={{ width: '100%' }}
+                  // Use dayjs object for value if available, otherwise null
+                  value={scheduleFormData.dateTime ? dayjs(scheduleFormData.dateTime) : null}
+                  onChange={(date) => {
+                    // Store the date as an ISO string for Supabase compatibility
+                    const isoString = date ? date.toISOString() : null;
+                    setScheduleFormData(prev => ({ ...prev, dateTime: isoString }));
+                  }}
+                  format="YYYY-MM-DD HH:mm" // Display format
                 />
               </div>
 
@@ -723,18 +761,28 @@ const Sessions = () => {
               </button>
               {/* Use primary color for Schedule button */}
               <button
-                className="px-4 py-2 bg-primary rounded-md text-sm font-medium text-white hover:bg-primary/90"
+                className="px-4 py-2 bg-primary rounded-md text-sm font-medium text-white hover:bg-primary/90 disabled:opacity-50"
                 onClick={() => {
                   const finalData = {
-                    ...scheduleFormData,
-                    patientId: preselectedPatientId || scheduleFormData.patientId // Ensure patientId is set
+                    patient_id: preselectedPatientId || scheduleFormData.patientId, // Use patient_id based on schema
+                    type: scheduleFormData.sessionType,
+                    provider_id: scheduleFormData.doctorId, // Use provider_id based on schema
+                    scheduled_date: scheduleFormData.dateTime, // Use scheduled_date based on schema
+                    session_notes: scheduleFormData.notes, // Use session_notes based on schema
+                    status: 'scheduled', // Default status
                   };
+                  // Basic validation
+                  if (!finalData.patient_id || !finalData.provider_id || !finalData.scheduled_date) {
+                      toast.error("Please select patient, doctor, and date/time.");
+                      return;
+                  }
                   console.log("Scheduling session with data:", finalData);
-                  // TODO: Implement session scheduling logic using useCreateSession mutation hook
-                  // e.g., createSessionMutation.mutate(finalData);
-                  setShowScheduleModal(false); // Close modal after logging/attempting schedule
+                  createSessionMutation.mutate(finalData);
+                  // Modal closing is handled by onSuccess in mutation hook
                 }}
+                disabled={createSessionMutation.isLoading} // Disable while creating
               >
+                {createSessionMutation.isLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2"/> : null}
                 Schedule
               </button>
             </div>

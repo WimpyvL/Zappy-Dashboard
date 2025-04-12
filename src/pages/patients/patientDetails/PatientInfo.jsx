@@ -1,8 +1,8 @@
 // components/patients/components/PatientInfo.jsx
 import React from 'react';
-import { Mail, Phone, MapPin } from 'lucide-react';
+import { Mail, Phone, MapPin } from 'lucide-react'; // Removed unused StatusBadge import
 import PatientSubscriptions from '../PatientSubscriptions';
-import StatusBadge from './common/StatusBadge';
+// Removed StatusBadge import as 'status' column doesn't exist on patients table
 
 const PatientInfo = ({ patient }) => {
   // Format date for display
@@ -56,8 +56,9 @@ const PatientInfo = ({ patient }) => {
             <div>
               <p className="text-sm text-gray-500">Address</p>
               <p className="text-sm font-medium">
-                {patient.address
-                  ? `${patient.address.street || ''}, ${patient.address.city || ''}, ${patient.address.state || ''} ${patient.address.zip || ''}`.replace(/ ,|, $/g, '') // Format address string, remove trailing/leading commas
+                {/* Use separate address fields from schema */}
+                {patient.address || patient.city || patient.state || patient.zip
+                  ? `${patient.address || ''}${patient.city ? ', ' + patient.city : ''}${patient.state ? ', ' + patient.state : ''} ${patient.zip || ''}`.trim().replace(/^,|,$/g, '').replace(/ , /g, ', ')
                   : 'No address on file'}
               </p>
             </div>
@@ -65,60 +66,28 @@ const PatientInfo = ({ patient }) => {
           <div>
             <p className="text-sm text-gray-500">Date of Birth</p>
             <p className="text-sm font-medium">
-              {patient.dob} (Age: {calculateAge(patient.dob)})
+              {/* Use date_of_birth from schema */}
+              {formatDate(patient.date_of_birth)} (Age: {calculateAge(patient.date_of_birth)})
             </p>
           </div>
-          <div>
-            <p className="text-sm text-gray-500">Status</p>
-            <div>
-              <StatusBadge status={patient.status} />
-            </div>
-          </div>
-          <div>
-            <p className="text-sm text-gray-500">Preferred Pharmacy</p>
-            <p className="text-sm font-medium">
-              {patient.preferredPharmacy || 'Not specified'}
-            </p>
-          </div>
+          {/* Removed Status section as 'status' column doesn't exist on patients */}
+          {/* Removed Preferred Pharmacy section as column doesn't exist on patients */}
         </div>
       </div>
 
-      {/* Medical Information Card */}
+      {/* Medical Information Card - Removed fields not directly on patient record */}
+      {/* TODO: Fetch and display related medical info (doctor, meds, notes, visits) separately */}
       <div className="bg-white p-6 rounded-lg shadow">
         <h2 className="text-lg font-medium text-gray-900 mb-4">
-          Medical Information
+          Medical Information (Placeholder)
         </h2>
-        <div className="space-y-3">
-          <div>
-            <p className="text-sm text-gray-500">Assigned Doctor</p>
-            <p className="text-sm font-medium">{patient.assignedDoctor}</p>
-          </div>
-          <div>
-            <p className="text-sm text-gray-500">Current Medication</p>
-            <p className="text-sm font-medium">{patient.medication}</p>
-          </div>
-          <div>
-            <p className="text-sm text-gray-500">Medical Notes</p>
-            <p className="text-sm font-medium">
-              {patient.medicalNotes || 'No notes available'}
-            </p>
-          </div>
-          <div>
-            <p className="text-sm text-gray-500">Last Visit</p>
-            <p className="text-sm font-medium">
-              {patient.lastVisit
-                ? formatDate(patient.lastVisit)
-                : 'No visits recorded'}
-            </p>
-          </div>
-          <div>
-            <p className="text-sm text-gray-500">Next Appointment</p>
-            <p className="text-sm font-medium">
-              {patient.nextAppointment
-                ? formatDate(patient.nextAppointment)
-                : 'No appointment scheduled'}
-            </p>
-          </div>
+        <div className="space-y-3 text-sm text-gray-500">
+          <p>Assigned Doctor: (Data not available)</p>
+          <p>Current Medication: (Data not available)</p>
+          <p>Medical Notes: (Data not available)</p>
+          <p>Last Visit: (Data not available)</p>
+          <p>Next Appointment: (Data not available)</p>
+          {/* Add links or buttons here later to navigate to relevant sections like Notes or Sessions */}
         </div>
       </div>
 

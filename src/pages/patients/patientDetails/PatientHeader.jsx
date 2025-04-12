@@ -51,9 +51,11 @@ const PatientHeader = ({ patient, patientId }) => {
           Back to Patients
         </Link>
         <h1 className="text-2xl font-bold text-gray-800 mt-1">
-          {patient.name}{' '}
+          {/* Use first_name and last_name from schema */}
+          {`${patient.first_name || ''} ${patient.last_name || ''}`.trim() || 'Patient Name'}{' '}
           <span className="text-lg font-normal text-gray-500">
-            ({formatDate(patient.dob)}) {/* Changed to display formatted DOB */}
+            {/* Use date_of_birth from schema */}
+            ({formatDate(patient.date_of_birth)})
           </span>
         </h1>
       </div>

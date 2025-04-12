@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom'; // Added useLocation
 import {
   Search,
   Filter,
@@ -37,11 +37,24 @@ const Patients = () => {
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
   const [searchType, setSearchType] = useState('name'); // name, email, phone, order
   const [currentPage, setCurrentPage] = useState(1);
+  const location = useLocation(); // Get location object
+
+  // --- Read search term from URL on initial load ---
+  useEffect(() => {
+    const queryParams = new URLSearchParams(location.search);
+    const urlSearchTerm = queryParams.get('search');
+    if (urlSearchTerm) {
+      setSearchTerm(urlSearchTerm);
+      // Optional: Clear the search param from URL after reading?
+      // window.history.replaceState({}, document.title, location.pathname);
+    }
+  }, [location.search]); // Re-run if search params change
 
   // --- Use React Query Hooks ---
+  // Include searchTerm from state in filters passed to the hook
   const filtersForHook = {
     search: searchTerm || undefined,
-    search_by: searchTerm ? searchType : undefined,
+    // search_by: searchTerm ? searchType : undefined, // search_by filter not implemented in usePatients hook yet
     status: statusFilter !== 'all' ? statusFilter : undefined,
     tag_id: tagFilter !== 'all' ? tagFilter : undefined,
     is_affiliate:

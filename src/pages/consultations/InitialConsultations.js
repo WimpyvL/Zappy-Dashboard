@@ -1,736 +1,236 @@
-import React, { useState } from 'react'; // Removed unused useEffect
-import { Link } from 'react-router-dom';
-// Removed useAppContext import
-import { usePatients } from '../../apis/patients/hooks'; // Assuming hook exists
+import React, { useState, useEffect } from 'react';
+import { toast } from 'react-toastify';
+import { Plus, Loader2, AlertTriangle } from 'lucide-react';
+
+// Import API Hooks
+import { usePatients } from '../../apis/patients/hooks';
 import {
   useConsultations,
   useUpdateConsultationStatus,
-  // useArchiveConsultation, // Assuming these hooks exist or will be created
+  // useArchiveConsultation, // Assuming archive mutation exists
 } from '../../apis/consultations/hooks';
-import { useServices } from '../../apis/services/hooks'; // Import useServices
-import { DatePicker } from 'antd'; // Import Ant Design DatePicker
-// Other Icons
-import {
-  Search,
-  Plus,
-  Filter,
-  Calendar, // Added Calendar icon import
-  Clock,
-  CheckCircle,
-  AlertTriangle,
-  Briefcase, // Added Briefcase icon
-  // FileText, // Removed unused import
-  User,
-  X,
-  // Mail, // Removed unused Mail import
-  Archive,
-  MoreHorizontal,
-  Loader2, // Added for loading state
-} from 'lucide-react';
-import ChildishDrawingElement from '../../components/ui/ChildishDrawingElement'; // Import drawing element
-// Import the consultation notes component
-import InitialConsultationNotes from './InitialConsultationNotes';
+import { useServices } from '../../apis/services/hooks';
+import { useGetUsers } from '../../apis/users/hooks';
 
-// StatusBadge using Zappy colors
-
-const StatusBadge = ({ status }) => {
-  if (status === 'reviewed' || status === 'followup') { // Combine reviewed and followup
-    return (
-      <span className="flex items-center px-2 py-1 text-xs font-medium rounded-full bg-accent3/10 text-accent3"> {/* Use accent3 */}
-        <Calendar className="h-3 w-3 mr-1" />
-        Follow-up
-      </span>
-    );
-  } else if (status === 'pending') {
-    return (
-      <span className="flex items-center px-2 py-1 text-xs font-medium rounded-full bg-accent4/10 text-accent4"> {/* Use accent4 */}
-        <Clock className="h-3 w-3 mr-1" />
-        Pending
-      </span>
-    );
-  } else if (status === 'archived') {
-    return (
-      <span className="flex items-center px-2 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-800"> {/* Keep gray */}
-        <Archive className="h-3 w-3 mr-1" />
-        Archived
-      </span>
-    );
-  }
-  return null;
-};
-
-// Removed unused FormCompletedBadge component
+// Import Sub-components
+import ConsultationListTable from './components/ConsultationListTable';
+import ConsultationFilters from './components/ConsultationFilters';
+import PatientSelectionModal from './components/PatientSelectionModal';
+import EmailPatientModal from './components/EmailPatientModal';
+import InitialConsultationNotes from './InitialConsultationNotes'; // Still used fullscreen/modal
+import ChildishDrawingElement from '../../components/ui/ChildishDrawingElement';
 
 const InitialConsultations = () => {
-  // Local state for UI controls
+  // --- State ---
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('pending'); // Default filter to 'pending'
-  const [providerFilter, setProviderFilter] = useState('all'); // State for provider filter
-  const [serviceFilter, setServiceFilter] = useState('all'); // State for service filter
-  const [dateRange, setDateRange] = useState(null); // State for date range [startDate, endDate]
-  const [selectedPatient, setSelectedPatient] = useState(null);
-  const [selectedConsultation, setSelectedConsultation] = useState(null);
-  const [showConsultationModal, setShowConsultationModal] = useState(false);
-  const [showNewConsultationModal, setShowNewConsultationModal] =
-    useState(false);
-  const [showEmailModal, setShowEmailModal] = useState(false);
-  const [emailContent, setEmailContent] = useState('');
-  const [showActionDropdown, setShowActionDropdown] = useState(null); // Tracks which dropdown is open
+  const [statusFilter, setStatusFilter] = useState('pending');
+  const [providerFilter, setProviderFilter] = useState('all');
+  const [serviceFilter, setServiceFilter] = useState('all');
+  const [dateRange, setDateRange] = useState(null);
 
-  // Fetch data using React Query hooks
-  const {
-    data: patientsData,
-    isLoading: isLoadingPatients,
-    error: errorPatients,
-  } = usePatients(); // Fetch patients for selection modal
+  const [showPatientSelectionModal, setShowPatientSelectionModal] = useState(false);
+  const [showConsultationNotesModal, setShowConsultationNotesModal] = useState(false);
+  const [showEmailModal, setShowEmailModal] = useState(false);
+
+  const [selectedPatientForNew, setSelectedPatientForNew] = useState(null); // Patient selected for NEW consult
+  const [selectedConsultation, setSelectedConsultation] = useState(null); // Consultation being viewed/edited/emailed
+
+  // --- Data Fetching ---
   const {
     data: consultationsData,
     isLoading: isLoadingConsultations,
     error: errorConsultations,
-  } = useConsultations({ searchTerm }); // Pass searchTerm to hook
+    refetch: refetchConsultations, // Get refetch function
+  } = useConsultations({
+    searchTerm,
+    providerId: providerFilter !== 'all' ? providerFilter : undefined,
+    // Add other filters if useConsultations hook supports them (status, service, date)
+    // status: statusFilter !== 'all' ? statusFilter : undefined,
+    // service: serviceFilter !== 'all' ? serviceFilter : undefined,
+    // startDate: dateRange?.[0]?.toISOString(),
+    // endDate: dateRange?.[1]?.toISOString(),
+  });
+
   const {
     data: servicesData,
     isLoading: isLoadingServices,
     error: errorServices,
-  } = useServices(); // Fetch services for filter
+  } = useServices();
 
-  // Mutation hooks
+  const {
+    data: providersData,
+    isLoading: isLoadingProviders,
+    error: errorProviders,
+  } = useGetUsers({ role: 'practitioner' });
+
+  // --- Mutations ---
   const updateStatusMutation = useUpdateConsultationStatus({
-    onSuccess: () => setShowActionDropdown(null), // Close dropdown on success
-    onError: (error) => console.error('Error updating status:', error),
+    onSuccess: () => {
+      toast.success('Consultation status updated.');
+      refetchConsultations(); // Refetch list after status update
+    },
+    onError: (error) => {
+      toast.error(`Failed to update status: ${error.message}`);
+    },
   });
-  // const archiveMutation = useArchiveConsultation({ // Assuming this hook exists
-  //   onSuccess: () => setShowActionDropdown(null),
-  //   onError: (error) => console.error("Error archiving:", error),
-  // });
 
-  // Process fetched data
-  const patients = patientsData?.data || patientsData || [];
-  const allConsultations = consultationsData?.data || consultationsData || [];
-  const allServices = servicesData?.data || servicesData || []; // Process services data
+  // --- Process Data ---
+  const allConsultations = consultationsData?.data || [];
+  const allServices = servicesData?.data || [];
+  const allProviders = providersData || [];
 
-  // Get unique providers for filter dropdown
-  const uniqueProviders = [
-    ...new Set(allConsultations.map(c => c.provider).filter(Boolean))
-  ].sort();
-
-  // Filter consultations based on filters (status, provider, service, date) - Search is now handled server-side
+  // Client-side filtering (can be removed if hooks handle all filtering)
   const filteredConsultations = allConsultations.filter((consultation) => {
-    // const patientName = consultation.patientName || ''; // No longer needed for search
-    // const provider = consultation.provider || ''; // No longer needed for search
-    // const email = consultation.email || ''; // No longer needed for search
-    // const preferredMed = consultation.preferredMedication || ''; // No longer needed for search
+    const matchesStatus = statusFilter === 'all' || consultation.status === statusFilter;
+    const matchesService = serviceFilter === 'all' || consultation.service === serviceFilter; // Adjust if service is ID
 
-    // const matchesSearch = // Removed frontend search logic
-    //   patientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    //   provider.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    //   email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    //   preferredMed.toLowerCase().includes(searchTerm.toLowerCase());
-
-    const matchesStatus =
-      statusFilter === 'all' || consultation.status === statusFilter;
-
-    const matchesProvider =
-       providerFilter === 'all' || consultation.provider === providerFilter;
-
-    // Assuming consultation.service holds the service name string
-    const matchesService =
-       serviceFilter === 'all' || consultation.service === serviceFilter;
-
-    // Date Range Filter Logic using Ant Design's date objects (likely Dayjs)
     let matchesDate = true;
     if (dateRange && (dateRange[0] || dateRange[1])) {
-        try {
-            const submittedDate = new Date(consultation.dateSubmitted); // Keep as Date object
-            const start = dateRange[0] ? dateRange[0].startOf('day').toDate() : null; // Get start of day as Date
-            const end = dateRange[1] ? dateRange[1].endOf('day').toDate() : null; // Get end of day as Date
-
-            if (start && end) {
-                matchesDate = submittedDate >= start && submittedDate <= end;
-            } else if (start) {
-                matchesDate = submittedDate >= start;
-            } else if (end) {
-                matchesDate = submittedDate <= end;
-            }
-        } catch (e) {
-            console.error("Error processing date for filtering:", consultation.dateSubmitted, e);
-            matchesDate = false; // Exclude if date is invalid
-      }
+      try {
+        const submittedDate = new Date(consultation.submitted_at);
+        const start = dateRange[0]?.startOf('day').toDate();
+        const end = dateRange[1]?.endOf('day').toDate();
+        if (start && end) matchesDate = submittedDate >= start && submittedDate <= end;
+        else if (start) matchesDate = submittedDate >= start;
+        else if (end) matchesDate = submittedDate <= end;
+      } catch (e) { matchesDate = false; }
     }
-
-    // Return based on filters only
-    return matchesStatus && matchesProvider && matchesService && matchesDate;
+    return matchesStatus && matchesService && matchesDate;
   });
 
-  // Handle viewing a consultation
+  // --- Handlers ---
+  const handleOpenNewConsultation = () => {
+    setShowPatientSelectionModal(true);
+  };
+
+  const handlePatientSelected = (patient) => {
+    setSelectedPatientForNew(patient);
+    setShowPatientSelectionModal(false);
+    setShowConsultationNotesModal(true); // Open notes modal immediately after selection
+  };
+
   const handleViewConsultation = (consultation) => {
-    // Find patient data from the fetched list
-    const patient = patients.find((p) => p.id === consultation.patientId) || {
-      id: consultation.patientId,
-      name: consultation.patientName,
-      email: consultation.email,
-      // Include DOB from the joined data in the fallback
-      dob: consultation.patients?.date_of_birth, // Use optional chaining
-      // Add other necessary patient fields if available
+    // Need patient data for the notes modal, find it (assuming consultations join patient data)
+    // This might need adjustment based on actual data structure from useConsultations
+    const patientData = {
+        id: consultation.patient_id,
+        name: consultation.patientName || 'Patient', // Use joined name if available
+        email: consultation.email,
+        dob: consultation.patients?.date_of_birth, // Example of accessing joined data
+        // Add other necessary fields
     };
-    setSelectedPatient(patient);
-    setSelectedConsultation(consultation);
-    setShowConsultationModal(true);
+    setSelectedPatientForNew(patientData); // Set patient context for the notes modal
+    setSelectedConsultation(consultation); // Set the consultation being viewed/edited
+    setShowConsultationNotesModal(true);
   };
 
-  // Handle creating a new consultation (opens patient selection first)
-  const handleOpenNewConsultationModal = () => {
-    setSelectedPatient(null); // Clear selected patient first
-    setShowNewConsultationModal(true);
-  };
-
-  // Handle selecting a patient to start a new consultation
-  const handleSelectPatientForNewConsultation = (patient) => {
-    setSelectedPatient(patient);
-    setSelectedConsultation(null); // Ensure no old consultation data lingers
-    // Keep the modal open, but now InitialConsultationNotes will render with the selected patient
-  };
-
-  // Handle consultation modal close
-  const handleCloseConsultationModal = () => {
-    setShowConsultationModal(false);
-    setShowNewConsultationModal(false);
-    setSelectedPatient(null);
+  const handleCloseNotesModal = () => {
+    setShowConsultationNotesModal(false);
+    setSelectedPatientForNew(null);
     setSelectedConsultation(null);
-    setSearchTerm(''); // Reset search term when closing patient selection
+    refetchConsultations(); // Refetch list when notes modal closes
   };
 
-  // Handle email sending modal opening
   const handleSendEmail = (consultation) => {
-    setSelectedConsultation(consultation);
-    setEmailContent(
-      `Dear ${consultation.patientName},\n\nThank you for your recent consultation submission. We're writing to inform you about the next steps in your treatment plan.\n\nSincerely,\nThe Medical Team`
-    );
+    setSelectedConsultation(consultation); // Set consultation for email modal
     setShowEmailModal(true);
   };
 
-  // Handle email sending confirmation (placeholder for API call)
-  const handleConfirmSendEmail = () => {
-    console.log(
-      `Sending email to ${selectedConsultation.email} with content: ${emailContent}`
-    );
-    // TODO: Integrate with an email sending API/service
-    // Optionally update status after sending email using mutation
-    // updateStatusMutation.mutate({ consultationId: selectedConsultation.id, status: 'followup' });
-    setShowEmailModal(false);
-    setSelectedConsultation(null);
-  };
-
-  // Handle archiving a consultation using mutation
-  const handleArchiveConsultation = (consultation) => {
-    // archiveMutation.mutate(consultation.id); // Assuming hook takes ID
-    // For now, simulate with status update:
-    updateStatusMutation.mutate({
-      consultationId: consultation.id,
-      status: 'archived',
-    });
-  };
-
-  // Handle updating consultation status using mutation
-  const handleUpdateStatus = (consultation, newStatus) => {
-    updateStatusMutation.mutate({
-      consultationId: consultation.id,
-      status: newStatus,
-    });
-  };
-
-  // Format date function
-  const formatDate = (dateString) => {
-    if (!dateString) return '-';
-    try {
-      return new Date(dateString).toLocaleDateString(undefined, {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric',
-      });
-    } catch (e) {
-      return 'Invalid Date';
+  const handleArchive = (consultation) => {
+    if (window.confirm('Are you sure you want to archive this consultation?')) {
+      updateStatusMutation.mutate({ consultationId: consultation.id, status: 'archived' });
     }
   };
 
-  // Handle loading state
-  if (isLoadingConsultations || isLoadingPatients || isLoadingServices) { // Added isLoadingServices
-    return (
-      <div className="flex justify-center items-center h-screen">
-        {/* Use primary color for spinner */}
-        <Loader2 className="h-16 w-16 animate-spin text-primary" />
-      </div>
-    );
+  const handleUpdateStatus = (consultation, status) => {
+     updateStatusMutation.mutate({ consultationId: consultation.id, status });
+  };
+
+  // --- Loading & Error States ---
+  const isLoading = isLoadingConsultations || isLoadingServices || isLoadingProviders; // Removed isLoadingPatients
+  const error = errorConsultations || errorServices || errorProviders; // Removed errorPatients
+
+  if (isLoading) {
+    return <div className="flex justify-center items-center h-screen"><Loader2 className="h-16 w-16 animate-spin text-primary" /></div>;
   }
 
-  // Handle error state
-  if (errorConsultations || errorPatients || errorServices) { // Added errorServices
+  if (error) {
     return (
       <div className="text-center py-10 text-red-600">
         <AlertTriangle className="h-12 w-12 mx-auto mb-4" />
-        <p>Error loading consultation or patient data.</p>
-        {/* <p>{errorConsultations?.message || errorPatients?.message || errorServices?.message}</p> */}
+        <p>Error loading page data: {error.message}</p>
       </div>
     );
   }
 
+  // --- Render ---
   return (
-    <div className="relative overflow-hidden pb-10"> {/* Add relative positioning and padding */}
-      {/* Add childish drawing elements */}
+    <div className="relative overflow-hidden pb-10">
       <ChildishDrawingElement type="watercolor" color="accent2" position="top-right" size={120} rotation={-10} opacity={0.1} />
       <ChildishDrawingElement type="doodle" color="accent4" position="bottom-left" size={100} rotation={15} opacity={0.1} />
 
-      <div className="flex justify-between items-center mb-6 relative z-10"> {/* Added z-index */}
-        <h1 className="text-2xl font-bold text-gray-800">
-          Initial Consultations
-        </h1>
-        <div className="flex">
-          {/* Use primary color for New Consultation button */}
-          <button
-            className="px-4 py-2 bg-primary text-white rounded-md flex items-center hover:bg-primary/90"
-            onClick={handleOpenNewConsultationModal} // Updated handler
-          >
-            <Plus className="h-5 w-5 mr-2" />
-            New Consultation
-          </button>
-        </div>
+      <div className="flex justify-between items-center mb-6 relative z-10">
+        <h1 className="text-2xl font-bold text-gray-800">Initial Consultations</h1>
+        <button
+          className="px-4 py-2 bg-primary text-white rounded-md flex items-center hover:bg-primary/90"
+          onClick={handleOpenNewConsultation}
+        >
+          <Plus className="h-5 w-5 mr-2" /> New Consultation
+        </button>
       </div>
 
-      {/* Search and filters */}
-      <div className="bg-white p-4 rounded-lg shadow mb-6 flex flex-col md:flex-row md:items-center space-y-4 md:space-y-0 md:space-x-4 flex-wrap"> {/* Added flex-wrap */}
-        <div className="flex-1 relative min-w-[200px]"> {/* Added min-width */}
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <Search className="h-5 w-5 text-gray-400" />
-          </div>
-          <input
-            type="text"
-            placeholder="Search by patient, email, medication or provider name..."
-            className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white focus:outline-none focus:ring-primary focus:border-primary"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-        </div>
+      <ConsultationFilters
+        searchTerm={searchTerm}
+        statusFilter={statusFilter}
+        providerFilter={providerFilter}
+        serviceFilter={serviceFilter}
+        dateRange={dateRange}
+        providers={allProviders}
+        services={allServices}
+        onSearchTermChange={setSearchTerm}
+        onStatusFilterChange={setStatusFilter}
+        onProviderFilterChange={setProviderFilter}
+        onServiceFilterChange={setServiceFilter}
+        onDateRangeChange={setDateRange}
+      />
 
-        {/* Status Filter */}
-        <div className="flex items-center space-x-2">
-          <Filter className="h-5 w-5 text-gray-400" />
-          <select
-            className="block pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm rounded-md"
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-          >
-            <option value="all">All Statuses</option>
-            <option value="pending">Pending</option>
-            <option value="followup">Follow-up</option>
-            <option value="reviewed">Reviewed</option>
-            <option value="archived">Archived</option>
-          </select>
-        </div>
-        {/* Provider Filter Dropdown */}
-        <div className="flex items-center space-x-2">
-           <User className="h-5 w-5 text-gray-400" /> {/* Using User icon for provider */}
-           <select
-             className="block pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm rounded-md"
-             value={providerFilter}
-             onChange={(e) => setProviderFilter(e.target.value)}
-           >
-             <option value="all">All Providers</option>
-             {uniqueProviders.map((provider) => (
-               <option key={provider} value={provider}>
-                 {provider}
-               </option>
-             ))}
-           </select>
-         </div>
-         {/* Service Filter Dropdown */}
-         <div className="flex items-center space-x-2">
-            <Briefcase className="h-5 w-5 text-gray-400" /> {/* Using Briefcase icon for service */}
-            <select
-              className="block pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm rounded-md"
-              value={serviceFilter}
-              onChange={(e) => setServiceFilter(e.target.value)}
-            >
-              <option value="all">All Services</option>
-              {allServices.map((service) => (
-                // Assuming consultation.service stores the name, so filter value is name
-                <option key={service.id} value={service.name}>
-                  {service.name}
-                </option>
-             ))}
-           </select>
-          </div>
-          {/* Date Range Filter using Ant Design */}
-           <div className="flex items-center space-x-2">
-             <DatePicker.RangePicker
-               onChange={(dates) => setDateRange(dates)}
-               // You might need to format the value prop if needed, but often null is fine
-               // value={dateRange}
-               className="text-sm" // Adjust styling as needed
-             />
-           </div>
-      </div>
+      <ConsultationListTable
+        consultations={filteredConsultations}
+        isLoading={isLoadingConsultations} // Pass specific loading state
+        onViewConsultation={handleViewConsultation}
+        onSendEmail={handleSendEmail}
+        onArchive={handleArchive}
+        onUpdateStatus={handleUpdateStatus}
+        isMutatingStatus={updateStatusMutation.isLoading}
+      />
 
-      {/* Consultations list */}
-      <div className="bg-white shadow overflow-hidden rounded-lg overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Patient / Email
-              </th>
-              {/* Removed Email column header */}
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Date Submitted
-              </th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Service
-              </th>
-              {/* Removed Preferred Medication column header */}
-              {/* Removed Preferred Plan column header */}
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Draft Date
-              </th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Provider
-              </th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Status
-              </th>
-              {/* Removed Form Completed column header */}
-              <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Actions
-              </th>
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            {filteredConsultations.length > 0 ? (
-              filteredConsultations.map((consultation) => (
-                <tr key={consultation.id} className="hover:bg-gray-50">
-                  <td className="px-4 py-4 whitespace-nowrap">
-                    <div className="flex items-center">
-                      {/* Use accent1 for avatar */}
-                      <div className="flex-shrink-0 h-8 w-8 rounded-full bg-accent1/10 flex items-center justify-center text-accent1">
-                        <User className="h-4 w-4" />
-                      </div>
-                      <div className="ml-3">
-                        <div className="text-sm font-medium text-gray-900">
-                          {/* Use primary color for link hover */}
-                          <Link
-                            to={`/patients/${consultation.patientId}`}
-                            className="hover:text-primary"
-                          >
-                            {consultation.patientName || 'N/A'}
-                          </Link>
-                        </div>
-                         {/* Added email below name */}
-                        <div className="text-xs text-gray-500 mt-1">
-                          {consultation.email || '-'}
-                        </div>
-                      </div>
-                    </div>
-                  </td>
-                  {/* Removed separate Email cell */}
-                  <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {formatDate(consultation.dateSubmitted)}
-                  </td>
-                  <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {consultation.service || '-'}
-                  </td>
-                  {/* Removed Preferred Medication cell */}
-                  {/* Removed Preferred Plan cell */}
-                  <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {formatDate(consultation.draftDate)}
-                  </td>
-                  <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {consultation.provider || '-'}
-                  </td>
-                  <td className="px-4 py-4 whitespace-nowrap">
-                    <StatusBadge status={consultation.status} />
-                  </td>
-                  {/* Removed Form Completed cell */}
-                  <td className="px-4 py-4 whitespace-nowrap text-right text-sm font-medium">
-                    <div className="relative flex justify-end">
-                      {/* Use primary color for Complete Consult button */}
-                      <button
-                        className="text-primary hover:text-primary/80 mr-3"
-                        onClick={() => handleViewConsultation(consultation)}
-                      >
-                        Complete Consult {/* Renamed button */}
-                      </button>
+      {/* Modals */}
+      <PatientSelectionModal
+        isOpen={showPatientSelectionModal}
+        onClose={() => setShowPatientSelectionModal(false)}
+        onSelectPatient={handlePatientSelected}
+      />
 
-                      <div className="relative">
-                        <button
-                          className="text-gray-500 hover:text-gray-700 disabled:opacity-50"
-                          onClick={() =>
-                            setShowActionDropdown(
-                              showActionDropdown === consultation.id
-                                ? null
-                                : consultation.id
-                            )
-                          }
-                          disabled={updateStatusMutation.isLoading} // Disable while any status update is loading
-                        >
-                          <MoreHorizontal className="h-5 w-5" />
-                        </button>
-
-                        {showActionDropdown === consultation.id && (
-                          <div className="absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-10">
-                            <div
-                              className="py-1"
-                              role="menu"
-                              aria-orientation="vertical"
-                            >
-                              <button
-                                onClick={() => handleSendEmail(consultation)}
-                                className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
-                                  role="menuitem"
-                                >
-                                  <Calendar className="h-4 w-4 mr-2 text-gray-500" /> {/* Corrected icon name */}
-                                  Mark for Follow-up
-                                </button>
-
-                              {consultation.status !== 'archived' && (
-                                <button
-                                  onClick={() =>
-                                    handleArchiveConsultation(consultation)
-                                  }
-                                  className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
-                                  role="menuitem"
-                                >
-                                  <Archive className="h-4 w-4 mr-2 text-gray-500" />
-                                  Archive
-                                </button>
-                              )}
-
-                              {consultation.status !== 'pending' && (
-                                <button
-                                  onClick={() =>
-                                    handleUpdateStatus(consultation, 'pending')
-                                  }
-                                  className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
-                                  role="menuitem"
-                                >
-                                  <Clock className="h-4 w-4 mr-2 text-gray-500" />
-                                  Mark as Pending
-                                </button>
-                              )}
-
-                              {consultation.status !== 'reviewed' && (
-                                <button
-                                  onClick={() =>
-                                    handleUpdateStatus(consultation, 'reviewed')
-                                  }
-                                  className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
-                                  role="menuitem"
-                                >
-                                  <CheckCircle className="h-4 w-4 mr-2 text-gray-500" />
-                                  Mark as Reviewed
-                                </button>
-                              )}
-
-                              {consultation.status !== 'followup' && (
-                                <button
-                                  onClick={() =>
-                                    handleUpdateStatus(consultation, 'followup')
-                                  }
-                                  className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
-                                  role="menuitem"
-                                >
-                                  <Calendar className="h-4 w-4 mr-2 text-gray-500" /> {/* Corrected icon name */}
-                                  Mark for Follow-up
-                                </button>
-                              )}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </td>
-                </tr>
-              ))
-            ) : (
-              <tr>
-                <td
-                  colSpan="8" // Adjusted colspan again
-                  className="px-4 py-4 text-center text-gray-500"
-                >
-                  No consultations found matching your search criteria.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
-
-      {/* Select Patient Modal for New Consultation */}
-      {showNewConsultationModal && !selectedPatient && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-75 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full">
-            <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
-              <h3 className="text-lg font-medium text-gray-900">
-                Select Patient for Consultation
-              </h3>
-              <button
-                className="text-gray-400 hover:text-gray-500"
-                onClick={handleCloseConsultationModal}
-              >
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-            <div className="px-6 py-4 max-h-96 overflow-y-auto">
-              <div className="mb-4">
-                <input
-                  type="text"
-                  placeholder="Search patients..."
-                  className="block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-primary focus:border-primary"
-                  // Use a separate search term for this modal if needed, or reuse main one
-                  // value={patientSearchTerm}
-                  // onChange={(e) => setPatientSearchTerm(e.target.value)}
-                />
-              </div>
-              <div className="divide-y divide-gray-200">
-                {isLoadingPatients ? (
-                  <div className="text-center p-4">
-                    <Loader2 className="h-6 w-6 animate-spin inline-block" />
-                  </div>
-                ) : (
-                  patients
-                    // .filter((patient) =>
-                    //   patient.name?.toLowerCase().includes(patientSearchTerm?.toLowerCase())
-                    // )
-                    .map((patient) => (
-                      <div
-                        key={patient.id}
-                        className="py-3 flex items-center hover:bg-gray-50 cursor-pointer"
-                        onClick={() =>
-                          handleSelectPatientForNewConsultation(patient)
-                        }
-                      >
-                        {/* Use accent1 for avatar */}
-                        <div className="flex-shrink-0 h-10 w-10 rounded-full bg-accent1/10 flex items-center justify-center text-accent1">
-                          <User className="h-6 w-6" />
-                        </div>
-                        <div className="ml-4">
-                          <div className="text-sm font-medium text-gray-900">
-                            {patient.name}
-                          </div>
-                          <div className="text-sm text-gray-500">
-                            {patient.email}
-                          </div>
-                        </div>
-                        {/* Optional: Indicate if patient already has consultations */}
-                      </div>
-                    ))
-                )}
-                {!isLoadingPatients && patients.length === 0 && (
-                  <p className="text-center text-gray-500 py-4">
-                    No patients found.
-                  </p>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Consultation Notes Modal (View/Edit Existing) */}
-      {showConsultationModal && selectedPatient && selectedConsultation && (
-        // Overlay covers screen, centers content horizontally
+      {showConsultationNotesModal && (
         <div className="fixed inset-0 bg-gray-600 bg-opacity-75 flex justify-center z-50">
-          {/* Container fills screen, manages internal layout */}
           <div className="w-full h-full bg-white flex flex-col overflow-hidden">
             <InitialConsultationNotes
-              patient={selectedPatient}
-              consultationData={selectedConsultation?.consultationData} // Pass existing data
-              consultationId={selectedConsultation.id} // Pass ID for potential updates
-              readOnly={
-                selectedConsultation?.status === 'reviewed' ||
-                selectedConsultation?.status === 'archived'
-              }
-              onClose={handleCloseConsultationModal}
-              // Pass mutation hooks if notes component handles saving
-              updateStatusMutation={updateStatusMutation} // Pass down mutation
+              patient={selectedPatientForNew} // Pass selected patient
+              consultationData={selectedConsultation?.consultationData} // Pass existing data if editing
+              consultationId={selectedConsultation?.id} // Pass ID if editing
+              readOnly={selectedConsultation?.status === 'reviewed' || selectedConsultation?.status === 'archived'}
+              onClose={handleCloseNotesModal}
+              updateStatusMutation={updateStatusMutation} // Pass mutation for edit unlock
             />
           </div>
         </div>
       )}
 
-      {/* New Consultation Modal (After Patient Selected) */}
-      {showNewConsultationModal && selectedPatient && !selectedConsultation && (
-        // Overlay covers screen, centers content horizontally
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-75 flex justify-center z-50">
-           {/* Container fills screen, manages internal layout */}
-          <div className="w-full h-full bg-white flex flex-col overflow-hidden">
-            <InitialConsultationNotes
-              patient={selectedPatient} // Pass selected patient
-              onClose={handleCloseConsultationModal}
-              // Pass mutation hooks if notes component handles saving
-            />
-          </div>
-        </div>
-      )}
-
-      {/* Email Modal */}
-      {showEmailModal && selectedConsultation && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-75 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full">
-            <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
-              <div>
-                <h3 className="text-lg font-medium text-gray-900">
-                  Send Email to Patient
-                </h3>
-                <p className="text-sm text-gray-500">
-                  To: {selectedConsultation.email}
-                </p>
-              </div>
-              <button
-                className="text-gray-400 hover:text-gray-500"
-                onClick={() => setShowEmailModal(false)}
-              >
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-            <div className="px-6 py-4">
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Subject
-                </label>
-                <input
-                  type="text"
-                  className="block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-primary focus:border-primary"
-                  defaultValue={`Consultation Follow-up for ${selectedConsultation.patientName}`}
-                />
-              </div>
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Message
-                </label>
-                <textarea
-                  rows={10}
-                  className="block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-primary focus:border-primary"
-                  value={emailContent}
-                  onChange={(e) => setEmailContent(e.target.value)}
-                />
-              </div>
-            </div>
-            <div className="px-6 py-4 border-t border-gray-200 flex justify-end space-x-3">
-              <button
-                className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
-                onClick={() => setShowEmailModal(false)}
-              >
-                Cancel
-              </button>
-              {/* Use primary color for Send Email button */}
-              <button
-                className="px-4 py-2 bg-primary rounded-md text-sm font-medium text-white hover:bg-primary/90"
-                onClick={handleConfirmSendEmail}
-              >
-                Send Email
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <EmailPatientModal
+        isOpen={showEmailModal}
+        onClose={() => setShowEmailModal(false)}
+        consultation={selectedConsultation}
+      />
     </div>
   );
 };

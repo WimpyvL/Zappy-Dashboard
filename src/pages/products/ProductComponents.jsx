@@ -61,8 +61,9 @@ export const SearchAndFilters = ({
   onSearchChange,
   placeholder = 'Search...',
   filters = [],
-}) => { // Changed to curly braces
-  return ( // Added explicit return
+  children // Add children prop
+}) => {
+  return (
   <div className="bg-white p-4 rounded-lg shadow mb-6 flex flex-col md:flex-row md:items-center space-y-4 md:space-y-0 md:space-x-4">
     <div className="flex-1 relative">
       <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -95,9 +96,11 @@ export const SearchAndFilters = ({
         </select>
       </div>
     ))}
+    {/* Render children (e.g., the Add button) */}
+    {children && <div className="ml-auto">{children}</div>}
   </div>
-  ); // Added closing parenthesis for return
-}; // Added closing brace for function body
+  );
+};
 
 // Product Table component
 export const ProductTable = ({ products, onEdit, onDelete }) => (

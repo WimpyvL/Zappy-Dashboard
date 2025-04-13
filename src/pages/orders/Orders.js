@@ -1,25 +1,39 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react'; // Added useEffect, useMemo
 import { Link } from 'react-router-dom';
-// Removed useAppContext import
-import { useOrders, useUpdateOrderStatus } from '../../apis/orders/hooks'; // Assuming hooks exist
-import { useSessions } from '../../apis/sessions/hooks'; // Assuming hook exists
+import { Select } from 'antd'; // Import Ant Design Select
+import { debounce } from 'lodash'; // Import debounce
+import { toast } from 'react-toastify'; // Import toast
+import {
+  useOrders,
+  useUpdateOrderStatus,
+  useCreateOrder, // Import create hook
+} from '../../apis/orders/hooks';
+import { useSessions } from '../../apis/sessions/hooks';
+import { usePatients } from '../../apis/patients/hooks'; // Import patient hook
+import { useProducts } from '../../apis/products/hooks'; // Import product hook
+import { usePharmacies } from '../../apis/pharmacies/hooks'; // Import pharmacy hook
 import {
   Search,
   Filter,
   Plus,
-  // Package, // Removed unused import
   AlertTriangle,
   CheckCircle,
   Clock,
   XCircle,
   TruckIcon,
   Calendar,
-  Loader2, // Added for loading state
+  Loader2,
 } from 'lucide-react';
-import ChildishDrawingElement from '../../components/ui/ChildishDrawingElement'; // Import drawing element
+import ChildishDrawingElement from '../../components/ui/ChildishDrawingElement';
+
+// Custom Spinner component using primary color
+const Spinner = () => (
+  <div className="inline-block h-5 w-5 animate-spin rounded-full border-2 border-solid border-primary border-r-transparent align-[-0.125em] motion-reduce:animate-[spin_1.5s_linear_infinite]"></div>
+);
 
 const StatusBadge = ({ status, holdReason }) => {
-  if (status === 'shipped') {
+  // ... (StatusBadge component remains the same) ...
+    if (status === 'shipped') {
     return (
       <div>
         {/* Use accent2 for shipped */}
@@ -72,105 +86,183 @@ const Orders = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [showCreateModal, setShowCreateModal] = useState(false);
+  // State for the create order modal form
+  const [newOrderData, setNewOrderData] = useState({
+    patientId: null,
+    productId: null, // Changed from medication
+    pharmacyId: null,
+    linkedSessionId: null,
+    notes: '',
+  });
+  const [patientSearchInput, setPatientSearchInput] = useState('');
+  const [debouncedPatientSearchTerm, setDebouncedPatientSearchTerm] = useState('');
+  const [productSearchInput, setProductSearchInput] = useState('');
+  const [debouncedProductSearchTerm, setDebouncedProductSearchTerm] = useState('');
+
+
+  // Debounce handlers
+  const debouncePatientSearch = useMemo(() => debounce(setDebouncedPatientSearchTerm, 500), []);
+  const debounceProductSearch = useMemo(() => debounce(setDebouncedProductSearchTerm, 500), []);
+
+  const handlePatientSearchInputChange = (value) => {
+    setPatientSearchInput(value);
+    debouncePatientSearch(value);
+  };
+  const handleProductSearchInputChange = (value) => {
+    setProductSearchInput(value);
+    debounceProductSearch(value);
+  };
 
   // Fetch data using React Query hooks
   const {
     data: ordersData,
     isLoading: isLoadingOrders,
     error: errorOrders,
-  } = useOrders(); // Assuming useOrders fetches all orders or handles pagination/filtering
+    refetch: refetchOrders, // Added refetch
+  } = useOrders({ search: searchTerm, status: statusFilter !== 'all' ? statusFilter : undefined }); // Pass filters
+
   const {
     data: sessionsData,
     isLoading: isLoadingSessions,
     error: errorSessions,
-  } = useSessions(); // Assuming useSessions fetches all sessions needed for linking
+  } = useSessions(); // Fetch all sessions for linking (consider filtering if needed)
 
-  // Mutation hook for updating status
+  // Fetch data for modal dropdowns
+  const { data: patientsData, isLoading: isLoadingPatients } = usePatients(1, { search: debouncedPatientSearchTerm }, 100);
+  const { data: productsData, isLoading: isLoadingProducts } = useProducts({ search: debouncedProductSearchTerm }); // Assuming useProducts exists and supports search
+  const { data: pharmaciesData, isLoading: isLoadingPharmacies } = usePharmacies(); // Assuming usePharmacies exists
+
+  const patientOptions = patientsData?.data || [];
+  const productOptions = productsData?.data || []; // Adapt based on useProducts response
+  const pharmacyOptions = pharmaciesData?.data || []; // Adapt based on usePharmacies response
+  const sessionOptions = sessionsData?.data || []; // Adapt based on useSessions response
+
+
+  // Mutation hooks
   const updateOrderStatusMutation = useUpdateOrderStatus({
-    // Optional: Add onSuccess/onError callbacks if needed, e.g., for notifications
     onSuccess: () => {
-      console.log('Order status updated successfully');
-      // queryClient.invalidateQueries(['orders']) is likely handled within the hook itself
+      toast.success('Order status updated successfully');
+      refetchOrders(); // Refetch orders list
     },
     onError: (error) => {
-      console.error('Failed to update order status:', error);
-      // Show error notification to user
+      toast.error(`Failed to update order status: ${error.message}`);
     },
+  });
+
+  const createOrderMutation = useCreateOrder({
+     onSuccess: () => {
+       toast.success('Order created successfully');
+       setShowCreateModal(false);
+       setNewOrderData({ patientId: null, productId: null, pharmacyId: null, linkedSessionId: null, notes: '' }); // Reset form
+       refetchOrders(); // Refetch orders list
+     },
+     onError: (error) => {
+       toast.error(`Failed to create order: ${error.message}`);
+     }
   });
 
   // Use fetched data or default empty arrays
-  const allOrders = ordersData?.data || ordersData || []; // Adapt based on API response structure
-  const sessions = sessionsData?.data || sessionsData || []; // Adapt based on API response structure
+  const allOrders = ordersData?.data || []; // Adapt based on API response structure
 
-  // Filter orders based on search and status
-  const filteredOrders = allOrders.filter((order) => {
-    // Ensure patientName and medication exist before calling toLowerCase
-    const patientName = order.patientName || '';
-    const medication = order.medication || '';
-    const matchesSearch =
-      patientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      medication.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus =
-      statusFilter === 'all' || order.status === statusFilter;
-    return matchesSearch && matchesStatus;
-  });
+  // Filter orders (client-side filtering removed as server-side is implemented in hook)
+  const filteredOrders = allOrders;
 
-  // Group orders by status (using filteredOrders)
-  const pendingOrders = filteredOrders.filter(
-    (order) => order.status === 'pending'
-  );
-  const processingOrders = filteredOrders.filter(
-    (order) => order.status === 'processing'
-  );
-  const shippedOrders = filteredOrders.filter(
-    (order) => order.status === 'shipped'
-  );
-  // const cancelledOrders = filteredOrders.filter( // Removed unused variable
-  //   (order) => order.status === 'cancelled'
-  // );
+  // Group orders by status
+  const pendingOrders = filteredOrders.filter((order) => order.status === 'pending');
+  const processingOrders = filteredOrders.filter((order) => order.status === 'processing');
+  const shippedOrders = filteredOrders.filter((order) => order.status === 'shipped');
 
   // Function to get the linked session for an order
   const getLinkedSession = (sessionId) => {
-    if (!sessionId) return null;
-    return sessions.find((session) => session.id === sessionId);
+    if (!sessionId || !sessionOptions) return null;
+    return sessionOptions.find((session) => session.id === sessionId);
   };
 
-  // Handle order status update using the mutation hook
+  // Handle order status update
   const handleStatusUpdate = (orderId, newStatus) => {
-    // Pass data as expected by the mutation hook, adjust if needed
     updateOrderStatusMutation.mutate({ orderId, status: newStatus });
   };
 
+  // Handle modal form input change
+  const handleModalInputChange = (name, value) => {
+    setNewOrderData(prev => ({ ...prev, [name]: value }));
+  };
+
+   // Handle modal patient selection
+  const handleModalPatientSelect = (value) => {
+    setNewOrderData(prev => ({ ...prev, patientId: value }));
+    // Clear search terms after selection
+    setPatientSearchInput('');
+    setDebouncedPatientSearchTerm('');
+  };
+
+  // Handle modal product selection
+  const handleModalProductSelect = (value) => {
+    setNewOrderData(prev => ({ ...prev, productId: value }));
+    setProductSearchInput('');
+    setDebouncedProductSearchTerm('');
+  };
+
+  // Handle modal pharmacy selection
+  const handleModalPharmacySelect = (value) => {
+    setNewOrderData(prev => ({ ...prev, pharmacyId: value }));
+  };
+
+  // Handle modal session selection
+  const handleModalSessionSelect = (value) => {
+    setNewOrderData(prev => ({ ...prev, linkedSessionId: value || null })); // Store null if unselected
+  };
+
+
+  // Handle create order submission
+  const handleCreateOrder = () => {
+     if (!newOrderData.patientId || !newOrderData.productId || !newOrderData.pharmacyId) {
+       toast.error("Please select Patient, Medication, and Pharmacy.");
+       return;
+     }
+     // Map state to the structure expected by useCreateOrder hook
+     const orderPayload = {
+       patient_id: newOrderData.patientId,
+       pharmacy_id: newOrderData.pharmacyId,
+       linked_session_id: newOrderData.linkedSessionId,
+       notes: newOrderData.notes,
+       // Assuming order items are handled separately or derived based on productId
+       // You might need to add logic here to create order_items based on newOrderData.productId
+       // For simplicity, sending basic order info for now.
+       status: 'pending', // Default status
+       // total_amount might be calculated backend or require line items here
+     };
+     console.log("Creating order with payload:", orderPayload);
+     createOrderMutation.mutate(orderPayload);
+  };
+
+
   // Handle loading state
-  if (isLoadingOrders || isLoadingSessions) {
+  if (isLoadingOrders || isLoadingSessions) { // Add other loading states if needed
     return (
       <div className="flex justify-center items-center h-screen">
-        {/* Use primary color for spinner */}
         <Loader2 className="h-16 w-16 animate-spin text-primary" />
       </div>
     );
   }
 
-  // Handle error state (basic example)
-  if (errorOrders || errorSessions) {
+  // Handle error state
+  if (errorOrders || errorSessions) { // Add other error states
     return (
       <div className="text-center py-10 text-red-600">
         <AlertTriangle className="h-12 w-12 mx-auto mb-4" />
         <p>Error loading order or session data.</p>
-        {/* <p>{errorOrders?.message || errorSessions?.message}</p> */}
       </div>
     );
   }
 
   return (
-    <div className="relative overflow-hidden pb-10"> {/* Add relative positioning and padding */}
-      {/* Add childish drawing elements */}
+    <div className="relative overflow-hidden pb-10">
       <ChildishDrawingElement type="doodle" color="accent2" position="top-right" size={100} rotation={10} opacity={0.1} />
       <ChildishDrawingElement type="scribble" color="accent4" position="bottom-left" size={120} rotation={-5} opacity={0.1} />
 
-      <div className="flex justify-between items-center mb-6 relative z-10"> {/* Added z-index */}
+      <div className="flex justify-between items-center mb-6 relative z-10">
         <h1 className="text-2xl font-bold text-gray-800">Orders</h1>
-        {/* Use primary color for Create Order button */}
         <button
           className="px-4 py-2 bg-primary text-white rounded-md flex items-center hover:bg-primary/90"
           onClick={() => setShowCreateModal(true)}
@@ -180,9 +272,9 @@ const Orders = () => {
         </button>
       </div>
 
-      {/* Alerts for orders requiring attention */}
-      {/* Use accent4 for alert */}
-      {pendingOrders.some(
+      {/* Alerts */}
+      {/* ... (Alerts remain the same) ... */}
+       {pendingOrders.some(
         (order) => order.holdReason === 'Awaiting follow-up appointment'
       ) && (
         <div className="bg-accent4/5 border-l-4 border-accent4 p-4 mb-6 rounded shadow">
@@ -217,6 +309,7 @@ const Orders = () => {
         </div>
       )}
 
+
       {/* Filters and Search */}
       <div className="bg-white p-4 rounded-lg shadow mb-6 flex flex-col md:flex-row md:items-center space-y-4 md:space-y-0 md:space-x-4">
         <div className="flex-1 relative">
@@ -248,408 +341,163 @@ const Orders = () => {
         </div>
       </div>
 
-      {/* Pending Orders */}
-      <div className="bg-white shadow overflow-hidden rounded-lg mb-6">
+      {/* Pending Orders Table */}
+      {/* ... (Table structure remains the same, but data comes from filteredOrders) ... */}
+       <div className="bg-white shadow overflow-hidden rounded-lg mb-6">
         <div className="px-6 py-4 border-b border-gray-200">
           <h2 className="text-lg font-medium text-gray-900">Pending Orders</h2>
         </div>
-
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Order Date
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Patient
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Medication
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Status
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Linked Session
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Pharmacy
-                </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Actions
-                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Order Date</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Patient</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Medication</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Linked Session</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Pharmacy</th>
+                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {pendingOrders.length > 0 ? (
                 pendingOrders
-                  .sort((a, b) => new Date(a.orderDate) - new Date(b.orderDate))
+                  .sort((a, b) => new Date(a.order_date) - new Date(b.order_date)) // Use order_date
                   .map((order) => {
-                    const linkedSession = getLinkedSession(
-                      order.linkedSessionId
-                    );
-                    const isProcessing =
-                      updateOrderStatusMutation.isLoading &&
-                      updateOrderStatusMutation.variables?.orderId ===
-                        order.id &&
-                      updateOrderStatusMutation.variables?.status ===
-                        'processing';
-                    const isCancelling =
-                      updateOrderStatusMutation.isLoading &&
-                      updateOrderStatusMutation.variables?.orderId ===
-                        order.id &&
-                      updateOrderStatusMutation.variables?.status ===
-                        'cancelled';
-                    const isMutating =
-                      updateOrderStatusMutation.isLoading &&
-                      updateOrderStatusMutation.variables?.orderId === order.id;
+                    const linkedSession = getLinkedSession(order.linked_session_id); // Use linked_session_id
+                    const isProcessing = updateOrderStatusMutation.isLoading && updateOrderStatusMutation.variables?.orderId === order.id && updateOrderStatusMutation.variables?.status === 'processing';
+                    const isCancelling = updateOrderStatusMutation.isLoading && updateOrderStatusMutation.variables?.orderId === order.id && updateOrderStatusMutation.variables?.status === 'cancelled';
+                    const isMutating = updateOrderStatusMutation.isLoading && updateOrderStatusMutation.variables?.orderId === order.id;
 
                     return (
                       <tr key={order.id} className="hover:bg-gray-50">
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {order.orderDate}
-                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{new Date(order.order_date).toLocaleDateString()}</td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="text-sm font-medium text-gray-900">
-                            {/* Use primary color for link hover */}
-                            <Link
-                              to={`/patients/${order.patientId}`} // Assuming patientId is available
-                              className="hover:text-primary"
-                            >
-                              {order.patientName || 'N/A'}
-                            </Link>
+                            <Link to={`/patients/${order.patient_id}`} className="hover:text-primary">{order.patientName || 'N/A'}</Link>
                           </div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          {order.medication}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <StatusBadge
-                            status={order.status}
-                            holdReason={order.holdReason}
-                          />
-                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{order.medication || 'N/A'}</td> {/* Need to fetch medication name */}
+                        <td className="px-6 py-4 whitespace-nowrap"><StatusBadge status={order.status} holdReason={order.hold_reason} /></td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           {linkedSession ? (
                             <div className="flex items-center">
                               <Calendar className="h-4 w-4 text-gray-400 mr-1" />
-                              <span
-                                className={`text-xs ${
-                                  linkedSession.status === 'completed'
-                                    ? 'text-green-600'
-                                    : linkedSession.status === 'scheduled'
-                                      ? 'text-blue-600'
-                                      : 'text-red-600'
-                                }`}
-                              >
-                                {new Date(
-                                  linkedSession.scheduledDate
-                                ).toLocaleDateString()}
-                                {' – '}
-                                {linkedSession.status}
+                              <span className={`text-xs ${linkedSession.status === 'completed' ? 'text-green-600' : linkedSession.status === 'scheduled' ? 'text-blue-600' : 'text-red-600'}`}>
+                                {new Date(linkedSession.scheduled_date).toLocaleDateString()} – {linkedSession.status}
                               </span>
                             </div>
-                          ) : (
-                            <span className="text-xs text-gray-500">
-                              No session linked
-                            </span>
-                          )}
+                          ) : (<span className="text-xs text-gray-500">No session linked</span>)}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {order.pharmacy || 'N/A'}
-                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{order.pharmacy || 'N/A'}</td> {/* Need to fetch pharmacy name */}
                         <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                          {/* Use accent3 for Process button */}
-                          <button
-                            onClick={() =>
-                              handleStatusUpdate(order.id, 'processing')
-                            }
-                            className={`text-accent3 hover:text-accent3/80 mr-3 ${
-                              isProcessing
-                                ? 'opacity-50 cursor-not-allowed'
-                                : ''
-                            }`}
-                            disabled={
-                              order.holdReason ===
-                                'Awaiting follow-up appointment' || isMutating
-                            }
-                          >
-                            {isProcessing ? (
-                              <Loader2 className="h-4 w-4 animate-spin inline mr-1" />
-                            ) : null}
-                            Process
+                          <button onClick={() => handleStatusUpdate(order.id, 'processing')} className={`text-accent3 hover:text-accent3/80 mr-3 ${isProcessing ? 'opacity-50 cursor-not-allowed' : ''}`} disabled={order.hold_reason === 'Awaiting follow-up appointment' || isMutating}>
+                            {isProcessing ? <Loader2 className="h-4 w-4 animate-spin inline mr-1" /> : null} Process
                           </button>
-                          {/* Use accent1 for Cancel button */}
-                          <button
-                            onClick={() =>
-                              handleStatusUpdate(order.id, 'cancelled')
-                            }
-                            className={`text-accent1 hover:text-accent1/80 ${
-                              isCancelling
-                                ? 'opacity-50 cursor-not-allowed'
-                                : ''
-                            }`}
-                            disabled={isMutating}
-                          >
-                            {isCancelling ? (
-                              <Loader2 className="h-4 w-4 animate-spin inline mr-1" />
-                            ) : null}
-                            Cancel
+                          <button onClick={() => handleStatusUpdate(order.id, 'cancelled')} className={`text-accent1 hover:text-accent1/80 ${isCancelling ? 'opacity-50 cursor-not-allowed' : ''}`} disabled={isMutating}>
+                            {isCancelling ? <Loader2 className="h-4 w-4 animate-spin inline mr-1" /> : null} Cancel
                           </button>
                         </td>
                       </tr>
                     );
                   })
               ) : (
-                <tr>
-                  <td
-                    colSpan="7"
-                    className="px-6 py-4 text-center text-gray-500"
-                  >
-                    No pending orders found.
-                  </td>
-                </tr>
+                <tr><td colSpan="7" className="px-6 py-4 text-center text-gray-500">No pending orders found.</td></tr>
               )}
             </tbody>
           </table>
         </div>
       </div>
 
-      {/* Processing Orders */}
-      <div className="bg-white shadow overflow-hidden rounded-lg mb-6">
-        <div className="px-6 py-4 border-b border-gray-200">
-          <h2 className="text-lg font-medium text-gray-900">
-            Processing Orders
-          </h2>
-        </div>
-
+      {/* Processing Orders Table */}
+      {/* ... (Similar structure as Pending Orders) ... */}
+       <div className="bg-white shadow overflow-hidden rounded-lg mb-6">
+        <div className="px-6 py-4 border-b border-gray-200"><h2 className="text-lg font-medium text-gray-900">Processing Orders</h2></div>
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Order Date
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Patient
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Medication
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Status
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Pharmacy
-                </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Actions
-                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Order Date</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Patient</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Medication</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Pharmacy</th>
+                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {processingOrders.length > 0 ? (
-                processingOrders
-                  .sort((a, b) => new Date(a.orderDate) - new Date(b.orderDate))
-                  .map((order) => {
-                    const isShipping =
-                      updateOrderStatusMutation.isLoading &&
-                      updateOrderStatusMutation.variables?.orderId ===
-                        order.id &&
-                      updateOrderStatusMutation.variables?.status === 'shipped';
-                    const isCancelling =
-                      updateOrderStatusMutation.isLoading &&
-                      updateOrderStatusMutation.variables?.orderId ===
-                        order.id &&
-                      updateOrderStatusMutation.variables?.status ===
-                        'cancelled';
-                    const isMutating =
-                      updateOrderStatusMutation.isLoading &&
-                      updateOrderStatusMutation.variables?.orderId === order.id;
-
-                    return (
-                      <tr key={order.id} className="hover:bg-gray-50">
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {order.orderDate}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm font-medium text-gray-900">
-                            {/* Use primary color for link hover */}
-                            <Link
-                              to={`/patients/${order.patientId}`} // Assuming patientId is available
-                              className="hover:text-primary"
-                            >
-                              {order.patientName || 'N/A'}
-                            </Link>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          {order.medication}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <StatusBadge
-                            status={order.status}
-                            holdReason={order.holdReason}
-                          />
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {order.pharmacy || 'N/A'}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                          {/* Use accent2 for Mark as Shipped button */}
-                          <button
-                            onClick={() =>
-                              handleStatusUpdate(order.id, 'shipped')
-                            } // Assuming backend handles tracking number
-                            className={`text-accent2 hover:text-accent2/80 mr-3 ${
-                              isShipping ? 'opacity-50 cursor-not-allowed' : ''
-                            }`}
-                            disabled={isMutating}
-                          >
-                            {isShipping ? (
-                              <Loader2 className="h-4 w-4 animate-spin inline mr-1" />
-                            ) : null}
-                            Mark as Shipped
-                          </button>
-                          {/* Use accent1 for Cancel button */}
-                          <button
-                            onClick={() =>
-                              handleStatusUpdate(order.id, 'cancelled')
-                            }
-                            className={`text-accent1 hover:text-accent1/80 ${
-                              isCancelling
-                                ? 'opacity-50 cursor-not-allowed'
-                                : ''
-                            }`}
-                            disabled={isMutating}
-                          >
-                            {isCancelling ? (
-                              <Loader2 className="h-4 w-4 animate-spin inline mr-1" />
-                            ) : null}
-                            Cancel
-                          </button>
-                        </td>
-                      </tr>
-                    );
-                  })
+                processingOrders.sort((a, b) => new Date(a.order_date) - new Date(b.order_date)).map((order) => {
+                  const isShipping = updateOrderStatusMutation.isLoading && updateOrderStatusMutation.variables?.orderId === order.id && updateOrderStatusMutation.variables?.status === 'shipped';
+                  const isCancelling = updateOrderStatusMutation.isLoading && updateOrderStatusMutation.variables?.orderId === order.id && updateOrderStatusMutation.variables?.status === 'cancelled';
+                  const isMutating = updateOrderStatusMutation.isLoading && updateOrderStatusMutation.variables?.orderId === order.id;
+                  return (
+                    <tr key={order.id} className="hover:bg-gray-50">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{new Date(order.order_date).toLocaleDateString()}</td>
+                      <td className="px-6 py-4 whitespace-nowrap"><div className="text-sm font-medium text-gray-900"><Link to={`/patients/${order.patient_id}`} className="hover:text-primary">{order.patientName || 'N/A'}</Link></div></td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{order.medication || 'N/A'}</td>
+                      <td className="px-6 py-4 whitespace-nowrap"><StatusBadge status={order.status} /></td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{order.pharmacy || 'N/A'}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        <button onClick={() => handleStatusUpdate(order.id, 'shipped')} className={`text-accent2 hover:text-accent2/80 mr-3 ${isShipping ? 'opacity-50 cursor-not-allowed' : ''}`} disabled={isMutating}>
+                          {isShipping ? <Loader2 className="h-4 w-4 animate-spin inline mr-1" /> : null} Mark as Shipped
+                        </button>
+                        <button onClick={() => handleStatusUpdate(order.id, 'cancelled')} className={`text-accent1 hover:text-accent1/80 ${isCancelling ? 'opacity-50 cursor-not-allowed' : ''}`} disabled={isMutating}>
+                          {isCancelling ? <Loader2 className="h-4 w-4 animate-spin inline mr-1" /> : null} Cancel
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })
               ) : (
-                <tr>
-                  <td
-                    colSpan="6"
-                    className="px-6 py-4 text-center text-gray-500"
-                  >
-                    No processing orders found.
-                  </td>
-                </tr>
+                <tr><td colSpan="6" className="px-6 py-4 text-center text-gray-500">No processing orders found.</td></tr>
               )}
             </tbody>
           </table>
         </div>
       </div>
 
-      {/* Shipped and Cancelled Orders */}
-      <div className="bg-white shadow overflow-hidden rounded-lg">
-        <div className="px-6 py-4 border-b border-gray-200">
-          <h2 className="text-lg font-medium text-gray-900">
-            Recent Shipped Orders
-          </h2>
-        </div>
-
+      {/* Shipped Orders Table */}
+      {/* ... (Table structure remains the same) ... */}
+       <div className="bg-white shadow overflow-hidden rounded-lg">
+        <div className="px-6 py-4 border-b border-gray-200"><h2 className="text-lg font-medium text-gray-900">Recent Shipped Orders</h2></div>
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Order Date
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Patient
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Medication
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Status
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Tracking
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Est. Delivery
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Pharmacy
-                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Order Date</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Patient</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Medication</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tracking</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Est. Delivery</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Pharmacy</th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {shippedOrders.length > 0 ? (
-                shippedOrders
-                  .sort((a, b) => new Date(b.orderDate) - new Date(a.orderDate))
-                  .slice(0, 10) // Only show the 10 most recent shipped orders
-                  .map((order) => (
-                    <tr key={order.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {order.orderDate}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-medium text-gray-900">
-                            {/* Use primary color for link hover */}
-                            <Link
-                              to={`/patients/${order.patientId}`} // Assuming patientId is available
-                              className="hover:text-primary"
-                            >
-                              {order.patientName || 'N/A'}
-                            </Link>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {order.medication}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <StatusBadge status={order.status} />
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {order.trackingNumber ? (
-                          <> {/* Optional: Use a fragment if needed, or just place comment before <a> */}
-                          {/* Use primary color for tracking link */}
-                          <a
-                            href={`https://tracking.example.com/${order.trackingNumber}`} // Replace with actual tracking URL if available
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-primary hover:text-primary/80"
-                          >
-                            {order.trackingNumber}
-                          </a>
-                        </>                        ) : (
-                          'Not available'
-                        )}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {order.estimatedDelivery || 'Unknown'}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {order.pharmacy || 'N/A'}
-                      </td>
-                    </tr>
-                  ))
+                shippedOrders.sort((a, b) => new Date(b.order_date) - new Date(a.order_date)).slice(0, 10).map((order) => (
+                  <tr key={order.id} className="hover:bg-gray-50">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{new Date(order.order_date).toLocaleDateString()}</td>
+                    <td className="px-6 py-4 whitespace-nowrap"><div className="text-sm font-medium text-gray-900"><Link to={`/patients/${order.patient_id}`} className="hover:text-primary">{order.patientName || 'N/A'}</Link></div></td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{order.medication || 'N/A'}</td>
+                    <td className="px-6 py-4 whitespace-nowrap"><StatusBadge status={order.status} /></td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{order.tracking_number ? (<a href={`https://tracking.example.com/${order.tracking_number}`} target="_blank" rel="noopener noreferrer" className="text-primary hover:text-primary/80">{order.tracking_number}</a>) : ('Not available')}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{order.estimated_delivery || 'Unknown'}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{order.pharmacy || 'N/A'}</td>
+                  </tr>
+                ))
               ) : (
-                <tr>
-                  <td
-                    colSpan="7"
-                    className="px-6 py-4 text-center text-gray-500"
-                  >
-                    No shipped orders found.
-                  </td>
-                </tr>
+                <tr><td colSpan="7" className="px-6 py-4 text-center text-gray-500">No shipped orders found.</td></tr>
               )}
             </tbody>
           </table>
         </div>
       </div>
 
-      {/* Create Order Modal - Placeholder, needs proper implementation */}
+
+      {/* Create Order Modal */}
       {showCreateModal && (
         <div className="fixed inset-0 bg-[#00000066] bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-lg shadow-xl max-w-lg w-full">
@@ -666,45 +514,89 @@ const Orders = () => {
             </div>
 
             <div className="p-6 space-y-4">
-              {/* TODO: Replace with actual form using react-hook-form and fetch data for selects */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Patient
+                  Patient *
                 </label>
-                <select className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm rounded-md">
-                  <option value="">Select a patient</option>
-                  {/* Populate with fetched patients */}
-                </select>
+                <Select
+                  showSearch
+                  style={{ width: '100%' }}
+                  placeholder="Search or Select Patient"
+                  value={newOrderData.patientId}
+                  onChange={handleModalPatientSelect}
+                  onSearch={handlePatientSearchInputChange}
+                  filterOption={false}
+                  loading={isLoadingPatients}
+                  options={patientOptions.map(p => ({
+                    value: p.id,
+                    label: `${p.first_name || ''} ${p.last_name || ''}`.trim() || `ID: ${p.id}`
+                  }))}
+                  notFoundContent={isLoadingPatients ? <Spinner /> : null}
+                  required
+                />
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Medication
+                  Medication/Product *
                 </label>
-                <select className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm rounded-md">
-                  <option value="">Select a medication</option>
-                  {/* Populate with fetched products/medications */}
-                </select>
+                <Select
+                  showSearch
+                  style={{ width: '100%' }}
+                  placeholder="Search or Select Product"
+                  value={newOrderData.productId}
+                  onChange={handleModalProductSelect}
+                  onSearch={handleProductSearchInputChange}
+                  filterOption={false}
+                  loading={isLoadingProducts}
+                  options={productOptions.map(p => ({ // Assuming useProducts returns similar structure
+                    value: p.id,
+                    label: p.name || `ID: ${p.id}`
+                  }))}
+                  notFoundContent={isLoadingProducts ? <Spinner /> : null}
+                  required
+                />
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Pharmacy
+                  Pharmacy *
                 </label>
-                <select className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm rounded-md">
-                  <option value="">Select a pharmacy</option>
-                  {/* Populate with fetched pharmacies */}
-                </select>
+                <Select
+                  showSearch
+                  style={{ width: '100%' }}
+                  placeholder="Select a pharmacy"
+                  value={newOrderData.pharmacyId}
+                  onChange={handleModalPharmacySelect}
+                  filterOption={(input, option) =>
+                    (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
+                  }
+                  loading={isLoadingPharmacies}
+                  options={pharmacyOptions.map(ph => ({ // Assuming usePharmacies returns similar structure
+                    value: ph.id,
+                    label: ph.name || `ID: ${ph.id}`
+                  }))}
+                  required
+                />
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Linked Session (Optional)
                 </label>
-                <select className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm rounded-md">
-                  <option value="">Select a session</option>
-                  {/* Populate with fetched sessions */}
-                </select>
+                <Select
+                  allowClear // Allow unselecting
+                  style={{ width: '100%' }}
+                  placeholder="Select a session (optional)"
+                  value={newOrderData.linkedSessionId}
+                  onChange={handleModalSessionSelect}
+                  loading={isLoadingSessions}
+                  options={sessionOptions.map(s => ({
+                    value: s.id,
+                    // Create a meaningful label for the session
+                    label: `Session on ${new Date(s.scheduled_date).toLocaleDateString()} with ${s.patients?.first_name || 'Patient'} (${s.status})`
+                  }))}
+                />
               </div>
 
               <div>
@@ -712,29 +604,32 @@ const Orders = () => {
                   Notes
                 </label>
                 <textarea
+                  name="notes" // Added name attribute
                   rows="3"
-                  className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm rounded-md"
+                  className="block w-full pl-3 pr-3 py-2 text-base border-gray-300 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm rounded-md"
                   placeholder="Add any notes about this order..."
+                  value={newOrderData.notes}
+                  onChange={(e) => handleModalInputChange('notes', e.target.value)}
                 ></textarea>
               </div>
             </div>
 
             <div className="px-6 py-4 border-t border-gray-200 flex justify-end space-x-3">
               <button
+                type="button"
                 className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
                 onClick={() => setShowCreateModal(false)}
               >
                 Cancel
               </button>
-              {/* Use primary color for Create Order button */}
               <button
-                className="px-4 py-2 bg-primary rounded-md text-sm font-medium text-white hover:bg-primary/90"
-                // Simplified onClick handler
-                onClick={() => setShowCreateModal(false)}
+                type="button"
+                className="px-4 py-2 bg-primary rounded-md text-sm font-medium text-white hover:bg-primary/90 disabled:opacity-50"
+                onClick={handleCreateOrder} // Use the correct handler
+                disabled={createOrderMutation.isLoading} // Disable while creating
               >
-                Create Order
+                {createOrderMutation.isLoading ? <Spinner /> : 'Create Order'}
               </button>
-              {/* TODO: Re-add order creation logic using useCreateOrder mutation hook later */}
             </div>
           </div>
         </div>

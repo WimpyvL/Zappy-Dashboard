@@ -116,25 +116,39 @@ export const useChangePassword = (options = {}) => {
   });
 };
 
-// Hook to get list of users (Example - assuming admin role needed)
-export const useGetUsers = (options = {}) => {
+// Hook to get list of users, potentially filtered by role
+export const useGetUsers = (filters = {}, options = {}) => {
    return useQuery({
-     queryKey: ['users', 'list'], // Example query key
+     queryKey: ['users', 'list', filters], // Include filters in query key
      queryFn: async () => {
-       // This likely needs RLS or potentially a backend function call
-       // to ensure only authorized users can list all users.
-       // Directly querying auth.users is often restricted.
-       // A common pattern is to have a 'profiles' table synced with auth.users.
-       console.warn("useGetUsers hook needs proper implementation, potentially querying a 'profiles' table or using an admin API/function.");
+       // Assuming a 'profiles' table linked to auth.users via 'id'
+       // and containing 'first_name', 'last_name', 'role' columns.
+       // Adjust table and column names based on your actual schema.
+       let query = supabase
+         .from('profiles') // Query the profiles table
+         .select('id, first_name, last_name, role'); // Select necessary fields
 
-       // Example querying a 'profiles' table:
-       // const { data, error } = await supabase.from('profiles').select('id, first_name, last_name, email, role');
-       // if (error) throw error;
-       // return data || [];
+       // Apply role filter if provided
+       if (filters.role) {
+         query = query.eq('role', filters.role); // Filter by role column
+       }
 
-       // Placeholder:
-       return [];
+       // Add ordering
+       query = query.order('last_name', { ascending: true }).order('first_name', { ascending: true });
+
+       const { data, error } = await query;
+
+       if (error) {
+         console.error('Error fetching users/profiles:', error);
+         // Avoid throwing error here to not break UI, return empty array instead
+         // throw new Error(error.message);
+         toast.error(`Error fetching users: ${error.message}`);
+         return [];
+       }
+       console.log(`Fetched users with role '${filters.role}':`, data); // Debug log
+       return data || [];
      },
+     staleTime: 5 * 60 * 1000, // Cache for 5 minutes
      ...options,
    });
  };

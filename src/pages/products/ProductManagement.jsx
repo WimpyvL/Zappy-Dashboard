@@ -1,4 +1,4 @@
-import React, { useState } from 'react'; // Removed unused useEffect
+import React, { useState, useEffect } from 'react'; // Added useEffect back
 import {
   // Search, // Removed unused import
   Plus,
@@ -345,6 +345,16 @@ const ProductManagement = () => {
   ]
     .filter(Boolean)
     .sort();
+
+  // Log the derived categories and options for debugging
+  useEffect(() => {
+    console.log("Derived Product Categories:", productCategories);
+    const categoryOptions = [
+      { value: 'all', label: 'All Categories' },
+      ...productCategories.map((c) => ({ value: c, label: formatCategoryName(c) })),
+    ];
+    console.log("Category Filter Options Passed:", categoryOptions);
+  }, [productCategories]); // Rerun if categories change
 
   const filteredProducts = allProducts.filter(
     (p) =>

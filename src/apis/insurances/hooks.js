@@ -11,24 +11,25 @@ const queryKeys = {
   details: (id) => [...queryKeys.all, 'detail', id],
 };
 
-// Get insurance records hook using Supabase
-export const useInsuranceRecords = (filters = {}) => {
+// Get insurance policies hook using Supabase
+export const useInsuranceRecords = (filters = {}) => { // Keep hook name for now, but it fetches policies
   return useQuery({
     queryKey: queryKeys.lists(filters),
     queryFn: async () => {
       let query = supabase
-        .from('insurance_records') // ASSUMING table name
+        .from('insurance_policy') // Correct table name
         .select(`
           *,
-          client_record ( id, first_name, last_name )
-        `) // Example join
-        .order('created_at', { ascending: false }); // Assuming timestamp column
+          patients ( id, first_name, last_name )
+        `) // Correct join table name
+        .order('created_at', { ascending: false });
 
       // Apply filters
       if (filters.patientId) {
-        query = query.eq('client_record_id', filters.patientId); // Adjust column name if needed
+        query = query.eq('patient_id', filters.patientId); // Correct foreign key
       }
       if (filters.status) {
+        // Use the 'status' column from insurance_policy table
         query = query.eq('status', filters.status);
       }
 
@@ -38,12 +39,12 @@ export const useInsuranceRecords = (filters = {}) => {
         console.error('Error fetching insurance records:', error);
         throw new Error(error.message);
       }
-       // Map data if needed
+       // Map data if needed (patientName is now joined)
        const mappedData = data?.map(rec => ({
            ...rec,
-           patientName: rec.client_record ? `${rec.client_record.first_name || ''} ${rec.client_record.last_name || ''}`.trim() : 'N/A',
-           // Fetch related documents separately if needed or join if possible
-           documents: [], // Placeholder - fetching documents might need another query/hook
+           patientName: rec.patients ? `${rec.patients.first_name || ''} ${rec.patients.last_name || ''}`.trim() : 'N/A',
+           // Documents might need separate fetching or a different join structure
+           documents: rec.insurance_document || [], // Assuming relation name is insurance_document
        })) || [];
 
       return { data: mappedData }; // Adjust return structure if pagination/meta needed
@@ -58,13 +59,14 @@ export const useInsuranceRecordById = (id, options = {}) => {
     queryFn: async () => {
       if (!id) return null;
 
-      // Fetch main record
+      // Fetch main policy record
       const { data: recordData, error: recordError } = await supabase
-        .from('insurance_records') // ASSUMING table name
+        .from('insurance_policy') // Correct table name
         .select(`
           *,
-          client_record ( id, first_name, last_name )
-        `) // Example join
+          patients ( id, first_name, last_name ),
+          insurance_document (*)
+        `) // Correct join table name and fetch related documents
         .eq('id', id)
         .single();
 
@@ -74,22 +76,13 @@ export const useInsuranceRecordById = (id, options = {}) => {
         throw new Error(recordError.message);
       }
 
-      // Fetch related documents (assuming an 'insurance_documents' table)
-      const { data: documentsData, error: documentsError } = await supabase
-        .from('insurance_documents') // ASSUMING table name
-        .select('*')
-        .eq('insurance_record_id', id); // Assuming foreign key column
-
-       if (documentsError) {
-         console.error(`Error fetching documents for insurance record ${id}:`, documentsError);
-         // Decide how to handle: throw error or return record without documents?
-       }
+      // Documents are now fetched via the join in the main query
 
        // Combine and map data
        const mappedData = recordData ? {
            ...recordData,
-           patientName: recordData.client_record ? `${recordData.client_record.first_name || ''} ${recordData.client_record.last_name || ''}`.trim() : 'N/A',
-           documents: documentsData || [], // Attach fetched documents
+           patientName: recordData.patients ? `${recordData.patients.first_name || ''} ${recordData.patients.last_name || ''}`.trim() : 'N/A', // Correct join table name
+           documents: recordData.insurance_document || [], // Use joined documents
        } : null;
 
 
@@ -105,20 +98,26 @@ export const useCreateInsuranceRecord = (options = {}) => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (recordData) => {
+      // Map frontend fields to DB columns
       const dataToInsert = {
-        ...recordData,
-        // Map frontend fields like patientId to DB columns like client_record_id
-        client_record_id: recordData.patientId,
-        status: recordData.status || 'Pending', // Default status
-        created_at: new Date().toISOString(), // Assuming timestamp columns
+        patient_id: recordData.patientId, // Correct foreign key
+        provider_name: recordData.provider, // Correct column name
+        policy_number: recordData.policy_number,
+        group_number: recordData.group_number,
+        status: recordData.verification_status || 'Pending', // Correct column name
+        // coverage_type: recordData.coverage_type, // Add if exists in schema
+        // coverage_details: recordData.coverage_details, // Add if exists in schema
+        notes: recordData.notes,
+        created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       };
       delete dataToInsert.patientId;
-      delete dataToInsert.patientName; // Don't store derived name
-      delete dataToInsert.documents; // Documents are handled separately
+      // delete dataToInsert.patientId; // Already mapped
+      // delete dataToInsert.patientName; // Not part of DB schema
+      // delete dataToInsert.documents; // Handled separately
 
       const { data, error } = await supabase
-        .from('insurance_records') // ASSUMING table name
+        .from('insurance_policy') // Correct table name
         .insert(dataToInsert)
         .select()
         .single();
@@ -147,20 +146,31 @@ export const useUpdateInsuranceRecord = (options = {}) => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, recordData }) => {
-      if (!id) throw new Error("Record ID is required for update.");
+      if (!id) throw new Error("Policy ID is required for update.");
+      // Map frontend fields to DB columns
       const dataToUpdate = {
-        ...recordData,
-        client_record_id: recordData.patientId, // Map if needed
+        patient_id: recordData.patientId, // Correct foreign key
+        provider_name: recordData.provider, // Correct column name
+        policy_number: recordData.policy_number,
+        group_number: recordData.group_number,
+        status: recordData.verification_status, // Correct column name
+        // coverage_type: recordData.coverage_type, // Add if exists
+        // coverage_details: recordData.coverage_details, // Add if exists
+        notes: recordData.notes,
+        // prior_auth_status: recordData.prior_auth_status, // Add if exists
+        // prior_auth_expiry_date: recordData.prior_auth_expiry_date, // Add if exists
+        // verification_history: recordData.verification_history, // Add if exists and handled correctly
         updated_at: new Date().toISOString(),
       };
+      // Remove fields not in the table or not meant to be updated this way
       delete dataToUpdate.id;
       delete dataToUpdate.created_at;
-      delete dataToUpdate.patientId;
-      delete dataToUpdate.patientName;
-      delete dataToUpdate.documents;
+      // delete dataToUpdate.patientId; // Already mapped
+      // delete dataToUpdate.patientName; // Not part of DB
+      // delete dataToUpdate.documents; // Handled separately
 
       const { data, error } = await supabase
-        .from('insurance_records') // ASSUMING table name
+        .from('insurance_policy') // Correct table name
         .update(dataToUpdate)
         .eq('id', id)
         .select()
@@ -214,17 +224,17 @@ export const useUploadInsuranceDocument = (options = {}) => {
 
       const publicURL = urlData?.publicUrl;
 
-      // Add record to your 'insurance_documents' table
+      // Add record to your 'insurance_document' table
       const docRecord = {
-        insurance_record_id: recordId, // Link to the insurance record
-        file_name: file.name, // Original file name
-        storage_path: filePath, // Store the path in storage
+        insurance_policy_id: recordId, // Correct foreign key
+        file_name: file.name,
+        storage_path: filePath,
         url: publicURL, // Store the public URL
         // Add other relevant fields like uploaded_by, created_at
       };
 
       const { data: dbData, error: dbError } = await supabase
-        .from('insurance_documents') // ASSUMING table name
+        .from('insurance_document') // Correct table name
         .insert(docRecord)
         .select()
         .single();
@@ -271,11 +281,11 @@ export const useDeleteInsuranceDocument = (options = {}) => {
         // throw new Error(storageError.message); // Option: stop if storage delete fails
       }
 
-      // 2. Delete record from the 'insurance_documents' table
+      // 2. Delete record from the 'insurance_document' table
       const { error: dbError } = await supabase
-        .from('insurance_documents') // ASSUMING table name
+        .from('insurance_document') // Correct table name
         .delete()
-        .eq('id', documentId); // Assuming 'id' is the primary key of insurance_documents
+        .eq('id', documentId);
 
       if (dbError) {
         console.error(`Error deleting document record ${documentId} from DB:`, dbError);

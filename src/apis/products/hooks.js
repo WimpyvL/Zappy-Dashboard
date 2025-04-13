@@ -26,8 +26,9 @@ export const useProducts = (filters = {}) => {
       if (filters.category) {
         query = query.eq('category', filters.category);
       }
+      // Corrected column name for active filter
       if (filters.active !== undefined) {
-        query = query.eq('active', filters.active);
+        query = query.eq('is_active', filters.active);
       }
       // Add search filter if needed
       if (filters.search) {
@@ -78,14 +79,26 @@ export const useCreateProduct = (options = {}) => {
   return useMutation({
     mutationFn: async (productData) => {
       // Add timestamps, default values etc. based on your actual 'products' table schema
+      // Map frontend fields to DB columns, ensuring correct names
       const dataToInsert = {
-        ...productData,
-        created_at: new Date().toISOString(), // Assuming created_at column
-        updated_at: new Date().toISOString(), // Assuming updated_at column
-        active: productData.active ?? true,
-        // Ensure complex fields like 'doses' or 'associatedServiceIds' are formatted correctly
-        // e.g., if they are JSONB columns, they should be passed as is.
-        // If they are relational, this logic needs adjustment.
+        name: productData.name,
+        description: productData.description,
+        sku: productData.sku,
+        category: productData.category,
+        type: productData.type,
+        price: productData.price,
+        one_time_purchase_price: productData.oneTimePurchasePrice,
+        fulfillment_source: productData.fulfillmentSource,
+        requires_prescription: productData.requiresPrescription,
+        interaction_warnings: productData.interactionWarnings,
+        stock_status: productData.stockStatus,
+        image_url: productData.imageUrl, // Assuming imageUrl maps to image_url
+        is_active: productData.active ?? true, // Corrected column name
+        stripe_price_id: productData.stripePriceId,
+        stripe_one_time_price_id: productData.stripeOneTimePriceId,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        // NOTE: 'doses' and 'associatedServiceIds' are likely handled via separate tables/logic, not direct insert here.
       };
 
       const { data, error } = await supabase
@@ -120,11 +133,27 @@ export const useUpdateProduct = (options = {}) => {
   return useMutation({
     mutationFn: async ({ id, productData }) => {
       if (!id) throw new Error("Product ID is required for update.");
+      // Map frontend fields to DB columns for update
       const dataToUpdate = {
-        ...productData,
-        updated_at: new Date().toISOString(), // Update timestamp
+        name: productData.name,
+        description: productData.description,
+        sku: productData.sku,
+        category: productData.category,
+        type: productData.type,
+        price: productData.price,
+        one_time_purchase_price: productData.oneTimePurchasePrice,
+        fulfillment_source: productData.fulfillmentSource,
+        requires_prescription: productData.requiresPrescription,
+        interaction_warnings: productData.interactionWarnings,
+        stock_status: productData.stockStatus,
+        image_url: productData.imageUrl,
+        is_active: productData.active, // Corrected column name
+        stripe_price_id: productData.stripePriceId,
+        stripe_one_time_price_id: productData.stripeOneTimePriceId,
+        updated_at: new Date().toISOString(),
+        // NOTE: 'doses' and 'associatedServiceIds' updates likely need separate logic.
       };
-      // Remove fields that shouldn't be updated directly if necessary
+      // Remove fields that shouldn't be updated directly
       delete dataToUpdate.id;
       delete dataToUpdate.created_at;
 

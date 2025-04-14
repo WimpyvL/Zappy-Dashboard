@@ -6,7 +6,7 @@ UI_Pages -- Uses --> UI_Components["Reusable Components"];
 UI_Layouts -- Contains --> UI_Sidebar["Sidebar (`Sidebar.js`)"];
 UI_Layouts -- Contains --> UI_Header["Header (`Headers.js`)"];
 UI_Pages -- Uses --> RQ_Hooks["React Query Hooks (`src/apis/*/hooks.js`)"];
-UI_Pages -- Uses --> Context_Hooks["Context Hooks (`useAuth`, `useCart`, etc.)"];
+UI_Pages -- Uses --> Context_Hooks["Context Hooks (`useAuth`, `useCart`, etc.)"];a
 end
 
     subgraph State Management

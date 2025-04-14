@@ -16,26 +16,57 @@ import PatientForms from './patientDetails/PatientForms';
 import PatientBilling from './patientDetails/PatientBilling';
 import PatientFollowUpNotes from './patientDetails/PatientFollowUpNotes';
 import PatientDocuments from './patientDetails/PatientDocuments';
+// Removed useAppContext import
 import { usePatientById } from '../../apis/patients/hooks'; // Import the correct hook
-// Removed placeholder form hook import
+// TODO: Import usePatientForms hook when created (e.g., import { usePatientForms } from '../../apis/forms/hooks';)
 
 const PatientDetail = () => {
   const { patientId } = useParams();
   // Fetch patient data using the hook
-  const { data: patient, isLoading: isLoadingPatient, error: patientError, refetch: refetchPatient } = usePatientById(patientId);
-  // Removed placeholder form data/loading/error states
-  // Removed placeholder loading states for other tabs
-  // Removed placeholder data states for other tabs
+  const { data: patient, isLoading: isLoadingPatient, error: patientError } = usePatientById(patientId);
+  // TODO: Use the actual forms hook when created
+  // const { data: patientFormsData, isLoading: isLoadingForms, error: formsError } = usePatientForms(patientId);
+  // Placeholder data until hook is implemented:
+  const patientFormsData = { data: [] }; // Default to empty array
+  const isLoadingForms = false; // Default to false
+  const formsError = null; // Default to null
+
+  // Loading states for different data types (keep for related data for now)
+  const [loading] = useState({ // Removed unused setLoading
+    // patient: true, // Handled by isLoadingPatient from hook
+    sessions: false,
+    orders: false,
+    notes: true, // Assume we might load these later
+    // documents: true, // Removed, handled by PatientDocuments component
+    forms: true,
+    invoices: true,
+  });
+
+  // Data states
+  // const [patient, setPatient] = useState(null); // Removed useState for patient, now comes from usePatientById hook
+  // Initialize related data as empty arrays, fetch logic can be added later if needed
+  // TODO: Remove these states if data is fetched within child components
+  const [patientSessions] = useState([]); // Removed setPatientSessions
+  const [patientOrders] = useState([]); // Removed setPatientOrders
+  const [patientNotes] = useState([]); // Removed setPatientNotes
+  // const [patientDocuments, setPatientDocuments] = useState([]); // Removed, handled by PatientDocuments component
+  const [patientForms] = useState([]); // Removed setPatientForms
+  const [patientInvoices] = useState([]); // Removed setPatientInvoices
 
   // UI states
   const [activeTab, setActiveTab] = useState('info');
   const [showFollowupNotes, setShowFollowupNotes] = useState(false);
   const [selectedSession, setSelectedSession] = useState(null);
 
-  // Define refreshPatient using the refetch function from usePatientById hook
-  const refreshPatientData = useCallback(() => {
-    refetchPatient();
-  }, [refetchPatient]);
+  // Define refreshPatient using useCallback to stabilize its reference
+  const refreshPatient = useCallback(async () => {
+    // This function currently does nothing as it relies on mock data/context
+    // In a real scenario, it would likely trigger a refetch of the patient data
+    // e.g., queryClient.invalidateQueries(['patient', patientId]);
+    console.warn("Refresh patient called. Adapt for actual data fetching if needed.");
+    // Since usePatientById handles fetching, maybe this isn't needed,
+    // or should trigger an invalidation via queryClient if using React Query fully.
+  }, []); // Empty dependency array means the function reference is stable
 
   // Removed useEffect that relied on contextPatients
 
@@ -84,20 +115,70 @@ const PatientDetail = () => {
       <PatientTabs
         activeTab={activeTab}
         setActiveTab={setActiveTab}
-        // Removed props passing placeholder data
+        // Pass related data (currently empty, fetched in fetchRelatedData)
+        patientSessions={patientSessions}
+        patientOrders={patientOrders}
+        patientNotes={patientNotes}
+        // patientDocuments={patientDocuments} // Removed, handled by PatientDocuments component
+        patientForms={patientForms}
       />
 
       {/* Content based on active tab */}
       {/* Pass the found patient object */}
       {activeTab === 'info' && <PatientInfo patient={patient} />}
 
-      {activeTab === 'sessions' && <PatientSessions patientId={patientId} onOpenFollowupNotes={handleOpenFollowupNotes} />}
-      {activeTab === 'orders' && <PatientOrders patientId={patientId} />}
-      {activeTab === 'notes' && <PatientNotes patientId={patientId} onOpenFollowupNotes={handleOpenFollowupNotes} />}
-      {activeTab === 'documents' && <PatientDocuments patientId={patientId} />}
-      {activeTab === 'forms' && <PatientForms patientId={patientId} />}
-      {activeTab === 'billing' && <PatientBilling patient={patient} refreshPatient={refreshPatientData} />} 
-      {/* Pass patient and refreshPatientData to Billing */}
+      {activeTab === 'sessions' && (
+        <PatientSessions
+          patientId={patientId}
+          sessions={patientSessions} // Pass related data
+          loading={loading.sessions}
+          onOpenFollowupNotes={handleOpenFollowupNotes}
+        />
+      )}
+
+      {activeTab === 'orders' && (
+        <PatientOrders
+          patientId={patientId}
+          orders={patientOrders} // Pass related data
+          loading={loading.orders}
+        />
+      )}
+
+      {activeTab === 'notes' && (
+        <PatientNotes
+          patientId={patientId}
+          notes={patientNotes} // Pass related data
+          loading={loading.notes}
+          onOpenFollowupNotes={handleOpenFollowupNotes}
+        />
+      )}
+
+      {activeTab === 'documents' && (
+        <PatientDocuments
+          patientId={patientId}
+          // documents={patientDocuments} // Removed, handled by PatientDocuments component
+          // loading={loading.documents} // Removed, handled by PatientDocuments component
+          // fetchDocuments={() => fetchPatientDocuments(patientId)} // Removed, handled by PatientDocuments component
+        />
+      )}
+
+      {activeTab === 'forms' && (
+        <PatientForms
+          patientId={patientId}
+          // Pass data and loading state from the (placeholder) forms hook
+          forms={patientFormsData?.data || []} // Use data from placeholder hook
+          loading={isLoadingForms} // Use loading state from placeholder hook
+        />
+      )}
+
+      {activeTab === 'billing' && (
+        <PatientBilling
+          patient={patient} // Pass the found patient object
+          invoices={patientInvoices} // Pass related data
+          loading={loading.invoices}
+          refreshPatient={refreshPatient} // Pass the stable useCallback version
+        />
+      )}
 
       {/* Follow-up Notes Modal */}
       {showFollowupNotes && (

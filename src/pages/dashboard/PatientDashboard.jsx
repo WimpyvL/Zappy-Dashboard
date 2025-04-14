@@ -1,38 +1,22 @@
 import React from 'react';
-
-const PatientDashboard = () => {
-  return (
-    <div className="p-6">
-      {/* Patient Dashboard Content Temporarily Disabled */}
-      <h1 className="text-2xl font-bold mb-4">Patient Dashboard</h1>
-      <p className="text-gray-600">This section is currently under construction and temporarily disabled.</p>
-    </div>
-  );
-};
-
-export default PatientDashboard;
-
-/*
-// Original Content:
-import React from 'react';
 import { useAuth } from '../../context/AuthContext'; // To get the current user and loading state
 import { Link, useNavigate, useLocation } from 'react-router-dom'; // Import useNavigate and useLocation
-// import { patientSidebarItems } from '../../constants/SidebarItems'; // Import patient sidebar items - Removed as unused
+import { patientSidebarItems } from '../../constants/SidebarItems'; // Import patient sidebar items
 import ChildishDrawingElement from '../../components/ui/ChildishDrawingElement'; // Import our drawing element
 import {
   Loader2,
   AlertTriangle,
   Home,
-  // Settings, // Removed unused
-  // FileText as RecordsIcon, // Removed unused
-  // Layout as ProgramsIcon, // Removed unused
+  Settings,
+  FileText as RecordsIcon,
+  Layout as ProgramsIcon,
   ClipboardList as FormsIcon,
   CreditCard as InvoiceIcon,
   Package as OrderIcon,
-  // Calendar as AppointmentIcon, // Removed unused
-  CreditCard, // For bottom nav and onboarding
-  // Store as ShopIcon, // Removed unused
-  // User as ProfileIcon, // Removed unused
+  Calendar as AppointmentIcon,
+  CreditCard, // For bottom nav
+  Store as ShopIcon, // For Shop
+  User as ProfileIcon, // For Profile
   CheckCircle, // For timeline
   Truck, // For timeline
   Clock as ClockIcon, // Alias Clock for timeline
@@ -42,9 +26,9 @@ import {
 } from 'lucide-react';
 // Import hooks (using mock data below for now)
 // import { useNotes } from '../../apis/notes/hooks'; // Keep notes hook commented out for now due to error
-// import { useGetPatientForms } from '../../apis/forms/hooks'; // Using mock data
-// import { useMyOrders } from '../../apis/orders/hooks'; // Using mock data
-// import { useMyInvoices } from '../../apis/subscriptionPlans/hooks'; // Using mock data
+import { useGetPatientForms } from '../../apis/forms/hooks';
+import { useMyOrders } from '../../apis/orders/hooks';
+import { useMyInvoices } from '../../apis/subscriptionPlans/hooks';
 // TODO: Import useSessions hook when available
 
 // Simple Order Status Timeline Component
@@ -59,7 +43,7 @@ const OrderStatusTimeline = ({ order }) => {
 
   // Find the index of the current status, default to -1 if not found
   let currentStatusIndex = steps.findIndex(step => step.status === order.status?.toLowerCase());
-
+  
   // If status is 'delivered' or something beyond 'shipped', mark all as completed
   if (order.status?.toLowerCase() === 'delivered') {
       currentStatusIndex = steps.length; // Mark all as completed
@@ -68,7 +52,7 @@ const OrderStatusTimeline = ({ order }) => {
       currentStatusIndex = 0; // Show 'Placed' as current/completed
   } else if (currentStatusIndex === -1) {
       // Default if status is missing or unknown
-      currentStatusIndex = 0;
+      currentStatusIndex = 0; 
   }
 
 
@@ -79,19 +63,20 @@ const OrderStatusTimeline = ({ order }) => {
         {steps.map((step, index) => {
           const isCompleted = index < currentStatusIndex;
           const isCurrent = index === currentStatusIndex;
-
+          
           return (
             <React.Fragment key={step.name}>
               <div className="flex flex-col items-center text-center w-16"> {/* Added fixed width and centering */}
                 <div className={`w-6 h-6 rounded-full flex items-center justify-center mb-1 ${
-                  isCompleted ? `bg-${step.color}` :
-                  isCurrent ? `bg-${step.color} ring-2 ring-offset-1 ring-${step.color}` :
+                  isCompleted ? `bg-${step.color}` : 
+                  isCurrent ? `bg-${step.color} ring-2 ring-offset-1 ring-${step.color}` : 
                   'bg-gray-300'
                 }`}>
                   <step.icon className={`h-4 w-4 ${isCompleted || isCurrent ? 'text-white' : 'text-gray-500'}`} />
                 </div>
                 <span className={`text-xs leading-tight ${isCurrent ? 'font-semibold text-gray-800' : 'text-gray-500'}`}>{step.name}</span>
               </div>
+              {/* Connector line */}
               {index < steps.length - 1 && (
                 <div className={`flex-1 h-0.5 mt-[-12px] ${isCompleted ? `bg-${steps[index+1].color}` : 'bg-gray-300'}`}></div>
               )}
@@ -115,7 +100,7 @@ const OnboardingStatusTimeline = ({ stepsCompleted = 0 }) => {
   ];
 
   // Determine completion based on stepsCompleted prop (0-indexed)
-  const currentStepIndex = stepsCompleted;
+  const currentStepIndex = stepsCompleted; 
 
   return (
     <div className="mt-3">
@@ -123,19 +108,20 @@ const OnboardingStatusTimeline = ({ stepsCompleted = 0 }) => {
         {steps.map((step, index) => {
           const isCompleted = index < currentStepIndex;
           const isCurrent = index === currentStepIndex;
-
+          
           return (
             <React.Fragment key={step.name}>
               <div className="flex flex-col items-center text-center w-14 sm:w-16"> {/* Adjusted width */}
                 <div className={`w-6 h-6 rounded-full flex items-center justify-center mb-1 ${
-                  isCompleted ? `bg-${step.color}` :
-                  isCurrent ? `bg-${step.color} ring-2 ring-offset-1 ring-${step.color}` :
+                  isCompleted ? `bg-${step.color}` : 
+                  isCurrent ? `bg-${step.color} ring-2 ring-offset-1 ring-${step.color}` : 
                   'bg-gray-300'
                 }`}>
                   <step.icon className={`h-4 w-4 ${isCompleted || isCurrent ? 'text-white' : 'text-gray-500'}`} />
                 </div>
                 <span className={`text-xs leading-tight ${isCurrent ? 'font-semibold text-gray-800' : 'text-gray-500'}`}>{step.name}</span>
               </div>
+              {/* Connector line */}
               {index < steps.length - 1 && (
                 <div className={`flex-1 h-0.5 mt-[-12px] ${isCompleted ? `bg-${steps[index+1].color}` : 'bg-gray-300'}`}></div>
               )}
@@ -148,11 +134,11 @@ const OnboardingStatusTimeline = ({ stepsCompleted = 0 }) => {
 };
 
 
-const PatientDashboard_Original = () => { // Renamed original component
+const PatientDashboard = () => {
   const { currentUser, loading: authLoading } = useAuth();
-  // const navigate = useNavigate(); // Removed unused
-  // const location = useLocation(); // Removed unused
-  // const patientId = currentUser?.id || 'dev-patient-id'; // Removed unused
+  const navigate = useNavigate();
+  const location = useLocation();
+  const patientId = currentUser?.id || 'dev-patient-id';
 
   // --- MOCK DATA (Replace with actual hook calls when ready) ---
   const mockMyForms = [
@@ -193,7 +179,7 @@ const PatientDashboard_Original = () => { // Renamed original component
   const pendingForms = !dataLoading && !dataError ? myForms?.filter(f => f.status === 'pending') : [];
   const pendingInvoices = !dataLoading && !dataError ? myInvoices?.filter(inv => inv.status?.toLowerCase() === 'pending') : [];
   // Get the most recent 1-2 orders that are processing or shipped
-  const activeOrders = !dataLoading && !dataError
+  const activeOrders = !dataLoading && !dataError 
     ? myOrders
         ?.filter(o => ['processing', 'shipped'].includes(o.status?.toLowerCase()))
         .sort((a, b) => new Date(b.orderDate || b.created_at) - new Date(a.orderDate || a.created_at)) // Sort recent first
@@ -274,7 +260,7 @@ const PatientDashboard_Original = () => { // Renamed original component
       <ChildishDrawingElement type="doodle" color="accent1" position="top-right" size={120} rotation={-15} opacity={0.15} />
       <ChildishDrawingElement type="scribble" color="accent2" position="bottom-left" size={100} rotation={10} opacity={0.1} />
       {/* Adjusted blue watercolor element: moved further left and slightly up */}
-      <ChildishDrawingElement type="watercolor" color="accent3" position="-top-4 -left-4" size={140} rotation={5} opacity={0.15} />
+      <ChildishDrawingElement type="watercolor" color="accent3" position="-top-4 -left-4" size={140} rotation={5} opacity={0.15} /> 
       {/* Welcome Header */}
       <div className="p-4 border-b border-gray-200 mb-6 relative z-10"> {/* Added relative z-10 to ensure text is above drawings */}
         <h1 className="text-2xl font-bold text-gray-900">Welcome Back, {firstName}</h1>
@@ -283,7 +269,7 @@ const PatientDashboard_Original = () => { // Renamed original component
 
       {/* Action Items & Status Section */}
       <div className="px-4 space-y-6">
-
+      
         {/* Onboarding Progress Card - Show if not complete */}
         {!isOnboardingComplete && (
           <div className="bg-white rounded-lg shadow overflow-hidden border-l-4 border-accent2">
@@ -301,16 +287,16 @@ const PatientDashboard_Original = () => { // Renamed original component
               <OnboardingStatusTimeline stepsCompleted={onboardingStepsCompleted} />
               {/* Optional: Add a CTA related to the current step */}
               {onboardingStepsCompleted === 1 && pendingFormsCount > 0 && (
-                 <Link
-                   to="/forms"
+                 <Link 
+                   to="/forms" 
                    className="mt-4 inline-flex items-center px-4 py-2 bg-accent3 text-white rounded-md text-sm font-medium hover:bg-accent3/90 transition-colors"
                  >
                    Complete Forms &rarr;
                  </Link>
               )}
                {onboardingStepsCompleted === 2 && pendingInvoicesCount > 0 && (
-                 <Link
-                   to="/billing"
+                 <Link 
+                   to="/billing" 
                    className="mt-4 inline-flex items-center px-4 py-2 bg-primary text-white rounded-md text-sm font-medium hover:bg-primary/90 transition-colors"
                  >
                    Setup Payment &rarr;
@@ -336,8 +322,8 @@ const PatientDashboard_Original = () => { // Renamed original component
               <p className="text-sm text-gray-600 mb-3">Please complete your check-in forms.</p>
               {pendingForms[0] && <p className="text-xs text-gray-500 mb-3">Next: {pendingForms[0].name}</p>}
               {/* CTA Button */}
-              <Link
-                to="/forms"
+              <Link 
+                to="/forms" 
                 className="inline-flex items-center px-4 py-2 bg-accent3 text-white rounded-md text-sm font-medium hover:bg-accent3/90 transition-colors"
               >
                 Complete Forms Now &rarr;
@@ -362,8 +348,8 @@ const PatientDashboard_Original = () => { // Renamed original component
                <p className="text-sm text-gray-600 mb-3">You have outstanding invoices that require payment.</p>
                {pendingInvoices[0] && <p className="text-xs text-gray-500 mb-3">Next Due: Invoice #{pendingInvoices[0].invoiceId || pendingInvoices[0].id}</p>}
                {/* CTA Button */}
-               <Link
-                 to="/billing"
+               <Link 
+                 to="/billing" 
                  className="inline-flex items-center px-4 py-2 bg-primary text-white rounded-md text-sm font-medium hover:bg-primary/90 transition-colors"
                >
                  Pay Invoices Now &rarr;
@@ -411,5 +397,4 @@ const PatientDashboard_Original = () => { // Renamed original component
   );
 };
 
-// export default PatientDashboard_Original; // Keep original export commented out
-*/
+export default PatientDashboard;

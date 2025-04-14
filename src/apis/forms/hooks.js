@@ -38,21 +38,23 @@ export const useForms = (params = {}) => {
   });
 };
 
-// Hook to fetch form requests/submissions for a specific patient
+// TODO: This hook relies on a 'form_requests' table which is not defined in the current schema (final_optimized_schema.sql).
+// Commenting out until the table and its relation to 'patients' (FK likely 'patient_id') are defined.
+/*
 export const useGetPatientForms = (patientId, params = {}, options = {}) => {
   return useQuery({
-    queryKey: queryKeys.patientForms(patientId, params), // Use the defined query key
+    queryKey: queryKeys.patientForms(patientId, params),
     queryFn: async () => {
       if (!patientId) return []; // Return empty if no patientId
 
       let query = supabase
-        .from('form_requests') // Use the correct table name
+        .from('form_requests') // ASSUMING table name is 'form_requests'
         .select(`
           *, 
           questionnaire ( id, name ) 
         `) // Join with questionnaire to get form name
-        .eq('patient_id', patientId) // Corrected FK column name
-        .order('created_at', { ascending: false }); 
+        .eq('client_record_id', patientId) // Filter by patient
+        .order('created_at', { ascending: false }); // Order by creation date
 
       // Add other filters from params if needed
       if (params.status) { 
@@ -70,19 +72,16 @@ export const useGetPatientForms = (patientId, params = {}, options = {}) => {
       const mappedData = data?.map(req => ({
           ...req,
           name: req.questionnaire?.name || 'Unknown Form', // Use questionnaire name
-          sentDate: req.sent_at, // Map sent_at if needed by frontend
-          deadlineDate: req.due_date, // Map due_date if needed
-          completedDate: req.completed_at, // Map completed_at
-          // status is already present
       })) || [];
 
-      return mappedData; 
+      return mappedData; // Return array of form requests/submissions
     },
     enabled: !!patientId, // Only run query if patientId is truthy
     keepPreviousData: true,
     ...options,
   });
 };
+*/
 
 
 // Hook to fetch a specific form (questionnaire) by ID using Supabase

@@ -29,7 +29,7 @@ export const useConsultations = (params = {}, pageSize = 10) => {
         `, // Join with 'client_record' table
           { count: 'exact' }
         )
-        .order('submitted_at', { ascending: false }) // Use correct column name
+        .order('datesubmitted', { ascending: false }) // Use lowercase column name
         .range(rangeFrom, rangeTo);
 
       // Apply filters
@@ -37,14 +37,14 @@ export const useConsultations = (params = {}, pageSize = 10) => {
         query = query.eq('status', status);
       }
       if (patientId) {
-        query = query.eq('patient_id', patientId); // Assuming FK is patient_id
+        query = query.eq('client_id', patientId); // Corrected FK column name
       }
       // Add server-side search filter
       if (searchTerm) {
-        // Adjust columns to search as needed (e.g., provider_notes, client_notes?)
-        // Assuming 'provider' column exists based on InitialConsultations.js filter logic
+        // Search on joined client_record fields and potentially consultation notes
+        // Removed invalid 'provider' column search. Corrected 'email' to reference joined table.
         query = query.or(
-          `client_record.first_name.ilike.%${searchTerm}%,client_record.last_name.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%,provider.ilike.%${searchTerm}%` // Corrected join table name
+          `client_record.first_name.ilike.%${searchTerm}%,client_record.last_name.ilike.%${searchTerm}%,client_record.email.ilike.%${searchTerm}%,provider_notes.ilike.%${searchTerm}%,client_notes.ilike.%${searchTerm}%`
         );
       }
       // Add other filters as needed based on otherFilters

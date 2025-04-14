@@ -17,11 +17,11 @@ export const useInsuranceRecords = (filters = {}) => { // Keep hook name for now
     queryKey: queryKeys.lists(filters),
     queryFn: async () => {
       let query = supabase
-        .from('insurance_records') // Corrected table name
+        .from('insurance_records') // Ensure correct table name
         .select(`
           *,
           client_record ( id, first_name, last_name )
-        `) // Corrected join table name
+        `) // Ensure correct join table name
         .order('created_at', { ascending: false });
 
       // Apply filters
@@ -61,12 +61,12 @@ export const useInsuranceRecordById = (id, options = {}) => {
 
       // Fetch main insurance record
       const { data: recordData, error: recordError } = await supabase
-        .from('insurance_records') // Corrected table name
+        .from('insurance_records') 
         .select(`
           *,
           client_record ( id, first_name, last_name ),
           insurance_documents (*) 
-        `) // Corrected join table name and fetch related documents
+        `) // Join client_record and insurance_documents
         .eq('id', id)
         .single();
 

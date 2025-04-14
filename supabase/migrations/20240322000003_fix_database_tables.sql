@@ -8,11 +8,22 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 -- Enable RLS and add policies for client_record
 ALTER TABLE public.client_record ENABLE ROW LEVEL SECURITY;
+-- Drop existing policies first
 DROP POLICY IF EXISTS "Allow admin full access on client_record" ON public.client_record;
+DROP POLICY IF EXISTS "Allow admin insert access on client_record" ON public.client_record; -- Added drop for new policy name
 DROP POLICY IF EXISTS "Allow authenticated read access on client_record" ON public.client_record;
-CREATE POLICY "Allow admin full access on client_record" ON public.client_record FOR ALL USING (auth.uid() IN (SELECT id FROM public.profiles WHERE role = 'admin')) WITH CHECK (auth.uid() IN (SELECT id FROM public.profiles WHERE role = 'admin'));
-CREATE POLICY "Allow authenticated read access on client_record" ON public.client_record FOR SELECT TO authenticated USING (true);
--- TODO: Add policy for users to access their own record if client_record.id matches auth.uid() or via a link table.
+-- Admins can perform any action (SELECT, INSERT, UPDATE, DELETE)
+CREATE POLICY "Allow admin full access on client_record" ON public.client_record FOR ALL 
+  USING (auth.uid() IN (SELECT id FROM public.profiles WHERE role = 'admin')) 
+  WITH CHECK (auth.uid() IN (SELECT id FROM public.profiles WHERE role = 'admin'));
+-- Allow any authenticated user to read (adjust if needed)
+CREATE POLICY "Allow authenticated read access on client_record" ON public.client_record FOR SELECT 
+  TO authenticated 
+  USING (true); 
+-- Explicitly allow admins to insert any row (redundant if FOR ALL exists, but clearer)
+-- CREATE POLICY "Allow admin insert access on client_record" ON public.client_record FOR INSERT 
+--   WITH CHECK (auth.uid() IN (SELECT id FROM public.profiles WHERE role = 'admin'));
+-- TODO: Add policy for users to access/update their own record if client_record.id matches auth.uid() or via a link table.
 
 -- Enable RLS and add policies for consultations
 ALTER TABLE public.consultations ENABLE ROW LEVEL SECURITY;

@@ -97,21 +97,4 @@ ALTER TABLE public.notifications ENABLE ROW LEVEL SECURITY;
 
 -- --- RLS for order_items --- (Moved to 20250414184000_create_orders_tables.sql)
 
--- --- RLS for sessions ---
--- Note: sessions table was proposed in combined_schema.sql but not created by a migration yet.
--- Adding RLS here assumes it will be created. If not, this section might fail or do nothing.
-ALTER TABLE public.sessions ENABLE ROW LEVEL SECURITY;
-DROP POLICY IF EXISTS "Allow admin full access on sessions" ON public.sessions;
-DROP POLICY IF EXISTS "Allow related patient read access on sessions" ON public.sessions;
-DROP POLICY IF EXISTS "Allow provider access on sessions" ON public.sessions;
--- Admins can do anything
-CREATE POLICY "Allow admin full access on sessions" ON public.sessions FOR ALL
-  USING (auth.uid() IN (SELECT id FROM public.profiles WHERE role = 'admin'))
-  WITH CHECK (auth.uid() IN (SELECT id FROM public.profiles WHERE role = 'admin'));
--- Patients can read their own sessions (using patient_id FK - migration (proposed) uses patient_id)
-CREATE POLICY "Allow related patient read access on sessions" ON public.sessions FOR SELECT
-  USING (EXISTS (SELECT 1 FROM client_record WHERE client_record.id = sessions.patient_id AND client_record.id = auth.uid())); 
--- Providers can manage sessions assigned to them
-CREATE POLICY "Allow provider access on sessions" ON public.sessions FOR ALL
-  USING (auth.uid() = provider_id)
-  WITH CHECK (auth.uid() = provider_id);
+-- --- RLS for sessions --- (Moved to 20250414184200_create_sessions_table.sql)

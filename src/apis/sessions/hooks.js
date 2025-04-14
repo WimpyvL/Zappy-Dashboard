@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '../../utils/supabaseClient'; // Import Supabase client
+import { supabase } from '../../lib/supabase'; // Use the correct Supabase client
 import { toast } from 'react-toastify'; // Keep for feedback
 // Removed auditLogService import as it wasn't used here previously
 
@@ -23,18 +23,18 @@ export const useSessions = (params = {}, pageSize = 10) => {
     queryFn: async () => {
       let query = supabase
         .from('sessions') // Assuming table name is 'sessions'
-        // Join with patients table to get name
+        // Join with client_record table to get name
         .select(`
           *,
-          patients ( id, first_name, last_name )
+          client_record ( id, first_name, last_name )
         `, { count: 'exact' })
         .order('created_at', { ascending: false }) // Example order
         .range(rangeFrom, rangeTo);
 
       // Apply filters
       if (patientId) {
-        // Assuming the FK column is patient_id based on other hooks
-        query = query.eq('patient_id', patientId);
+        // Assuming the FK column is patient_id (as defined in other migrations)
+        query = query.eq('patient_id', patientId); 
       }
       if (status) {
         query = query.eq('status', status); // Assuming 'status' column exists
@@ -43,9 +43,9 @@ export const useSessions = (params = {}, pageSize = 10) => {
       if (searchTerm) {
         // Adjust columns to search as needed (e.g., provider name if joined, notes)
         query = query.or(
-          `patients.first_name.ilike.%${searchTerm}%,patients.last_name.ilike.%${searchTerm}%` // Search joined patient name
+          `client_record.first_name.ilike.%${searchTerm}%,client_record.last_name.ilike.%${searchTerm}%` // Search joined client_record name
           // Add other searchable fields like session_notes if they exist
-          // `,session_notes.ilike.%${searchTerm}%`
+          // `,session_notes.ilike.%${searchTerm}%` 
         );
       }
       // Add other filters as needed based on otherFilters
@@ -61,12 +61,12 @@ export const useSessions = (params = {}, pageSize = 10) => {
       const mappedData =
         data?.map((session) => ({
           ...session,
-          // Construct patientName from the joined 'patients' data
-          patientName: session.patients
-            ? `${session.patients.first_name || ''} ${session.patients.last_name || ''}`.trim()
+          // Construct patientName from the joined 'client_record' data
+          patientName: session.client_record 
+            ? `${session.client_record.first_name || ''} ${session.client_record.last_name || ''}`.trim()
             : 'N/A',
-          // Ensure patientId is correctly mapped if the foreign key is different
-          patientId: session.client_record_id || session.patient_id || session.patients?.id // Adjust based on actual FK column name
+          // Ensure patientId is correctly mapped (assuming FK is patient_id)
+          patientId: session.patient_id 
         })) || [];
 
       return {

@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '../../utils/supabaseClient';
+import { supabase } from '../../lib/supabase'; // Use the correct Supabase client
 import { message } from 'antd';
 
 // --- Fetch All Prompts ---

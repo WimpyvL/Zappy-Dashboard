@@ -817,8 +817,7 @@ const ProductManagement = () => {
                                 : 'bg-purple-100 text-purple-800'
                           }
                         >
-                          {product.type.charAt(0).toUpperCase() +
-                            product.type.slice(1)}
+                          {product.type ? product.type.charAt(0).toUpperCase() + product.type.slice(1) : 'N/A'}
                         </Badge>
                       </td>
                       <td className="px-6 py-4">

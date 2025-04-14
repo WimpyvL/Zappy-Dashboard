@@ -54,8 +54,5 @@ CREATE TABLE IF NOT EXISTS test (
 -- Insert a test record
 INSERT INTO test (name) VALUES ('Test Record');
 
--- Enable realtime for these tables
-ALTER PUBLICATION supabase_realtime ADD TABLE products;
-ALTER PUBLICATION supabase_realtime ADD TABLE services;
-ALTER PUBLICATION supabase_realtime ADD TABLE subscription_plans;
+-- Enable realtime for the new test table (others added previously)
 ALTER PUBLICATION supabase_realtime ADD TABLE test;

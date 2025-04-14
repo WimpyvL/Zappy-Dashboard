@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '../../utils/supabaseClient'; // Import Supabase client
+import { supabase } from '../../lib/supabase'; // Use the correct Supabase client
 // Removed unused imports like apiService and commented out local api functions
 // import {
 //   getPatients,
@@ -18,22 +18,22 @@ export const usePatients = (currentPage = 1, filters = {}, pageSize = 10) => {
   const rangeTo = rangeFrom + pageSize - 1;
 
   return useQuery({
-    queryKey: ['patients', currentPage, filters, pageSize],
+    queryKey: ['patients', currentPage, filters, pageSize], // Use 'patients' for query key consistency
     queryFn: async () => {
       let query = supabase
-        .from('patients') // Changed table name to 'patients'
+        .from('client_record') // Corrected table name
         .select('*', { count: 'exact' }) // Select all columns and request total count
         .order('created_at', { ascending: false }) // Use created_at
         .range(rangeFrom, rangeTo); // Apply pagination
 
       // Apply filters (example: filter by status)
-      if (filters.status) {
-        query = query.eq('status', filters.status);
-      }
+      // Note: client_record doesn't have a 'status' column by default in the provided schema
+      // if (filters.status) {
+      //   query = query.eq('status', filters.status);
+      // }
       // Add more filters as needed based on the 'filters' object structure
       if (filters.search) {
         // Example: Search across multiple fields (adjust fields as needed)
-        // This requires careful consideration of indexing in Postgres
         query = query.or(
           `first_name.ilike.%${filters.search}%,last_name.ilike.%${filters.search}%,email.ilike.%${filters.search}%`
         );
@@ -42,7 +42,7 @@ export const usePatients = (currentPage = 1, filters = {}, pageSize = 10) => {
       const { data, error, count } = await query;
 
       if (error) {
-        console.error('Error fetching patients:', error);
+        console.error('Error fetching client_records (patients):', error);
         throw new Error(error.message);
       }
 
@@ -64,18 +64,18 @@ export const usePatients = (currentPage = 1, filters = {}, pageSize = 10) => {
 // Get patient by ID hook using Supabase
 export const usePatientById = (id, options = {}) => {
   return useQuery({
-    queryKey: ['patient', id],
+    queryKey: ['patient', id], // Use 'patient' for query key consistency
     queryFn: async () => {
       if (!id) return null; // Don't fetch if no ID is provided
 
       const { data, error } = await supabase
-        .from('patients') // Changed table name to 'patients'
+        .from('client_record') // Corrected table name
         .select('*')
         .eq('id', id)
         .single(); // Use .single() if expecting one record or null
 
       if (error) {
-        console.error(`Error fetching patient ${id}:`, error);
+        console.error(`Error fetching client_record (patient) ${id}:`, error);
         // Handle specific errors like 'PGRST116' (resource not found) if needed
         if (error.code === 'PGRST116') return null; // Return null if not found
         throw new Error(error.message);
@@ -94,63 +94,39 @@ export const useCreatePatient = (options = {}) => {
 
   return useMutation({
     mutationFn: async (patientData) => {
-      // Separate profile data from top-level fields using the names revealed in the log
-      const {
-        street_address, // Use the name from the log
-        city_name,      // Use the name from the log
-        state,
-        zip_code,       // Use the name from the log
-        date_of_birth,  // Use the name from the log
-        preferredPharmacy,
-        assignedDoctor,
-        medicalNotes
-        // Include any other fields intended for the profile JSONB
-        // Removed ...topLevelData as it was unused
-      } = patientData;
-
-      // Construct the final object for insertion, mapping directly from input to DB columns
+      // Map frontend data to client_record schema columns
       const dataToInsert = {
-        // Valid top-level fields from client_record schema
-        first_name: patientData.first_name, // Use patientData directly
+        first_name: patientData.first_name,
         last_name: patientData.last_name,
         email: patientData.email,
-        phone: patientData.phone, // Use 'phone' from input
-        address: patientData.street_address, // Map street_address input to address column
-        city: patientData.city_name,       // Map city_name input to city column
-        state: patientData.state,          // Map state input to state column
-        zip: patientData.zip_code,         // Map zip_code input to zip column
-        date_of_birth: patientData.date_of_birth, // Map date_of_birth input to date_of_birth column
-        // insurance_provider: patientData.insurance_provider, // Map if available in patientData
-        // insurance_id: patientData.insurance_id, // Map if available in patientData
-
-        // REMOVED fields not in schema:
-        // status: patientData.status,
-        // related_tags: patientData.related_tags || [],
-        // profile: profileData,
-        // date_created: patientData.date_created || new Date().toISOString(),
-        // is_child_record: patientData.is_child_record ?? false,
-        // is_active: patientData.is_active ?? true,
-        // invitation_sent: patientData.invitation_sent ?? false,
+        phone: patientData.phone,
+        address: patientData.street_address, // Map from form field
+        city: patientData.city_name,       // Map from form field
+        state: patientData.state,
+        zip: patientData.zip_code,         // Map from form field
+        date_of_birth: patientData.date_of_birth,
+        insurance_provider: patientData.insurance_provider, // Add if available
+        insurance_id: patientData.insurance_id,       // Add if available
+        // created_at and updated_at are handled by DB defaults
       };
 
-      // Remove undefined fields to avoid overwriting with null
+      // Remove undefined fields to avoid inserting nulls unintentionally
       Object.keys(dataToInsert).forEach(key => {
         if (dataToInsert[key] === undefined) {
           delete dataToInsert[key];
         }
       });
-      // End of dataToInsert object
 
-      console.log('[useCreatePatient] FINAL payload before insert:', JSON.stringify(dataToInsert, null, 2)); // Log the final object clearly
+      console.log('[useCreatePatient] Inserting into client_record:', JSON.stringify(dataToInsert, null, 2));
 
       const { data, error } = await supabase
-        .from('patients') // Changed table name to 'patients'
+        .from('client_record') // Corrected table name
         .insert(dataToInsert)
         .select() // Select the newly created record
         .single(); // Expecting a single record back
 
       if (error) {
-        console.error('Error creating patient:', error);
+        console.error('Error creating client_record (patient):', error);
         throw new Error(error.message);
       }
       return data;
@@ -160,16 +136,16 @@ export const useCreatePatient = (options = {}) => {
 
       // Log the audit event
       const patientId = data?.id || 'unknown';
-      const patientName = data?.firstName
-        ? `${data.firstName} ${data.lastName}`
+      const patientName = data?.first_name
+        ? `${data.first_name} ${data.last_name}` // Use correct field names
         : 'Unknown Name';
       auditLogService.log('Patient Created', {
         patientId: patientId,
         name: patientName,
       });
 
-      options.onSuccess && options.onSuccess(data, variables, context); // Call original onSuccess
-    }, // Added comma here
+      options.onSuccess && options.onSuccess(data, variables, context);
+    },
     onError: (error, variables, context) => {
       console.error('Create patient mutation error:', error);
       options.onError && options.onError(error, variables, context);
@@ -185,31 +161,21 @@ export const useUpdatePatient = (options = {}) => {
     mutationFn: async ({ id, patientData }) => {
       if (!id) throw new Error('Patient ID is required for update.');
 
-      // Removed the unnecessary destructuring block that was causing syntax errors
-
-      // Construct the final object for update, mapping directly from input to DB columns
+      // Map frontend data to client_record schema columns
       const dataToUpdate = {
-        // Valid top-level fields that can be updated
-        first_name: patientData.first_name, // Use patientData directly
+        first_name: patientData.first_name,
         last_name: patientData.last_name,
         email: patientData.email,
-        phone: patientData.phone, // Use 'phone' from input
-        address: patientData.street_address, // Map street_address input to address column
-        city: patientData.city_name,       // Map city_name input to city column
-        state: patientData.state,          // Map state input to state column
-        zip: patientData.zip_code,         // Map zip_code input to zip column
-        date_of_birth: patientData.date_of_birth, // Map date_of_birth input to date_of_birth column
-        // insurance_provider: patientData.insurance_provider, // Map if available
-        // insurance_id: patientData.insurance_id, // Map if available
-        status: patientData.status, // ADDED status
-        related_tags: patientData.related_tags, // ADDED related_tags
-        subscription_plan_id: patientData.subscription_plan_id, // ADDED subscription plan ID
-        assigned_doctor_id: patientData.assigned_doctor_id, // ADDED assigned doctor ID
-        preferred_pharmacy: patientData.preferred_pharmacy, // ADDED preferred pharmacy
-
-        // REMOVED fields not in schema:
-        // profile: profileUpdates, // Profile JSONB updates would need separate handling if required
-
+        phone: patientData.phone,
+        address: patientData.street_address, // Map from form field
+        city: patientData.city_name,       // Map from form field
+        state: patientData.state,
+        zip: patientData.zip_code,         // Map from form field
+        date_of_birth: patientData.date_of_birth,
+        insurance_provider: patientData.insurance_provider, // Add if available
+        insurance_id: patientData.insurance_id,       // Add if available
+        // Note: 'status', 'related_tags', 'subscription_plan_id', 'assigned_doctor_id', 'preferred_pharmacy'
+        // are not part of the client_record schema provided. These might belong in the 'profiles' table or another related table.
         updated_at: new Date().toISOString(), // Set updated_at timestamp
       };
 
@@ -220,17 +186,17 @@ export const useUpdatePatient = (options = {}) => {
         }
       });
 
-      console.log(`[useUpdatePatient] FINAL payload before update for ${id}:`, JSON.stringify(dataToUpdate, null, 2)); // Log the final object clearly
+      console.log(`[useUpdatePatient] Updating client_record ${id}:`, JSON.stringify(dataToUpdate, null, 2));
 
       const { data, error } = await supabase
-        .from('patients') // Changed table name to 'patients'
+        .from('client_record') // Corrected table name
         .update(dataToUpdate)
         .eq('id', id)
         .select() // Select the updated record
         .single(); // Expecting a single record back
 
       if (error) {
-        console.error(`Error updating patient ${id}:`, error);
+        console.error(`Error updating client_record (patient) ${id}:`, error);
         throw new Error(error.message);
       }
       return data;
@@ -241,17 +207,17 @@ export const useUpdatePatient = (options = {}) => {
 
       // Log audit event (optional)
       const patientId = variables.id;
-      const patientName = data?.firstName
-        ? `${data.firstName} ${data.lastName}`
+      const patientName = data?.first_name
+        ? `${data.first_name} ${data.last_name}` // Use correct field names
         : 'Unknown Name';
       auditLogService.log('Patient Updated', {
         patientId: patientId,
         name: patientName,
-        changes: variables.patientData,
+        changes: variables.patientData, // Note: patientData contains form fields, not necessarily DB fields
       });
 
-      options.onSuccess && options.onSuccess(data, variables, context); // Call original onSuccess
-    }, // Added comma here
+      options.onSuccess && options.onSuccess(data, variables, context);
+    },
     onError: (error, variables, context) => {
       console.error(`Update patient ${variables.id} mutation error:`, error);
       options.onError && options.onError(error, variables, context);
@@ -268,12 +234,12 @@ export const useDeletePatient = (options = {}) => {
       if (!id) throw new Error('Patient ID is required for deletion.');
 
       const { error } = await supabase
-        .from('patients') // Changed table name to 'patients'
+        .from('client_record') // Corrected table name
         .delete()
         .eq('id', id);
 
       if (error) {
-        console.error(`Error deleting patient ${id}:`, error);
+        console.error(`Error deleting client_record (patient) ${id}:`, error);
         throw new Error(error.message);
       }
       return { success: true, id }; // Return success and id
@@ -286,7 +252,7 @@ export const useDeletePatient = (options = {}) => {
       // Log audit event (optional)
       auditLogService.log('Patient Deleted', { patientId: variables });
 
-      options.onSuccess && options.onSuccess(data, variables, context); // Call original onSuccess
+      options.onSuccess && options.onSuccess(data, variables, context);
     },
     onError: (error, variables, context) => {
       console.error(`Delete patient ${variables} mutation error:`, error);

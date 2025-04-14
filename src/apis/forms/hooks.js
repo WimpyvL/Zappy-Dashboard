@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '../../utils/supabaseClient'; // Import Supabase client
+import { supabase } from '../../lib/supabase'; // Use the correct Supabase client
 import { toast } from 'react-toastify';
 
 // Removed Mock Data
@@ -178,6 +178,68 @@ export const useCreateForm = (options = {}) => {
       options.onError?.(error, variables, context);
     },
     onSettled: options.onSettled,
+  });
+};
+
+// Hook to trigger sending a reminder for a specific form request
+export const useSendFormReminder = (options = {}) => {
+  // No query invalidation needed typically, as this is just an action
+  return useMutation({
+    mutationFn: async ({ patientId, formId }) => { // Assuming formId refers to the form request/assignment ID
+      if (!patientId || !formId) {
+        throw new Error("Patient ID and Form ID are required to send a reminder.");
+      }
+      // Invoke the Supabase Edge Function
+      const { data, error } = await supabase.functions.invoke('send-form-reminder', {
+        body: { patientId, formId }, 
+      });
+
+      if (error) {
+        console.error('Error invoking send-form-reminder function:', error);
+        throw new Error(error.message || 'Failed to send reminder via Edge Function.');
+      }
+      return data; // Return any response from the function
+    },
+    onSuccess: (data, variables, context) => {
+      toast.success('Form reminder sent successfully.');
+      options.onSuccess?.(data, variables, context);
+    },
+    onError: (error, variables, context) => {
+      toast.error(`Error sending reminder: ${error.message || 'Unknown error'}`);
+      options.onError?.(error, variables, context);
+    },
+    onSettled: options.onSettled,
+  });
+};
+
+// Hook to trigger resending a specific form request
+export const useResendForm = (options = {}) => {
+  // No query invalidation needed typically
+  return useMutation({
+    mutationFn: async ({ patientId, formId }) => { // Assuming formId refers to the form request/assignment ID
+       if (!patientId || !formId) {
+         throw new Error("Patient ID and Form ID are required to resend the form.");
+       }
+       // Invoke the Supabase Edge Function
+       const { data, error } = await supabase.functions.invoke('resend-form', {
+         body: { patientId, formId },
+       });
+
+       if (error) {
+         console.error('Error invoking resend-form function:', error);
+         throw new Error(error.message || 'Failed to resend form via Edge Function.');
+       }
+       return data; // Return any response from the function
+    },
+     onSuccess: (data, variables, context) => {
+       toast.success('Form resent successfully.');
+       options.onSuccess?.(data, variables, context);
+     },
+     onError: (error, variables, context) => {
+       toast.error(`Error resending form: ${error.message || 'Unknown error'}`);
+       options.onError?.(error, variables, context);
+     },
+     onSettled: options.onSettled,
   });
 };
 

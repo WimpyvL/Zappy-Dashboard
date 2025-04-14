@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '../../utils/supabaseClient'; // Import Supabase client
+import { supabase } from '../../lib/supabase'; // Use the correct Supabase client
 import { toast } from 'react-toastify';
 
 // Hook to fetch all tags using Supabase
@@ -8,7 +8,7 @@ export const useTags = (params = {}) => {
     queryKey: ['tags', params],
     queryFn: async () => {
       let query = supabase
-        .from('tag') // Assuming table name is 'tag'
+        .from('tags') // Corrected table name
         .select('*')
         .order('name', { ascending: true }); // Example order
 
@@ -36,7 +36,7 @@ export const useTagById = (id, options = {}) => {
       if (!id) return null;
 
       const { data, error } = await supabase
-        .from('tag')
+        .from('tags') // Corrected table name
         .select('*')
         .eq('id', id)
         .single();
@@ -76,7 +76,7 @@ export const useCreateTag = (options = {}) => {
       console.log('[useCreateTag] Inserting tag data:', dataToInsert); // Add logging
 
       const { data, error } = await supabase
-        .from('tag')
+        .from('tags') // Corrected table name
         .insert(dataToInsert)
         .select()
         .single();
@@ -120,7 +120,7 @@ export const useUpdateTag = (options = {}) => {
 
 
       const { data, error } = await supabase
-        .from('tag')
+        .from('tags') // Corrected table name
         .update(dataToUpdate)
         .eq('id', id)
         .select()
@@ -158,7 +158,7 @@ export const useDeleteTag = (options = {}) => {
       if (!id) throw new Error("Tag ID is required for deletion.");
 
       const { error } = await supabase
-        .from('tag')
+        .from('tags') // Corrected table name
         .delete()
         .eq('id', id);
 

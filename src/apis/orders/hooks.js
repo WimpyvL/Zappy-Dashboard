@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '../../utils/supabaseClient'; // Import Supabase client
+import { supabase } from '../../lib/supabase'; // Use the correct Supabase client
 // Removed unused auditLogService import
 
 // Get orders hook using Supabase
@@ -12,10 +12,10 @@ export const useOrders = (currentPage = 1, filters = {}, pageSize = 10) => {
     queryFn: async () => {
       let query = supabase
         .from('orders') // Use quoted table name if needed, or adjust if different
-        // Join with patients table (assuming FK is client_record_id)
+        // Join with client_record table (assuming FK is patient_id)
         .select(`
           *,
-          patients!inner(id, first_name, last_name)
+          client_record!inner(id, first_name, last_name)
         `, { count: 'exact' })
         .order('order_date', { ascending: false })
         .range(rangeFrom, rangeTo);
@@ -25,13 +25,13 @@ export const useOrders = (currentPage = 1, filters = {}, pageSize = 10) => {
         query = query.eq('status', filters.status);
       }
       if (filters.patientId) {
-        query = query.eq('client_record_id', filters.patientId);
+        query = query.eq('patient_id', filters.patientId); // Corrected FK name
       }
       // Add search filter if needed (adjust based on actual schema and join)
       if (filters.search) {
-        // Use the joined table alias 'patients' for patient name fields
+        // Use the joined table alias 'client_record' for patient name fields
         query = query.or(
-          `medication.ilike.%${filters.search}%,pharmacy.ilike.%${filters.search}%,patients.first_name.ilike.%${filters.search}%,patients.last_name.ilike.%${filters.search}%`
+          `medication.ilike.%${filters.search}%,pharmacy.ilike.%${filters.search}%,client_record.first_name.ilike.%${filters.search}%,client_record.last_name.ilike.%${filters.search}%`
         );
       }
 
@@ -46,12 +46,12 @@ export const useOrders = (currentPage = 1, filters = {}, pageSize = 10) => {
       const mappedData =
         data?.map((order) => ({
           ...order,
-          // Construct patientName from the joined 'patients' data
-          patientName: order.patients
-            ? `${order.patients.first_name || ''} ${order.patients.last_name || ''}`.trim()
+          // Construct patientName from the joined 'client_record' data
+          patientName: order.client_record 
+            ? `${order.client_record.first_name || ''} ${order.client_record.last_name || ''}`.trim()
             : 'N/A',
-          // Ensure patientId is correctly mapped if the foreign key is different
-          patientId: order.client_record_id || order.patient_id || order.patients?.id // Adjust based on actual FK column name
+          // Ensure patientId is correctly mapped (assuming FK is patient_id)
+          patientId: order.patient_id 
         })) || [];
 
       return {
@@ -109,10 +109,10 @@ export const useMyOrders = (patientId, options = {}) => {
       if (!patientId) return []; // Return empty if no patientId
 
       const { data, error } = await supabase
-        .from('orders') // Use the correct table name 'orders'
-        .select('*') // Select all columns for now
-        .eq('client_record_id', patientId) // Filter by patient ID (assuming column name)
-        .order('order_date', { ascending: false }); // Order by date
+        .from('orders') 
+        .select('*') 
+        .eq('patient_id', patientId) // Corrected FK name
+        .order('order_date', { ascending: false }); 
 
       if (error) {
         console.error(`Error fetching orders for patient ${patientId}:`, error);

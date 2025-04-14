@@ -53,7 +53,4 @@ BEGIN
     END IF;
 END $$;
 
--- Enable realtime for these tables
-ALTER PUBLICATION supabase_realtime ADD TABLE client_record;
-ALTER PUBLICATION supabase_realtime ADD TABLE "order";
-ALTER PUBLICATION supabase_realtime ADD TABLE session;
+-- Realtime enabling handled elsewhere or in previous migrations

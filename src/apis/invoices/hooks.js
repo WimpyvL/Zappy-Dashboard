@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '../../utils/supabaseClient'; // Import Supabase client
+import { supabase } from '../../lib/supabase'; // Use the correct Supabase client
 import { toast } from 'react-toastify';
 
 // Removed Mock Data
@@ -25,8 +25,8 @@ export const useInvoices = (params = {}, pageSize = 10) => {
         .select(`
           *,
           client_record ( id, first_name, last_name )
-        `, { count: 'exact' }) // Example join
-        .order('created_at', { ascending: false }) // Order by creation date
+        `, { count: 'exact' }) 
+        .order('created_at', { ascending: false }) 
         .range(rangeFrom, rangeTo);
 
       // Apply filters
@@ -34,7 +34,7 @@ export const useInvoices = (params = {}, pageSize = 10) => {
         query = query.eq('status', params.status);
       }
       if (params.patientId) {
-         query = query.eq('client_record_id', params.patientId);
+         query = query.eq('patient_id', params.patientId); // Corrected FK name
       }
       // Add date range filters if needed
       // if (params.startDate) { query = query.gte('date_created', params.startDate); }
@@ -50,12 +50,9 @@ export const useInvoices = (params = {}, pageSize = 10) => {
       // Map data if needed
       const mappedData = data?.map(inv => ({
           ...inv,
-          // Map DB fields to frontend fields if necessary
-          // e.g., issueDate: inv.date_created, dueDate: inv.due_date_column_if_exists
           patientName: inv.client_record ? `${inv.client_record.first_name || ''} ${inv.client_record.last_name || ''}`.trim() : 'N/A',
-          // Assuming amount needs calculation or is stored in metadata
-          amount: inv.pb_invoice_metadata?.total || 0, // Example: get amount from metadata
-          items: inv.pb_invoice_metadata?.items || [], // Example: get items from metadata
+          amount: inv.pb_invoice_metadata?.total || 0, 
+          items: inv.pb_invoice_metadata?.items || [], 
       })) || [];
 
       return {
@@ -84,7 +81,7 @@ export const useInvoiceById = (id, options = {}) => {
         .select(`
           *,
           client_record ( id, first_name, last_name )
-        `) // Example join
+        `) 
         .eq('id', id)
         .single();
 
@@ -101,7 +98,7 @@ export const useInvoiceById = (id, options = {}) => {
            items: data.pb_invoice_metadata?.items || [],
        } : null;
 
-      return mappedData;
+      return mappedData; // Return mapped data
     },
     enabled: !!id,
     ...options,
@@ -115,9 +112,9 @@ export const useCreateInvoice = (options = {}) => {
     mutationFn: async (invoiceData) => {
       // Map frontend fields to DB columns
       const dataToInsert = {
-        client_record_id: invoiceData.patientId,
-        status: invoiceData.status || 'pending', // Default status
-        pb_invoice_metadata: { // Store items/amount in metadata JSONB
+        patient_id: invoiceData.patientId, // Corrected FK name
+        status: invoiceData.status || 'pending', 
+        pb_invoice_metadata: { 
             items: invoiceData.items || [],
             total: invoiceData.amount || 0,
             // Add other relevant metadata
@@ -164,7 +161,7 @@ export const useUpdateInvoice = (options = {}) => {
       if (!id) throw new Error("Invoice ID is required for update.");
 
       const dataToUpdate = {
-         client_record_id: invoiceData.patientId, // Allow changing patient? Maybe not.
+         patient_id: invoiceData.patientId, // Corrected FK name (Allow changing patient? Maybe not.)
          status: invoiceData.status,
          pb_invoice_metadata: {
              items: invoiceData.items,

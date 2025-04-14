@@ -1,8 +1,8 @@
 // components/patients/components/PatientForms.jsx
 import React, { useState } from 'react';
-import { Plus, CheckCircle, Clock, XCircle } from 'lucide-react';
+import { Plus, CheckCircle, Clock, XCircle, Send, RefreshCw } from 'lucide-react'; // Added icons
 import { toast } from 'react-toastify';
-import apiService from '../../../utils/apiService';
+import { useSendFormReminder, useResendForm } from '../../../apis/forms/hooks'; // Import new hooks
 import LoadingSpinner from './common/LoadingSpinner';
 
 const FormStatusBadge = ({ status }) => {
@@ -50,30 +50,17 @@ const PatientForms = ({ patientId, forms, loading }) => {
       ? forms
       : forms.filter((form) => form.status === formFilter);
 
+  const sendReminderMutation = useSendFormReminder();
+  const resendFormMutation = useResendForm();
+
   // Send form reminder
-  const handleSendFormReminder = async (formId) => {
-    try {
-      await apiService.post(
-        `/api/v1/admin/patients/${patientId}/forms/${formId}/send_reminder`
-      );
-      toast.success('Reminder sent successfully');
-    } catch (error) {
-      console.error('Error sending form reminder:', error);
-      toast.error('Failed to send reminder');
-    }
+  const handleSendFormReminder = (formId) => {
+    sendReminderMutation.mutate({ patientId, formId });
   };
 
   // Resend form
-  const handleResendForm = async (formId) => {
-    try {
-      await apiService.post(
-        `/api/v1/admin/patients/${patientId}/forms/${formId}/resend`
-      );
-      toast.success('Form resent successfully');
-    } catch (error) {
-      console.error('Failed to resend form:', error);
-      toast.error('Failed to resend form');
-    }
+  const handleResendForm = (formId) => {
+    resendFormMutation.mutate({ patientId, formId });
   };
 
   return (
@@ -155,17 +142,21 @@ const PatientForms = ({ patientId, forms, loading }) => {
                       </button>
                     ) : (
                       <button
-                        className="text-indigo-600 hover:text-indigo-900 mr-3"
+                        className={`text-indigo-600 hover:text-indigo-900 mr-3 inline-flex items-center ${sendReminderMutation.isLoading && sendReminderMutation.variables?.formId === form.id ? 'opacity-50 cursor-not-allowed' : ''}`}
                         onClick={() => handleSendFormReminder(form.id)}
+                        disabled={sendReminderMutation.isLoading && sendReminderMutation.variables?.formId === form.id}
                       >
-                        Send Reminder
+                        <Send className="h-3 w-3 mr-1" />
+                        {sendReminderMutation.isLoading && sendReminderMutation.variables?.formId === form.id ? 'Sending...' : 'Send Reminder'}
                       </button>
                     )}
                     <button
-                      className="text-indigo-600 hover:text-indigo-900"
+                      className={`text-indigo-600 hover:text-indigo-900 inline-flex items-center ${resendFormMutation.isLoading && resendFormMutation.variables?.formId === form.id ? 'opacity-50 cursor-not-allowed' : ''}`}
                       onClick={() => handleResendForm(form.id)}
+                      disabled={resendFormMutation.isLoading && resendFormMutation.variables?.formId === form.id}
                     >
-                      Resend
+                       <RefreshCw className="h-3 w-3 mr-1" />
+                       {resendFormMutation.isLoading && resendFormMutation.variables?.formId === form.id ? 'Resending...' : 'Resend'}
                     </button>
                   </td>
                 </tr>

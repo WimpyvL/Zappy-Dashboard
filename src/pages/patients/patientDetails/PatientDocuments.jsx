@@ -1,56 +1,44 @@
 // components/patients/components/PatientDocuments.jsx
-import React, { useState, useEffect } from 'react'; // Import useEffect
-import { Upload, CheckCircle, Clock, XCircle } from 'lucide-react';
+import React, { useState } from 'react'; // Removed useEffect for now
+import { Upload, CheckCircle, Clock, XCircle, Loader2, FileWarning } from 'lucide-react'; // Added icons
 import { toast } from 'react-toastify';
-import apiService from '../../../utils/apiService';
+import { useUploadInsuranceDocument, useDeleteInsuranceDocument, useInsuranceRecords } from '../../../apis/insurances/hooks'; // Import insurance hooks
 import LoadingSpinner from './common/LoadingSpinner';
 
-const DocumentUploadForm = ({ patientId, onCancel, onSuccess }) => {
-  const [documentType, setDocumentType] = useState('id');
+// This form now requires an insuranceRecordId to link the document
+const DocumentUploadForm = ({ insuranceRecordId, onCancel, onSuccess }) => { // Removed patientId (not directly needed here)
+  // Default to a common insurance document type
+  const [documentType, setDocumentType] = useState('Insurance Card Front');
   const [documentFile, setDocumentFile] = useState(null);
-  const [uploading, setUploading] = useState(false);
+  
+  const uploadMutation = useUploadInsuranceDocument({
+    onSuccess: () => {
+      toast.success('Document uploaded successfully');
+      onSuccess(); // Refresh the list in the parent (if implemented)
+      setDocumentFile(null); // Reset file input
+      onCancel(); // Close the form
+    },
+    onError: (error) => {
+      toast.error(`Upload failed: ${error.message}`);
+    }
+  });
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
-
     if (!documentFile) {
       toast.error('Please select a file to upload');
       return;
     }
-
-    try {
-      setUploading(true);
-
-      // Create form data for file upload
-      const formData = new FormData();
-      formData.append('file', documentFile);
-      formData.append('type', documentType);
-
-      // Upload document
-      await apiService.post(
-        `/api/v1/admin/patients/${patientId}/documents`,
-        formData,
-        {
-          headers: {
-            'Content-Type': 'multipart/form-data',
-          },
-        }
-      );
-
-      toast.success('Document uploaded successfully');
-
-      // Notify parent component of success
-      onSuccess();
-
-      // Reset the form
-      setDocumentFile(null);
-      onCancel();
-    } catch (error) {
-      console.error('Error uploading document:', error);
-      toast.error('Failed to upload document');
-    } finally {
-      setUploading(false);
+    if (!insuranceRecordId) {
+      // This component now requires an insuranceRecordId to function correctly
+      toast.error('Cannot upload: Insurance Record ID is missing.');
+      console.error('DocumentUploadForm requires an insuranceRecordId prop.');
+      return;
     }
+    // TODO: Map documentType to the expected value in insurance_document table if needed
+    // The hook useUploadInsuranceDocument expects { recordId, file }
+    // We might need to pass documentType if the hook is adapted or if it's stored in metadata
+    uploadMutation.mutate({ recordId: insuranceRecordId, file: documentFile }); 
   };
 
   return (
@@ -95,19 +83,20 @@ const DocumentUploadForm = ({ patientId, onCancel, onSuccess }) => {
             type="button"
             className="px-3 py-1 text-sm border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50"
             onClick={onCancel}
-            disabled={uploading}
+            disabled={uploadMutation.isLoading}
           >
             Cancel
           </button>
           <button
             type="submit"
             className="px-3 py-1 text-sm bg-indigo-600 text-white rounded-md hover:bg-indigo-700 flex items-center"
-            disabled={uploading}
+            disabled={uploadMutation.isLoading || !insuranceRecordId} // Disable if no record ID
+            title={!insuranceRecordId ? "Select an insurance record first" : ""}
           >
-            {uploading ? (
+            {uploadMutation.isLoading ? (
               <>
-                <LoadingSpinner size="tiny" />
-                <span className="ml-1">Uploading...</span>
+                <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                <span>Uploading...</span>
               </>
             ) : (
               'Upload'
@@ -200,50 +189,33 @@ const DocumentStatusBadge = ({ status }) => {
 };
 
 const PatientDocuments = ({
-  patientId, // Removed unused documents, loading, fetchDocuments props
+  patientId,
 }) => {
-  const [isUploadingFormVisible, setIsUploadingFormVisible] = useState(false); // Renamed state for clarity
-  const [isLoading, setIsLoading] = useState(true); // Local loading state
-  const [documents, setDocuments] = useState([]); // Local documents state - THIS IS CORRECT, it's the local state declaration
+  const [isUploadingFormVisible, setIsUploadingFormVisible] = useState(false);
+  // State to hold the selected insurance record ID for upload
+  const [selectedInsuranceRecordId, setSelectedInsuranceRecordId] = useState(''); 
 
-  // Fetch documents when component mounts or patientId changes
-  useEffect(() => {
-    const fetchDocumentsData = async () => {
-      if (!patientId) return; // Don't fetch if no ID
-      setIsLoading(true);
-      try {
-        const response = await apiService.get(
-          `/api/v1/admin/patients/${patientId}/documents`
-        );
-        setDocuments(response.data || []);
-      } catch (error) {
-        console.error('Error fetching patient documents:', error);
-        toast.error('Failed to load documents.');
-        setDocuments([]); // Set to empty array on error
-      } finally {
-        setIsLoading(false);
-      }
-    };
+  // Fetch insurance records for the patient
+  const { data: insuranceData, isLoading: isLoadingInsurance, error: insuranceError, refetch: refreshInsuranceRecords } = useInsuranceRecords({ patientId: patientId });
+  
+  // Extract documents from all insurance records
+  const allDocuments = insuranceData?.data?.flatMap(record => 
+    (record.insurance_document || []).map(doc => ({ 
+      ...doc, 
+      insurance_record_id: record.id, // Add record ID to each doc for deletion/upload context
+      provider_name: record.provider_name // Add provider name for display context
+    }))
+  ) || [];
 
-    fetchDocumentsData();
-  }, [patientId]); // Dependency array ensures fetch runs when patientId changes
-
-  // Function to manually refresh documents (e.g., after upload/delete)
-  const refreshDocuments = async () => {
-    setIsLoading(true);
-    try {
-      const response = await apiService.get(
-        `/api/v1/admin/patients/${patientId}/documents`
-      );
-      setDocuments(response.data || []);
-    } catch (error) {
-      console.error('Error refreshing patient documents:', error);
-      toast.error('Failed to refresh documents.');
-    } finally {
-      setIsLoading(false);
+  const deleteDocumentMutation = useDeleteInsuranceDocument({
+    onSuccess: () => {
+        toast.success('Document deleted successfully');
+        refreshInsuranceRecords(); // Refetch insurance records which contain documents
+    },
+    onError: (error) => {
+        toast.error(`Failed to delete document: ${error.message}`);
     }
-  };
-
+  });
 
   const formatDate = (dateString) => {
     if (!dateString) return 'Not available';
@@ -255,16 +227,20 @@ const PatientDocuments = ({
     }).format(date);
   };
 
-  const handleDeleteDocument = async (docId) => {
-    try {
-      await apiService.delete(
-        `/api/v1/admin/patients/${patientId}/documents/${docId}`
-      );
-      toast.success('Document deleted successfully');
-      refreshDocuments(); // Use local refresh function
-    } catch (error) {
-      console.error('Failed to delete document:', error);
-      toast.error('Failed to delete document');
+  // Handles deletion using the mutation hook
+  const handleDeleteDocument = (doc) => {
+    // The doc object now includes insurance_record_id from the flatMap above
+    if (!doc || !doc.id || !doc.storage_path || !doc.insurance_record_id) {
+        toast.error("Cannot delete document: Missing required information (ID, Path, or Record ID).");
+        console.error("Missing info for deletion:", doc);
+        return;
+    }
+    if (window.confirm(`Are you sure you want to delete ${doc.file_name || 'this document'}?`)) {
+        deleteDocumentMutation.mutate({
+            recordId: doc.insurance_record_id, // For query invalidation
+            documentId: doc.id,
+            storagePath: doc.storage_path
+        });
     }
   };
 
@@ -273,25 +249,42 @@ const PatientDocuments = ({
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-lg font-medium text-gray-900">Patient Documents</h2>
         <button
-          className="px-3 py-1 text-sm bg-indigo-600 text-white rounded-md hover:bg-indigo-700 flex items-center"
-          onClick={() => setIsUploadingFormVisible(true)} // Use renamed state setter
+          className="px-3 py-1 text-sm bg-indigo-600 text-white rounded-md hover:bg-indigo-700 flex items-center disabled:opacity-50"
+          onClick={() => {
+            if (!insuranceData?.data || insuranceData.data.length === 0) {
+              toast.error("Please add an insurance record before uploading documents.");
+            } else {
+              // If only one record, pre-select it, otherwise require selection via form
+              setSelectedInsuranceRecordId(insuranceData.data.length === 1 ? insuranceData.data[0].id : ''); 
+              setIsUploadingFormVisible(true);
+            }
+          }}
+          disabled={!patientId} // Disable if no patient context
         >
           <Upload className="h-4 w-4 mr-1" />
           Upload Document
         </button>
       </div>
 
-      {isUploadingFormVisible && ( // Use renamed state variable
+      {isUploadingFormVisible && (
         <DocumentUploadForm
-          patientId={patientId}
-          onCancel={() => setIsUploadingFormVisible(false)} // Use renamed state setter
-          onSuccess={refreshDocuments} // Use local refresh function
+          // Pass the selected record ID (might be pre-filled or selected in the form)
+          insuranceRecordId={selectedInsuranceRecordId} 
+          onCancel={() => setIsUploadingFormVisible(false)} 
+          onSuccess={refreshInsuranceRecords} // Use refetch from useInsuranceRecords
         />
+        // TODO: If multiple insurance records exist, the form should include a dropdown
+        // to select which record the document belongs to, updating selectedInsuranceRecordId
       )}
 
-      {isLoading ? ( // Use local loading state
+      {isLoadingInsurance ? ( 
         <LoadingSpinner size="small" />
-      ) : documents && documents.length > 0 ? ( // Use local documents state
+      ) : insuranceError ? (
+        <div className="text-center py-8 text-red-500">
+            <FileWarning className="h-8 w-8 mx-auto mb-2" />
+            Error loading documents: {insuranceError.message}
+        </div>
+      ) : allDocuments && allDocuments.length > 0 ? ( 
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
@@ -300,10 +293,10 @@ const PatientDocuments = ({
                   Document Type
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Filename
+                  Filename (Insurance Provider)
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Uploaded
+                  Uploaded Date
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Status
@@ -314,16 +307,18 @@ const PatientDocuments = ({
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {documents.map((doc) => ( // Use local documents state
+              {allDocuments.map((doc) => ( 
                 <tr key={doc.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <DocumentTypeBadge type={doc.type} />
+                    {/* Use doc.document_type if available, otherwise fallback */}
+                    <DocumentTypeBadge type={doc.document_type || 'other'} /> 
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-500">
-                    {doc.filename}
+                    {doc.file_name} 
+                    {doc.provider_name && <span className="text-xs block text-gray-400">({doc.provider_name})</span>}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {formatDate(doc.uploadedAt)}
+                    {formatDate(doc.created_at)} {/* Use created_at from DB */}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <DocumentStatusBadge status={doc.status} />
@@ -338,10 +333,11 @@ const PatientDocuments = ({
                       View
                     </a>
                     <button
-                      className="text-red-600 hover:text-red-900"
-                      onClick={() => handleDeleteDocument(doc.id)}
+                      className={`text-red-600 hover:text-red-900 ${deleteDocumentMutation.isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      onClick={() => handleDeleteDocument(doc)} // Pass the whole doc object
+                      disabled={deleteDocumentMutation.isLoading}
                     >
-                      Delete
+                      {deleteDocumentMutation.isLoading && deleteDocumentMutation.variables?.documentId === doc.id ? 'Deleting...' : 'Delete'}
                     </button>
                   </td>
                 </tr>

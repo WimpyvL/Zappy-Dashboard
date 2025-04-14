@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '../../utils/supabaseClient'; // Import Supabase client
+import { supabase } from '../../lib/supabase'; // Use the correct Supabase client
 import { toast } from 'react-toastify';
 
 // Removed Mock Data
@@ -19,10 +19,13 @@ export const useNotes = (patientId, params = {}, options = {}) => {
       if (!patientId) return []; // Return empty if no patientId
 
       let query = supabase
-        .from('notes') // ASSUMING table name is 'notes'
-        .select(`*`) // Temporarily removing the join to isolate the issue
-        .eq('client_record_id', patientId) // Filter by patient
-        .order('created_at', { ascending: false }); // Order by creation date
+        .from('notes') 
+        .select(`
+          *,
+          author:user_id ( id, first_name, last_name ) 
+        `) // Join with profiles table using user_id FK
+        .eq('patient_id', patientId) // Corrected FK name
+        .order('created_at', { ascending: false }); 
 
       // Add other filters from params if needed
       // if (params.type) { query = query.eq('type', params.type); }
@@ -34,14 +37,13 @@ export const useNotes = (patientId, params = {}, options = {}) => {
         throw new Error(error.message);
       }
 
-      // Map data if needed (e.g., format author name)
-      // Adjust mapping - authorName will be 'Unknown' since we removed the join
+      // Map data to include author name
       const mappedData = data?.map(note => ({
           ...note,
-          authorName: 'Unknown', // Set default since author info is not joined
+          authorName: note.author ? `${note.author.first_name || ''} ${note.author.last_name || ''}`.trim() : 'System', // Use joined author name
       })) || [];
 
-      return mappedData; // Return array of notes
+      return mappedData; 
     },
     enabled: !!patientId, // Only run query if patientId is truthy
     keepPreviousData: true,
@@ -57,11 +59,11 @@ export const useNoteById = (noteId, options = {}) => {
       if (!noteId) return null;
 
       const { data, error } = await supabase
-        .from('notes') // ASSUMING table name is 'notes'
+        .from('notes') 
         .select(`
           *,
-          author_id ( id, first_name, last_name ) 
-        `) // Trying 'author_id' as the foreign key column name
+          author:user_id ( id, first_name, last_name ) 
+        `) // Join with profiles table using user_id FK
         .eq('id', noteId)
         .single();
 
@@ -70,14 +72,13 @@ export const useNoteById = (noteId, options = {}) => {
         if (error.code === 'PGRST116') return null; // Not found
         throw new Error(error.message);
       }
-       // Map data if needed
+       // Map data to include author name
        const mappedData = data ? {
            ...data,
-           // Adjust mapping to use the data structure returned by the corrected join
-           authorName: data.author_id ? `${data.author_id.first_name || ''} ${data.author_id.last_name || ''}`.trim() : 'System',
+           authorName: data.author ? `${data.author.first_name || ''} ${data.author.last_name || ''}`.trim() : 'System', // Use joined author name
        } : null;
 
-      return mappedData;
+      return mappedData; // Return mapped data
     },
     enabled: !!noteId,
     ...options,
@@ -98,14 +99,14 @@ export const useCreateNote = (options = {}) => {
 
       const dataToInsert = {
         ...noteData,
-        client_record_id: patientId,
+        patient_id: patientId, // Corrected FK name
+        user_id: noteData.user_id, // Ensure user_id is passed in noteData
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
-        // user_id: currentUser?.id, // Set author ID if available
       };
 
       const { data, error } = await supabase
-        .from('notes') // ASSUMING table name is 'notes'
+        .from('notes') 
         .insert(dataToInsert)
         .select()
         .single();
@@ -143,11 +144,11 @@ export const useUpdateNote = (options = {}) => {
        // Remove fields that shouldn't be updated directly if necessary
        delete dataToUpdate.id;
        delete dataToUpdate.created_at;
-       delete dataToUpdate.client_record_id; // Don't allow changing patient link
+       delete dataToUpdate.patient_id; // Don't allow changing patient link
        delete dataToUpdate.user_id; // Don't allow changing author
 
       const { data, error } = await supabase
-        .from('notes') // ASSUMING table name is 'notes'
+        .from('notes') 
         .update(dataToUpdate)
         .eq('id', noteId)
         .select()
@@ -187,7 +188,7 @@ export const useDeleteNote = (options = {}) => {
       if (!noteId) throw new Error("Note ID is required for deletion.");
 
       const { error } = await supabase
-        .from('notes') // ASSUMING table name is 'notes'
+        .from('notes') 
         .delete()
         .eq('id', noteId);
 

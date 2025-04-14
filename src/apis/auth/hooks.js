@@ -1,193 +1,183 @@
-import React, { useState, useEffect } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { Eye, EyeOff, AlertCircle, CheckCircle } from 'lucide-react';
-import { useForm } from 'react-hook-form';
-import { useAuth } from '../../context/AuthContext';
-import { useLogin } from '../../apis/auth/hooks';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { supabase } from '../../lib/supabase'; // Use the correct Supabase client
+import { toast } from 'react-toastify';
+import { useAuth } from '../../context/AuthContext'; // Import useAuth to update context
 
-const Login = () => {
-  const navigate = useNavigate();
-  const location = useLocation();
-  const { setUser, error: authError, isAuthenticated, clearError } = useAuth();
-  const [showPassword, setShowPassword] = useState(false);
-  const [successMessage, setSuccessMessage] = useState(
-    location.state?.message || ''
-  );
-  const [apiError, setApiError] = useState('');
-
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-    reset,
-  } = useForm({
-    defaultValues: { email: '', password: '', rememberMe: false },
-  });
-
-  // Use the custom useLogin hook
-  const mutation = useLogin({
-    onSuccess: (response) => {
-      // Extract user data from the response
-      const userData = {
-        email: response.data?.attributes?.email,
-        role: response.data?.attributes?.role,
-        id: response.data?.id,
-      };
-
-      localStorage.setItem('isAuthenticated', 'true');
-      localStorage.setItem('user', JSON.stringify(userData));
-      setUser(userData);
-      reset();
-    },
-  });
-
-  useEffect(() => {
-    if (authError) setApiError(authError);
-    clearError && clearError();
-  }, [authError, clearError]);
-
-  useEffect(() => {
-    if (isAuthenticated) {
-      navigate(location.state?.from?.pathname || '/', { replace: true });
-    }
-  }, [isAuthenticated, navigate, location.state]);
-
-  const togglePasswordVisibility = () => setShowPassword((prev) => !prev);
-
-  const onSubmit = (data) => {
-    setSuccessMessage('');
-    setApiError('');
-    mutation.mutate(data);
-  };
-
-  // Handle mutation errors
-  useEffect(() => {
-    if (mutation.error) {
-      setApiError(
-        mutation.error?.response?.data ||
-          'An unexpected error occurred. Please try again.'
-      );
-    }
-  }, [mutation.error]);
-
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100 p-4">
-      <div className="max-w-md w-full bg-white rounded-lg shadow-md overflow-hidden px-6 py-8">
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-indigo-900">MedSub</h1>
-          <p className="text-gray-600 mt-1">Log in to your account</p>
-        </div>
-
-        {successMessage && (
-          <div className="mb-4 p-3 bg-green-50 text-green-700 text-sm rounded flex items-start">
-            <CheckCircle className="h-5 w-5 mr-2" /> <p>{successMessage}</p>
-          </div>
-        )}
-        {apiError && (
-          <div className="mb-4 p-3 bg-red-50 text-red-700 text-sm rounded flex items-start">
-            <AlertCircle className="h-5 w-5 mr-2" /> <p>{apiError}</p>
-          </div>
-        )}
-
-        <form onSubmit={handleSubmit(onSubmit)} noValidate>
-          <div className="mb-6">
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Email Address
-            </label>
-            <input
-              type="email"
-              autoComplete="email"
-              className={`block w-full px-3 py-2 border ${
-                errors.email ? 'border-red-300' : 'border-gray-300'
-              } rounded-md shadow-sm placeholder-gray-400 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm`}
-              placeholder="your.email@example.com"
-              {...register('email', {
-                required: 'Email is required',
-                pattern: { value: /\S+@\S+\.\S+/, message: 'Email is invalid' },
-              })}
-            />
-            {errors.email && (
-              <p className="mt-1 text-sm text-red-600">
-                {errors.email.message}
-              </p>
-            )}
-          </div>
-
-          <div className="mb-6">
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Password
-            </label>
-            <div className="relative">
-              <input
-                type={showPassword ? 'text' : 'password'}
-                autoComplete="current-password"
-                className={`block w-full px-3 py-2 border ${
-                  errors.password ? 'border-red-300' : 'border-gray-300'
-                } rounded-md shadow-sm placeholder-gray-400 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm`}
-                placeholder="••••••••"
-                {...register('password', { required: 'Password is required' })}
-              />
-              <button
-                type="button"
-                className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400"
-                onClick={togglePasswordVisibility}
-              >
-                {showPassword ? (
-                  <EyeOff className="h-5 w-5" />
-                ) : (
-                  <Eye className="h-5 w-5" />
-                )}
-              </button>
-            </div>
-            {errors.password && (
-              <p className="mt-1 text-sm text-red-600">
-                {errors.password.message}
-              </p>
-            )}
-          </div>
-
-          <div className="flex items-center justify-between mb-6">
-            <label className="flex items-center text-sm text-gray-700">
-              <input
-                type="checkbox"
-                className="h-4 w-4 text-indigo-600 border-gray-300 rounded"
-                {...register('rememberMe')}
-              />
-              <span className="ml-2">Remember me</span>
-            </label>
-            <Link
-              to="/forgot-password"
-              className="text-sm text-indigo-600 hover:text-indigo-500"
-            >
-              Forgot your password?
-            </Link>
-          </div>
-
-          <button
-            type="submit"
-            disabled={mutation.isPending}
-            className={`w-full py-2 px-4 text-sm font-medium text-white rounded-md shadow-sm ${
-              mutation.isPending
-                ? 'bg-indigo-400'
-                : 'bg-indigo-600 hover:bg-indigo-700'
-            } focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500`}
-          >
-            {mutation.isPending ? 'Signing in...' : 'Sign in'}
-          </button>
-
-          <p className="mt-6 text-center text-sm text-gray-600">
-            Don't have an account?{' '}
-            <Link
-              to="/signup"
-              className="text-indigo-600 hover:text-indigo-500"
-            >
-              Sign up
-            </Link>
-          </p>
-        </form>
-      </div>
-    </div>
-  );
+// Define query keys (optional for auth, but good practice)
+const queryKeys = {
+  user: ['user'],
 };
 
-export default Login;
+// Hook for user login using Supabase Auth
+export const useLogin = (options = {}) => {
+  const queryClient = useQueryClient();
+  const { setUser } = useAuth(); // Get setUser from context
+
+  return useMutation({
+    mutationFn: async ({ email, password }) => {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: email,
+        password: password,
+      });
+
+      if (error) {
+        console.error('Supabase login error:', error);
+        throw new Error(error.message || 'Login failed. Please check your credentials.');
+      }
+      return data; // Contains user and session
+    },
+    onSuccess: (data, variables, context) => {
+      if (data.user && data.session) {
+        // Update user in AuthContext
+        // You might need to fetch profile data here if not in user_metadata
+        setUser(data.user);
+        // Optionally invalidate user-related queries if needed elsewhere
+        queryClient.invalidateQueries({ queryKey: queryKeys.user });
+        toast.success('Login successful!');
+      } else {
+         // Handle cases where login might succeed but return unexpected data
+         throw new Error('Login succeeded but user data is missing.');
+      }
+      options.onSuccess?.(data, variables, context);
+    },
+    onError: (error, variables, context) => {
+      toast.error(`Login failed: ${error.message}`);
+      options.onError?.(error, variables, context);
+    },
+    onSettled: options.onSettled,
+  });
+};
+
+// Hook for user signup using Supabase Auth
+export const useSignup = (options = {}) => {
+  return useMutation({
+    mutationFn: async ({ email, password, firstName, lastName }) => {
+      const { data, error } = await supabase.auth.signUp({
+        email: email,
+        password: password,
+        options: {
+          // Store additional info in user_metadata
+          data: {
+            first_name: firstName,
+            last_name: lastName,
+            // Add role or other default metadata if needed
+          },
+        },
+      });
+
+      if (error) {
+        console.error('Supabase signup error:', error);
+        throw new Error(error.message || 'Signup failed. Please try again.');
+      }
+      // Note: Supabase might require email confirmation depending on settings.
+      // The 'data' object contains user and session info if confirmation is not required or disabled.
+      return data;
+    },
+    onSuccess: (data, variables, context) => {
+      if (data.user?.identities?.length === 0) {
+         toast.error('Signup error: User might already exist.'); // Supabase sometimes returns this
+      } else if (data.user && data.session) {
+         toast.success('Signup successful! Welcome.');
+      } else if (data.user) {
+         toast.success('Signup successful! Please check your email to confirm your account.');
+      } else {
+         toast.warn('Signup process initiated. Further steps might be required.');
+      }
+      options.onSuccess?.(data, variables, context);
+    },
+    onError: (error, variables, context) => {
+      toast.error(`Signup failed: ${error.message}`);
+      options.onError?.(error, variables, context);
+    },
+    onSettled: options.onSettled,
+  });
+};
+
+// Hook for user logout using Supabase Auth
+export const useLogout = (options = {}) => {
+  const queryClient = useQueryClient();
+  const { logout: logoutContext } = useAuth(); // Get logout from context
+
+  return useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        console.error('Supabase logout error:', error);
+        // Don't necessarily throw, allow context cleanup anyway
+        // throw new Error(error.message || 'Logout failed.');
+      }
+      return null; // No data needed on success
+    },
+    onSuccess: (data, variables, context) => {
+      // Clear user state in AuthContext
+      logoutContext();
+      // Clear React Query cache if desired
+      queryClient.clear();
+      toast.success('Logged out successfully.');
+      options.onSuccess?.(data, variables, context);
+    },
+    onError: (error, variables, context) => {
+      // Still attempt context cleanup even if Supabase logout fails
+      logoutContext();
+      queryClient.clear();
+      toast.error(`Logout error: ${error.message || 'An error occurred.'}`);
+      options.onError?.(error, variables, context);
+    },
+    onSettled: options.onSettled,
+  });
+};
+
+// Hook for password reset request (forgot password)
+export const useForgotPassword = (options = {}) => {
+    return useMutation({
+      mutationFn: async ({ email }) => {
+        const { error } = await supabase.auth.resetPasswordForEmail(email, {
+          // Optional: Specify the URL to redirect the user to after clicking the email link
+          // redirectTo: 'http://localhost:3000/update-password',
+        });
+        if (error) {
+          console.error('Supabase password reset request error:', error);
+          throw new Error(error.message || 'Failed to send password reset email.');
+        }
+        return null; // No data needed on success
+      },
+      onSuccess: (data, variables, context) => {
+        toast.success('Password reset email sent. Please check your inbox.');
+        options.onSuccess?.(data, variables, context);
+      },
+      onError: (error, variables, context) => {
+        toast.error(`Password reset request failed: ${error.message}`);
+        options.onError?.(error, variables, context);
+      },
+      onSettled: options.onSettled,
+    });
+  };
+
+// Hook for updating password (after reset link clicked or logged in)
+// Note: Supabase uses updateUser for logged-in password changes (see useChangePassword in users/hooks.js)
+// This hook is specifically for the reset flow *after* the user clicks the email link.
+export const useUpdatePassword = (options = {}) => {
+    return useMutation({
+      mutationFn: async ({ password }) => {
+        // This assumes the user is on the page redirected from the email link,
+        // which contains the necessary recovery token in the URL fragment.
+        // Supabase client handles extracting this token automatically.
+        const { data, error } = await supabase.auth.updateUser({ password });
+
+        if (error) {
+          console.error('Supabase password update error:', error);
+          throw new Error(error.message || 'Failed to update password.');
+        }
+        return data;
+      },
+      onSuccess: (data, variables, context) => {
+        toast.success('Password updated successfully. You can now log in.');
+        options.onSuccess?.(data, variables, context);
+      },
+      onError: (error, variables, context) => {
+        toast.error(`Password update failed: ${error.message}`);
+        options.onError?.(error, variables, context);
+      },
+      onSettled: options.onSettled,
+    });
+  };

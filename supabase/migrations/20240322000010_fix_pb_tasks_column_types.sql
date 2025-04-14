@@ -38,15 +38,15 @@ END $$;
 -- Add foreign key constraints with proper error handling
 DO $$
 BEGIN
-    -- Check if the user table exists before adding the constraint
+    -- Check if the auth.users table exists before adding the constraint
     IF EXISTS (
-        SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'user'
+        SELECT FROM pg_tables WHERE schemaname = 'auth' AND tablename = 'users'
     ) THEN
         BEGIN
             ALTER TABLE pb_tasks ADD CONSTRAINT pb_tasks_user_id_fkey 
-            FOREIGN KEY (user_id) REFERENCES "user"(id) ON DELETE SET NULL;
+            FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE SET NULL;
         EXCEPTION WHEN OTHERS THEN
-            RAISE NOTICE 'Could not add foreign key constraint to user table: %', SQLERRM;
+            RAISE NOTICE 'Could not add foreign key constraint to auth.users table: %', SQLERRM;
         END;
     END IF;
     
@@ -63,5 +63,4 @@ BEGIN
     END IF;
 END $$;
 
--- Enable realtime for this table if not already enabled
-ALTER PUBLICATION supabase_realtime ADD TABLE pb_tasks;
+-- Realtime was enabled in the previous migration

@@ -9,8 +9,9 @@ import {
 } from 'lucide-react';
 import { toast } from 'react-toastify';
 import { redirectToCheckout } from '../../../utils/stripeCheckout';
+import { usePauseSubscription, useCancelSubscription } from '../../../apis/subscriptionPlans/hooks'; // Import new hooks
 import LoadingSpinner from './common/LoadingSpinner';
-import apiService from '../../../utils/apiService';
+// Removed unused apiService import
 
 const PaymentMethodCard = ({
   method,
@@ -19,16 +20,18 @@ const PaymentMethodCard = ({
   refreshPatient,
 }) => {
   const handleMakeDefault = async () => {
+    // TODO: Implement backend call to set default payment method
+    toast.info('Setting default payment method - Not implemented yet.');
+    /*
     try {
-      await apiService.put(
-        `/api/v1/admin/patients/${patientId}/payment_methods/${method.id}/make_default`
-      );
-      toast.success('Default payment method updated');
-      refreshPatient();
+      // const response = await someBackendFunctionToSetDefault(patientId, method.id); // Replace with actual backend call
+      // toast.success('Default payment method updated');
+      // refreshPatient(); // Refresh data after successful update
     } catch (error) {
       console.error('Failed to update default payment method:', error);
       toast.error('Failed to update payment method');
     }
+    */
   };
 
   return (
@@ -103,6 +106,10 @@ const PaymentStatusBadge = ({ status }) => {
 };
 
 const PatientBilling = ({ patient, invoices, loading, refreshPatient }) => {
+  // Format date for display
+  const pauseSubscriptionMutation = usePauseSubscription();
+  const cancelSubscriptionMutation = useCancelSubscription();
+
   // Format date for display
   const formatDate = (dateString) => {
     if (!dateString) return 'Not available';
@@ -316,44 +323,40 @@ const PatientBilling = ({ patient, invoices, loading, refreshPatient }) => {
 
             <div className="flex justify-end space-x-2 pt-4">
               <button
-                className="px-3 py-1 text-sm border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50"
-                onClick={async () => {
-                  try {
-                    await apiService.post(
-                      `/api/v1/admin/patients/${patient.id}/subscription/pause`
-                    );
-                    toast.success('Subscription paused successfully');
-                    refreshPatient();
-                  } catch (error) {
-                    console.error('Failed to pause subscription:', error);
-                    toast.error('Failed to pause subscription');
+                className={`px-3 py-1 text-sm border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 ${pauseSubscriptionMutation.isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                onClick={() => {
+                  // Assuming patient.stripe_subscription_id holds the relevant ID
+                  if (patient?.stripe_subscription_id) {
+                     pauseSubscriptionMutation.mutate({ 
+                       subscriptionId: patient.stripe_subscription_id,
+                       patientId: patient.id // Pass patientId for query invalidation if needed by hook
+                     });
+                  } else {
+                    toast.error("Cannot pause: Subscription ID not found.");
                   }
                 }}
+                disabled={pauseSubscriptionMutation.isLoading}
               >
-                Pause Subscription
+                {pauseSubscriptionMutation.isLoading ? 'Pausing...' : 'Pause Subscription'}
               </button>
               <button
-                className="px-3 py-1 text-sm border border-red-300 text-red-700 rounded-md hover:bg-red-50"
-                onClick={async () => {
-                  if (
-                    window.confirm(
-                      'Are you sure you want to cancel this subscription? This action cannot be undone.'
-                    )
-                  ) {
-                    try {
-                      await apiService.post(
-                        `/api/v1/admin/patients/${patient.id}/subscription/cancel`
-                      );
-                      toast.success('Subscription cancelled successfully');
-                      refreshPatient();
-                    } catch (error) {
-                      console.error('Failed to cancel subscription:', error);
-                      toast.error('Failed to cancel subscription');
+                className={`px-3 py-1 text-sm border border-red-300 text-red-700 rounded-md hover:bg-red-50 ${cancelSubscriptionMutation.isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                onClick={() => {
+                  if (window.confirm('Are you sure you want to cancel this subscription? This action cannot be undone.')) {
+                    // Assuming patient.stripe_subscription_id holds the relevant ID
+                    if (patient?.stripe_subscription_id) {
+                      cancelSubscriptionMutation.mutate({ 
+                        subscriptionId: patient.stripe_subscription_id,
+                        patientId: patient.id // Pass patientId for query invalidation if needed by hook
+                      });
+                    } else {
+                       toast.error("Cannot cancel: Subscription ID not found.");
                     }
                   }
                 }}
+                disabled={cancelSubscriptionMutation.isLoading}
               >
-                Cancel Subscription
+                {cancelSubscriptionMutation.isLoading ? 'Cancelling...' : 'Cancel Subscription'}
               </button>
             </div>
           </div>

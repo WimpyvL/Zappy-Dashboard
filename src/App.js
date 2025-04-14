@@ -4,10 +4,8 @@ import AppRoutes from './constants/AppRoutes';
 import { ToastContainer } from 'react-toastify';
 // Import the Tempo Devtools
 import { TempoDevtools } from 'tempo-devtools';
-// Import debug utility
-import { debugSupabaseConnection } from './utils/debugSupabase';
-// Import supabase client to ensure it's initialized early
-import { supabase } from './utils/supabaseClient';
+// Import the correct supabase client
+import { supabase } from './lib/supabase';
 // Providers and Router are now in src/index.js
 
 function App() {
@@ -17,11 +15,7 @@ function App() {
       TempoDevtools.init();
     }
 
-    // Debug Supabase connection on startup
-    const connectionStatus = debugSupabaseConnection();
-    console.log('Supabase connection status:', connectionStatus);
-
-    // Test Supabase connection with error handling
+    // Test Supabase connection with error handling using the correct client
     const testSupabaseConnection = async () => {
       try {
         // First check if the test table exists

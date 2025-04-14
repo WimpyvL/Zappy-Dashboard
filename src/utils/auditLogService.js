@@ -3,7 +3,7 @@
 // or could be simplified.
 
 // Service for logging events and errors to the backend (Supabase)
-import { supabase } from './supabaseClient'; // Import Supabase client
+import { supabase } from '../lib/supabase'; // Use the correct Supabase client
 import errorHandling from './errorHandling'; // Assuming errorHandling utility exists
 // TODO: Consider importing useAuth hook or similar to get user ID if needed consistently
 

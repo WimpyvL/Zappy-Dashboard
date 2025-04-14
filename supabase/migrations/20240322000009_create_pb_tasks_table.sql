@@ -24,8 +24,9 @@ ALTER TABLE pb_tasks DROP CONSTRAINT IF EXISTS pb_tasks_user_id_fkey;
 ALTER TABLE pb_tasks DROP CONSTRAINT IF EXISTS pb_tasks_client_record_id_fkey;
 
 -- Add foreign key constraints
+-- Reference the auth.users table for user IDs
 ALTER TABLE pb_tasks ADD CONSTRAINT pb_tasks_user_id_fkey 
-  FOREIGN KEY (user_id) REFERENCES "user"(id) ON DELETE SET NULL;
+  FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE SET NULL;
 
 ALTER TABLE pb_tasks ADD CONSTRAINT pb_tasks_client_record_id_fkey 
   FOREIGN KEY (client_record_id) REFERENCES client_record(id) ON DELETE SET NULL;

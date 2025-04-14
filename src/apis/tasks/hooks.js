@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '../../utils/supabaseClient'; // Import Supabase client
+import { supabase } from '../../lib/supabase'; // Use the correct Supabase client
 import { toast } from 'react-toastify';
 
 // Removed Mock Data
@@ -54,7 +54,7 @@ export const useTasks = (
         query = query.eq('user_id', filters.assigneeId);
       }
       if (filters.patientId) {
-        query = query.eq('client_record_id', filters.patientId);
+        query = query.eq('patient_id', filters.patientId); // Corrected FK name
       }
       // Add search filter if needed
       if (filters.search) {
@@ -137,7 +137,7 @@ export const useCreateTask = (options = {}) => {
         ...taskData,
         // Map frontend fields to DB columns if names differ
         user_id: taskData.assigneeId,
-        client_record_id: taskData.patientId,
+        patient_id: taskData.patientId, // Corrected FK name
         completed: taskData.status === 'Completed',
         // Ensure timestamps are set
         created_at: new Date().toISOString(),
@@ -186,7 +186,7 @@ export const useUpdateTask = (options = {}) => {
       const dataToUpdate = {
         ...taskData,
         user_id: taskData.assigneeId,
-        client_record_id: taskData.patientId,
+        patient_id: taskData.patientId, // Corrected FK name
         completed: taskData.status === 'Completed',
         updated_at: new Date().toISOString(),
         date_modified: new Date().toISOString(),
@@ -329,7 +329,7 @@ export const useTaskablePatients = (options = {}) => {
     queryKey: queryKeys.taskablePatients,
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('patients')
+        .from('client_record') // Corrected table name
         .select('id, first_name, last_name') // Select relevant fields
         .order('last_name', { ascending: true });
 

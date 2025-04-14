@@ -5,7 +5,7 @@ import React, {
   useEffect,
   useCallback,
 } from 'react';
-import { supabase } from '../utils/supabaseClient'; // Import Supabase client
+import { supabase } from '../lib/supabase'; // Use the correct Supabase client
 import { useAppContext } from './AppContext'; // Import AppContext hook
 // Removed apiService and errorHandling imports
 

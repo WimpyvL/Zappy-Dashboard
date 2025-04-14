@@ -16,7 +16,13 @@ import {
 import { CopyOutlined } from '@ant-design/icons';
 // import { useAppContext } from '../../../context/AppContext'; // Context might not be needed directly if using AuthContext
 import { useAuth } from '../../../context/AuthContext'; // Assuming AuthContext provides user role
-import apiService from '../../../utils/apiService'; // Use the actual apiService
+// Import the new referral hooks
+import { 
+  useReferralSettings, 
+  useUpdateReferralSettings, 
+  useReferralHistory, 
+  useUserReferralInfo 
+} from '../../../apis/referrals/hooks';
 
 const { Title, Paragraph, Text } = Typography;
 
@@ -42,8 +48,7 @@ const ReferralSettings = () => {
   // State for User View
   const [referralCode, setReferralCode] = useState('LOADING...');
   const [referralStats, setReferralStats] = useState({ count: 0, rewards: 0 });
-  const [isLoadingCode, setIsLoadingCode] = useState(!isAdmin);
-  const [isLoadingStats, setIsLoadingStats] = useState(!isAdmin);
+  // Loading states will come from hooks below
 
   // State for Admin View & Shared Settings
   const [rewardAmount, setRewardAmount] = useState(0);
@@ -51,114 +56,91 @@ const ReferralSettings = () => {
   const [newRewardAmount, setNewRewardAmount] = useState('');
   const [newRewardRecipient, setNewRewardRecipient] = useState('referrer'); // For admin form
   const [allReferrals, setAllReferrals] = useState([]);
-  const [isLoadingAdminSettings, setIsLoadingAdminSettings] = useState(true);
-  const [isLoadingReferrals, setIsLoadingReferrals] = useState(isAdmin);
-  const [isUpdatingSettings, setIsUpdatingSettings] = useState(false);
+  // Loading states will come from hooks below
+  const [isUpdatingSettings, setIsUpdatingSettings] = useState(false); // Keep for mutation loading state
 
-  // --- API Fetch Functions ---
-  const fetchUserReferralInfo = async () => {
-    if (isAdmin) return;
-    setIsLoadingCode(true);
-    setIsLoadingStats(true);
-    try {
-      // Use the new apiService method
-      const info = await apiService.users.getReferralInfo();
-      setReferralCode(info?.code || 'N/A');
-      // Adjust keys based on actual API response structure
-      setReferralStats({
-        count: info?.referralCount || 0,
-        rewards: info?.totalRewards || 0,
-      });
-    } catch (error) {
-      console.error('Error fetching user referral info:', error); // Log the actual error
-      message.error('Failed to load your referral information.');
-      setReferralCode('Error');
-      setReferralStats({ count: 0, rewards: 0 });
-    } finally {
-      setIsLoadingCode(false);
-      setIsLoadingStats(false);
-    }
-  };
-
-  const fetchReferralSettings = async () => {
-    setIsLoadingAdminSettings(true);
-    try {
-      // Use the new apiService method
-      const settings = await apiService.referrals.getSettings();
-      const currentAmount = settings?.rewardAmount || 0;
-      const currentRecipient = settings?.rewardRecipient || 'referrer';
-
-      setRewardAmount(currentAmount);
-      setRewardRecipient(currentRecipient);
-
+  // --- React Query Hooks ---
+  const { data: settingsData, isLoading: isLoadingAdminSettings } = useReferralSettings({
+    onSuccess: (data) => {
+      setRewardAmount(data?.rewardAmount || 0);
+      setRewardRecipient(data?.rewardRecipient || 'referrer');
       if (isAdmin) {
-        setNewRewardAmount(currentAmount.toString());
-        setNewRewardRecipient(currentRecipient);
+        setNewRewardAmount((data?.rewardAmount || 0).toString());
+        setNewRewardRecipient(data?.rewardRecipient || 'referrer');
       }
-    } catch (error) {
-      console.error('Error fetching referral settings:', error); // Log the actual error
-      message.error('Failed to load referral settings.');
-      setRewardAmount(0);
-      setRewardRecipient('referrer');
-    } finally {
-      setIsLoadingAdminSettings(false);
+    },
+    onError: () => {
+        // Error handled by toast in hook
+        setRewardAmount(0);
+        setRewardRecipient('referrer');
     }
-  };
+  });
 
-  const fetchAllReferrals = async () => {
-    if (!isAdmin) return;
-    setIsLoadingReferrals(true);
-    try {
-      // Use the new apiService method
-      const data = await apiService.referrals.getAllAdmin();
-      // Adjust key based on actual API response structure
-      setAllReferrals(data?.referrals || []);
-    } catch (error) {
-      console.error('Error fetching referral history:', error); // Log the actual error
-      message.error('Failed to load referral history.');
-      setAllReferrals([]);
-    } finally {
-      setIsLoadingReferrals(false);
+  // Fetch user-specific referral info (only runs if not admin)
+  const { data: userInfo, isLoading: isLoadingUserReferralInfo } = useUserReferralInfo({
+    enabled: !isAdmin, // Only enable for non-admins
+    onSuccess: (data) => {
+        setReferralCode(data?.code || 'N/A');
+        setReferralStats({
+            count: data?.referralCount || 0,
+            rewards: data?.totalRewards || 0,
+        });
+    },
+    onError: () => {
+        // Error handled by toast in hook
+        setReferralCode('Error');
+        setReferralStats({ count: 0, rewards: 0 });
     }
-  };
+  });
+  // Combine loading states for user view
+  const isLoadingCode = !isAdmin && isLoadingUserReferralInfo;
+  const isLoadingStats = !isAdmin && isLoadingUserReferralInfo;
 
-  const handleUpdateSettings = async () => {
+
+  // Fetch referral history (only runs if admin)
+  const { data: referralHistoryData, isLoading: isLoadingReferrals } = useReferralHistory({}, {
+    enabled: isAdmin, // Only enable for admins
+    onSuccess: (data) => {
+        setAllReferrals(data || []);
+    },
+    onError: () => {
+        // Error handled by toast in hook
+        setAllReferrals([]);
+    }
+  });
+
+  // Mutation hook for updating settings
+  const updateSettingsMutation = useUpdateReferralSettings({
+    onSuccess: (updatedSettings) => {
+        // Update local state based on the successful mutation response
+        setRewardAmount(updatedSettings?.reward_amount || 0); // Use DB column name from response
+        setRewardRecipient(updatedSettings?.reward_recipient || 'referrer');
+        // Optionally reset form fields if needed, or rely on query invalidation
+        setNewRewardAmount((updatedSettings?.reward_amount || 0).toString());
+        setNewRewardRecipient(updatedSettings?.reward_recipient || 'referrer');
+    },
+    // onError handled by toast in hook
+    onSettled: () => {
+        setIsUpdatingSettings(false); // Reset local loading state regardless of outcome
+    }
+  });
+
+  // --- Event Handlers ---
+  const handleUpdateSettings = () => {
     if (!isAdmin) return;
     const amount = parseFloat(newRewardAmount);
     if (isNaN(amount) || amount < 0) {
       message.error('Please enter a valid non-negative reward amount.');
       return;
     }
-    setIsUpdatingSettings(true);
-    try {
-      // Use the new apiService method
-      const updatedSettings = await apiService.referrals.updateSettings({
-        rewardAmount: amount,
-        rewardRecipient: newRewardRecipient,
-      });
-      // Update local state from the response to be sure
-      setRewardAmount(updatedSettings?.rewardAmount || amount);
-      setRewardRecipient(
-        updatedSettings?.rewardRecipient || newRewardRecipient
-      );
-      message.success('Referral settings updated successfully!');
-    } catch (error) {
-      console.error('Error updating referral settings:', error); // Log the actual error
-      message.error('Failed to update referral settings.');
-    } finally {
-      setIsUpdatingSettings(false);
-    }
+    setIsUpdatingSettings(true); // Set local loading state
+    updateSettingsMutation.mutate({
+      rewardAmount: amount,
+      rewardRecipient: newRewardRecipient,
+    });
   };
 
-  useEffect(() => {
-    fetchReferralSettings(); // Fetch settings for all users
-    if (!isAdmin) {
-      fetchUserReferralInfo();
-    } else {
-      fetchAllReferrals();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isAdmin]);
+  // --- Event Handlers --- (handleUpdateSettings is already defined using the mutation hook)
 
   const copyToClipboard = () => {
     navigator.clipboard

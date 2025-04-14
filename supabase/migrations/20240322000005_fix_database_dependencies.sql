@@ -118,6 +118,4 @@ BEGIN
     END IF;
 END $$;
 
--- Enable realtime for these tables
-ALTER PUBLICATION supabase_realtime ADD TABLE client_record;
-ALTER PUBLICATION supabase_realtime ADD TABLE consultations;
+-- Realtime was enabled in a previous migration

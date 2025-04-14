@@ -1,6 +1,7 @@
 import React from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { useMyInvoices, useMySubscription, useCreateCustomerPortalSession } from '../../apis/subscriptionPlans/hooks'; // Import hooks
+// Import necessary hooks including useMySubscription
+import { useMyInvoices, useMySubscription, useCreateCustomerPortalSession } from '../../apis/subscriptionPlans/hooks'; 
 import { Link } from 'react-router-dom';
 import { 
   Loader2, AlertTriangle, CreditCard, FileText, CheckCircle, 
@@ -54,6 +55,7 @@ const PatientBillingPage = () => {
   const patientId = currentUser?.id || 'dev-patient-id'; // Use default for testing
 
   const { data: invoices, isLoading: invoicesLoading, error: invoicesError } = useMyInvoices(patientId);
+  // Use the implemented hook to fetch subscription data
   const { data: subscription, isLoading: subscriptionLoading, error: subscriptionError } = useMySubscription(patientId);
   
   // Mutation hook for managing subscription

@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '../../utils/supabaseClient'; // Import Supabase client
+import { supabase } from '../../lib/supabase'; // Use the correct Supabase client
 import { toast } from 'react-toastify';
 
 // Define query keys
@@ -25,8 +25,8 @@ export const useConsultations = (params = {}, pageSize = 10) => {
         .select(
           `
           *,
-          patients ( id, first_name, last_name, date_of_birth )
-        `, // Join with 'patients' table, ADDED date_of_birth
+          client_record ( id, first_name, last_name, date_of_birth )
+        `, // Join with 'client_record' table
           { count: 'exact' }
         )
         .order('submitted_at', { ascending: false }) // Use correct column name
@@ -37,14 +37,14 @@ export const useConsultations = (params = {}, pageSize = 10) => {
         query = query.eq('status', status);
       }
       if (patientId) {
-        query = query.eq('patient_id', patientId); // Use correct foreign key 'patient_id'
+        query = query.eq('patient_id', patientId); // Assuming FK is patient_id
       }
       // Add server-side search filter
       if (searchTerm) {
         // Adjust columns to search as needed (e.g., provider_notes, client_notes?)
         // Assuming 'provider' column exists based on InitialConsultations.js filter logic
         query = query.or(
-          `patients.first_name.ilike.%${searchTerm}%,patients.last_name.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%,provider.ilike.%${searchTerm}%`
+          `client_record.first_name.ilike.%${searchTerm}%,client_record.last_name.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%,provider.ilike.%${searchTerm}%` // Corrected join table name
         );
       }
       // Add other filters as needed based on otherFilters
@@ -60,9 +60,9 @@ export const useConsultations = (params = {}, pageSize = 10) => {
       const mappedData =
         data?.map((consult) => ({
           ...consult,
-          // Use the correct joined table name 'patients'
-          patientName: consult.patients
-            ? `${consult.patients.first_name || ''} ${consult.patients.last_name || ''}`.trim()
+          // Use the correct joined table name 'client_record'
+          patientName: consult.client_record 
+            ? `${consult.client_record.first_name || ''} ${consult.client_record.last_name || ''}`.trim()
             : 'N/A',
         })) || [];
 
@@ -92,8 +92,8 @@ export const useConsultationById = (id, options = {}) => {
         .select(
           `
           *,
-          patients ( id, first_name, last_name )
-        ` // Join with 'patients' table
+          client_record ( id, first_name, last_name )
+        ` // Join with 'client_record' table
         )
         .eq('id', id)
         .single();
@@ -107,9 +107,9 @@ export const useConsultationById = (id, options = {}) => {
        const mappedData = data
          ? {
             ...data,
-            // Use the correct joined table name 'patients'
-            patientName: data.patients
-              ? `${data.patients.first_name || ''} ${data.patients.last_name || ''}`.trim()
+            // Use the correct joined table name 'client_record'
+            patientName: data.client_record 
+              ? `${data.client_record.first_name || ''} ${data.client_record.last_name || ''}`.trim()
               : 'N/A',
           }
         : null;

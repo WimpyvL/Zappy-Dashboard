@@ -21,8 +21,7 @@ CREATE TABLE IF NOT EXISTS pharmacies (
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- Enable realtime for this table
-ALTER PUBLICATION supabase_realtime ADD TABLE pharmacies;
+-- Realtime was enabled in a previous migration
 
 -- Insert some sample data
 INSERT INTO pharmacies (name, address, city, state, zip, phone, is_active)

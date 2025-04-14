@@ -62,10 +62,9 @@ export const useCreateTag = (options = {}) => {
       // Only include fields that exist in the 'tag' table schema
       const dataToInsert = {
         name: tagData.name, // Required field
-        // Generate ID client-side if it's VARCHAR and required, otherwise let DB handle UUID
-        id: tagData.id || tagData.name?.toLowerCase().replace(/\s+/g, '-') || `tag-${Date.now()}`, // Example ID generation if needed
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
+        color: tagData.color, // Include color if provided by the form
+        // Let the database generate the UUID for the 'id' column
+        // created_at and updated_at should also be handled by DB defaults
       };
 
       // Ensure required 'name' field is present

@@ -1,10 +1,12 @@
 // components/patients/components/PatientNotes.jsx
 import React, { useState } from 'react';
 import { Plus } from 'lucide-react';
+import { useNotes } from '../../../apis/notes/hooks'; // Import the hook
 import LoadingSpinner from './common/LoadingSpinner';
 
 const NoteCard = ({ note, onOpenFollowupNotes }) => {
-  const date = new Date(note.createdAt).toLocaleDateString();
+  // Use created_at from the hook data
+  const date = new Date(note.created_at).toLocaleDateString(); 
 
   return (
     <div className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50">
@@ -19,7 +21,8 @@ const NoteCard = ({ note, onOpenFollowupNotes }) => {
                 : 'bg-gray-100 text-gray-800'
             }`}
           >
-            {note.category === 'follow-up' ? 'Follow-up' : note.category}
+            {/* Use note_type from the hook data */}
+            {note.note_type === 'follow-up' ? 'Follow-up' : note.note_type} 
           </span>
         </div>
       </div>
@@ -27,10 +30,11 @@ const NoteCard = ({ note, onOpenFollowupNotes }) => {
         {note.content}
       </p>
       <div className="mt-2 flex justify-between items-center">
-        <div className="text-xs text-gray-500">By: {note.createdBy}</div>
-        {note.category === 'follow-up' && (
+         {/* Use authorName mapped in the hook */}
+        <div className="text-xs text-gray-500">By: {note.authorName || 'System'}</div>
+        {note.note_type === 'follow-up' && ( // Use note_type
           <button
-            className="text-indigo-600 text-sm font-medium"
+            className="text-indigo-600 text-sm font-medium" // Removed hover:underline as it's not standard button style here
             onClick={() => onOpenFollowupNotes()}
           >
             View Details
@@ -41,22 +45,26 @@ const NoteCard = ({ note, onOpenFollowupNotes }) => {
   );
 };
 
-const PatientNotes = ({ patientId, notes, loading, onOpenFollowupNotes }) => {
+const PatientNotes = ({ patientId, onOpenFollowupNotes }) => { // Removed notes and loading props
   const [noteType, setNoteType] = useState('all');
+  
+  // Fetch notes using the hook
+  const { data: notesData, isLoading: loading, error } = useNotes(patientId); 
+  const notes = notesData || []; // Use fetched data or default to empty array
 
-  // Filter notes based on selected type
+  // Filter notes based on selected type (using note_type from DB)
   const filteredNotes =
     noteType === 'all'
       ? notes
-      : notes.filter((note) => note.category === noteType);
+      : notes.filter((note) => note.note_type === noteType);
 
-  // Separate follow-up notes for special section
+  // Separate follow-up notes for special section (using note_type)
   const standardNotes = filteredNotes.filter(
-    (note) => note.category !== 'follow-up'
+    (note) => note.note_type !== 'follow-up'
   );
   const followupNotes =
     noteType === 'follow-up' || noteType === 'all'
-      ? filteredNotes.filter((note) => note.category === 'follow-up')
+      ? filteredNotes.filter((note) => note.note_type === 'follow-up')
       : [];
 
   return (
@@ -70,10 +78,10 @@ const PatientNotes = ({ patientId, notes, loading, onOpenFollowupNotes }) => {
             onChange={(e) => setNoteType(e.target.value)}
           >
             <option value="all">All Notes</option>
-            <option value="medical">Medical</option>
-            <option value="admin">Admin</option>
-            <option value="follow-up">Follow-up</option>
-            <option value="initial-consult">Initial Consult</option>
+            {/* Adjust options based on actual note_type values used */}
+            <option value="Clinical">Clinical</option> 
+            <option value="Administrative">Administrative</option>
+            <option value="follow-up">Follow-up</option> 
           </select>
           <button
             className="px-3 py-1 text-sm bg-indigo-600 text-white rounded-md hover:bg-indigo-700 flex items-center"

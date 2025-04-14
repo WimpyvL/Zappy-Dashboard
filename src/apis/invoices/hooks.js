@@ -274,3 +274,48 @@ export const useMarkInvoiceAsPaid = (options = {}) => {
 };
 
 // Removed useSendInvoice hook - Requires backend logic (email, PDF generation etc.)
+
+// Hook to fetch detailed invoice data or a viewable link/PDF via an Edge Function
+export const useViewInvoice = (options = {}) => {
+  return useMutation({
+    mutationFn: async (invoiceId) => {
+      if (!invoiceId) throw new Error("Invoice ID is required.");
+
+      // Invoke the Supabase Edge Function
+      // This function should fetch full details and potentially generate a PDF/link
+      const { data, error } = await supabase.functions.invoke('get-invoice-details', {
+        body: { invoiceId }, 
+      });
+
+      if (error) {
+        console.error(`Error invoking get-invoice-details function for invoice ${invoiceId}:`, error);
+        throw new Error(error.message || 'Failed to fetch invoice details.');
+      }
+      
+      // Expecting the function to return data needed for display or a URL to a PDF
+      if (!data) {
+          throw new Error('No details returned for the invoice.');
+      }
+      
+      return data; 
+    },
+    onSuccess: (data, variables, context) => {
+      // Handle the response - e.g., open a PDF URL in a new tab
+      if (data.pdfUrl) {
+          window.open(data.pdfUrl, '_blank');
+          toast.success('Invoice opened in new tab.');
+      } else {
+          // Handle cases where raw data might be returned for display in a modal
+          console.log("Invoice details fetched:", data); 
+          toast.info('Invoice details loaded (display logic needed).');
+          // TODO: Implement logic to display invoice details, perhaps in a modal
+      }
+      options.onSuccess?.(data, variables, context);
+    },
+    onError: (error, variables, context) => {
+      toast.error(`Error viewing invoice: ${error.message || 'Unknown error'}`);
+      options.onError?.(error, variables, context);
+    },
+    onSettled: options.onSettled,
+  });
+};

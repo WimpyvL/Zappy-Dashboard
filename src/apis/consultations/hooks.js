@@ -29,7 +29,7 @@ export const useConsultations = (params = {}, pageSize = 10) => {
         `, // Join with 'client_record' table
           { count: 'exact' }
         )
-        .order('datesubmitted', { ascending: false }) // Use lowercase column name
+        .order('datesubmitted', { ascending: false }) // Revert to lowercase based on DB hint
         .range(rangeFrom, rangeTo);
 
       // Apply filters

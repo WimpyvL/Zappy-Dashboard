@@ -6,12 +6,14 @@ import {
   CheckCircle,
   Clock,
   XCircle,
+  Loader2, // Added
+  FileText // Added
 } from 'lucide-react';
 import { toast } from 'react-toastify';
 import { redirectToCheckout } from '../../../utils/stripeCheckout';
-import { usePauseSubscription, useCancelSubscription } from '../../../apis/subscriptionPlans/hooks'; // Import new hooks
+import { usePauseSubscription, useCancelSubscription } from '../../../apis/subscriptionPlans/hooks'; 
+import { useViewInvoice } from '../../../apis/invoices/hooks'; // Import the new hook
 import LoadingSpinner from './common/LoadingSpinner';
-// Removed unused apiService import
 
 const PaymentMethodCard = ({
   method,
@@ -109,6 +111,9 @@ const PatientBilling = ({ patient, invoices, loading, refreshPatient }) => {
   // Format date for display
   const pauseSubscriptionMutation = usePauseSubscription();
   const cancelSubscriptionMutation = useCancelSubscription();
+
+  // Format date for display
+  const viewInvoiceMutation = useViewInvoice();
 
   // Format date for display
   const formatDate = (dateString) => {
@@ -234,14 +239,14 @@ const PatientBilling = ({ patient, invoices, loading, refreshPatient }) => {
                       <PaymentStatusBadge status={invoice.status} />
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <a
-                        href={invoice.viewUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-indigo-600 hover:text-indigo-900 mr-3"
+                      <button
+                        onClick={() => viewInvoiceMutation.mutate(invoice.id)} // Use the hook
+                        disabled={viewInvoiceMutation.isLoading && viewInvoiceMutation.variables === invoice.id}
+                        className={`text-indigo-600 hover:text-indigo-900 mr-3 inline-flex items-center ${viewInvoiceMutation.isLoading && viewInvoiceMutation.variables === invoice.id ? 'opacity-50 cursor-not-allowed' : ''}`}
                       >
+                        {viewInvoiceMutation.isLoading && viewInvoiceMutation.variables === invoice.id ? <Loader2 className="h-3 w-3 mr-1 animate-spin"/> : <FileText className="h-3 w-3 mr-1" />}
                         View
-                      </a>
+                      </button>
                       {invoice.status === 'pending' && (
                         <button
                           className="text-indigo-600 hover:text-indigo-900"

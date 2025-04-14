@@ -80,19 +80,18 @@ export const useCreateDiscount = (options = {}) => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (discountData) => {
-      // Map frontend fields to DB columns if needed
+      // Map frontend fields to DB columns, explicitly setting null for unused type
       const dataToInsert = {
-        ...discountData,
-        // Assuming 'value' from mock maps to 'amount' or 'percentage'
-        amount: discountData.discount_type === 'fixed' ? parseFloat(discountData.value) : 0,
-        percentage: discountData.discount_type === 'percentage' ? parseInt(discountData.value, 10) : 0,
+        ...discountData, // Include name, code, description, start_date, end_date, usage_limit etc.
+        amount: discountData.discount_type === 'fixed' ? parseFloat(discountData.value) : null, // Set null if not fixed
+        percentage: discountData.discount_type === 'percentage' ? parseInt(discountData.value, 10) : null, // Set null if not percentage
         status: discountData.status === 'Active', // Convert string to boolean
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       };
-      // Remove fields not directly in DB table
-      delete dataToInsert.discount_type;
-      delete dataToInsert.value;
+      // Remove frontend-specific fields not in DB table
+      delete dataToInsert.discount_type; 
+      delete dataToInsert.value; 
 
 
       const { data, error } = await supabase

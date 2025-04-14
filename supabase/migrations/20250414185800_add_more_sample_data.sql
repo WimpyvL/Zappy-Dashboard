@@ -28,7 +28,8 @@ FROM client_record cr OFFSET 1 LIMIT 1;
 -- Sample Data for questionnaire
 INSERT INTO public.questionnaire (name, description, structure, status, form_type, slug) VALUES
 ('Initial Health Assessment', 'Comprehensive intake form for new patients.', '{"pages": [{"title": "Personal Info", "fields": [{"name": "dob", "label": "Date of Birth", "type": "date"}]}]}', true, 'intake', 'initial-health-assessment'),
-('Follow-up Survey', 'Quick check-in form for existing patients.', '{"pages": [{"title": "Symptoms", "fields": [{"name": "symptoms", "label": "Current Symptoms", "type": "textarea"}]}]}', true, 'follow-up', 'follow-up-survey');
+('Follow-up Survey', 'Quick check-in form for existing patients.', '{"pages": [{"title": "Symptoms", "fields": [{"name": "symptoms", "label": "Current Symptoms", "type": "textarea"}]}]}', true, 'follow-up', 'follow-up-survey')
+ON CONFLICT (slug) DO NOTHING; -- Ignore duplicate slugs
 
 -- Sample Data for insurance_records
 WITH patient_ids AS (
@@ -61,7 +62,8 @@ SELECT
   NULL, -- URL might be generated dynamically or signed
   'Insurance Card Front',
   (SELECT id FROM auth.users LIMIT 1) -- ASSUMES at least one user exists
-FROM insurance_records ir ORDER BY ir.created_at LIMIT 1; -- Order the final select instead
+FROM insurance_records ir ORDER BY ir.created_at LIMIT 1
+ON CONFLICT (storage_path) DO NOTHING; -- Ignore duplicate storage paths
 
 -- Sample Data for pb_invoices
 INSERT INTO public.pb_invoices (client_record_id, status, pb_invoice_metadata, due_date, paid_date) -- Corrected column name
@@ -108,28 +110,53 @@ SELECT
 ;
 
 -- Sample Data for orders
-INSERT INTO public.orders (patient_id, status, total_amount) -- Assuming orders uses patient_id
+-- Order 1: Completed, Product Mix
+INSERT INTO public.orders (patient_id, status, total_amount, order_date) 
 SELECT 
   cr.id, 
   'completed',
-  124.98
+  124.98,
+  NOW() - INTERVAL '20 days'
 FROM client_record cr LIMIT 1;
 
-INSERT INTO public.orders (patient_id, status, total_amount)
+-- Order 2: Pending, Single Product, Linked to Pending Invoice
+INSERT INTO public.orders (patient_id, status, total_amount, invoice_id, order_date) 
 SELECT 
   cr.id, 
   'pending',
-  24.99
+  24.99,
+  (SELECT id FROM pb_invoices WHERE status = 'pending' LIMIT 1), -- Link to pending invoice
+  NOW() - INTERVAL '2 days'
 FROM client_record cr OFFSET 1 LIMIT 1;
 
+-- Order 3: Shipped, Single Service
+INSERT INTO public.orders (patient_id, status, total_amount, order_date) 
+SELECT 
+  cr.id, 
+  'shipped',
+  50.00,
+  NOW() - INTERVAL '5 days'
+FROM client_record cr LIMIT 1;
+
+-- Order 4: Processing, Product
+INSERT INTO public.orders (patient_id, status, total_amount, order_date) 
+SELECT 
+  cr.id, 
+  'processing',
+  19.99,
+  NOW() - INTERVAL '1 day'
+FROM client_record cr OFFSET 1 LIMIT 1;
+
+
 -- Sample Data for order_items
+-- Items for Order 1 (Completed)
 INSERT INTO public.order_items (order_id, product_id, quantity, price_at_order)
 SELECT 
   o.id, 
   p.id, 
   1, 
   p.price 
-FROM orders o, products p WHERE p.name = 'Vitamin D Supplement' AND o.status = 'completed' LIMIT 1;
+FROM orders o, products p WHERE p.name = 'Vitamin D Supplement' AND o.status = 'completed' ORDER BY o.order_date DESC LIMIT 1;
 
 INSERT INTO public.order_items (order_id, product_id, quantity, price_at_order)
 SELECT 
@@ -137,15 +164,35 @@ SELECT
   p.id, 
   1, 
   p.price 
-FROM orders o, products p WHERE p.name = 'Blood Pressure Monitor' AND o.status = 'completed' LIMIT 1;
+FROM orders o, products p WHERE p.name = 'Blood Pressure Monitor' AND o.status = 'completed' ORDER BY o.order_date DESC LIMIT 1;
 
+-- Item for Order 2 (Pending)
 INSERT INTO public.order_items (order_id, product_id, quantity, price_at_order)
 SELECT 
   o.id, 
   p.id, 
   1, 
   p.price 
-FROM orders o, products p WHERE p.name = 'Vitamin D Supplement' AND o.status = 'pending' LIMIT 1;
+FROM orders o, products p WHERE p.name = 'Vitamin D Supplement' AND o.status = 'pending' ORDER BY o.order_date DESC LIMIT 1;
+
+-- Item for Order 3 (Shipped - Service)
+INSERT INTO public.order_items (order_id, service_id, quantity, price_at_order)
+SELECT 
+  o.id, 
+  s.id, 
+  1, 
+  s.price 
+FROM orders o, services s WHERE s.name = 'Medication Review' AND o.status = 'shipped' ORDER BY o.order_date DESC LIMIT 1;
+
+-- Item for Order 4 (Processing)
+INSERT INTO public.order_items (order_id, product_id, quantity, price_at_order)
+SELECT 
+  o.id, 
+  p.id, 
+  1, 
+  p.price 
+FROM orders o, products p WHERE p.name = 'Allergy Medication' AND o.status = 'processing' ORDER BY o.order_date DESC LIMIT 1;
+
 
 -- Sample Data for sessions
 INSERT INTO public.sessions (patient_id, provider_id, service_id, start_time, end_time, status, meeting_link) -- Assuming sessions uses patient_id

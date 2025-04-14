@@ -15,8 +15,13 @@ CREATE TABLE IF NOT EXISTS discounts (
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- Enable realtime for this table
-ALTER PUBLICATION supabase_realtime ADD TABLE discounts;
+-- Enable realtime for this table, only if it isn't already added
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_publication_tables WHERE pubname = 'supabase_realtime' AND schemaname = 'public' AND tablename = 'discounts') THEN
+    ALTER PUBLICATION supabase_realtime ADD TABLE public.discounts;
+  END IF;
+END $$;
 
 -- Add indexes for commonly queried columns
 CREATE INDEX IF NOT EXISTS idx_discounts_code ON discounts (code);

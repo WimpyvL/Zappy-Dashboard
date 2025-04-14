@@ -11,8 +11,13 @@ CREATE TABLE IF NOT EXISTS questionnaire (
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- Enable realtime for this table
-ALTER PUBLICATION supabase_realtime ADD TABLE questionnaire;
+-- Enable realtime for this table, only if it isn't already added
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_publication_tables WHERE pubname = 'supabase_realtime' AND schemaname = 'public' AND tablename = 'questionnaire') THEN
+    ALTER PUBLICATION supabase_realtime ADD TABLE public.questionnaire;
+  END IF;
+END $$;
 
 -- Add indexes for commonly queried columns
 CREATE INDEX IF NOT EXISTS idx_questionnaire_status ON questionnaire (status);

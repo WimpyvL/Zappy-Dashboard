@@ -1,12 +1,7 @@
-import React, { useState } from 'react';
-import { Plus, Edit, Trash2 } from 'lucide-react';
-
-// Mock Data for Templates
-const initialTemplates = [
-  { id: 'tpl_001', name: 'Standard Follow-Up', content: 'Dear [Patient Name],\n\nWe have reviewed your progress on [Medication Name]. Please continue your current dosage. Maintain diet and exercise. Your next follow-up is scheduled for [Follow-Up Date].\n\nSincerely,\nYour Care Team' },
-  { id: 'tpl_002', name: 'Dose Escalation Notice', content: 'Dear [Patient Name],\n\nBased on your recent check-in, we are adjusting your dose of [Medication Name] to [New Dose]. Please follow the updated instructions provided. Contact us if you experience any significant side effects. Your next follow-up is scheduled for [Follow-Up Date].\n\nSincerely,\nYour Care Team' },
-  { id: 'tpl_003', name: 'Initial Consult Approval', content: 'Dear [Patient Name],\n\nYour initial consultation has been reviewed and approved. Your prescription for [Medication Name] [Dose] will be sent to the pharmacy shortly. Please allow 24-48 hours for processing. We recommend scheduling a follow-up in [Follow-Up Interval].\n\nSincerely,\nYour Care Team' },
-];
+import React from 'react'; // Removed useState
+import { Plus, Edit, Trash2, Loader2, AlertTriangle } from 'lucide-react'; // Added Loader2, AlertTriangle
+import { useNoteTemplateSettings } from '../../../hooks/useNoteTemplateSettings'; // Import the custom hook
+// Removed mock data
 
 // Basic Modal Component (can be replaced with a shared one if available)
 const Modal = ({ isOpen, onClose, title, children }) => {
@@ -28,54 +23,36 @@ const Modal = ({ isOpen, onClose, title, children }) => {
 
 
 const PatientNoteTemplateSettings = () => {
-  const [templates, setTemplates] = useState(initialTemplates);
-  const [showModal, setShowModal] = useState(false);
-  const [isEditing, setIsEditing] = useState(false);
-  const [currentTemplate, setCurrentTemplate] = useState({ id: null, name: '', content: '' });
+  const {
+    templates,
+    isLoadingTemplates,
+    errorLoadingTemplates,
+    showModal,
+    isEditing,
+    currentTemplate,
+    isSaving,
+    // isDeleting, // Not currently used for button state, but available
+    handleAdd,
+    handleEdit,
+    handleDelete,
+    handleSave,
+    handleInputChange,
+    handleCloseModal,
+  } = useNoteTemplateSettings();
 
-  const handleAdd = () => {
-    setIsEditing(false);
-    setCurrentTemplate({ id: null, name: '', content: '' });
-    setShowModal(true);
-  };
+  // Loading and Error Handling
+  if (isLoadingTemplates) {
+    return <div className="p-6 flex justify-center"><Loader2 className="h-8 w-8 animate-spin text-indigo-600" /></div>;
+  }
 
-  const handleEdit = (template) => {
-    setIsEditing(true);
-    setCurrentTemplate(template);
-    setShowModal(true);
-  };
-
-  const handleDelete = (templateId) => {
-    if (window.confirm('Are you sure you want to delete this template?')) {
-      console.log('Deleting template (mock):', templateId);
-      setTemplates(prev => prev.filter(t => t.id !== templateId));
-      // TODO: Add API call for deletion
-      alert('Template deleted (mock).');
-    }
-  };
-
-  const handleSave = (e) => {
-     e.preventDefault();
-     if (isEditing) {
-       console.log('Updating template (mock):', currentTemplate);
-       setTemplates(prev => prev.map(t => t.id === currentTemplate.id ? currentTemplate : t));
-       // TODO: Add API call for update
-       alert('Template updated (mock).');
-     } else {
-       const newTemplate = { ...currentTemplate, id: `tpl_${Date.now()}` }; // Generate temporary ID
-       console.log('Adding template (mock):', newTemplate);
-       setTemplates(prev => [newTemplate, ...prev]);
-       // TODO: Add API call for creation
-       alert('Template added (mock).');
-     }
-     setShowModal(false);
-  };
-
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setCurrentTemplate(prev => ({ ...prev, [name]: value }));
-  };
-
+  if (errorLoadingTemplates) {
+    return (
+      <div className="p-6 text-center text-red-600">
+        <AlertTriangle className="h-12 w-12 mx-auto mb-2" />
+        <p>Error loading templates: {errorLoadingTemplates.message}</p>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6">
@@ -123,7 +100,8 @@ const PatientNoteTemplateSettings = () => {
                   </button>
                   <button
                     onClick={() => handleDelete(template.id)}
-                    className="text-red-600 hover:text-red-900"
+                    className="text-red-600 hover:text-red-900 disabled:opacity-50"
+                    // disabled={isDeleting} // Optionally disable while deleting
                   >
                      <Trash2 className="h-4 w-4 inline-block" />
                   </button>
@@ -140,7 +118,7 @@ const PatientNoteTemplateSettings = () => {
       </div>
 
        {/* Add/Edit Modal */}
-       <Modal isOpen={showModal} onClose={() => setShowModal(false)} title={isEditing ? 'Edit Template' : 'Add New Template'}>
+       <Modal isOpen={showModal} onClose={handleCloseModal} title={isEditing ? 'Edit Template' : 'Add New Template'}>
          <form onSubmit={handleSave}>
             <div className="space-y-4">
                 <div>
@@ -153,6 +131,7 @@ const PatientNoteTemplateSettings = () => {
                         onChange={handleInputChange}
                         className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                         required
+                        disabled={isSaving} // Disable while saving
                     />
                 </div>
                 <div>
@@ -166,6 +145,7 @@ const PatientNoteTemplateSettings = () => {
                         className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                         placeholder="Enter the full note template content. Use placeholders like [Patient Name], [Medication Name], etc."
                         required
+                        disabled={isSaving} // Disable while saving
                     />
                      <p className="mt-1 text-xs text-gray-500">Use placeholders like [Patient Name], [Medication Name], [Dose], [Follow-Up Date] where needed.</p>
                 </div>
@@ -173,16 +153,19 @@ const PatientNoteTemplateSettings = () => {
             <div className="mt-6 flex justify-end space-x-3">
                  <button
                    type="button"
-                   className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
-                   onClick={() => setShowModal(false)}
+                   className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                   onClick={handleCloseModal}
+                   disabled={isSaving} // Disable while saving
                  >
                    Cancel
                  </button>
                  <button
                    type="submit"
-                   className="px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700"
+                   className="px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 flex items-center justify-center"
+                   disabled={isSaving} // Disable while saving
                  >
-                   {isEditing ? 'Save Changes' : 'Add Template'}
+                   {isSaving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                   {isSaving ? 'Saving...' : (isEditing ? 'Save Changes' : 'Add Template')}
                  </button>
             </div>
          </form>

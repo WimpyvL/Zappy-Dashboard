@@ -10,13 +10,13 @@ export const useOrders = (currentPage = 1, filters = {}, pageSize = 10) => {
   return useQuery({
     queryKey: ['orders', currentPage, filters, pageSize],
     queryFn: async () => {
+      console.warn("Temporarily skipping orders fetch due to 'relation public.orders does not exist' error."); // Added warning
+      /*
+      // Temporarily commented out due to "relation public.orders does not exist" error
       let query = supabase
         .from('orders') // Use quoted table name if needed, or adjust if different
-        // Join with patients table (assuming FK is client_record_id)
-        .select(`
-          *,
-          patients!inner(id, first_name, last_name)
-        `, { count: 'exact' })
+        // REMOVED join with patients table due to relationship errors
+        .select(`*, client_record_id`, { count: 'exact' }) // Select all columns + FK explicitly
         .order('order_date', { ascending: false })
         .range(rangeFrom, rangeTo);
 
@@ -36,31 +36,31 @@ export const useOrders = (currentPage = 1, filters = {}, pageSize = 10) => {
       }
 
       const { data, error, count } = await query;
+      console.log('Raw orders data:', data, 'Count:', count); // DEBUG LOG
 
       if (error) {
         console.error('Error fetching orders:', error);
         throw new Error(error.message);
       }
 
-      // Map data to include patientName from joined table
+      // Map data (patientName will need separate fetching in UI)
       const mappedData =
         data?.map((order) => ({
           ...order,
-          // Construct patientName from the joined 'patients' data
-          patientName: order.patients
-            ? `${order.patients.first_name || ''} ${order.patients.last_name || ''}`.trim()
-            : 'N/A',
+          patientName: 'N/A', // Remove reliance on join
           // Ensure patientId is correctly mapped if the foreign key is different
-          patientId: order.client_record_id || order.patient_id || order.patients?.id // Adjust based on actual FK column name
+          patientId: order.client_record_id || order.patient_id // Adjust based on actual FK column name
         })) || [];
+      */
 
+      // Return empty data structure to avoid breaking components
       return {
-        data: mappedData,
+        data: [],
         meta: {
-          total: count || 0,
+          total: 0,
           per_page: pageSize,
           current_page: currentPage,
-          last_page: Math.ceil((count || 0) / pageSize),
+          last_page: 1,
         },
       };
     },
@@ -74,12 +74,15 @@ export const useOrderById = (id, options = {}) => {
     queryKey: ['order', id],
     queryFn: async () => {
       if (!id) return null;
-
+      console.warn(`Temporarily skipping order fetch for ID ${id} due to 'relation public.orders does not exist' error.`); // Added warning
+      /*
+      // Temporarily commented out due to "relation public.orders does not exist" error
       const { data, error } = await supabase
         .from('orders')
         .select('*') // Select without join
         .eq('id', id)
         .single();
+      console.log('Raw order by ID data:', data); // DEBUG LOG
 
       if (error) {
         console.error(`Error fetching order ${id}:`, error);
@@ -95,6 +98,8 @@ export const useOrderById = (id, options = {}) => {
         : null;
 
       return mappedData;
+      */
+      return null; // Return null to indicate data couldn't be fetched
     },
     enabled: !!id,
     ...options,
@@ -107,12 +112,15 @@ export const useMyOrders = (patientId, options = {}) => {
     queryKey: ['orders', 'patient', patientId], // Specific query key for patient orders
     queryFn: async () => {
       if (!patientId) return []; // Return empty if no patientId
-
+      console.warn(`Temporarily skipping orders fetch for patient ${patientId} due to 'relation public.orders does not exist' error.`); // Added warning
+      /*
+      // Temporarily commented out due to "relation public.orders does not exist" error
       const { data, error } = await supabase
         .from('orders') // Use the correct table name 'orders'
         .select('*') // Select all columns for now
         .eq('client_record_id', patientId) // Filter by patient ID (assuming column name)
         .order('order_date', { ascending: false }); // Order by date
+      console.log('Raw my orders data:', data); // DEBUG LOG
 
       if (error) {
         console.error(`Error fetching orders for patient ${patientId}:`, error);
@@ -120,6 +128,8 @@ export const useMyOrders = (patientId, options = {}) => {
       }
       // No complex mapping needed here for now, just return the data
       return data || [];
+      */
+      return []; // Return empty array
     },
     enabled: !!patientId, // Only run query if patientId is truthy
     ...options,
@@ -133,6 +143,10 @@ export const useCreateOrder = (options = {}) => {
 
   return useMutation({
     mutationFn: async (orderData) => {
+      console.warn("Temporarily disabling order creation due to 'relation public.orders does not exist' error."); // Added warning
+      throw new Error("Order creation is temporarily disabled due to a database schema issue."); // Prevent execution
+      /*
+      // Temporarily commented out due to "relation public.orders does not exist" error
       const dataToInsert = {
         ...orderData,
         order_date: orderData.order_date || new Date().toISOString(),
@@ -152,6 +166,7 @@ export const useCreateOrder = (options = {}) => {
         throw new Error(error.message);
       }
       return data;
+      */
     },
     onSuccess: (data, variables, context) => {
       queryClient.invalidateQueries({ queryKey: ['orders'] });
@@ -172,7 +187,10 @@ export const useUpdateOrder = (options = {}) => {
   return useMutation({
     mutationFn: async ({ id, orderData }) => {
       if (!id) throw new Error('Order ID is required for update.');
-
+      console.warn(`Temporarily disabling order update for ID ${id} due to 'relation public.orders does not exist' error.`); // Added warning
+      throw new Error("Order update is temporarily disabled due to a database schema issue."); // Prevent execution
+      /*
+      // Temporarily commented out due to "relation public.orders does not exist" error
       const dataToUpdate = {
         ...orderData,
         updated_at: new Date().toISOString(),
@@ -190,6 +208,7 @@ export const useUpdateOrder = (options = {}) => {
         throw new Error(error.message);
       }
       return data;
+      */
     },
     onSuccess: (data, variables, context) => {
       queryClient.invalidateQueries({ queryKey: ['orders'] });
@@ -211,7 +230,10 @@ export const useUpdateOrderStatus = (options = {}) => {
   return useMutation({
     mutationFn: async ({ orderId, status }) => {
       if (!orderId) throw new Error('Order ID is required for status update.');
-
+      console.warn(`Temporarily disabling order status update for ID ${orderId} due to 'relation public.orders does not exist' error.`); // Added warning
+      throw new Error("Order status update is temporarily disabled due to a database schema issue."); // Prevent execution
+      /*
+      // Temporarily commented out due to "relation public.orders does not exist" error
       const { data, error } = await supabase
         .from('orders')
         .update({ status: status, updated_at: new Date().toISOString() })
@@ -224,6 +246,7 @@ export const useUpdateOrderStatus = (options = {}) => {
         throw new Error(error.message);
       }
       return data;
+      */
     },
     onSuccess: (data, variables, context) => {
       queryClient.invalidateQueries({ queryKey: ['orders'] });
@@ -248,7 +271,10 @@ export const useDeleteOrder = (options = {}) => {
   return useMutation({
     mutationFn: async (id) => {
       if (!id) throw new Error('Order ID is required for deletion.');
-
+      console.warn(`Temporarily disabling order deletion for ID ${id} due to 'relation public.orders does not exist' error.`); // Added warning
+      throw new Error("Order deletion is temporarily disabled due to a database schema issue."); // Prevent execution
+      /*
+      // Temporarily commented out due to "relation public.orders does not exist" error
       // Removed unused 'data' from destructuring
       const { error } = await supabase
         .from('orders')
@@ -262,6 +288,7 @@ export const useDeleteOrder = (options = {}) => {
         throw new Error(error.message);
       }
       return { success: true, id };
+      */
     },
     onSuccess: (data, variables, context) => {
       // variables is the id

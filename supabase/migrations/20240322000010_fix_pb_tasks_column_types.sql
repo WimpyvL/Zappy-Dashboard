@@ -63,5 +63,10 @@ BEGIN
     END IF;
 END $$;
 
--- Enable realtime for this table if not already enabled
-ALTER PUBLICATION supabase_realtime ADD TABLE pb_tasks;
+-- Enable realtime for this table, only if it isn't already added
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_publication_tables WHERE pubname = 'supabase_realtime' AND schemaname = 'public' AND tablename = 'pb_tasks') THEN
+    ALTER PUBLICATION supabase_realtime ADD TABLE public.pb_tasks;
+  END IF;
+END $$;

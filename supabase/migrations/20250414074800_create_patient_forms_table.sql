@@ -1,4 +1,4 @@
-htvivqlvivmxgrbpwrje-- Migration to create the patient_forms table
+-- Migration to create the patient_forms table
 
 CREATE TABLE IF NOT EXISTS patient_forms (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -24,5 +24,10 @@ COMMENT ON COLUMN patient_forms.status IS 'The current status of the patient''s 
 COMMENT ON COLUMN patient_forms.answers IS 'JSONB data containing the patient''s submitted answers.';
 COMMENT ON COLUMN patient_forms.submitted_at IS 'Timestamp when the patient submitted the form.';
 
--- Enable realtime for the new table if needed
-ALTER PUBLICATION supabase_realtime ADD TABLE patient_forms;
+-- Enable realtime for the new table, only if it isn't already added
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_publication_tables WHERE pubname = 'supabase_realtime' AND schemaname = 'public' AND tablename = 'patient_forms') THEN
+    ALTER PUBLICATION supabase_realtime ADD TABLE public.patient_forms;
+  END IF;
+END $$;

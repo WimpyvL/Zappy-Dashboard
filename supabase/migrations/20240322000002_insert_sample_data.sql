@@ -7,7 +7,7 @@ VALUES
 ON CONFLICT (email) DO NOTHING;
 
 -- Insert sample products
-INSERT INTO products (name, description, price, category, sku, stock_quantity) -- Changed inventory_count to stock_quantity
+INSERT INTO products (name, description, price, category, sku, inventory_count) -- Use correct column name inventory_count
 VALUES
   ('Vitamin D Supplement', 'High-quality vitamin D supplement, 60 capsules', 24.99, 'Supplements', 'VIT-D-001', 100),
   ('Blood Pressure Monitor', 'Digital blood pressure monitor for home use', 89.99, 'Devices', 'BP-MON-002', 50),

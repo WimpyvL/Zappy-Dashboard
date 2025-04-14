@@ -1,8 +1,9 @@
 import React from 'react';
-import { usePatients } from '../../apis/patients/hooks'; // Assuming this path is correct
-import { useSessions } from '../../apis/sessions/hooks'; // Assuming this hook exists and path is correct
-import { useOrders } from '../../apis/orders/hooks'; // Assuming this hook exists and path is correct
-import { Link } from 'react-router-dom';
+import { usePatients } from '../../apis/patients/hooks';
+import { useSessions } from '../../apis/sessions/hooks';
+import { useOrders } from '../../apis/orders/hooks';
+import { useConsultations } from '../../apis/consultations/hooks'; // Import consultations hook
+import { Link, useNavigate } from 'react-router-dom'; // Import useNavigate
 import {
   Calendar,
   Clock,
@@ -38,13 +39,10 @@ const ConsultationStatusBadge = ({ status }) => {
         Rejected
       </span>
     );
-  } else if (status === 'needs_more_info') {
-    return (
-      <span className="px-2 py-1 text-xs rounded-full bg-yellow-100 text-yellow-800">
-        Needs Info
-      </span>
-    );
   }
+  // Removed 'needs_more_info' case as it's not in the final schema enum
+  // Add other statuses from the final schema's enum if needed
+  // ('scheduled', 'completed', 'cancelled', 'reviewed', 'followup', 'archived')
   return null;
 };
 
@@ -66,54 +64,23 @@ const ProviderDashboard = () => {
     error: errorOrders,
   } = useOrders(); // Assuming useOrders fetches all needed orders
 
+  const {
+    data: consultationsData,
+    isLoading: isLoadingConsultations,
+    error: errorConsultations,
+  } = useConsultations({ status: 'pending' }); // Fetch only 'pending' status
+
   // Use fetched data or default empty arrays
-  // Note: Adjust based on the actual structure returned by usePatients, useSessions, useOrders
-  const patients = patientsData?.data || patientsData || []; // Adapt based on API response structure
-  const sessions = sessionsData?.data || sessionsData || []; // Adapt based on API response structure
-  const orders = ordersData?.data || ordersData || []; // Adapt based on API response structure
-
-  // Placeholder for consultations data - in real app, get from context or dedicated hook
-  // TODO: Replace placeholder consultations with data fetched via React Query hook (e.g., useConsultations)
-  const consultations = [
-    {
-      id: 'c1',
-      patientName: 'John Smith',
-      patientId: 'p001',
-      dateSubmitted: '2025-02-25',
-      status: 'pending',
-      provider: 'Dr. Sarah Johnson',
-      category: 'medication',
-    },
-    {
-      id: 'c2',
-      patientName: 'Emily Davis',
-      patientId: 'p002',
-      dateSubmitted: '2025-02-23',
-      status: 'approved',
-      provider: 'Dr. Michael Chen',
-      category: 'medication',
-    },
-    {
-      id: 'c3',
-      patientName: 'Robert Wilson',
-      patientId: 'p003',
-      dateSubmitted: '2025-02-21',
-      status: 'needs_more_info',
-      provider: 'Dr. Lisa Wong',
-      category: 'service',
-    },
-  ];
-
-  // Get pending consultations
-  const pendingConsultations = consultations.filter(
-    (c) => c.status === 'pending' || c.status === 'needs_more_info'
-  );
+  const patients = patientsData?.data || patientsData || []; // Define patients once
+  const sessions = sessionsData?.data || sessionsData || []; // Define sessions once
+  const orders = ordersData?.data || ordersData || [];
+  const pendingConsultations = consultationsData?.data || consultationsData || []; // Use fetched data
 
   // Calculate statistics
   const scheduledSessions = sessions.filter(
     (s) => s.status === 'scheduled'
   ).length;
-  const pendingOrders = orders.filter((o) => o.status === 'pending').length;
+  const pendingOrders = orders.filter((o) => o.status === 'pending').length; // Assuming orders have status
 
   // Get today's sessions
   const today = new Date().toDateString();
@@ -146,27 +113,38 @@ const ProviderDashboard = () => {
     },
   ];
 
+  const navigate = useNavigate(); // Hook for navigation
+
   // Handle loading state
-  if (isLoadingPatients || isLoadingSessions || isLoadingOrders) {
+  if (isLoadingPatients || isLoadingSessions || isLoadingOrders || isLoadingConsultations) {
     return (
       <div className="flex justify-center items-center h-screen">
-        {/* Use primary color for spinner */}
         <Loader2 className="h-16 w-16 animate-spin text-primary" />
       </div>
     );
   }
 
   // Handle error state (basic example)
-  if (errorPatients || errorSessions || errorOrders) {
+  if (errorPatients || errorSessions || errorOrders || errorConsultations) {
+    // Log the specific errors for debugging
+    console.error("Dashboard loading errors:", { errorPatients, errorSessions, errorOrders, errorConsultations });
     return (
       <div className="text-center py-10 text-red-600">
         <AlertTriangle className="h-12 w-12 mx-auto mb-4" />
         <p>Error loading dashboard data.</p>
-        {/* Optionally display specific error messages */}
-        {/* <p>{errorPatients?.message || errorSessions?.message || errorOrders?.message}</p> */}
+        {/* More specific error message could be added */}
       </div>
     );
   }
+
+  // Handler for the Review button click
+  const handleReviewClick = (consultationId) => {
+    // Navigate to the InitialConsultations page, which handles opening the notes modal
+    navigate(`/consultations?review=${consultationId}`);
+    // Alternatively, navigate directly to a detail page if one exists:
+    // navigate(`/consultations/${consultationId}`);
+  };
+
 
   return (
     <div className="dashboard-container relative overflow-hidden pb-10">
@@ -400,27 +378,29 @@ const ProviderDashboard = () => {
                       </div>
                       <div className="ml-4 flex-1">
                         <div className="flex items-center justify-between">
-                          <p className="text-sm font-medium">
-                            {consultation.patientName}
-                          </p>
-                          <ConsultationStatusBadge
-                            status={consultation.status}
-                          />
-                        </div>
-                        <p className="text-sm text-gray-500">
-                          Submitted:{' '}
-                          {new Date(
-                            consultation.dateSubmitted
-                          ).toLocaleDateString()}
+                        <p className="text-sm font-medium">
+                          {/* Adjust patient name access based on actual data structure */}
+                          {consultation.patientName || `${consultation.patients?.first_name || ''} ${consultation.patients?.last_name || ''}`.trim() || 'Unknown Patient'}
                         </p>
+                        <ConsultationStatusBadge
+                          status={consultation.status}
+                        />
                       </div>
-                      {/* Use primary color for button */}
-                      <Link
-                        to={`/consultations/${consultation.id}`}
-                        className="ml-4 px-3 py-1 border border-primary text-primary text-sm rounded hover:bg-primary/5"
-                      >
-                        Review
-                      </Link>
+                      <p className="text-sm text-gray-500">
+                        Submitted:{' '}
+                        {/* Use submitted_at or created_at */}
+                        {new Date(
+                          consultation.submitted_at || consultation.created_at
+                        ).toLocaleDateString()}
+                      </p>
+                    </div>
+                    {/* Use primary color for button, trigger navigation handler */}
+                    <button
+                      onClick={() => handleReviewClick(consultation.id)} // Use the handler
+                      className="ml-4 px-3 py-1 border border-primary text-primary text-sm rounded hover:bg-primary/5"
+                    >
+                      Review
+                    </button>
                     </div>
                   </li>
                 ))}

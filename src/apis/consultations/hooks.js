@@ -25,16 +25,22 @@ export const useConsultations = (params = {}, pageSize = 10) => {
         .select(
           `
           *,
-          patients ( id, first_name, last_name, date_of_birth )
-        `, // Join with 'patients' table, ADDED date_of_birth
+          client_record ( id, first_name, last_name, date_of_birth )
+        `, // Join with 'client_record' table
           { count: 'exact' }
         )
-        .order('submitted_at', { ascending: false }) // Use correct column name
+        .order('submitted_at', { ascending: false }) // Corrected column name
         .range(rangeFrom, rangeTo);
 
       // Apply filters
       if (status) {
-        query = query.eq('status', status);
+        if (Array.isArray(status)) {
+          // Use 'in' filter if status is an array
+          query = query.in('status', status);
+        } else {
+          // Use 'eq' filter if status is a single string
+          query = query.eq('status', status);
+        }
       }
       if (patientId) {
         query = query.eq('patient_id', patientId); // Use correct foreign key 'patient_id'
@@ -50,6 +56,7 @@ export const useConsultations = (params = {}, pageSize = 10) => {
       // Add other filters as needed based on otherFilters
 
       const { data, error, count } = await query;
+      console.log('Raw consultations data:', data, 'Count:', count); // DEBUG LOG
 
       if (error) {
         console.error('Error fetching consultations:', error);
@@ -60,9 +67,9 @@ export const useConsultations = (params = {}, pageSize = 10) => {
       const mappedData =
         data?.map((consult) => ({
           ...consult,
-          // Use the correct joined table name 'patients'
-          patientName: consult.patients
-            ? `${consult.patients.first_name || ''} ${consult.patients.last_name || ''}`.trim()
+          // Use the correct joined table name 'client_record'
+          patientName: consult.client_record
+            ? `${consult.client_record.first_name || ''} ${consult.client_record.last_name || ''}`.trim()
             : 'N/A',
         })) || [];
 
@@ -92,11 +99,12 @@ export const useConsultationById = (id, options = {}) => {
         .select(
           `
           *,
-          patients ( id, first_name, last_name )
-        ` // Join with 'patients' table
+          client_record ( id, first_name, last_name )
+        ` // Join with 'client_record' table
         )
         .eq('id', id)
         .single();
+      console.log('Raw consultation by ID data:', data); // DEBUG LOG
 
       if (error) {
         console.error(`Error fetching consultation ${id}:`, error);
@@ -107,9 +115,9 @@ export const useConsultationById = (id, options = {}) => {
        const mappedData = data
          ? {
             ...data,
-            // Use the correct joined table name 'patients'
-            patientName: data.patients
-              ? `${data.patients.first_name || ''} ${data.patients.last_name || ''}`.trim()
+            // Use the correct joined table name 'client_record'
+            patientName: data.client_record
+              ? `${data.client_record.first_name || ''} ${data.client_record.last_name || ''}`.trim()
               : 'N/A',
           }
         : null;

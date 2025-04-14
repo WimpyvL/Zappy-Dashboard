@@ -5,18 +5,15 @@ import {
   Mail,
   Phone,
   Calendar,
-  Tag, // Keep one Tag import
-  // Building, // Removed unused icon
-  // Briefcase, // Removed unused icon
-  // Ticket, // Removed unused icon
-  // Loader2, // Removed unused icon
+  Tag,
 } from 'lucide-react';
 import { toast } from 'react-toastify';
-import { useCreatePatient, useUpdatePatient, usePatientById } from '../../apis/patients/hooks'; // Import patient hooks
-import { useTags } from '../../apis/tags/hooks'; // Import tags hook
-import { useSubscriptionPlans } from '../../apis/subscriptionPlans/hooks'; // Import subscription plans hook
-import { useGetUsers } from '../../apis/users/hooks'; // Corrected import name
-import { Select } from 'antd'; // Import Select component from Ant Design
+import { useCreatePatient, useUpdatePatient, usePatientById } from '../../apis/patients/hooks';
+import { useTags } from '../../apis/tags/hooks';
+import { useSubscriptionPlans } from '../../apis/subscriptionPlans/hooks';
+import { useGetUsers } from '../../apis/users/hooks';
+import { usePharmacies } from '../../apis/pharmacies/hooks'; // Re-import pharmacies hook
+import { Select } from 'antd';
 
 // Accept editingPatientId prop
 const PatientModal = ({ isOpen, onClose, editingPatientId, onSuccess }) => {
@@ -32,15 +29,16 @@ const PatientModal = ({ isOpen, onClose, editingPatientId, onSuccess }) => {
   // Fetch data for dropdowns
   const { data: tagsData, isLoading: isLoadingTags } = useTags();
   const { data: plansData, isLoading: isLoadingPlans } = useSubscriptionPlans();
-  // Assuming useGetUsers fetches users who can be assigned as doctors (e.g., practitioners)
-  const { data: usersData, isLoading: isLoadingUsers } = useGetUsers({ role: 'practitioner' }); // Corrected hook name
+  const { data: usersData, isLoading: isLoadingUsers } = useGetUsers({ role: 'practitioner' });
+  const { data: pharmaciesData, isLoading: isLoadingPharmacies } = usePharmacies(); // Fetch pharmacies
 
   const allTags = tagsData || [];
   const allPlans = plansData || [];
   const allDoctors = usersData || [];
+  const allPharmacies = pharmaciesData || []; // Get pharmacies data
 
   // Combined loading state for dropdown data
-  const isLoadingDropdownData = isLoadingTags || isLoadingPlans || isLoadingUsers;
+  const isLoadingDropdownData = isLoadingTags || isLoadingPlans || isLoadingUsers || isLoadingPharmacies; // Add isLoadingPharmacies
 
   // Use mutation loading state instead of local isSubmitting
   const isSubmitting = createPatientMutation.isPending || updatePatientMutation.isPending;
@@ -51,15 +49,15 @@ const PatientModal = ({ isOpen, onClose, editingPatientId, onSuccess }) => {
     email: '',
     phone: '',
     street_address: '',
-    city_name: '', // Changed from city
+    city_name: '',
     state: '',
     zip_code: '',
-    date_of_birth: '', // Keep as string YYYY-MM-DD
-    status: 'active', // Use lowercase status consistent with DB/API
-    related_tags: [], // Add state for selected tags
-    subscription_plan_id: null, // Add state for selected plan ID
-    assigned_doctor_id: null, // Add state for selected doctor ID
-    preferred_pharmacy: '', // Add state for preferred pharmacy
+    date_of_birth: '',
+    status: 'active',
+    related_tags: [],
+    subscription_plan_id: null,
+    assigned_doctor_id: null,
+    preferred_pharmacy_id: null, // Re-add state for pharmacy ID
   });
 
   const isEditMode = !!editingPatientId;
@@ -70,7 +68,7 @@ const PatientModal = ({ isOpen, onClose, editingPatientId, onSuccess }) => {
       setFormData({
         first_name: '', last_name: '', email: '', phone: '', street_address: '', city_name: '',
         state: '', zip_code: '', date_of_birth: '', status: 'active',
-        related_tags: [], subscription_plan_id: null, assigned_doctor_id: null, // Reset new fields
+        related_tags: [], subscription_plan_id: null, assigned_doctor_id: null, preferred_pharmacy_id: null, // Reset fields including pharmacy ID
       });
     };
 
@@ -85,29 +83,27 @@ const PatientModal = ({ isOpen, onClose, editingPatientId, onSuccess }) => {
                if (!/^\d{4}-\d{2}-\d{2}$/.test(formattedDob)) formattedDob = '';
              } catch { formattedDob = ''; }
           }
-          // Populate form data from fetched patient, accessing profile fields
+          // Populate form data from fetched patient
           setFormData({
             first_name: patientDataForEdit.first_name || '',
             last_name: patientDataForEdit.last_name || '',
             email: patientDataForEdit.email || '',
             phone: patientDataForEdit.mobile_phone || patientDataForEdit.phone || '', // Prefer mobile_phone
-            street_address: patientDataForEdit.profile?.address || '', // Access profile.address
-            city_name: patientDataForEdit.profile?.city || '',       // Access profile.city
-            state: patientDataForEdit.profile?.state || '',         // Access profile.state
-            zip_code: patientDataForEdit.profile?.zip || '',         // Access profile.zip
-            date_of_birth: patientDataForEdit.profile?.dob || formattedDob, // Access profile.dob (Note: form uses date_of_birth)
+            street_address: patientDataForEdit.address || '', // Use address field from DB
+            city_name: patientDataForEdit.city || '',       // Use city field from DB
+            state: patientDataForEdit.state || '',         // Use state field from DB
+            zip_code: patientDataForEdit.zip || '',         // Use zip field from DB
+            date_of_birth: formattedDob, // Use formatted DOB
             status: patientDataForEdit.status || 'active',
-            related_tags: patientDataForEdit.related_tags || [], // Populate tags
-            subscription_plan_id: patientDataForEdit.subscription_plan_id || null, // Populate plan
-            assigned_doctor_id: patientDataForEdit.assigned_doctor_id || null, // Populate doctor
-            preferred_pharmacy: patientDataForEdit.preferred_pharmacy || '', // Populate pharmacy
+            related_tags: patientDataForEdit.related_tags || [],
+            subscription_plan_id: patientDataForEdit.subscription_plan_id || null,
+            assigned_doctor_id: patientDataForEdit.assigned_doctor_id || null,
+            preferred_pharmacy_id: patientDataForEdit.preferred_pharmacy_id || null, // Populate pharmacy ID
           });
         } else if (!isLoadingData) {
-          // Handle case where data is loaded but null (patient not found)
           toast.error(`Patient data not found for ID: ${editingPatientId}`);
           onClose();
         }
-        // If isLoadingData is true, we wait for data or error
       } else {
         resetForm(); // Reset for Add mode
       }
@@ -125,35 +121,32 @@ const PatientModal = ({ isOpen, onClose, editingPatientId, onSuccess }) => {
   // Updated handleSubmit to use mutation hooks
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (isSubmitting) return; // Prevent double submission
+    if (isSubmitting) return;
 
-    // Prepare payload - only include fields the hooks expect for client_record mapping
+    // Prepare payload - map form fields to DB columns
     const patientPayload = {
       first_name: formData.first_name,
       last_name: formData.last_name,
       email: formData.email,
-      phone: formData.phone || null, // Mapped to 'phone' in hooks
-      street_address: formData.street_address || null, // Mapped to 'address' in hooks
-      city_name: formData.city_name || null, // Mapped to 'city' in hooks
-      state: formData.state || null, // Mapped to 'state' in hooks
-      zip_code: formData.zip_code || null, // Mapped to 'zip' in hooks
-      date_of_birth: formData.date_of_birth || null, // Mapped to 'date_of_birth' in hooks
-      // Include fields needed for update, mapping from formData
+      phone: formData.phone || null,
+      address: formData.street_address || null, // Map form field to DB column
+      city: formData.city_name || null,       // Map form field to DB column
+      state: formData.state || null,
+      zip: formData.zip_code || null,         // Map form field to DB column
+      date_of_birth: formData.date_of_birth || null,
       status: formData.status,
       related_tags: formData.related_tags || [],
       subscription_plan_id: formData.subscription_plan_id || null,
       assigned_doctor_id: formData.assigned_doctor_id || null,
-      preferred_pharmacy: formData.preferred_pharmacy || null, // Add preferred pharmacy
+      preferred_pharmacy_id: formData.preferred_pharmacy_id || null, // Send pharmacy ID
     };
 
-    // Remove undefined fields before sending (important for updates to not overwrite with null)
+    // Remove undefined fields before sending
     Object.keys(patientPayload).forEach(key => patientPayload[key] === undefined && delete patientPayload[key]);
-
 
     try {
       let result;
       if (isEditMode) {
-        console.log('[PatientModal handleSubmit] Payload for update:', JSON.stringify(patientPayload, null, 2)); // ADDED LOG
         result = await updatePatientMutation.mutateAsync({ id: editingPatientId, patientData: patientPayload });
         toast.success('Patient updated successfully');
       } else {
@@ -162,18 +155,16 @@ const PatientModal = ({ isOpen, onClose, editingPatientId, onSuccess }) => {
       }
 
       if (onSuccess) {
-        onSuccess(result); // Pass back the result from the mutation
+        onSuccess(result);
       }
-      onClose(); // Close the modal
+      onClose();
 
     } catch (error) {
       console.error('Error saving patient:', error);
       toast.error(`Failed to save patient: ${error.message}`);
-      // No finally block needed as isSubmitting comes from mutation state
     }
   };
 
-  // If the modal is not open, render nothing
   if (!isOpen) {
     return null;
   }
@@ -182,32 +173,22 @@ const PatientModal = ({ isOpen, onClose, editingPatientId, onSuccess }) => {
   const submitButtonText = isEditMode ? 'Save Changes' : 'Add Patient';
 
   return (
-    // Modal container with backdrop
     <div className={`fixed inset-0 flex items-center justify-center p-4 z-50 transition-opacity duration-300 ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
-      {/* Backdrop */}
       <div className="absolute inset-0 bg-black opacity-50" onClick={!isSubmitting ? onClose : undefined}></div>
-
-      {/* Modal Content */}
       <div className={`bg-white rounded-lg shadow-xl max-w-md w-full relative transition-transform duration-300 ${isOpen ? 'scale-100' : 'scale-95'}`}>
-        {/* Header */}
         <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
           <h3 className="text-lg font-medium text-gray-900">{modalTitle}</h3>
           <button className="text-gray-400 hover:text-gray-500" onClick={onClose} type="button" disabled={isSubmitting}>
             <X className="h-5 w-5" />
           </button>
         </div>
-
-        {/* Form Body */}
         <form onSubmit={handleSubmit}>
-          {/* Form Fields Container */}
           <div className={`p-6 space-y-4 max-h-[70vh] overflow-y-auto ${isLoadingData ? 'opacity-50' : ''}`}>
             {isLoadingData && (
               <div className="absolute inset-0 flex items-center justify-center bg-white bg-opacity-75 z-10">
-                {/* Simple loading text or spinner */}
                 <p>Loading patient data...</p>
               </div>
             )}
-            {/* First Name & Last Name */}
             <div className="grid grid-cols-2 gap-4">
                <div>
                  <label className="block text-sm font-medium text-gray-700 mb-1">First Name *</label>
@@ -223,7 +204,6 @@ const PatientModal = ({ isOpen, onClose, editingPatientId, onSuccess }) => {
                  </div>
                </div>
              </div>
-            {/* Email */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Email *</label>
               <div className="relative">
@@ -231,7 +211,6 @@ const PatientModal = ({ isOpen, onClose, editingPatientId, onSuccess }) => {
                 <input type="email" name="email" className="block w-full pl-10 pr-3 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md" value={formData.email || ''} onChange={handleChange} placeholder="patient@example.com" required disabled={isLoadingData} />
               </div>
             </div>
-            {/* Phone */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
               <div className="relative">
@@ -239,7 +218,6 @@ const PatientModal = ({ isOpen, onClose, editingPatientId, onSuccess }) => {
                 <input type="tel" name="phone" className="block w-full pl-10 pr-3 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md" value={formData.phone || ''} onChange={handleChange} placeholder="(XXX) XXX-XXXX" disabled={isLoadingData} />
               </div>
             </div>
-            {/* DOB and Status */}
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Date of Birth</label>
@@ -262,16 +240,14 @@ const PatientModal = ({ isOpen, onClose, editingPatientId, onSuccess }) => {
                 </div>
               </div>
             </div>
-            {/* Address */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Street Address</label> {/* Changed label */}
-              <input type="text" name="street_address" className="block w-full pl-3 pr-3 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md" value={formData.street_address || ''} onChange={handleChange} placeholder="Street Address" disabled={isLoadingData} /> {/* Changed name and value */}
+              <label className="block text-sm font-medium text-gray-700 mb-1">Street Address</label>
+              <input type="text" name="street_address" className="block w-full pl-3 pr-3 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md" value={formData.street_address || ''} onChange={handleChange} placeholder="Street Address" disabled={isLoadingData} />
             </div>
-            {/* City, State, Zip */}
             <div className="grid grid-cols-3 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">City</label>
-                <input type="text" name="city_name" className="block w-full pl-3 pr-3 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md" value={formData.city_name || ''} onChange={handleChange} disabled={isLoadingData} /> {/* Changed name and value */}
+                <input type="text" name="city_name" className="block w-full pl-3 pr-3 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md" value={formData.city_name || ''} onChange={handleChange} disabled={isLoadingData} />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">State</label>
@@ -282,8 +258,6 @@ const PatientModal = ({ isOpen, onClose, editingPatientId, onSuccess }) => {
                 <input type="text" name="zip_code" className="block w-full pl-3 pr-3 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md" value={formData.zip_code || ''} onChange={handleChange} disabled={isLoadingData} />
               </div>
             </div>
-
-            {/* Assigned Doctor Dropdown */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Assigned Doctor</label>
               <Select
@@ -302,8 +276,6 @@ const PatientModal = ({ isOpen, onClose, editingPatientId, onSuccess }) => {
                 ))}
               </Select>
             </div>
-
-            {/* Subscription Plan Dropdown */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Subscription Plan</label>
               <Select
@@ -322,8 +294,6 @@ const PatientModal = ({ isOpen, onClose, editingPatientId, onSuccess }) => {
                 ))}
               </Select>
             </div>
-
-            {/* Tags Multi-Select Dropdown */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Tags</label>
               <Select
@@ -343,57 +313,42 @@ const PatientModal = ({ isOpen, onClose, editingPatientId, onSuccess }) => {
                 ))}
               </Select>
             </div>
-
-            {/* Preferred Pharmacy Input */}
+            {/* Preferred Pharmacy Dropdown (Re-added) */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Preferred Pharmacy</label>
-              <div className="relative">
-                {/* TODO: Consider adding an icon if one is available and relevant (e.g., Hospital) */}
-                {/* <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Building className="h-4 w-4 text-gray-400" />
-                </div> */}
-                <input
-                  type="text"
-                  name="preferred_pharmacy" // Use snake_case name
-                  className="block w-full pl-3 pr-3 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md" // Removed pl-10 as icon is commented out
-                  value={formData.preferred_pharmacy || ''} // Use snake_case value
-                  onChange={handleChange}
-                  placeholder="Preferred Pharmacy Name"
-                  disabled={isLoadingData}
-                />
-              </div>
+              <Select
+                style={{ width: '100%' }}
+                placeholder="Select Preferred Pharmacy"
+                value={formData.preferred_pharmacy_id}
+                onChange={(value) => setFormData(prev => ({ ...prev, preferred_pharmacy_id: value }))}
+                loading={isLoadingPharmacies}
+                disabled={isLoadingData || isLoadingDropdownData}
+                allowClear
+                showSearch // Optional: Allow searching pharmacies
+                optionFilterProp="children" // Optional: Filter based on displayed text
+                filterOption={(input, option) => // Optional: Custom filter logic
+                  (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
+                }
+                options={allPharmacies.map(pharm => ({ // Use options prop for better performance/structure
+                    value: pharm.id,
+                    label: pharm.name // Display pharmacy name
+                }))}
+              />
             </div>
-             {/* Optional: Add Medical Notes Textarea if needed in modal */}
-             {/* <div>
-               <label htmlFor="medicalNotes" className="block text-sm font-medium text-gray-700 mb-1">
-                 Medical Notes
-               </label>
-               <Textarea
-                 id="medicalNotes"
-                 name="medicalNotes"
-                 rows={3}
-                 className="block w-full border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                 placeholder="Add any relevant medical notes..."
-                 value={formData.medicalNotes || ''}
-                 onChange={handleChange}
-               />
-             </div> */}
           </div>
-
-          {/* Footer Actions */}
           <div className="px-6 py-4 border-t border-gray-200 flex justify-end space-x-3">
             <button
               type="button"
               className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
               onClick={onClose}
-              disabled={isSubmitting} // Only disable based on submission state
+              disabled={isSubmitting}
             >
               Cancel
             </button>
             <button
               type="submit"
               className="px-4 py-2 bg-indigo-600 rounded-md text-sm font-medium text-white hover:bg-indigo-700 disabled:bg-indigo-300"
-              disabled={isSubmitting} // Only disable based on submission state
+              disabled={isSubmitting}
             >
               {isSubmitting ? 'Saving...' : submitButtonText}
             </button>

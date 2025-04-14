@@ -21,8 +21,13 @@ CREATE TABLE IF NOT EXISTS pharmacies (
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- Enable realtime for this table
-ALTER PUBLICATION supabase_realtime ADD TABLE pharmacies;
+-- Enable realtime for this table, only if it isn't already added
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_publication_tables WHERE pubname = 'supabase_realtime' AND schemaname = 'public' AND tablename = 'pharmacies') THEN
+    ALTER PUBLICATION supabase_realtime ADD TABLE public.pharmacies;
+  END IF;
+END $$;
 
 -- Insert some sample data
 INSERT INTO pharmacies (name, address, city, state, zip, phone, is_active)

@@ -1,12 +1,19 @@
 import { createClient } from '@supabase/supabase-js';
 
-// Use hardcoded credentials instead of environment variables
-const supabaseUrl = 'https://htvivqlvivmxgrbpwrje.supabase.co';
-const supabaseAnonKey =
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh0dml2cWx2aXZteGdyYnB3cmplIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDIxNTM0MjcsImV4cCI6MjA1NzcyOTQyN30.WxsjlBlh7XfHzoeEFSrkGnyn738jihRfLOL4xsQRLJU';
+// Use process.env for Create React App
+const supabaseUrl = process.env.REACT_APP_SUPABASE_URL;
+const supabaseKey = process.env.REACT_APP_SUPABASE_ANON_KEY;
+
+// Basic check if variables are loaded
+if (!supabaseUrl || !supabaseKey) {
+  console.error(
+    'Supabase URL or Anon Key is missing. Make sure you have set REACT_APP_SUPABASE_URL and REACT_APP_SUPABASE_ANON_KEY in your .env file and restarted the server.'
+  );
+  // Optionally throw an error or return a dummy client to prevent further issues
+}
 
 // Create a single supabase client for interacting with your database
-export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+export const supabase = createClient(supabaseUrl, supabaseKey, {
   auth: {
     persistSession: true,
     autoRefreshToken: true,
@@ -16,4 +23,4 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
 
 // Export the URL and key for other components that might need them
 export const SUPABASE_URL = supabaseUrl;
-export const SUPABASE_ANON_KEY = supabaseAnonKey;
+export const SUPABASE_ANON_KEY = supabaseKey; // Corrected variable name

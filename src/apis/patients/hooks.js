@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query'; // Corrected import
 import { supabase } from '../../utils/supabaseClient'; // Import Supabase client
 // Removed unused imports like apiService and commented out local api functions
 // import {
@@ -18,10 +18,10 @@ export const usePatients = (currentPage = 1, filters = {}, pageSize = 10) => {
   const rangeTo = rangeFrom + pageSize - 1;
 
   return useQuery({
-    queryKey: ['patients', currentPage, filters, pageSize],
+    queryKey: ['patients', currentPage, filters, pageSize], // Keep queryKey for consistency? Or change to client_record? Let's keep for now.
     queryFn: async () => {
       let query = supabase
-        .from('patients') // Changed table name to 'patients'
+        .from('client_record') // Use 'client_record' table name based on migrations/schema
         .select('*', { count: 'exact' }) // Select all columns and request total count
         .order('created_at', { ascending: false }) // Use created_at
         .range(rangeFrom, rangeTo); // Apply pagination
@@ -40,6 +40,7 @@ export const usePatients = (currentPage = 1, filters = {}, pageSize = 10) => {
       }
 
       const { data, error, count } = await query;
+      console.log('Raw patients data:', data, 'Count:', count); // DEBUG LOG
 
       if (error) {
         console.error('Error fetching patients:', error);
@@ -64,15 +65,16 @@ export const usePatients = (currentPage = 1, filters = {}, pageSize = 10) => {
 // Get patient by ID hook using Supabase
 export const usePatientById = (id, options = {}) => {
   return useQuery({
-    queryKey: ['patient', id],
+    queryKey: ['patient', id], // Keep queryKey for consistency?
     queryFn: async () => {
       if (!id) return null; // Don't fetch if no ID is provided
 
       const { data, error } = await supabase
-        .from('patients') // Changed table name to 'patients'
+        .from('client_record') // Use 'client_record' table name
         .select('*')
         .eq('id', id)
         .single(); // Use .single() if expecting one record or null
+      console.log('Raw patient by ID data:', data); // DEBUG LOG
 
       if (error) {
         console.error(`Error fetching patient ${id}:`, error);
@@ -97,7 +99,7 @@ export const useCreatePatient = (options = {}) => {
       // Separate profile data from top-level fields using the names revealed in the log
       const {
         street_address, // Use the name from the log
-        city_name,      // Use the name from the log
+        a,      // Use the name from the log
         state,
         zip_code,       // Use the name from the log
         date_of_birth,  // Use the name from the log
@@ -120,6 +122,7 @@ export const useCreatePatient = (options = {}) => {
         state: patientData.state,          // Map state input to state column
         zip: patientData.zip_code,         // Map zip_code input to zip column
         date_of_birth: patientData.date_of_birth, // Map date_of_birth input to date_of_birth column
+        preferred_pharmacy_id: patientData.preferred_pharmacy_id, // Ensure FK is included
         // insurance_provider: patientData.insurance_provider, // Map if available in patientData
         // insurance_id: patientData.insurance_id, // Map if available in patientData
 
@@ -144,7 +147,7 @@ export const useCreatePatient = (options = {}) => {
       console.log('[useCreatePatient] FINAL payload before insert:', JSON.stringify(dataToInsert, null, 2)); // Log the final object clearly
 
       const { data, error } = await supabase
-        .from('patients') // Changed table name to 'patients'
+        .from('client_record') // Use 'client_record' table name
         .insert(dataToInsert)
         .select() // Select the newly created record
         .single(); // Expecting a single record back
@@ -205,7 +208,7 @@ export const useUpdatePatient = (options = {}) => {
         related_tags: patientData.related_tags, // ADDED related_tags
         subscription_plan_id: patientData.subscription_plan_id, // ADDED subscription plan ID
         assigned_doctor_id: patientData.assigned_doctor_id, // ADDED assigned doctor ID
-        preferred_pharmacy: patientData.preferred_pharmacy, // ADDED preferred pharmacy
+        preferred_pharmacy_id: patientData.preferred_pharmacy_id, // Ensure FK is included
 
         // REMOVED fields not in schema:
         // profile: profileUpdates, // Profile JSONB updates would need separate handling if required
@@ -223,7 +226,7 @@ export const useUpdatePatient = (options = {}) => {
       console.log(`[useUpdatePatient] FINAL payload before update for ${id}:`, JSON.stringify(dataToUpdate, null, 2)); // Log the final object clearly
 
       const { data, error } = await supabase
-        .from('patients') // Changed table name to 'patients'
+        .from('client_record') // Use 'client_record' table name
         .update(dataToUpdate)
         .eq('id', id)
         .select() // Select the updated record
@@ -268,7 +271,7 @@ export const useDeletePatient = (options = {}) => {
       if (!id) throw new Error('Patient ID is required for deletion.');
 
       const { error } = await supabase
-        .from('patients') // Changed table name to 'patients'
+        .from('client_record') // Use 'client_record' table name
         .delete()
         .eq('id', id);
 

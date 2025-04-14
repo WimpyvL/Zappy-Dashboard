@@ -139,9 +139,9 @@ export const useCreateForm = (options = {}) => {
         structure: formData.structure || { pages: [], conditionals: [] }, // Assuming JSONB column
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
-        // Add other fields like description, status, form_type if they exist in your table
+        // Add other fields like description, form_type if they exist in your table
         description: formData.description,
-        status: formData.status ?? true,
+        // status: formData.status ?? true, // REMOVED: Column does not exist in questionnaire table
         form_type: formData.form_type,
         slug: formData.slug || formData.title?.toLowerCase().replace(/\s+/g, '-'),
       };

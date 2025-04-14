@@ -16,8 +16,13 @@ CREATE TABLE IF NOT EXISTS pb_invoices (
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- Enable realtime for this table
-ALTER PUBLICATION supabase_realtime ADD TABLE pb_invoices;
+-- Enable realtime for this table, only if it isn't already added
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_publication_tables WHERE pubname = 'supabase_realtime' AND schemaname = 'public' AND tablename = 'pb_invoices') THEN
+    ALTER PUBLICATION supabase_realtime ADD TABLE public.pb_invoices;
+  END IF;
+END $$;
 
 -- Add indexes
 CREATE INDEX IF NOT EXISTS idx_pb_invoices_client_record_id ON pb_invoices (client_record_id);

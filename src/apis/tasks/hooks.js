@@ -305,12 +305,11 @@ export const useAssignees = (options = {}) => {
   return useQuery({
     queryKey: queryKeys.assignees,
     queryFn: async () => {
-      // Fetch users who can be assignees
-      // Note: Querying auth.users directly; names are not available here.
-      // Consider creating a public 'profiles' table linked to auth.users for names.
+      // Fetch users who can be assignees from the public 'profiles' table
+      // Ensure 'profiles' table exists and has RLS allowing reads
       const { data, error } = await supabase
-        .from('users', { schema: 'auth' }) // Target the 'auth.users' table
-        .select('id'); // Select only the ID
+        .from('profiles') // Query the public 'profiles' table
+        .select('id, first_name, last_name'); // Select ID and name fields
 
       if (error) {
         console.error('Error fetching assignees:', error);
@@ -329,7 +328,7 @@ export const useTaskablePatients = (options = {}) => {
     queryKey: queryKeys.taskablePatients,
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('patients')
+        .from('client_record') // Use 'client_record' table name
         .select('id, first_name, last_name') // Select relevant fields
         .order('last_name', { ascending: true });
 

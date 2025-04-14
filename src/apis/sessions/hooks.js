@@ -21,13 +21,13 @@ export const useSessions = (params = {}, pageSize = 10) => {
   return useQuery({
     queryKey: queryKeys.lists(params),
     queryFn: async () => {
+      console.warn("Temporarily skipping sessions fetch due to 'relation public.sessions does not exist' error."); // Added warning
+      /*
+      // Temporarily commented out due to "relation public.sessions does not exist" error
       let query = supabase
         .from('sessions') // Assuming table name is 'sessions'
-        // Join with patients table to get name
-        .select(`
-          *,
-          patients ( id, first_name, last_name )
-        `, { count: 'exact' })
+        // REMOVED join with patients table due to relationship errors
+        .select(`*, client_record_id`, { count: 'exact' }) // Select all columns + FK explicitly
         .order('created_at', { ascending: false }) // Example order
         .range(rangeFrom, rangeTo);
 
@@ -57,25 +57,24 @@ export const useSessions = (params = {}, pageSize = 10) => {
         throw new Error(error.message);
       }
 
-      // Map data to include patientName from joined table
+      // Map data (patientName will need separate fetching in UI)
       const mappedData =
         data?.map((session) => ({
           ...session,
-          // Construct patientName from the joined 'patients' data
-          patientName: session.patients
-            ? `${session.patients.first_name || ''} ${session.patients.last_name || ''}`.trim()
-            : 'N/A',
+          patientName: 'N/A', // Remove reliance on join
           // Ensure patientId is correctly mapped if the foreign key is different
-          patientId: session.client_record_id || session.patient_id || session.patients?.id // Adjust based on actual FK column name
+          patientId: session.client_record_id || session.patient_id // Adjust based on actual FK column name
         })) || [];
+      */
 
+      // Return empty data structure
       return {
-        data: mappedData,
+        data: [],
         meta: {
-          total: count || 0,
+          total: 0,
           per_page: pageSize,
           current_page: currentPage,
-          last_page: Math.ceil((count || 0) / pageSize),
+          last_page: 1,
         },
       };
     },
@@ -89,7 +88,9 @@ export const useSessionById = (id, options = {}) => {
     queryKey: queryKeys.details(id),
     queryFn: async () => {
       if (!id) return null;
-
+      console.warn(`Temporarily skipping session fetch for ID ${id} due to 'relation public.sessions does not exist' error.`); // Added warning
+      /*
+      // Temporarily commented out due to "relation public.sessions does not exist" error
       const { data, error } = await supabase
         .from('sessions')
         .select('*')
@@ -110,6 +111,8 @@ export const useSessionById = (id, options = {}) => {
         : null;
 
       return mappedData;
+      */
+      return null; // Return null
     },
     enabled: !!id,
     ...options,
@@ -121,6 +124,10 @@ export const useCreateSession = (options = {}) => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (sessionData) => {
+      console.warn("Temporarily disabling session creation due to 'relation public.sessions does not exist' error."); // Added warning
+      throw new Error("Session creation is temporarily disabled due to a database schema issue."); // Prevent execution
+      /*
+      // Temporarily commented out due to "relation public.sessions does not exist" error
       const dataToInsert = {
         ...sessionData,
         created_at: new Date().toISOString(),
@@ -138,6 +145,7 @@ export const useCreateSession = (options = {}) => {
         throw new Error(error.message);
       }
       return data;
+      */
     },
     onSuccess: (data, variables, context) => {
       toast.success('Session created successfully');
@@ -159,6 +167,10 @@ export const useUpdateSession = (options = {}) => {
   return useMutation({
     mutationFn: async ({ id, sessionData }) => {
       if (!id) throw new Error('Session ID is required for update.');
+      console.warn(`Temporarily disabling session update for ID ${id} due to 'relation public.sessions does not exist' error.`); // Added warning
+      throw new Error("Session update is temporarily disabled due to a database schema issue."); // Prevent execution
+      /*
+      // Temporarily commented out due to "relation public.sessions does not exist" error
       const dataToUpdate = {
         ...sessionData,
         updated_at: new Date().toISOString(),
@@ -176,6 +188,7 @@ export const useUpdateSession = (options = {}) => {
         throw new Error(error.message);
       }
       return data;
+      */
     },
     onSuccess: (data, variables, context) => {
       toast.success('Session updated successfully');
@@ -199,6 +212,32 @@ export const useUpdateSessionStatus = (options = {}) => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ sessionId, status }) => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.details(variables.id),
+      });
+      options.onSuccess?.(data, variables, context);
+    }, // Ensure comma is present
+    onError: (error, variables, context) => {
+      console.error(`Update session ${variables.id} mutation error:`, error);
+      toast.error(`Error updating session: ${error.message}`);
+      options.onError?.(error, variables, context);
+    },
+    onSettled: options.onSettled,
+  });
+};
+
+// Update session status hook using Supabase
+export const useUpdateSessionStatus = (options = {}) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ sessionId, status }) => {
+      // TEMP FIX: Prevent mutation as 'sessions' table does not exist
+      const errorMsg = `Cannot update session status ${sessionId}: 'sessions' table is missing in migrations.`;
+      console.error(errorMsg);
+      toast.error(errorMsg);
+      throw new Error(errorMsg);
+      // Original code commented out below
+      /*
       if (!sessionId)
         throw new Error('Session ID is required for status update.');
 
@@ -215,6 +254,7 @@ export const useUpdateSessionStatus = (options = {}) => {
         throw new Error(error.message);
       }
       return data;
+      */
     },
     onSuccess: (data, variables, context) => {
       toast.success('Session status updated successfully');
@@ -241,6 +281,13 @@ export const useDeleteSession = (options = {}) => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id) => {
+      // TEMP FIX: Prevent mutation as 'sessions' table does not exist
+      const errorMsg = `Cannot delete session ${id}: 'sessions' table is missing in migrations.`;
+      console.error(errorMsg);
+      toast.error(errorMsg);
+      throw new Error(errorMsg);
+      // Original code commented out below
+      /*
       if (!id) throw new Error('Session ID is required for deletion.');
 
       const { error } = await supabase.from('sessions').delete().eq('id', id);
@@ -250,6 +297,7 @@ export const useDeleteSession = (options = {}) => {
         throw new Error(error.message);
       }
       return { success: true, id };
+      */
     },
     onSuccess: (data, variables, context) => {
       // variables is the id

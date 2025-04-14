@@ -53,7 +53,18 @@ BEGIN
     END IF;
 END $$;
 
--- Enable realtime for these tables
-ALTER PUBLICATION supabase_realtime ADD TABLE client_record;
-ALTER PUBLICATION supabase_realtime ADD TABLE "order";
-ALTER PUBLICATION supabase_realtime ADD TABLE session;
+-- Enable realtime for these tables, only if they aren't already added
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_publication_tables WHERE pubname = 'supabase_realtime' AND schemaname = 'public' AND tablename = 'client_record') THEN
+    ALTER PUBLICATION supabase_realtime ADD TABLE public.client_record;
+  END IF;
+  -- Use correct quoting for "order" table name - REMOVED as 'order' table might not exist at this stage due to missing migrations
+  -- IF NOT EXISTS (SELECT 1 FROM pg_publication_tables WHERE pubname = 'supabase_realtime' AND schemaname = 'public' AND tablename = 'order') THEN
+  --   ALTER PUBLICATION supabase_realtime ADD TABLE public."order";
+  -- END IF;
+  -- REMOVED as 'session' table might not exist at this stage due to missing migrations
+  -- IF NOT EXISTS (SELECT 1 FROM pg_publication_tables WHERE pubname = 'supabase_realtime' AND schemaname = 'public' AND tablename = 'session') THEN
+  --   ALTER PUBLICATION supabase_realtime ADD TABLE public.session;
+  -- END IF;
+END $$;

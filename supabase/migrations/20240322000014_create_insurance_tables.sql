@@ -27,9 +27,16 @@ CREATE TABLE IF NOT EXISTS insurance_documents (
   -- No updated_at needed if documents are immutable once uploaded
 );
 
--- Enable realtime for these tables
-ALTER PUBLICATION supabase_realtime ADD TABLE insurance_records;
-ALTER PUBLICATION supabase_realtime ADD TABLE insurance_documents;
+-- Enable realtime for these tables, only if they aren't already added
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_publication_tables WHERE pubname = 'supabase_realtime' AND schemaname = 'public' AND tablename = 'insurance_records') THEN
+    ALTER PUBLICATION supabase_realtime ADD TABLE public.insurance_records;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_publication_tables WHERE pubname = 'supabase_realtime' AND schemaname = 'public' AND tablename = 'insurance_documents') THEN
+    ALTER PUBLICATION supabase_realtime ADD TABLE public.insurance_documents;
+  END IF;
+END $$;
 
 -- Add indexes
 CREATE INDEX IF NOT EXISTS idx_insurance_records_client_record_id ON insurance_records (client_record_id);

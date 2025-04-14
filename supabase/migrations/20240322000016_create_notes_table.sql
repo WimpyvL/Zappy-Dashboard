@@ -10,8 +10,13 @@ CREATE TABLE IF NOT EXISTS notes (
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- Enable realtime for this table
-ALTER PUBLICATION supabase_realtime ADD TABLE notes;
+-- Enable realtime for this table, only if it isn't already added
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_publication_tables WHERE pubname = 'supabase_realtime' AND schemaname = 'public' AND tablename = 'notes') THEN
+    ALTER PUBLICATION supabase_realtime ADD TABLE public.notes;
+  END IF;
+END $$;
 
 -- Add indexes
 CREATE INDEX IF NOT EXISTS idx_notes_client_record_id ON notes (client_record_id);

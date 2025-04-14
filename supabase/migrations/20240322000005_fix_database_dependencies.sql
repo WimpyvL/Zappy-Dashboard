@@ -118,6 +118,13 @@ BEGIN
     END IF;
 END $$;
 
--- Enable realtime for these tables
-ALTER PUBLICATION supabase_realtime ADD TABLE client_record;
-ALTER PUBLICATION supabase_realtime ADD TABLE consultations;
+-- Enable realtime for these tables, only if they aren't already added
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_publication_tables WHERE pubname = 'supabase_realtime' AND schemaname = 'public' AND tablename = 'client_record') THEN
+    ALTER PUBLICATION supabase_realtime ADD TABLE public.client_record;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_publication_tables WHERE pubname = 'supabase_realtime' AND schemaname = 'public' AND tablename = 'consultations') THEN
+    ALTER PUBLICATION supabase_realtime ADD TABLE public.consultations;
+  END IF;
+END $$;

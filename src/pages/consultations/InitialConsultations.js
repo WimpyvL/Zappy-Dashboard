@@ -1,9 +1,6 @@
-import React, { useState } from 'react';
-// Removed toast import, handled in hook
+import React, { useState, useEffect } from 'react'; // Import useEffect
+import { useLocation, useNavigate } from 'react-router-dom'; // Import useLocation and useNavigate
 import { Plus, Loader2, AlertTriangle } from 'lucide-react';
-
-// Removed direct API hook imports (useConsultations, useUpdateConsultationStatus, useServices, useGetUsers)
-// Removed usePatients import as it's not directly used here anymore
 
 // Import Hook
 import { useConsultationListManagement } from '../../hooks/useConsultationListManagement';
@@ -50,6 +47,35 @@ const InitialConsultations = () => {
 
   const [selectedPatientForNew, setSelectedPatientForNew] = useState(null); // Patient selected for NEW consult
   const [selectedConsultation, setSelectedConsultation] = useState(null); // Consultation being viewed/edited/emailed
+
+  const location = useLocation(); // Hook to access location object (query params)
+  const navigate = useNavigate(); // Hook for navigation (to clear query params)
+
+  // Effect to check for 'review' query parameter and open modal
+  useEffect(() => {
+    const queryParams = new URLSearchParams(location.search);
+    const reviewId = queryParams.get('review');
+
+    // Only proceed if reviewId exists, consultations are loaded, and modal isn't already open for this ID
+    if (reviewId && !isLoading && consultations.length > 0 && selectedConsultation?.id !== reviewId) {
+      const consultationToReview = consultations.find(c => c.id === reviewId);
+      if (consultationToReview) {
+        console.log(`Opening consultation ${reviewId} for review from URL parameter.`);
+        handleViewConsultation(consultationToReview);
+
+        // Clear the query parameter from the URL after opening
+        queryParams.delete('review');
+        navigate(`${location.pathname}?${queryParams.toString()}`, { replace: true });
+      } else {
+         console.warn(`Consultation with ID ${reviewId} not found in the current list.`);
+         // Optionally clear the param even if not found
+         queryParams.delete('review');
+         navigate(`${location.pathname}?${queryParams.toString()}`, { replace: true });
+      }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.search, isLoading, consultations, selectedConsultation?.id, navigate]); // Dependencies
+
 
   // --- Modal Handlers ---
   const handleOpenNewConsultation = () => {

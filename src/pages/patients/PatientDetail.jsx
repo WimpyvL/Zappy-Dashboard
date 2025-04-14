@@ -18,20 +18,18 @@ import PatientFollowUpNotes from './patientDetails/PatientFollowUpNotes';
 import PatientDocuments from './patientDetails/PatientDocuments';
 // Removed useAppContext import
 import { usePatientById } from '../../apis/patients/hooks'; // Import the correct hook
-// TODO: Import usePatientForms hook when created (e.g., import { usePatientForms } from '../../apis/forms/hooks';)
+import { useGetPatientForms } from '../../apis/forms/hooks'; // Import the patient forms hook
 
 const PatientDetail = () => {
   const { patientId } = useParams();
   // Fetch patient data using the hook
   const { data: patient, isLoading: isLoadingPatient, error: patientError } = usePatientById(patientId);
-  // TODO: Use the actual forms hook when created
-  // const { data: patientFormsData, isLoading: isLoadingForms, error: formsError } = usePatientForms(patientId);
-  // Placeholder data until hook is implemented:
-  const patientFormsData = { data: [] }; // Default to empty array
-  const isLoadingForms = false; // Default to false
-  const formsError = null; // Default to null
+  // Use the actual forms hook
+  const { data: patientFormsData, isLoading: isLoadingForms, error: formsError } = useGetPatientForms(patientId);
+  // Removed placeholder data
 
   // Loading states for different data types (keep for related data for now)
+  // Note: isLoadingForms is now handled by the hook above
   const [loading] = useState({ // Removed unused setLoading
     // patient: true, // Handled by isLoadingPatient from hook
     sessions: false,
@@ -165,9 +163,10 @@ const PatientDetail = () => {
       {activeTab === 'forms' && (
         <PatientForms
           patientId={patientId}
-          // Pass data and loading state from the (placeholder) forms hook
-          forms={patientFormsData?.data || []} // Use data from placeholder hook
-          loading={isLoadingForms} // Use loading state from placeholder hook
+          // Pass data and loading state from the forms hook
+          forms={patientFormsData || []} // Use data directly from hook (it returns the array)
+          loading={isLoadingForms} // Use loading state from hook
+          error={formsError} // Pass error state from hook
         />
       )}
 

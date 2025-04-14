@@ -38,9 +38,7 @@ export const useForms = (params = {}) => {
   });
 };
 
-// TODO: This hook relies on a 'form_requests' table which is not defined in the current schema (final_optimized_schema.sql).
-// Commenting out until the table and its relation to 'patients' (FK likely 'patient_id') are defined.
-/*
+// Hook to fetch forms assigned/submitted by a specific patient
 export const useGetPatientForms = (patientId, params = {}, options = {}) => {
   return useQuery({
     queryKey: queryKeys.patientForms(patientId, params),
@@ -48,16 +46,16 @@ export const useGetPatientForms = (patientId, params = {}, options = {}) => {
       if (!patientId) return []; // Return empty if no patientId
 
       let query = supabase
-        .from('form_requests') // ASSUMING table name is 'form_requests'
+        .from('patient_forms') // Use the correct table name 'patient_forms'
         .select(`
-          *, 
-          questionnaire ( id, name ) 
+          *,
+          questionnaire ( id, name )
         `) // Join with questionnaire to get form name
-        .eq('client_record_id', patientId) // Filter by patient
+        .eq('patient_id', patientId) // Filter by the correct foreign key 'patient_id'
         .order('created_at', { ascending: false }); // Order by creation date
 
       // Add other filters from params if needed
-      if (params.status) { 
+      if (params.status) {
         query = query.eq('status', params.status); 
       }
 
@@ -81,7 +79,6 @@ export const useGetPatientForms = (patientId, params = {}, options = {}) => {
     ...options,
   });
 };
-*/
 
 
 // Hook to fetch a specific form (questionnaire) by ID using Supabase

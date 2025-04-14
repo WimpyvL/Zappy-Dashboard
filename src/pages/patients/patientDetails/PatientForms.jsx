@@ -1,8 +1,9 @@
 // components/patients/components/PatientForms.jsx
 import React, { useState } from 'react';
-import { Plus, CheckCircle, Clock, XCircle, Send, RefreshCw } from 'lucide-react'; // Added icons
+import { Plus, CheckCircle, Clock, XCircle, Send, RefreshCw, Loader2 } from 'lucide-react'; 
 import { toast } from 'react-toastify';
-import { useSendFormReminder, useResendForm } from '../../../apis/forms/hooks'; // Import new hooks
+import { useNavigate } from 'react-router-dom'; // Import useNavigate
+import { useGetPatientForms, useSendFormReminder, useResendForm } from '../../../apis/forms/hooks'; // Import hooks
 import LoadingSpinner from './common/LoadingSpinner';
 
 const FormStatusBadge = ({ status }) => {
@@ -30,8 +31,12 @@ const FormStatusBadge = ({ status }) => {
   );
 };
 
-const PatientForms = ({ patientId, forms, loading }) => {
+const PatientForms = ({ patientId }) => { 
+  const navigate = useNavigate(); // Initialize useNavigate
   const [formFilter, setFormFilter] = useState('all');
+
+  // Fetch patient forms using the hook
+  const { data: forms, isLoading: loading, error } = useGetPatientForms(patientId);
 
   // Format date for display
   const formatDate = (dateString) => {
@@ -47,8 +52,8 @@ const PatientForms = ({ patientId, forms, loading }) => {
   // Filter forms based on status
   const filteredForms =
     formFilter === 'all'
-      ? forms
-      : forms.filter((form) => form.status === formFilter);
+      ? forms || [] // Handle potential undefined initial state from hook
+      : (forms || []).filter((form) => form.status === formFilter);
 
   const sendReminderMutation = useSendFormReminder();
   const resendFormMutation = useResendForm();
@@ -80,9 +85,7 @@ const PatientForms = ({ patientId, forms, loading }) => {
           </select>
           <button
             className="px-3 py-1 text-sm bg-indigo-600 text-white rounded-md hover:bg-indigo-700 flex items-center"
-            onClick={() =>
-              (window.location.href = `/patients/${patientId}/forms/new`)
-            }
+            onClick={() => navigate(`/patients/${patientId}/forms/new`)} // Use navigate
           >
             <Plus className="h-4 w-4 mr-1" />
             Send Form
@@ -92,6 +95,10 @@ const PatientForms = ({ patientId, forms, loading }) => {
 
       {loading ? (
         <LoadingSpinner size="small" />
+      ) : error ? (
+         <div className="text-center py-8 text-red-500">
+           Error loading forms: {error.message || 'Unknown error'}
+         </div>
       ) : filteredForms && filteredForms.length > 0 ? (
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
@@ -124,18 +131,19 @@ const PatientForms = ({ patientId, forms, loading }) => {
                     {form.name}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {formatDate(form.sentDate)}
+                    {formatDate(form.sent_at)} {/* Use sent_at */}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {formatDate(form.deadlineDate)}
+                    {formatDate(form.due_date)} {/* Use due_date */}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <FormStatusBadge status={form.status} />
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {form.completedDate ? formatDate(form.completedDate) : '-'}
+                    {form.completed_at ? formatDate(form.completed_at) : '-'} {/* Use completed_at */}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                    {/* TODO: Add View Responses button/logic */}
                     {form.status === 'completed' ? (
                       <button className="text-indigo-600 hover:text-indigo-900 mr-3">
                         View Responses

@@ -1,7 +1,7 @@
 // components/patients/components/PatientSessions.jsx
 import React from 'react';
-import { Plus, Clock, CheckCircle, XCircle } from 'lucide-react';
-// import { Link } from 'react-router-dom'; // Removed unused import
+import { Plus, Clock, CheckCircle, XCircle, Loader2 } from 'lucide-react'; // Added Loader2
+import { useSessions } from '../../../apis/sessions/hooks'; // Import the hook
 import LoadingSpinner from './common/LoadingSpinner';
 
 const SessionTypeTag = ({ type }) => {
@@ -43,12 +43,10 @@ const SessionStatusBadge = ({ status }) => {
   );
 };
 
-const PatientSessions = ({
-  patientId,
-  sessions,
-  loading,
-  onOpenFollowupNotes,
-}) => {
+const PatientSessions = ({ patientId, onOpenFollowupNotes }) => { // Removed sessions and loading props
+  // Fetch sessions using the hook, filtering by patientId
+  const { data: sessionsData, isLoading: loading, error } = useSessions({ patientId: patientId });
+  const sessions = sessionsData?.data || []; // Use fetched data or default to empty array
   return (
     <div className="bg-white p-6 rounded-lg shadow">
       <div className="flex justify-between items-center mb-4">
@@ -95,19 +93,22 @@ const PatientSessions = ({
               {sessions.map((session) => (
                 <tr key={session.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {new Date(session.scheduledDate).toLocaleDateString()}
+                    {/* Use start_time from DB */}
+                    {new Date(session.start_time).toLocaleDateString()} 
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <SessionTypeTag type={session.type} />
+                     {/* Use service_id or consultation_type if available, fallback */}
+                    <SessionTypeTag type={session.consultation_type || 'medical'} />
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {session.doctor}
+                     {/* TODO: Fetch and display provider name based on provider_id */}
+                    {session.provider_id ? `Provider: ${session.provider_id.substring(0,6)}...` : 'N/A'} 
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <SessionStatusBadge status={session.status} />
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 max-w-xs truncate">
-                    {session.notes || 'No notes'}
+                    {session.session_notes || 'No notes'} {/* Use session_notes */}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <button

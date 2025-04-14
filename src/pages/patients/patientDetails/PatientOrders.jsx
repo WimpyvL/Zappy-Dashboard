@@ -1,75 +1,76 @@
 // components/patients/components/PatientOrders.jsx
-import React from 'react'; // Removed unused useState, useEffect
-import { Link } from 'react-router-dom';
-import { Plus, Clock, CheckCircle, XCircle, FileText, Hash, Loader2 } from 'lucide-react'; // Added FileText, Hash, Loader2
-// Removed unused LoadingSpinner import
+import React from 'react';
+import { Link, useNavigate } from 'react-router-dom'; // Import useNavigate
+import { Plus, Clock, CheckCircle, XCircle, FileText, Hash, Loader2 } from 'lucide-react';
 import { useOrders } from '../../../apis/orders/hooks'; // Import the useOrders hook
 
 const OrderStatusBadge = ({ status }) => {
+  // Determine color and icon based on status
+  let bgColor, textColor, Icon;
+  switch (status?.toLowerCase()) {
+    case 'shipped':
+    case 'completed': // Treat completed like shipped for display?
+      bgColor = 'bg-green-100';
+      textColor = 'text-green-800';
+      Icon = CheckCircle;
+      break;
+    case 'pending':
+      bgColor = 'bg-yellow-100';
+      textColor = 'text-yellow-800';
+      Icon = Clock;
+      break;
+    case 'processing':
+      bgColor = 'bg-blue-100';
+      textColor = 'text-blue-800';
+      Icon = Clock; // Or a different icon like Settings
+      break;
+    case 'cancelled': // Added cancelled status
+    case 'failed': // Added failed status
+      bgColor = 'bg-red-100';
+      textColor = 'text-red-800';
+      Icon = XCircle;
+      break;
+    default:
+      bgColor = 'bg-gray-100';
+      textColor = 'text-gray-800';
+      Icon = Hash; // Default icon
+      status = status || 'Unknown'; // Handle null/undefined status
+  }
+
   return (
     <span
-      className={`flex items-center px-2 py-1 text-xs font-medium rounded-full ${
-        status === 'shipped'
-          ? 'bg-green-100 text-green-800'
-          : status === 'pending'
-            ? 'bg-yellow-100 text-yellow-800'
-            : status === 'processing'
-              ? 'bg-blue-100 text-blue-800'
-              : 'bg-gray-100 text-gray-800'
-      }`}
+      className={`flex items-center px-2 py-1 text-xs font-medium rounded-full ${bgColor} ${textColor}`}
     >
-      {status === 'shipped' ? (
-        <CheckCircle className="h-3 w-3 mr-1" />
-      ) : status === 'pending' ? (
-        <Clock className="h-3 w-3 mr-1" />
-      ) : (
-        <XCircle className="h-3 w-3 mr-1" />
-      )}
+      <Icon className="h-3 w-3 mr-1" />
       {status.charAt(0).toUpperCase() + status.slice(1)}
     </span>
   );
 };
 
-const PaymentStatusBadge = ({ status }) => {
-  return (
-    <span
-      className={`flex items-center px-2 py-1 text-xs font-medium rounded-full ${
-        status === 'paid'
-          ? 'bg-green-100 text-green-800'
-          : status === 'pending'
-            ? 'bg-yellow-100 text-yellow-800'
-            : status === 'failed'
-              ? 'bg-red-100 text-red-800'
-              : 'bg-gray-100 text-gray-800'
-      }`}
-    >
-      {status || 'Unknown'}
-    </span>
-  );
-};
-
-// Removed Mock Order Data
-
 // Helper to format date
 const formatDate = (dateString) => {
   if (!dateString) return '-';
-  const date = new Date(dateString);
-  return date.toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-  });
+  try {
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return 'Invalid Date'; // Check for invalid date object
+    return date.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+    });
+  } catch (e) {
+    console.error("Error formatting date:", dateString, e);
+    return 'Invalid Date Format';
+  }
 };
 
 
 const PatientOrders = ({ patientId }) => {
+  const navigate = useNavigate(); // Initialize useNavigate
   // Fetch orders using the hook, filtering by patientId
-  const { data: ordersData, isLoading: loading, error } = useOrders({ client_record_id: patientId });
-
-  // The hook returns the array directly or handles the data structure internally
-  const orders = ordersData || [];
-
-  // Removed local state and useEffect for mock data fetching
+  // The hook returns { data: [], meta: {} }
+  const { data: ordersResponse, isLoading: loading, error } = useOrders({ patientId: patientId });
+  const orders = ordersResponse?.data || []; // Extract data array from response
 
   return (
     <div className="bg-white p-6 rounded-lg shadow">
@@ -77,9 +78,7 @@ const PatientOrders = ({ patientId }) => {
         <h2 className="text-lg font-medium text-gray-900">Order History</h2>
         <button
           className="px-3 py-1 text-sm bg-indigo-600 text-white rounded-md hover:bg-indigo-700 flex items-center"
-          onClick={() =>
-            (window.location.href = `/orders/new?patientId=${patientId}`)
-          }
+          onClick={() => navigate(`/orders/new?patientId=${patientId}`)} // Use navigate
         >
           <Plus className="h-4 w-4 mr-1" />
           Create New Order
@@ -107,20 +106,18 @@ const PatientOrders = ({ patientId }) => {
                    Order ID
                  </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Medication
+                  Items
                 </th>
                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                   Links
+                   Total
                  </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Status
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Pharmacy
+                  Invoice
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Payment Status
-                </th>
+                {/* Removed Pharmacy and Payment Status as they are not directly on the order table */}
                 <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Actions
                 </th>
@@ -130,41 +127,34 @@ const PatientOrders = ({ patientId }) => {
               {orders.map((order) => (
                 <tr key={order.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {formatDate(order.orderDate)}
+                    {formatDate(order.order_date)} {/* Use order_date from DB */}
                   </td>
                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 font-mono">
-                     {order.id}
+                     {order.id.substring(0, 8)}... {/* Display partial order UUID */}
                    </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {order.medication}
+                     {/* TODO: Fetch and display order items (names) */}
+                     Items... {/* Placeholder */}
                   </td>
                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                     {/* Add links to related items */}
-                     <div className="flex flex-col space-y-1">
-                       {order.invoiceId && (
-                         <Link to={`/invoices/${order.invoiceId}`} className="flex items-center text-xs text-blue-600 hover:underline">
-                           <FileText size={12} className="mr-1"/> Invoice: {order.invoiceId}
-                         </Link>
-                       )}
-                       {order.consultationId && (
-                         <span className="flex items-center text-xs text-gray-500"> {/* Assuming no direct link page for consultations yet */}
-                           <Hash size={12} className="mr-1"/> Consult: {order.consultationId}
-                         </span>
-                       )}
-                     </div>
+                     ${(order.total_amount || 0).toFixed(2)} {/* Use total_amount */}
                    </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <OrderStatusBadge status={order.status} />
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {order.pharmacy}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <PaymentStatusBadge status={order.paymentStatus} />
-                  </td>
+                     {order.invoice_id ? ( // Use invoice_id from DB
+                       <Link to={`/invoices/${order.invoice_id}`} className="flex items-center text-xs text-blue-600 hover:underline">
+                         <FileText size={12} className="mr-1"/> {order.invoice_id.substring(0,8)}...
+                       </Link>
+                     ) : (
+                       '-'
+                     )}
+                   </td>
+                  {/* Removed Pharmacy and Payment Status columns */}
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <Link
-                      to={`/orders/${order.id}`}
+                      to={`/orders/${order.id}`} // Link to order detail page
                       className="text-indigo-600 hover:text-indigo-900"
                     >
                       View Details

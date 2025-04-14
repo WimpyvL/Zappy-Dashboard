@@ -13,11 +13,8 @@ import {
 } from 'lucide-react';
 import { toast } from 'react-toastify';
 import { useCreatePatient, useUpdatePatient, usePatientById } from '../../apis/patients/hooks'; // Import patient hooks
-import { useTags } from '../../apis/tags/hooks'; 
-import { useSubscriptionPlans } from '../../apis/subscriptionPlans/hooks'; 
-import { useGetUsers } from '../../apis/users/hooks'; 
-import { usePharmacies } from '../../apis/pharmacies/hooks'; // Import pharmacies hook
-import { Select } from 'antd'; 
+// Removed unused hooks for tags, plans, users, pharmacies
+import { Select } from 'antd'; // Keep Select for Status dropdown
 
 // Accept editingPatientId prop
 const PatientModal = ({ isOpen, onClose, editingPatientId, onSuccess }) => {
@@ -31,19 +28,8 @@ const PatientModal = ({ isOpen, onClose, editingPatientId, onSuccess }) => {
   });
 
   // Fetch data for dropdowns
-  const { data: tagsData, isLoading: isLoadingTags } = useTags();
-  const { data: plansData, isLoading: isLoadingPlans } = useSubscriptionPlans();
-  // Assuming useGetUsers fetches users who can be assigned as doctors (e.g., practitioners)
-  const { data: usersData, isLoading: isLoadingUsers } = useGetUsers({ role: 'practitioner' }); 
-  const { data: pharmaciesData, isLoading: isLoadingPharmacies } = usePharmacies(); // Fetch pharmacies
-
-  const allTags = tagsData || [];
-  const allPlans = plansData || [];
-  const allDoctors = usersData || [];
-  const allPharmacies = pharmaciesData || []; // Use fetched pharmacies
-
-  // Combined loading state for dropdown data
-  const isLoadingDropdownData = isLoadingTags || isLoadingPlans || isLoadingUsers || isLoadingPharmacies;
+  // Removed fetching for tags, plans, users, pharmacies
+  const isLoadingDropdownData = false; // Set to false as dropdowns are removed
 
   // Use mutation loading state instead of local isSubmitting
   const isSubmitting = createPatientMutation.isPending || updatePatientMutation.isPending;
@@ -59,10 +45,7 @@ const PatientModal = ({ isOpen, onClose, editingPatientId, onSuccess }) => {
     zip_code: '',
     date_of_birth: '', // Keep as string YYYY-MM-DD
     status: 'active', // Use lowercase status consistent with DB/API
-    related_tags: [], // Add state for selected tags
-    subscription_plan_id: null, // Add state for selected plan ID
-    assigned_doctor_id: null, // Add state for selected doctor ID
-    preferred_pharmacy: '', // Add state for preferred pharmacy
+    // Removed fields not in client_record: related_tags, subscription_plan_id, assigned_doctor_id, preferred_pharmacy
   });
 
   const isEditMode = !!editingPatientId;
@@ -100,11 +83,7 @@ const PatientModal = ({ isOpen, onClose, editingPatientId, onSuccess }) => {
             zip_code: patientDataForEdit.zip || '',         // Use direct zip field
             date_of_birth: formattedDob, // Use formatted DOB from client_record.date_of_birth
             status: 'active', // Status is not in client_record, default to active
-            // TODO: Fetch/populate these fields from 'profiles' or other related tables if needed for edit mode
-            related_tags: [], // patientDataForEdit.related_tags || [], 
-            subscription_plan_id: null, // patientDataForEdit.subscription_plan_id || null, 
-            assigned_doctor_id: null, // patientDataForEdit.assigned_doctor_id || null, 
-            preferred_pharmacy: '', // patientDataForEdit.preferred_pharmacy || '', 
+            // Removed population for fields not in client_record
           });
         } else if (!isLoadingData) {
           // Handle case where data is loaded but null (patient not found)
@@ -142,12 +121,7 @@ const PatientModal = ({ isOpen, onClose, editingPatientId, onSuccess }) => {
       state: formData.state || null, // Mapped to 'state' in hooks
       zip_code: formData.zip_code || null, // Mapped to 'zip' in hooks
       date_of_birth: formData.date_of_birth || null, // Mapped to 'date_of_birth' in hooks
-      // status: formData.status, // Status not in client_record
-      // related_tags: formData.related_tags || [], // Tags not in client_record
-      // subscription_plan_id: formData.subscription_plan_id || null, // Plan not in client_record
-      // assigned_doctor_id: formData.assigned_doctor_id || null, // Doctor not in client_record
-      // preferred_pharmacy: formData.preferred_pharmacy || null, // Pharmacy not in client_record
-      // TODO: Update these fields separately in the 'profiles' table or via a dedicated backend function
+      // Removed fields not belonging to client_record from payload
     };
 
     // Remove undefined fields before sending
@@ -286,92 +260,7 @@ const PatientModal = ({ isOpen, onClose, editingPatientId, onSuccess }) => {
                 <input type="text" name="zip_code" className="block w-full pl-3 pr-3 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md" value={formData.zip_code || ''} onChange={handleChange} disabled={isLoadingData} />
               </div>
             </div>
-
-            {/* Assigned Doctor Dropdown */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Assigned Doctor</label>
-              <Select
-                style={{ width: '100%' }}
-                placeholder="Select Doctor"
-                value={formData.assigned_doctor_id}
-                onChange={(value) => setFormData(prev => ({ ...prev, assigned_doctor_id: value }))}
-                loading={isLoadingUsers}
-                disabled={isLoadingData || isLoadingDropdownData}
-                allowClear
-              >
-                {allDoctors.map(doc => (
-                  <Select.Option key={doc.id} value={doc.id}>
-                    {`${doc.first_name} ${doc.last_name}`}
-                  </Select.Option>
-                ))}
-              </Select>
-            </div>
-
-            {/* Subscription Plan Dropdown */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Subscription Plan</label>
-              <Select
-                style={{ width: '100%' }}
-                placeholder="Select Plan"
-                value={formData.subscription_plan_id}
-                onChange={(value) => setFormData(prev => ({ ...prev, subscription_plan_id: value }))}
-                loading={isLoadingPlans}
-                disabled={isLoadingData || isLoadingDropdownData}
-                allowClear
-              >
-                {allPlans.map(plan => (
-                  <Select.Option key={plan.id} value={plan.id}>
-                    {plan.name} (${plan.price}/{plan.billing_cycle})
-                  </Select.Option>
-                ))}
-              </Select>
-            </div>
-
-            {/* Tags Multi-Select Dropdown */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Tags</label>
-              <Select
-                mode="multiple"
-                style={{ width: '100%' }}
-                placeholder="Select Tags"
-                value={formData.related_tags}
-                onChange={(values) => setFormData(prev => ({ ...prev, related_tags: values }))}
-                loading={isLoadingTags}
-                disabled={isLoadingData || isLoadingDropdownData}
-                allowClear
-              >
-                {allTags.map(tag => (
-                  <Select.Option key={tag.id} value={tag.id}>
-                    {tag.name}
-                  </Select.Option>
-                ))}
-              </Select>
-            </div>
-
-            {/* Preferred Pharmacy Dropdown */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Preferred Pharmacy</label>
-              <Select
-                style={{ width: '100%' }}
-                placeholder="Select Pharmacy"
-                value={formData.preferred_pharmacy} // Assuming this field exists in formData state now
-                onChange={(value) => setFormData(prev => ({ ...prev, preferred_pharmacy: value }))}
-                loading={isLoadingPharmacies}
-                disabled={isLoadingData || isLoadingDropdownData}
-                allowClear
-                showSearch // Allow searching pharmacies
-                optionFilterProp="children" // Search by label text
-                filterOption={(input, option) => 
-                  option.children.toLowerCase().includes(input.toLowerCase())
-                }
-              >
-                {allPharmacies.map(pharm => (
-                  <Select.Option key={pharm.id} value={pharm.id}> {/* Store ID, display name */}
-                    {pharm.name}
-                  </Select.Option>
-                ))}
-              </Select>
-            </div>
+            {/* Removed Assigned Doctor, Subscription Plan, Tags, Preferred Pharmacy dropdowns */}
              {/* Optional: Add Medical Notes Textarea if needed in modal */}
              {/* <div>
                <label htmlFor="medicalNotes" className="block text-sm font-medium text-gray-700 mb-1">

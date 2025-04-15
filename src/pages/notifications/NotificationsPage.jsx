@@ -3,10 +3,10 @@ import { useNotifications, NOTIFICATION_TYPES } from '../../contexts/Notificatio
 import { 
   Bell, CheckCircle, AlertTriangle, Info, Calendar, 
   FileText, Pill, CreditCard, Settings, ChevronRight, 
-  Trash2, Filter, Clock, CheckCheck, X
+  Trash2, Filter, CheckCheck // Removed unused Clock, X
 } from 'lucide-react';
 import ChildishDrawingElement from '../../components/ui/ChildishDrawingElement';
-import { formatDistanceToNow, format } from 'date-fns';
+import { format } from 'date-fns'; // Removed unused formatDistanceToNow
 
 // Helper function to get icon based on notification type
 const getNotificationIcon = (type) => {
@@ -90,16 +90,8 @@ const getTypeName = (type) => {
 const NotificationItem = ({ notification, onMarkAsRead, onRemove }) => {
   const { id, title, message, type, timestamp, read, actionUrl, actionText } = notification;
   
-  const handleClick = () => {
-    if (!read) {
-      onMarkAsRead(id);
-    }
-    
-    // If there's an action URL, navigate to it
-    if (actionUrl) {
-      window.location.href = actionUrl;
-    }
-  };
+  // Note: The original handleClick function was removed as it was unused.
+  // The logic for navigating on actionUrl click is now handled directly in the JSX onClick handler for the link.
   
   return (
     <div 
@@ -400,7 +392,8 @@ const NotificationsPage = () => {
         });
       }, 1000);
     }
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [addNotification, notifications.length]); // Added missing dependencies
 
   return (
     <div className="container mx-auto px-4 py-6 relative overflow-hidden pb-10">

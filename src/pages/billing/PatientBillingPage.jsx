@@ -4,8 +4,8 @@ import { useAuth } from '../../context/AuthContext';
 import { useMyInvoices, useMySubscription, useCreateCustomerPortalSession } from '../../apis/subscriptionPlans/hooks'; 
 import { Link } from 'react-router-dom';
 import { 
-  Loader2, AlertTriangle, CreditCard, FileText, CheckCircle, 
-  Clock, Download, Award
+  Loader2, AlertTriangle, FileText, CheckCircle, 
+  Clock, Download, Award // Removed unused CreditCard
 } from 'lucide-react';
 import ChildishDrawingElement from '../../components/ui/ChildishDrawingElement'; // Import drawing element
 

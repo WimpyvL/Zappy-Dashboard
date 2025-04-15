@@ -23,13 +23,6 @@ const Sidebar = () => {
     navigate('/login');
   };
 
-  // Function to determine if a menu item is active for admin view
-  const isAdminActive = (path) => {
-    return location.pathname === path
-      ? 'bg-indigo-800 text-white'
-      : 'text-indigo-100 hover:bg-indigo-700 hover:text-white';
-  };
-
   // Function to return specific active/inactive classes for patient view
   const getPatientNavItemClasses = (path, color) => {
     const isActive = location.pathname === path;
@@ -78,22 +71,8 @@ const Sidebar = () => {
     };
   };
 
-  // Reusable menu item component for admin view
-  const AdminNavItem = ({ item }) => {
-    const Icon = item.icon;
-
-    return (
-      <Link
-        to={item.path}
-        className={`flex items-center px-4 py-2 text-sm font-medium rounded-md ${isAdminActive(item.path)}`}
-      >
-        <Icon className="mr-3 h-5 w-5" />
-        {item.title}
-      </Link>
-    );
-  };
-
   // Reusable menu item component for patient view - Updated
+  // Removed unused AdminNavItem component
   const PatientNavItem = ({ item }) => {
     const Icon = item.icon;
     const { link: linkClasses, icon: iconClass } = getPatientNavItemClasses(item.path, item.color || 'primary');
@@ -124,13 +103,15 @@ const Sidebar = () => {
       // sessionStorage.removeItem(scrollKey);
     }
 
+    // Capture the ref's current value inside the effect
+    const node = navRef.current;
     // Cleanup function to save scroll position on unmount/navigation
     return () => {
-      if (navRef.current) {
-        sessionStorage.setItem(scrollKey, navRef.current.scrollTop);
+      if (node) { // Use the captured value in the cleanup
+        sessionStorage.setItem(scrollKey, node.scrollTop);
       }
     };
-  }, []); // Empty dependency array ensures this runs once on mount and cleanup on unmount
+  }, [scrollKey]); // Added scrollKey to dependency array as it's used inside
 
   // Use the light theme structure for both views
   return (

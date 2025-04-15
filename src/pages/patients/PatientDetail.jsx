@@ -29,7 +29,7 @@ const PatientDetail = () => {
   // Placeholder data until hook is implemented:
   const patientFormsData = { data: [] }; // Default to empty array
   const isLoadingForms = false; // Default to false
-  const formsError = null; // Default to null
+  // const _formsError = null; // Removed unused var - Default to null
 
   // Loading states for different data types (keep for related data for now)
   const [loading] = useState({ // Removed unused setLoading

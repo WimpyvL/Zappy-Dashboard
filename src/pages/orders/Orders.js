@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react'; // Added useEffect, useMemo
+import React, { useState, useMemo } from 'react'; // Removed unused useEffect, Added useMemo
 import { Link } from 'react-router-dom';
 import { Select } from 'antd'; // Import Ant Design Select
 import { debounce } from 'lodash'; // Import debounce
@@ -94,9 +94,9 @@ const Orders = () => {
     linkedSessionId: null,
     notes: '',
   });
-  const [patientSearchInput, setPatientSearchInput] = useState('');
+  // const [_patientSearchInput, setPatientSearchInput] = useState(''); // Removed unused var
   const [debouncedPatientSearchTerm, setDebouncedPatientSearchTerm] = useState('');
-  const [productSearchInput, setProductSearchInput] = useState('');
+  // const [_productSearchInput, setProductSearchInput] = useState(''); // Removed unused var
   const [debouncedProductSearchTerm, setDebouncedProductSearchTerm] = useState('');
 
 
@@ -105,11 +105,11 @@ const Orders = () => {
   const debounceProductSearch = useMemo(() => debounce(setDebouncedProductSearchTerm, 500), []);
 
   const handlePatientSearchInputChange = (value) => {
-    setPatientSearchInput(value);
+    // setPatientSearchInput(value); // Removed call to setter for unused state
     debouncePatientSearch(value);
   };
   const handleProductSearchInputChange = (value) => {
-    setProductSearchInput(value);
+    // setProductSearchInput(value); // Removed call to setter for unused state
     debounceProductSearch(value);
   };
 
@@ -192,14 +192,14 @@ const Orders = () => {
   const handleModalPatientSelect = (value) => {
     setNewOrderData(prev => ({ ...prev, patientId: value }));
     // Clear search terms after selection
-    setPatientSearchInput('');
+    // setPatientSearchInput(''); // Removed call to setter for unused state
     setDebouncedPatientSearchTerm('');
   };
 
   // Handle modal product selection
   const handleModalProductSelect = (value) => {
     setNewOrderData(prev => ({ ...prev, productId: value }));
-    setProductSearchInput('');
+    // setProductSearchInput(''); // Removed call to setter for unused state
     setDebouncedProductSearchTerm('');
   };
 

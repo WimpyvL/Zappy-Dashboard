@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react'; // Removed unused useEffect
 import { createPortal } from 'react-dom';
 import {
   X,
@@ -22,10 +22,7 @@ import {
   useDeleteInsuranceDocument,
 } from '../../../apis/insurances/hooks';
 
-// Custom Spinner component using primary color
-const Spinner = () => (
-  <div className="inline-block h-5 w-5 animate-spin rounded-full border-2 border-solid border-primary border-r-transparent align-[-0.125em] motion-reduce:animate-[spin_1.5s_linear_infinite]"></div>
-);
+// Removed unused Spinner component definition
 
 // Define StatusBadge locally or import from a shared location
 const StatusBadge = ({ status }) => {

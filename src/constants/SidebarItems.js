@@ -18,17 +18,17 @@ import {
   Map,
   // Patient view icons
   LayoutDashboard as PatientDashboardIcon,
-  User as PatientProfileIcon,
+  // User as PatientProfileIcon, // Removed unused
   ShoppingCart as PatientOrdersIcon,
-  CalendarCheck as PatientSessionsIcon,
-  MessageSquare as PatientMessagesIcon,
+  // CalendarCheck as PatientSessionsIcon, // Removed unused
+  // MessageSquare as PatientMessagesIcon, // Removed unused
   LayoutGrid as PatientProgramIcon,
   FolderClock as PatientRecordsIcon,
-  CreditCard,
+  // CreditCard, // Removed unused (duplicate import)
   Store as ShopIcon,
   Headphones, // For Customer Support
-  Bot as AssistantIcon, // For My Assistant
-  CreditCard as PaymentIcon, // For Payment Methods
+  // Bot as AssistantIcon, // Removed unused
+  // CreditCard as PaymentIcon, // Removed unused (duplicate import)
   UserCog, // For My Information
 } from 'lucide-react';
 

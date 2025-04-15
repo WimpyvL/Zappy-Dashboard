@@ -1,21 +1,21 @@
-import React, { useState, useRef, useEffect, useMemo } from 'react'; // Added useMemo, Removed useCallback
+import React, { useState, useRef, useEffect } from 'react'; // Removed useMemo, Removed useCallback
 import { useAuth } from '../../context/AuthContext';
-import { useCart } from '../../context/CartContext';
+// import { useCart } from '../../context/CartContext'; // Removed unused useCart import
 import { useAppContext } from '../../context/AppContext';
 import NotificationsCenter from '../../components/notifications/NotificationsCenter';
-import { useNavigate, Link } from 'react-router-dom';
-import { Dropdown, Button, Menu, Avatar } from 'antd';
+import { useNavigate } from 'react-router-dom'; // Removed unused Link
+import { Dropdown, Button, Avatar } from 'antd'; // Removed unused Menu
 import { profileMenuItems } from '../../constants/SidebarItems';
 // import { debounce } from 'lodash'; // No longer needed for client-side search
 import {
-  Bell,
+  // Bell, // Removed unused Bell
   Search,
   LogOut,
   Settings,
   User,
   X,
   ChevronDown,
-  ShoppingCart,
+  // ShoppingCart, // Removed unused ShoppingCart
   UserCheck, // Icon for Patient View
   ShieldCheck, // Icon for Admin View
   Eye, // Generic View icon
@@ -23,8 +23,8 @@ import {
 
 const Header = ({ onToggleCart }) => {
   const { currentUser, logout } = useAuth();
-  const { getCartItemCount } = useCart();
-  const { viewMode, setViewMode, patients } = useAppContext(); // Get view mode, setter, and patients
+  // const { getCartItemCount: _getCartItemCount } = useCart(); // Removed unused var
+  const { viewMode, setViewMode /*, patients: _patients */ } = useAppContext(); // Removed unused var, Get view mode, setter
   const navigate = useNavigate();
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
   const userDropdownRef = useRef(null);
@@ -118,7 +118,7 @@ const Header = ({ onToggleCart }) => {
 
       {/* View Mode Dropdown, Notifications, Cart, and user profile */}
       <div className={`flex items-center space-x-4 ${viewMode === 'admin' ? 'ml-4' : 'ml-auto'}`}>
-        {/* View Mode Dropdown */}
+        {/* View Mode Dropdown - Conditionally disable Patient View for Admins */}
         <Dropdown
           menu={{
             items: [
@@ -126,14 +126,23 @@ const Header = ({ onToggleCart }) => {
                 key: 'admin',
                 icon: <ShieldCheck size={14} />,
                 label: 'Admin View',
+                // Disable if already in admin mode
+                disabled: viewMode === 'admin',
               },
               {
                 key: 'patient',
                 icon: <UserCheck size={14} />,
                 label: 'Patient View',
+                // Disable if already in patient mode OR if current mode is admin (prevent switching back)
+                disabled: viewMode === 'patient' || viewMode === 'admin',
               },
-            ],
-            onClick: ({ key }) => setViewMode(key),
+            ].filter(item => !(item.key === 'patient' && viewMode === 'admin')), // Hide Patient View option entirely for Admins
+            onClick: ({ key }) => {
+              // Only allow setting the view mode if the target key is different and allowed
+              if (key !== viewMode && !(key === 'patient' && viewMode === 'admin')) {
+                 setViewMode(key);
+              }
+            },
           }}
           trigger={['click']}
         >

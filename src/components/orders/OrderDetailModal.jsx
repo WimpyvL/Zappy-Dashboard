@@ -1,6 +1,6 @@
 import React from 'react';
 import { useOrderById } from '../../apis/orders/hooks'; // Assuming hook path
-import { X, Package, Calendar, DollarSign, MapPin, Truck, Info, Loader2, AlertTriangle } from 'lucide-react';
+import { X, Package, MapPin, Truck, Info, Loader2, AlertTriangle } from 'lucide-react'; // Removed Calendar, DollarSign
 import ChildishDrawingElement from '../ui/ChildishDrawingElement'; // Assuming path
 import { StatusBadge } from '../../pages/orders/PatientOrderHistoryPage'; // Reuse StatusBadge
 

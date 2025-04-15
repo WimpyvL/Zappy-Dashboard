@@ -16,8 +16,8 @@ const CommunicationSection = ({
   readOnly,
 }) => {
   // State for template visibility (can be managed internally or passed as props)
-  const [showPatientMessageTemplates, setShowPatientMessageTemplates] = React.useState(true);
-  const [showAssessmentTemplates, setShowAssessmentTemplates] = React.useState(true);
+  const [showPatientMessageTemplates] = React.useState(true); // Removed unused setter
+  const [showAssessmentTemplates] = React.useState(true); // Removed unused setter
 
   return (
     <>

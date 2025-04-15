@@ -49,7 +49,7 @@ const PatientNotes = ({ patientId, onOpenFollowupNotes }) => { // Removed notes 
   const [noteType, setNoteType] = useState('all');
   
   // Fetch notes using the hook
-  const { data: notesData, isLoading: loading, error } = useNotes(patientId); 
+  const { data: notesData, isLoading: loading /*, error: _error */ } = useNotes(patientId); // Removed unused error
   const notes = notesData || []; // Use fetched data or default to empty array
 
   // Filter notes based on selected type (using note_type from DB)

@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useMemo } from 'react'; // Added useMemo
+import React, { useState, useMemo } from 'react'; // Removed unused useEffect, Added useMemo
 import { Plus, Loader2, AlertTriangle } from 'lucide-react'; // Keep necessary icons
-import { toast } from 'react-toastify';
+// import { toast } from 'react-toastify'; // Removed unused toast
 
 // Import React Query hooks
 import { useInsuranceRecords } from '../../apis/insurances/hooks';
@@ -12,17 +12,7 @@ import AddInsuranceRecordModal from './components/AddInsuranceRecordModal';
 import ViewInsuranceRecordModal from './components/ViewInsuranceRecordModal';
 import ChildishDrawingElement from '../../components/ui/ChildishDrawingElement';
 
-// Helper function to format date (can be moved to utils)
-const formatDate = (dateString) => {
-  if (!dateString) return '-';
-  try {
-    const date = new Date(dateString);
-    if (isNaN(date.getTime())) return 'Invalid Date';
-    return new Intl.DateTimeFormat('en-US', {
-      year: 'numeric', month: 'short', day: 'numeric',
-    }).format(date);
-  } catch (e) { return 'Invalid Date Format'; }
-};
+// Removed unused formatDate function
 
 // Parse verification history (can be moved to utils)
 const parseVerificationHistory = (historyString) => {

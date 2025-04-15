@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react'; // Removed unused useEffect
 import { toast } from 'react-toastify';
 import { Plus, Loader2, AlertTriangle } from 'lucide-react';
 
 // Import API Hooks
-import { usePatients } from '../../apis/patients/hooks';
+// import { usePatients } from '../../apis/patients/hooks'; // Removed unused import
 import {
   useConsultations,
   useUpdateConsultationStatus,

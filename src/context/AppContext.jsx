@@ -6,16 +6,8 @@ const AppContext = createContext();
 // Removed all Mock Data (samplePatients, sampleSessions, etc.)
 
 export const AppProvider = ({ children }) => {
-  // State for view mode simulation, initialized from localStorage or default to 'admin'
-  const [viewMode, setViewMode] = useState(() => {
-    try {
-      const storedViewMode = localStorage.getItem('appViewMode');
-      return storedViewMode === 'patient' ? 'patient' : 'admin'; // Default to 'admin' if invalid or not found
-    } catch (error) {
-      console.error("Error reading localStorage for viewMode", error);
-      return 'admin';
-    }
-  });
+  // State for view mode, always default to 'admin' on initial load
+  const [viewMode, setViewMode] = useState('admin');
 
   // NOTE: Removed state for patients, sessions, orders, products, services, plans, tags, documents, forms, invoices
   // It's assumed this data will be fetched and managed via React Query hooks (e.g., usePatients, useOrders)

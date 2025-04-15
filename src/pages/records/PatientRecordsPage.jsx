@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { 
-  FileText, ClipboardList, Package, CreditCard, Beaker, Pill, 
-  ShieldAlert, Stethoscope, Folder, Calendar, Clock, ArrowRight,
-  StickyNote, Eye // Import StickyNote icon and Eye icon
+  ClipboardList, Beaker, Pill, 
+  Calendar, Clock, ArrowRight,
+  StickyNote, Eye // Removed unused FileText, Package, CreditCard, ShieldAlert, Stethoscope, Folder
 } from 'lucide-react';
 import ChildishDrawingElement from '../../components/ui/ChildishDrawingElement';
 import NoteViewModal from '../../components/notes/NoteViewModal'; // Import the modal

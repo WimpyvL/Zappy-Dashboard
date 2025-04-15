@@ -14,7 +14,7 @@ import {
 import { toast } from 'react-toastify';
 import { useCreatePatient, useUpdatePatient, usePatientById } from '../../apis/patients/hooks'; // Import patient hooks
 // Removed unused hooks for tags, plans, users, pharmacies
-import { Select } from 'antd'; // Keep Select for Status dropdown
+// import { Select } from 'antd'; // Removed unused Select import
 
 // Accept editingPatientId prop
 const PatientModal = ({ isOpen, onClose, editingPatientId, onSuccess }) => {
@@ -29,7 +29,7 @@ const PatientModal = ({ isOpen, onClose, editingPatientId, onSuccess }) => {
 
   // Fetch data for dropdowns
   // Removed fetching for tags, plans, users, pharmacies
-  const isLoadingDropdownData = false; // Set to false as dropdowns are removed
+  // const _isLoadingDropdownData = false; // Removed unused var - Set to false as dropdowns are removed
 
   // Use mutation loading state instead of local isSubmitting
   const isSubmitting = createPatientMutation.isPending || updatePatientMutation.isPending;

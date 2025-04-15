@@ -33,9 +33,9 @@ export const AuthProvider = ({ children }) => {
       } else {
         const user = session?.user ?? null;
         setCurrentUser(user); // Set user if session exists, otherwise null
-        // Determine view mode based on user role
+        // Determine view mode based on user role, default to 'admin' if role is not 'admin' or undefined
         const userRole = user?.app_metadata?.role; // Check role in app_metadata
-        const determinedViewMode = userRole === 'admin' ? 'admin' : 'patient'; // Default to patient if logged in but not admin
+        const determinedViewMode = userRole === 'admin' ? 'admin' : 'admin'; // Default to ADMIN if role is not explicitly 'admin'
         setViewMode(determinedViewMode);
         console.log(`AuthContext: Session checked, user role: ${userRole}, viewMode set to ${determinedViewMode}`);
       }
@@ -52,9 +52,9 @@ export const AuthProvider = ({ children }) => {
       const user = session?.user ?? null;
       setCurrentUser(user);
       setError(null); // Clear errors on auth change
-      // Determine view mode based on user role
+      // Determine view mode based on user role, default to 'admin' if role is not 'admin' or undefined
       const userRole = user?.app_metadata?.role; // Check role in app_metadata
-      const determinedViewMode = userRole === 'admin' ? 'admin' : 'patient'; // Default to patient if logged in but not admin
+      const determinedViewMode = userRole === 'admin' ? 'admin' : 'admin'; // Default to ADMIN if role is not explicitly 'admin'
       setViewMode(determinedViewMode);
       console.log(`AuthContext: Auth state changed, user role: ${userRole}, viewMode set to ${determinedViewMode}`);
       // No need to set loading here as getSession handles initial load
@@ -64,7 +64,7 @@ export const AuthProvider = ({ children }) => {
     return () => {
       subscription?.unsubscribe();
     };
-  }, []);
+  }, [setViewMode]); // Added setViewMode to dependency array
 
   // Login function using Supabase
   const login = async (email, password) => {
@@ -171,7 +171,8 @@ export const AuthProvider = ({ children }) => {
     setLoading(true);
     setError(null);
     try {
-      const { data, error: passwordError } = await supabase.auth.updateUser({
+      // Removed unused 'data' from destructuring
+      const { error: passwordError } = await supabase.auth.updateUser({
         password: newPassword,
       });
 

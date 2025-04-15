@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Layout, Typography, Button, Space, Avatar, Input, Badge } from 'antd'; // Added components
+import { Layout, Typography, Button, Avatar, Input } from 'antd'; // Removed unused Space, Badge
 import { 
   QuestionCircleOutlined, 
   SendOutlined, 

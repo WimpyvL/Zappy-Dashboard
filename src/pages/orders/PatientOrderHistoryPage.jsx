@@ -1,8 +1,8 @@
 import React, { useState } from 'react'; // Import useState
-import { useAuth } from '../../context/AuthContext';
+// import { useAuth } from '../../context/AuthContext'; // Removed unused useAuth
 // import { useMyOrders } from '../../apis/orders/hooks'; // Temporarily disable hook for mock data
-import { Link } from 'react-router-dom';
-import { Loader2, AlertTriangle, Package, CheckCircle, Clock, XCircle, Truck, Info } from 'lucide-react'; // Replaced TruckIcon with Truck, added Info
+// import { Link } from 'react-router-dom'; // Removed unused Link
+import { /* Loader2, AlertTriangle, */ Package, CheckCircle, Clock, XCircle, Truck, Info } from 'lucide-react'; // Removed unused Loader2, AlertTriangle, Replaced TruckIcon with Truck, added Info
 import ChildishDrawingElement from '../../components/ui/ChildishDrawingElement'; // Import drawing element
 import OrderDetailModal from '../../components/orders/OrderDetailModal'; // Import the modal
 
@@ -68,9 +68,9 @@ export const StatusBadge = ({ status }) => {
 
 
 const PatientOrderHistoryPage = () => {
-  const { currentUser } = useAuth();
+  // useAuth(); // Removed empty destructuring
   // Use a default ID for testing if currentUser is null (due to auth bypass)
-  const patientId = currentUser?.id || 'dev-patient-id'; 
+  // const _patientId = currentUser?.id || 'dev-patient-id'; // Removed unused var
   
   // State for modal
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
@@ -84,8 +84,8 @@ const PatientOrderHistoryPage = () => {
       { id: 'ord-4', orderId: 'ZAP-0950', orderDate: '2025-03-01T11:00:00Z', created_at: '2025-03-01T11:00:00Z', medication: 'Initial Consultation Fee', totalAmount: 150.00, status: 'paid' }, // Example non-med order
   ];
   const orders = mockOrders;
-  const isLoading = false; // Simulate loaded state
-  const error = null; // Simulate no error
+  // const _isLoading = false; // Removed unused var
+  // const _error = null; // Removed unused var
   // --- END MOCK DATA ---
 
   // Original hook usage (commented out)

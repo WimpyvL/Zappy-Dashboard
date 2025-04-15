@@ -2,7 +2,7 @@ import React from 'react';
 import { useAppContext } from '../context/AppContext'; // Import the context hook
 import PatientDashboard from './dashboard/PatientDashboard'; // Import the new Patient Dashboard
 import ProviderDashboard from './dashboard/ProviderDashboard'; // Import the new Provider Dashboard
-import { Loader2 } from 'lucide-react'; // For loading state
+// import { Loader2 } from 'lucide-react'; // Removed unused Loader2
 
 const Dashboard = () => {
   const { viewMode } = useAppContext(); // Get the viewMode from context

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { Select } from 'antd';
-import { X, Loader2, CheckCircle } from 'lucide-react'; // Added CheckCircle
+import { X, CheckCircle } from 'lucide-react'; // Removed unused Loader2, Added CheckCircle
 import { toast } from 'react-toastify';
 import { debounce } from 'lodash';
 import { usePatients } from '../../../apis/patients/hooks';
@@ -26,7 +26,7 @@ const AddInsuranceRecordModal = ({ isOpen, onClose, onSuccess }) => {
     notes: '',
   });
   const [selectedPatientName, setSelectedPatientName] = useState('');
-  const [patientSearchInput, setPatientSearchInput] = useState('');
+  // const [_patientSearchInput, setPatientSearchInput] = useState(''); // Removed unused var
   const [debouncedPatientSearchTerm, setDebouncedPatientSearchTerm] = useState('');
 
   // Debounce handler for patient search
@@ -39,15 +39,16 @@ const AddInsuranceRecordModal = ({ isOpen, onClose, onSuccess }) => {
 
   // Handle raw search input change
   const handlePatientSearchInputChange = (value) => {
-    setPatientSearchInput(value);
+    // setPatientSearchInput(value); // Removed call to setter for unused state
     debouncePatientSearch(value);
   };
 
   // Fetch Patients for dropdown using debounced search term
   const { data: patientsData, isLoading: isLoadingPatients } = usePatients(1, { search: debouncedPatientSearchTerm }, 100);
-  const patientOptions = patientsData?.data || [];
+  const patientOptions = useMemo(() => patientsData?.data || [], [patientsData]); // Memoize patientOptions
   // Add console log to check fetched options based on search term
   useEffect(() => {
+    // This log now only runs when the memoized patientOptions or the search term changes
     console.log('Patient Options (search term:', debouncedPatientSearchTerm, '):', patientOptions);
   }, [patientOptions, debouncedPatientSearchTerm]);
 
@@ -79,7 +80,7 @@ const AddInsuranceRecordModal = ({ isOpen, onClose, onSuccess }) => {
         notes: '',
       });
       setSelectedPatientName('');
-      setPatientSearchInput('');
+      // setPatientSearchInput(''); // Removed call to setter for unused state
       setDebouncedPatientSearchTerm('');
     }
   }, [isOpen]);
@@ -101,7 +102,7 @@ const AddInsuranceRecordModal = ({ isOpen, onClose, onSuccess }) => {
       patientId: value,
     }));
     setSelectedPatientName(selectedPatient ? `${selectedPatient.first_name || ''} ${selectedPatient.last_name || ''}`.trim() : '');
-    setPatientSearchInput(''); // Clear search input after selection
+    // setPatientSearchInput(''); // Removed call to setter for unused state
     setDebouncedPatientSearchTerm(''); // Clear debounced term
   };
 

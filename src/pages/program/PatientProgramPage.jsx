@@ -1,7 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom'; // Import useNavigate
 import { CheckSquare, Target, BookOpen, MessageSquare, BarChart2, Check } from 'lucide-react'; // Import icons
-import { Link } from 'react-router-dom'; // Import Link for potential future use
+// import { Link } from 'react-router-dom'; // Removed unused Link
 import ChildishDrawingElement from '../../components/ui/ChildishDrawingElement'; // Import drawing element
 
 const PatientProgramPage = () => {

@@ -1,10 +1,14 @@
 import React, { useState } from 'react';
-import { useAuth } from '../../context/AuthContext';
+// import { useAuth } from '../../context/AuthContext'; // Removed unused useAuth
 // import { useGetPatientForms } from '../../apis/forms/hooks'; // Temporarily disable hook for mock data
-import { Link } from 'react-router-dom';
+// import { Link } from 'react-router-dom'; // Removed unused Link
 import { 
-  Loader2, AlertTriangle, FileText, Edit, CheckCircle, 
-  Clock, Award, ChevronRight, Eye, ArrowRight, Star
+  // Loader2, // Removed unused Loader2
+  // AlertTriangle, // Removed unused AlertTriangle
+  FileText, Edit, CheckCircle, 
+  Clock, Award, ChevronRight, Eye, 
+  // ArrowRight, // Removed unused ArrowRight
+  Star
 } from 'lucide-react';
 import ChildishDrawingElement from '../../components/ui/ChildishDrawingElement'; // Import drawing element
 
@@ -77,9 +81,9 @@ const FormCompletionCelebration = ({ formName, onDismiss }) => {
 };
 
 const PatientFormsPage = () => {
-  const { currentUser } = useAuth();
+  // useAuth(); // Removed empty destructuring
   // Use a default ID for testing if currentUser is null (due to auth bypass)
-  const patientId = currentUser?.id || 'dev-patient-id';
+  // const _patientId = currentUser?.id || 'dev-patient-id'; // Removed unused var
   
   // State for showing celebration modal
   const [showCelebration, setShowCelebration] = useState(false);
@@ -124,8 +128,8 @@ const PatientFormsPage = () => {
       },
   ];
   const forms = mockForms;
-  const isLoading = false; // Simulate loaded state
-  const error = null; // Simulate no error
+  // const _isLoading = false; // Removed unused var - Simulate loaded state
+  // const _error = null; // Removed unused var - Simulate no error
   // --- END MOCK DATA ---
 
 

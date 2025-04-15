@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Form, Input, Button, Card, Typography, message, Space, Spin, Alert, Tooltip } from 'antd';
-import { SaveOutlined, InfoCircleOutlined, EditOutlined, CheckOutlined, CloseOutlined } from '@ant-design/icons';
+import { InfoCircleOutlined, EditOutlined, CheckOutlined, CloseOutlined } from '@ant-design/icons'; // Removed unused SaveOutlined
 import { usePrompts, useUpdatePrompt } from '../../../apis/prompts/hooks'; // Corrected import path
 
 const { Title, Paragraph, Text } = Typography;

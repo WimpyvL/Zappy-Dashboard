@@ -1,22 +1,22 @@
 import React from 'react';
 import { useAuth } from '../../context/AuthContext'; // To get the current user and loading state
-import { Link, useNavigate, useLocation } from 'react-router-dom'; // Import useNavigate and useLocation
-import { patientSidebarItems } from '../../constants/SidebarItems'; // Import patient sidebar items
+import { Link } from 'react-router-dom'; // Removed unused useNavigate, useLocation
+// import { patientSidebarItems } from '../../constants/SidebarItems'; // Removed unused import
 import ChildishDrawingElement from '../../components/ui/ChildishDrawingElement'; // Import our drawing element
 import {
   Loader2,
   AlertTriangle,
   Home,
-  Settings,
-  FileText as RecordsIcon,
-  Layout as ProgramsIcon,
+  // Settings, // Removed unused
+  // FileText as RecordsIcon, // Removed unused
+  // Layout as ProgramsIcon, // Removed unused
   ClipboardList as FormsIcon,
   CreditCard as InvoiceIcon,
   Package as OrderIcon,
-  Calendar as AppointmentIcon,
-  CreditCard, // For bottom nav
-  Store as ShopIcon, // For Shop
-  User as ProfileIcon, // For Profile
+  // Calendar as AppointmentIcon, // Removed unused
+  CreditCard, // For bottom nav (used in OnboardingStatusTimeline)
+  // Store as ShopIcon, // Removed unused
+  // User as ProfileIcon, // Removed unused
   CheckCircle, // For timeline
   Truck, // For timeline
   Clock as ClockIcon, // Alias Clock for timeline
@@ -26,7 +26,7 @@ import {
 } from 'lucide-react';
 // Import hooks (using mock data below for now)
 // import { useNotes } from '../../apis/notes/hooks'; // Keep notes hook commented out for now due to error
-import { useGetPatientForms } from '../../apis/forms/hooks';
+// import { useGetPatientForms } from '../../apis/forms/hooks'; // Removed unused import
 import { useMyOrders } from '../../apis/orders/hooks';
 import { useMyInvoices } from '../../apis/subscriptionPlans/hooks';
 // TODO: Import useSessions hook when available
@@ -136,69 +136,69 @@ const OnboardingStatusTimeline = ({ stepsCompleted = 0 }) => {
 
 const PatientDashboard = () => {
   const { currentUser, loading: authLoading } = useAuth();
-  const navigate = useNavigate();
-  const location = useLocation();
-  const patientId = currentUser?.id || 'dev-patient-id';
+  // const _navigate = useNavigate(); // Removed unused var
+  // const _location = useLocation(); // Removed unused var
+  // const _patientId = currentUser?.id || 'dev-patient-id'; // Removed unused var (top-level patientId is used by hooks)
 
-  // --- MOCK DATA (Replace with actual hook calls when ready) ---
+  // --- MOCK DATA for Forms (Reverted due to missing useGetPatientForms hook) ---
   const mockMyForms = [
       { id: 'req-1', questionnaire_id: 'q-intake', name: 'Initial Health Intake', status: 'pending', created_at: '2025-04-01T10:00:00Z' },
       { id: 'req-2', questionnaire_id: 'q-followup-1', name: 'Week 1 Check-in', status: 'pending', created_at: '2025-04-07T11:00:00Z' },
       { id: 'req-3', questionnaire_id: 'q-consent', name: 'Telehealth Consent', status: 'completed', created_at: '2025-03-28T09:00:00Z' },
   ];
   const myForms = mockMyForms;
-  const formsLoading = false;
-  const formsError = null;
+  const formsLoading = false; // Use mock loading state for forms
+  const formsError = null; // Use mock error state for forms
+  // --- END MOCK DATA for Forms ---
 
-  const mockMyOrders = [
-       { id: 'ord-1', orderId: 'ZAP-1001', orderDate: '2025-04-05T14:00:00Z', status: 'shipped', medication: 'Med A' },
-       { id: 'ord-2', orderId: 'ZAP-1005', orderDate: '2025-04-08T10:00:00Z', status: 'processing', medication: 'Supplement Pack' },
-       { id: 'ord-3', orderId: 'ZAP-0988', orderDate: '2025-03-15T16:30:00Z', status: 'delivered', medication: 'Med A' },
-   ];
-  const myOrders = mockMyOrders;
-  const ordersLoading = false;
-  const ordersError = null;
+  // --- Use Actual Hooks for Orders and Invoices ---
+  const { data: myOrders, isLoading: ordersLoading, error: ordersError } = useMyOrders();
+  const { data: myInvoices, isLoading: invoicesLoading, error: invoicesError } = useMyInvoices();
+  // --- END HOOK USAGE ---
 
-   const mockMyInvoices = [
-       { id: 'inv-1', invoiceId: 'INV-001', createdAt: '2025-04-01T00:00:00Z', status: 'Paid', invoiceAmount: 99.00 },
-       { id: 'inv-2', invoiceId: 'INV-002', createdAt: '2025-04-08T00:00:00Z', status: 'Pending', invoiceAmount: 150.00 },
-   ];
-  const myInvoices = mockMyInvoices;
-  const invoicesLoading = false;
-  const invoicesError = null;
-
-  // Removed mockUpcomingSession as it's not used
-  // --- END MOCK DATA ---
-
-  // Combine loading states
-  const dataLoading = authLoading || formsLoading || ordersLoading || invoicesLoading; // Removed sessionsLoading
-  // Combine error states
-  const dataError = formsError || ordersError || invoicesError; // Removed sessionsError
+  // Combine loading states (using mock formsLoading)
+  const dataLoading = authLoading || formsLoading || ordersLoading || invoicesLoading;
+  // Combine error states (using mock formsError)
+  const dataError = formsError || ordersError || invoicesError;
 
   // Calculate derived state only if data is available and not loading/error
-  const pendingForms = !dataLoading && !dataError ? myForms?.filter(f => f.status === 'pending') : [];
-  const pendingInvoices = !dataLoading && !dataError ? myInvoices?.filter(inv => inv.status?.toLowerCase() === 'pending') : [];
-  // Get the most recent 1-2 orders that are processing or shipped
-  const activeOrders = !dataLoading && !dataError 
+  const pendingForms = !dataLoading && !dataError ? myForms?.filter(f => f.status === 'pending') : []; // Uses mock myForms
+  const pendingInvoices = !dataLoading && !dataError && Array.isArray(myInvoices) ? myInvoices.filter(inv => inv.status?.toLowerCase() === 'pending') : []; // Uses real myInvoices
+  // Get the most recent active order that is processing or shipped
+  const activeOrders = !dataLoading && !dataError && Array.isArray(myOrders)
     ? myOrders
-        ?.filter(o => ['processing', 'shipped'].includes(o.status?.toLowerCase()))
+        .filter(o => ['processing', 'shipped'].includes(o.status?.toLowerCase()))
         .sort((a, b) => new Date(b.orderDate || b.created_at) - new Date(a.orderDate || a.created_at)) // Sort recent first
         .slice(0, 1) // Show only the most recent active order for simplicity
-    : [];
+    : []; // Uses real myOrders
   const pendingFormsCount = pendingForms.length;
   const pendingInvoicesCount = pendingInvoices.length;
   const activeOrdersCount = activeOrders.length; // Use activeOrders count
 
-  // --- Mock Onboarding Status ---
-  // In a real app, derive this from user data, form status, subscription status etc.
+  // --- Calculate Onboarding Status (using mock form data) ---
   const calculateOnboardingSteps = () => {
+    // Use mock form data, but real invoice/order data if available
+    if (authLoading || ordersLoading || invoicesLoading) return 0; // Wait for auth, orders, invoices
+    if (ordersError || invoicesError) return 0; // Handle errors for real data
+
     let steps = 1; // Step 1: Sign Up is always done if they are here
-    if (!myForms?.some(f => f.status === 'pending' && f.name.includes('Intake'))) steps++; // Step 2: Forms (assuming intake form completion)
-    if (myInvoices?.some(inv => inv.status === 'Paid')) steps++; // Step 3: Payment (assuming first invoice paid)
-    // Step 4 (Consultation Review) & 5 (Program Started) need real data/logic
-    // For mock, let's assume step 3 is max for now unless all forms are done
-    if (pendingFormsCount === 0 && steps === 3) steps = 4; // Mock: If forms done and payment done, assume review done
-    // if (activeOrdersCount > 0 && steps === 4) steps = 5; // Mock: If orders active and review done, assume program started
+
+    // Step 2: Forms (using mock data)
+    const intakeFormCompleted = myForms.some(f => f.name?.toLowerCase().includes('intake') && f.status === 'completed');
+    if (intakeFormCompleted) steps++;
+
+    // Step 3: Payment (using real data)
+    const paymentMade = Array.isArray(myInvoices) && myInvoices.some(inv => inv.status?.toLowerCase() === 'paid');
+    if (paymentMade && steps === 2) steps++;
+
+    // Step 4: Consultation Review (Placeholder)
+    const consultationReviewed = false;
+    if (consultationReviewed && steps === 3) steps++;
+
+    // Step 5: Program Started (using real data)
+    const programStarted = Array.isArray(myOrders) && myOrders.some(o => ['shipped', 'delivered'].includes(o.status?.toLowerCase()));
+    if (programStarted && steps === 4) steps++;
+
     return steps;
   }
   const onboardingStepsCompleted = calculateOnboardingSteps();
@@ -245,14 +245,14 @@ const PatientDashboard = () => {
     return (
       <div className="text-center py-10 text-red-600">
         <AlertTriangle className="h-12 w-12 mx-auto mb-4" />
-        <p>Error loading your dashboard data.</p>
-        {/* <p>{dataError.message}</p> */}
+        <p>Error loading your dashboard data:</p>
+        <p className="text-sm text-red-500 mt-1">{dataError.message || 'An unknown error occurred.'}</p>
       </div>
     );
   }
 
   // Extract user's first name for greeting
-  const firstName = currentUser?.user_metadata?.firstName || 'Anthony';
+  const firstName = currentUser?.user_metadata?.firstName || currentUser?.email?.split('@')[0] || 'User'; // Fallback to email part or generic 'User'
 
   return (
     <div className="pb-20 relative overflow-hidden"> {/* Add padding at bottom for the fixed navigation and position relative for the drawing elements */}

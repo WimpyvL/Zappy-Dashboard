@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react'; // Removed unused useEffect
 import {
   Typography,
   Input,
@@ -60,7 +60,7 @@ const ReferralSettings = () => {
   const [isUpdatingSettings, setIsUpdatingSettings] = useState(false); // Keep for mutation loading state
 
   // --- React Query Hooks ---
-  const { data: settingsData, isLoading: isLoadingAdminSettings } = useReferralSettings({
+  const { /* data: _settingsData, */ isLoading: isLoadingAdminSettings } = useReferralSettings({ // Removed unused settingsData
     onSuccess: (data) => {
       setRewardAmount(data?.rewardAmount || 0);
       setRewardRecipient(data?.rewardRecipient || 'referrer');
@@ -77,7 +77,7 @@ const ReferralSettings = () => {
   });
 
   // Fetch user-specific referral info (only runs if not admin)
-  const { data: userInfo, isLoading: isLoadingUserReferralInfo } = useUserReferralInfo({
+  const { /* data: _userInfo, */ isLoading: isLoadingUserReferralInfo } = useUserReferralInfo({ // Removed unused userInfo
     enabled: !isAdmin, // Only enable for non-admins
     onSuccess: (data) => {
         setReferralCode(data?.code || 'N/A');
@@ -98,7 +98,7 @@ const ReferralSettings = () => {
 
 
   // Fetch referral history (only runs if admin)
-  const { data: referralHistoryData, isLoading: isLoadingReferrals } = useReferralHistory({}, {
+  const { /* data: _referralHistoryData, */ isLoading: isLoadingReferrals } = useReferralHistory({}, { // Removed unused referralHistoryData
     enabled: isAdmin, // Only enable for admins
     onSuccess: (data) => {
         setAllReferrals(data || []);

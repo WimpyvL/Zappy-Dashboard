@@ -1,6 +1,6 @@
 // components/patients/components/PatientSessions.jsx
 import React from 'react';
-import { Plus, Clock, CheckCircle, XCircle, Loader2 } from 'lucide-react'; // Added Loader2
+import { Plus, Clock, CheckCircle, XCircle } from 'lucide-react'; // Removed unused Loader2
 import { useSessions } from '../../../apis/sessions/hooks'; // Import the hook
 import LoadingSpinner from './common/LoadingSpinner';
 
@@ -45,7 +45,7 @@ const SessionStatusBadge = ({ status }) => {
 
 const PatientSessions = ({ patientId, onOpenFollowupNotes }) => { // Removed sessions and loading props
   // Fetch sessions using the hook, filtering by patientId
-  const { data: sessionsData, isLoading: loading, error } = useSessions({ patientId: patientId });
+  const { data: sessionsData, isLoading: loading /*, error: _error */ } = useSessions({ patientId: patientId }); // Removed unused error
   const sessions = sessionsData?.data || []; // Use fetched data or default to empty array
   return (
     <div className="bg-white p-6 rounded-lg shadow">

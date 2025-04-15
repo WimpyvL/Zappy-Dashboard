@@ -6,18 +6,17 @@ import PatientModal from '../PatientModal';
 
 const PatientHeader = ({ patient, patientId }) => {
   const [showAddModal, setShowAddModal] = useState(false);
-  // Calculate patient age from DOB
-  const calculateAge = (dob) => {
-    if (!dob) return 'Unknown';
-    const birthDate = new Date(dob);
-    const today = new Date();
-    let age = today.getFullYear() - birthDate.getFullYear();
-    const m = today.getMonth() - birthDate.getMonth();
-    if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
-      age--;
-    }
-    return age;
-  };
+  // Removed unused calculateAge function
+
+  // Format date for display (e.g., Jan 1, 1990)
+  //   const today = new Date();
+  //   let age = today.getFullYear() - birthDate.getFullYear();
+  //   const m = today.getMonth() - birthDate.getMonth();
+  //   if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+  //     age--;
+  //   }
+  //   return age;
+  // };
 
   // Format date for display (e.g., Jan 1, 1990)
   const formatDate = (dateString) => {

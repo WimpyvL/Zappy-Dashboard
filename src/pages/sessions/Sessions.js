@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Select, DatePicker, TimePicker, Input, Form, Radio } from 'antd';
+import { Select, DatePicker, Radio } from 'antd'; // Removed unused TimePicker, Input, Form
 import dayjs from 'dayjs'; // Import dayjs for Ant Design DatePicker v5+
 import { toast } from 'react-toastify'; // Import toast for notifications
 import { usePatients, usePatientById } from '../../apis/patients/hooks';
@@ -143,11 +143,11 @@ const Sessions = () => {
 
   // Fetch patients for the dropdown
   const { data: patientsData, isLoading: isLoadingPatients } = usePatients(); // Fetch all patients
-  const allPatients = patientsData?.data || patientsData || [];
+  const allPatients = patientsData?.data || [];
 
   // Fetch doctors/providers for the dropdown
-  const { data: providersData, isLoading: isLoadingProviders } = useGetUsers({ role: 'practitioner' }); // Assuming role filter works
-  const allProviders = providersData || [];
+  const { data: providersData /*, isLoading: _isLoadingProviders */ } = useGetUsers({ role: 'practitioner' }); // Removed unused isLoadingProviders
+  const allProviders = providersData || []; // Removed unused allProviders - It seems this is actually used in the modal options, reverting removal
 
   // Create session mutation
   const createSessionMutation = useCreateSession({

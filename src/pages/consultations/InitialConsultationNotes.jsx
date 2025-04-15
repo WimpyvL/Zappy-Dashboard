@@ -32,8 +32,8 @@ const InitialConsultationNotes = ({
   });
 
   // --- Data Fetching --- (Keep hooks for data needed by sub-components)
-  const { data: servicesData, isLoading: isLoadingServices, error: errorServices } = useServices();
-  const { data: plansData, isLoading: isLoadingPlans, error: errorPlans } = useSubscriptionPlans();
+  const { /* data: _servicesData, */ isLoading: isLoadingServices, error: errorServices } = useServices(); // Removed unused var
+  const { /* data: _plansData, */ isLoading: isLoadingPlans, error: errorPlans } = useSubscriptionPlans(); // Removed unused var
   const { data: productsData, isLoading: isLoadingProducts, error: errorProducts } = useProducts();
 
   // --- Process Fetched Data --- (Keep processing needed for props)
@@ -50,7 +50,9 @@ const InitialConsultationNotes = ({
   ];
   const allServices = mockServicesWithPlans; // Use mock
   const allPlans = mockAllPlans; // Use mock
-  const allProducts = productsData?.data || productsData || [];
+  // Wrap allProducts initialization in useMemo
+  const allProducts = useMemo(() => productsData?.data || productsData || [], [productsData]);
+
 
   // --- State Hooks --- (Keep all state here, pass setters down)
   const [hpi, setHpi] = useState('');
@@ -79,11 +81,14 @@ const InitialConsultationNotes = ({
 
   // --- Derived Data & Effects ---
   const getServiceById = (id) => allServices.find((s) => s.id === id);
-  const getServicePlans = (serviceId) => {
+  // Wrap getServicePlans in useCallback
+  const getServicePlans = React.useCallback((serviceId) => {
     const service = getServiceById(serviceId);
     return Array.isArray(service?.availablePlans) ? service.availablePlans : [];
-  };
-  const plansForSelectedService = useMemo(() => getServicePlans(selectedServiceId), [selectedServiceId, allServices]); // Memoize derived data
+  }, [getServiceById]); // Corrected dependency
+
+  // Now use the useCallback version in useMemo dependency
+  const plansForSelectedService = useMemo(() => getServicePlans(selectedServiceId), [selectedServiceId, getServicePlans]);
 
   const availableMedications = useMemo(() => allProducts.filter(
     (p) => p.type === 'medication' && Array.isArray(p.doses) && p.doses.length > 0

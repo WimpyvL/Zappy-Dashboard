@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { 
-  CreditCard, Plus, Trash2, Edit, Check, X, ChevronRight, 
-  AlertCircle, Shield, ArrowRight
+  CreditCard, Plus, Trash2, Edit, ChevronRight, 
+  Shield // Removed unused Check, X, AlertCircle, ArrowRight
 } from 'lucide-react';
 import ChildishDrawingElement from '../../components/ui/ChildishDrawingElement';
 

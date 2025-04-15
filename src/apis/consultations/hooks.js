@@ -12,7 +12,7 @@ const queryKeys = {
 // Get consultations hook using Supabase
 export const useConsultations = (params = {}, pageSize = 10) => {
   // Extract searchTerm and other filters from params
-  const { page, status, patientId, searchTerm, ...otherFilters } = params;
+  const { page, status, patientId, searchTerm } = params; // Removed unused _otherFilters
   const currentPage = page || 1;
   const rangeFrom = (currentPage - 1) * pageSize;
   const rangeTo = rangeFrom + pageSize - 1;

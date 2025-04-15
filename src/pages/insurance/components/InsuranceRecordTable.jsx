@@ -1,4 +1,4 @@
-wimport React from 'react';
+import React from 'react';
 // import { Link } from 'react-router-dom'; // Removed unused Link
 import { CheckCircle, Clock, X, Info } from 'lucide-react'; // Import necessary icons
 

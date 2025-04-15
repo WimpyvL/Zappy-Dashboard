@@ -23,7 +23,7 @@ export const usePharmacies = (filters = {}) => {
 
       // Apply filters if any
       if (filters.active !== undefined) {
-        query = query.eq('active', filters.active);
+        query = query.eq('is_active', filters.active); // Use correct column name 'is_active'
       }
       if (filters.type) {
         query = query.eq('type', filters.type);
@@ -73,14 +73,24 @@ export const useCreatePharmacy = (options = {}) => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (pharmacyData) => {
+      // Explicitly construct object with ONLY fields managed by the form + timestamps
       const dataToInsert = {
-        ...pharmacyData,
-        created_at: new Date().toISOString(), // Assuming timestamp columns exist
+        name: pharmacyData.name,
+        pharmacy_type: pharmacyData.pharmacy_type,
+        contact_name: pharmacyData.contact_name,
+        email: pharmacyData.email, // Assumes form sends 'email' for the main email
+        contact_email: pharmacyData.contact_email, // Assumes form might send this separately
+        contact_phone: pharmacyData.contact_phone,
+        notes: pharmacyData.notes,
+        is_active: !!(pharmacyData.active ?? true), // Map 'active' from form
+        supported_states: pharmacyData.supportedStates || [], // Map 'supportedStates' from form
+        created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
-        active: pharmacyData.active ?? true,
-        supported_states: pharmacyData.supportedStates || [], // Map to DB column name
       };
-      delete dataToInsert.supportedStates; // Remove frontend field name
+       // Clean up undefined/null values
+       Object.keys(dataToInsert).forEach(key => (dataToInsert[key] === undefined || dataToInsert[key] === null) && delete dataToInsert[key]);
+
+      console.log('[useCreatePharmacy] Final dataToInsert:', JSON.stringify(dataToInsert, null, 2)); // Log the final object
 
       const { data, error } = await supabase
         .from('pharmacies') // ASSUMING table name is 'pharmacies'
@@ -113,14 +123,23 @@ export const useUpdatePharmacy = (options = {}) => {
   return useMutation({
     mutationFn: async ({ id, pharmacyData }) => {
       if (!id) throw new Error("Pharmacy ID is required for update.");
+      // Explicitly construct object with ONLY fields managed by the form + timestamps
       const dataToUpdate = {
-        ...pharmacyData,
+        name: pharmacyData.name,
+        pharmacy_type: pharmacyData.pharmacy_type,
+        contact_name: pharmacyData.contact_name,
+        email: pharmacyData.email,
+        contact_email: pharmacyData.contact_email,
+        contact_phone: pharmacyData.contact_phone,
+        notes: pharmacyData.notes,
+        is_active: !!pharmacyData.active, // Map 'active' from form
+        supported_states: pharmacyData.supportedStates || [], // Map 'supportedStates'
         updated_at: new Date().toISOString(),
-        supported_states: pharmacyData.supportedStates, // Map to DB column name
       };
-      delete dataToUpdate.id;
-      delete dataToUpdate.created_at;
-      delete dataToUpdate.supportedStates;
+      // Clean up undefined/null values
+      Object.keys(dataToUpdate).forEach(key => (dataToUpdate[key] === undefined || dataToUpdate[key] === null) && delete dataToUpdate[key]);
+
+      console.log('[useUpdatePharmacy] Final dataToUpdate:', JSON.stringify(dataToUpdate, null, 2)); // Log the final object
 
       const { data, error } = await supabase
         .from('pharmacies') // ASSUMING table name is 'pharmacies'
@@ -194,7 +213,7 @@ export const useTogglePharmacyActive = (options = {}) => {
 
        const { data, error } = await supabase
          .from('pharmacies') // ASSUMING table name is 'pharmacies'
-         .update({ active: active, updated_at: new Date().toISOString() })
+         .update({ is_active: active, updated_at: new Date().toISOString() }) // Use correct column name 'is_active'
          .eq('id', id)
          .select()
          .single();
@@ -205,6 +224,19 @@ export const useTogglePharmacyActive = (options = {}) => {
        }
        return data;
     },
+    onSuccess: (data, variables, context) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.details(variables.id) });
+      toast.success(`Pharmacy ${variables.active ? 'activated' : 'deactivated'} successfully`);
+      options.onSuccess?.(data, variables, context);
+    },
+    onError: (error, variables, context) => {
+      toast.error(`Error updating pharmacy status: ${error.message || 'Unknown error'}`);
+      options.onError?.(error, variables, context);
+    },
+    onSettled: options.onSettled,
+  });
+};
     onSuccess: (data, variables, context) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.lists() });
       queryClient.invalidateQueries({ queryKey: queryKeys.details(variables.id) });

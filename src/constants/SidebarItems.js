@@ -148,6 +148,12 @@ export const settingsItems = [
     icon: History,
     color: 'accent2', // Added color
   },
+  {
+    title: 'Forms',
+    path: '/settings/forms-v2', // Path from AppRoutes.jsx
+    icon: ClipboardList,
+    color: 'accent3', // Assign a color
+  },
 ];
 
 // Export the logout item

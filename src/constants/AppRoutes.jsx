@@ -471,11 +471,6 @@ const AppRoutes = () => {
         }
       />
 
-      {/* Add route for tempo storyboards */}
-      {import.meta &&
-        import.meta.env &&
-        import.meta.env.VITE_TEMPO === 'true' && <Route path="/tempobook/*" />}
-
       {/* Redirect any unknown routes to dashboard */}
       <Route path="*" element={<Navigate to={paths.dashboard} replace />} />
     </Routes>

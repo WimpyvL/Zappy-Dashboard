@@ -187,13 +187,27 @@ const PharmacyFormModal = ({
     name: '',
     pharmacy_type: 'Compounding',
     contact_name: '',
-    contact_email: '',
+    email: '', // Changed from contact_email
     contact_phone: '',
-    active: true,
+    active: true, // This corresponds to 'is_active' in DB via hook logic
     served_state_codes: [],
   };
 
-  const [formData, setFormData] = useState(initialData || INITIAL_FORM_DATA);
+  // Helper to map initialData (which might have old structure) to new state structure
+  const mapInitialData = (data) => {
+    if (!data) return INITIAL_FORM_DATA;
+    return {
+      name: data.name || '',
+      pharmacy_type: data.pharmacy_type || 'Compounding',
+      contact_name: data.contact_name || '',
+      email: data.email || data.contact_email || '', // Use email, fallback to contact_email if present in old data
+      contact_phone: data.contact_phone || '',
+      active: data.is_active !== undefined ? data.is_active : (data.active !== undefined ? data.active : true), // Map is_active or active from DB/initialData
+      served_state_codes: data.supported_states || data.served_state_codes || [], // Map supported_states or served_state_codes
+    };
+  };
+
+  const [formData, setFormData] = useState(mapInitialData(initialData));
   const [stateSearchTerm, setStateSearchTerm] = useState('');
   const [validationError, setValidationError] = useState('');
 
@@ -335,9 +349,9 @@ const PharmacyFormModal = ({
                 <input
                   id="contact-email"
                   type="email"
-                  name="contact_email"
+                  name="email" // Keep name as 'email'
                   className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
-                  value={formData.contact_email}
+                  value={formData.email || ''} // Ensure value uses formData.email
                   onChange={handleInputChange}
                 />
               </div>
@@ -499,9 +513,20 @@ const PharmacyManagement = () => {
   };
 
   // Handle adding pharmacy submission
-  const handleAddSubmit = async (formData) => {
+  const handleAddSubmit = async (formDataFromModal) => {
+    // Explicitly construct payload with known fields expected by the hook/DB
+    const payload = {
+      name: formDataFromModal.name,
+      pharmacy_type: formDataFromModal.pharmacy_type,
+      contact_name: formDataFromModal.contact_name,
+      email: formDataFromModal.email, // Use the correct email field from form state
+      contact_phone: formDataFromModal.contact_phone,
+      active: formDataFromModal.active, // Pass the 'active' state value (hook maps to is_active)
+      supportedStates: formDataFromModal.served_state_codes // Pass states (hook maps to supported_states)
+    };
+    console.log("Payload for createPharmacy:", payload); // Log the exact payload being sent
     try {
-      await createPharmacy.mutateAsync(formData);
+      await createPharmacy.mutateAsync(payload);
       return true;
     } catch (err) {
       console.error('Error creating pharmacy:', err);
@@ -510,11 +535,22 @@ const PharmacyManagement = () => {
   };
 
   // Handle editing pharmacy submission
-  const handleEditSubmit = async (formData) => {
+  const handleEditSubmit = async (formDataFromModal) => {
+     // Explicitly construct payload with known fields expected by the hook/DB
+     const payload = {
+       name: formDataFromModal.name,
+       pharmacy_type: formDataFromModal.pharmacy_type,
+       contact_name: formDataFromModal.contact_name,
+       email: formDataFromModal.email, // Use the correct email field from form state
+       contact_phone: formDataFromModal.contact_phone,
+       active: formDataFromModal.active, // Pass the 'active' state value (hook maps to is_active)
+       supportedStates: formDataFromModal.served_state_codes // Pass states (hook maps to supported_states)
+     };
+     console.log("Payload for updatePharmacy:", payload); // Log the exact payload being sent
     try {
       await updatePharmacy.mutateAsync({
         id: currentPharmacy.id,
-        pharmacyData: formData,
+        pharmacyData: payload,
       });
       return true;
     } catch (err) {

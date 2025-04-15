@@ -80,12 +80,15 @@ const InitialConsultationNotes = ({
   ];
 
   // --- Derived Data & Effects ---
-  const getServiceById = (id) => allServices.find((s) => s.id === id);
+  // Wrap getServiceById in useCallback
+  const getServiceById = React.useCallback((id) => allServices.find((s) => s.id === id), [allServices]);
   // Wrap getServicePlans in useCallback
   const getServicePlans = React.useCallback((serviceId) => {
     const service = getServiceById(serviceId);
     return Array.isArray(service?.availablePlans) ? service.availablePlans : [];
-  }, [getServiceById]); // Corrected dependency
+  }, [getServiceById]); // Dependency is now stable
+
+  // Now use the useCallback version in useMemo dependency
 
   // Now use the useCallback version in useMemo dependency
   const plansForSelectedService = useMemo(() => getServicePlans(selectedServiceId), [selectedServiceId, getServicePlans]);

@@ -147,7 +147,7 @@ const Sessions = () => {
 
   // Fetch doctors/providers for the dropdown
   const { data: providersData /*, isLoading: _isLoadingProviders */ } = useGetUsers({ role: 'practitioner' }); // Removed unused isLoadingProviders
-  const allProviders = providersData || []; // Removed unused allProviders - It seems this is actually used in the modal options, reverting removal
+  // const allProviders = providersData || []; // Removed unused allProviders
 
   // Create session mutation
   const createSessionMutation = useCreateSession({

@@ -87,42 +87,48 @@ const Dashboard = () => {
     <div className="dashboard-container">
       <h1 className="text-2xl font-bold mb-6">Provider Dashboard</h1>
 
-      {/* Stats Cards */}
-      <Link to="/patients"><div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
-        <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="text-gray-500 text-sm font-medium">Total Patients</h3>
-          <p className="text-3xl font-bold mt-2">{patients.length}</p>
-          <div className="mt-2 text-green-600 text-sm">
-            ↑ 12% from last month
-          </div>
-        </div>
+      {/* Stats Cards - Removed outer Link, wrapped individual cards */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+        <Link to="/patients" className="block hover:shadow-lg transition-shadow duration-200">
+          <div className="bg-white rounded-lg shadow p-6 h-full"> {/* Added h-full for consistent height */}
+            <h3 className="text-gray-500 text-sm font-medium">Total Patients</h3>
+            <p className="text-3xl font-bold mt-2">{patients.length}</p>
+            <div className="mt-2 text-green-600 text-sm">
+              ↑ 12% from last month
+            </div>
+          </div> {/* Added missing closing div */}
+        </Link>
 
-        <Link to="/sessions"> <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="text-gray-500 text-sm font-medium">Upcoming Sessions</h3>
-          <p className="text-3xl font-bold mt-2">{scheduledSessions}</p>
-          <div className="mt-2 text-gray-600 text-sm">
-            {todaySessions.length > 0 ? `${todaySessions.length} sessions today` : 'No sessions today'}
-          </div>
-        </div></Link>
+        <Link to="/sessions" className="block hover:shadow-lg transition-shadow duration-200">
+          <div className="bg-white rounded-lg shadow p-6 h-full">
+            <h3 className="text-gray-500 text-sm font-medium">Upcoming Sessions</h3>
+            <p className="text-3xl font-bold mt-2">{scheduledSessions}</p>
+            <div className="mt-2 text-gray-600 text-sm">
+              {todaySessions.length > 0 ? `${todaySessions.length} sessions today` : 'No sessions today'}
+            </div>
+          </div> {/* Added missing closing div */}
+        </Link>
 
-        <Link to="/orders"> <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="text-gray-500 text-sm font-medium">Pending Orders</h3>
-          <p className="text-3xl font-bold mt-2">{pendingOrders}</p>
-          <div className="mt-2 text-yellow-600 text-sm">
-            {pendingOrders > 0 ? `${pendingOrders} awaiting approval` : 'No pending orders'}
+        <Link to="/orders" className="block hover:shadow-lg transition-shadow duration-200">
+          <div className="bg-white rounded-lg shadow p-6 h-full">
+            <h3 className="text-gray-500 text-sm font-medium">Pending Orders</h3>
+            <p className="text-3xl font-bold mt-2">{pendingOrders}</p>
+            <div className="mt-2 text-yellow-600 text-sm">
+              {pendingOrders > 0 ? `${pendingOrders} awaiting approval` : 'No pending orders'}
+            </div>
+          </div> {/* Added missing closing div */}
+        </Link>
 
-          </div>
-        </div></Link>
-
-        <Link to="/consultations" className=""><div className="bg-white rounded-lg shadow p-6">
-          <h3 className="text-gray-500 text-sm font-medium">New Consultations</h3>
-          <p className="text-3xl font-bold mt-2">{pendingConsultations.length}</p>
-          <div className="mt-2 text-blue-600 text-sm">
-            {pendingConsultations.length > 0 ? `${pendingConsultations.length} need review` : 'All caught up!'}
-          </div>
-        </div></Link>
-
-      </div></Link>
+        <Link to="/consultations" className="block hover:shadow-lg transition-shadow duration-200">
+          <div className="bg-white rounded-lg shadow p-6 h-full">
+            <h3 className="text-gray-500 text-sm font-medium">New Consultations</h3>
+            <p className="text-3xl font-bold mt-2">{pendingConsultations.length}</p>
+            <div className="mt-2 text-blue-600 text-sm">
+              {pendingConsultations.length > 0 ? `${pendingConsultations.length} need review` : 'All caught up!'}
+            </div>
+          </div> {/* Added missing closing div */}
+        </Link>
+      </div>
 
       {/* Two column layout for Today's Sessions and Tasks */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">

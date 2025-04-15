@@ -66,18 +66,35 @@ export const getPatientById = async (id) => {
 
 export const createPatient = async (patientData) => {
   // Note: Ensure user_id is added here if required by RLS policies
-  // This might involve getting the current user session first:
-  // const { data: { user } } = await supabase.auth.getUser();
-  // const dataToInsert = { ...patientData, user_id: user.id };
+  // Get current user ID to associate with the new patient
+  let userId = null;
+  try {
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      if (userError) throw userError;
+      if (!user) throw new Error('No authenticated user found.');
+      userId = user.id;
+      console.log('User ID found for patient creation:', userId);
+  } catch (error) {
+      console.error('Error getting user for patient creation:', error);
+      // Decide if this should be a fatal error or if patient can be created without user_id (if schema allows)
+      // For now, let's throw to indicate failure. Adjust if needed.
+      throw new Error(`Could not identify user to create patient: ${error.message}`);
+  }
+
+  // Add user_id to the patient data
+  const dataToInsert = { ...patientData, user_id: userId };
+
+  console.log('Attempting to insert patient data:', JSON.stringify(dataToInsert, null, 2)); // Log the data being inserted
 
   const { data, error } = await supabase
     .from('patients')
-    .insert(patientData) // Use dataToInsert if user_id is needed
+    .insert(dataToInsert) // Insert data including user_id
     .select() // Return the created record(s)
     .single(); // Assuming we insert one at a time
 
   if (error) {
-    console.error('Error creating patient:', error);
+    // Log the full error object for detailed debugging
+    console.error('Error creating patient (Supabase):', JSON.stringify(error, null, 2));
     throw error;
   }
   return data; // Return the newly created patient record

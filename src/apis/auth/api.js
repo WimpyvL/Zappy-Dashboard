@@ -17,16 +17,13 @@ export const login = async (email, password) => {
 
 export const register = async (userData) => {
   // Assuming userData contains email and password
-  // Additional data (like name) can be passed in options.data
-  // It's often better to create a separate profile record after signup
-  const { email, password, ...otherData } = userData;
+  // userData should contain email, password, and optionally options: { data: {...} }
+  const { email, password, options } = userData;
 
   const { data, error } = await supabase.auth.signUp({
     email: email,
     password: password,
-    options: {
-      // data: otherData // Store additional metadata if needed (accessible via user.user_metadata)
-    }
+    options: options // Pass the whole options object received
   });
 
   if (error) {

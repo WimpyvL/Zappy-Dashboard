@@ -24,10 +24,7 @@ const PatientModal = ({ isOpen, onClose, patientData, onSuccess }) => {
     last_name: "",
     email: "",
     phone: "",
-    address: "",
-    city: "",
-    state: "",
-    zip_code: "", // Use zip_code
+    // Removed conflicting top-level address fields
     dob: "", // Use dob
     status: "active",
     // preferredPharmacy: "", // TODO: Link to pharmacies table
@@ -129,22 +126,22 @@ const PatientModal = ({ isOpen, onClose, patientData, onSuccess }) => {
         first_name: formData.first_name?.trim(),
         last_name: formData.last_name?.trim(),
         email: formData.email?.trim(),
-        phone: formData.phone?.trim() || null, // Use null if empty
-        // Ensure address fields are included, use null if empty string
+        // phone: formData.phone?.trim() || null, // Field not in schema
+        // Correctly construct address object
         address: {
             street: formData.address?.street?.trim() || null,
             city: formData.address?.city?.trim() || null,
             state: formData.address?.state?.trim() || null,
             zip_code: formData.address?.zip_code?.trim() || null,
-        },
-        dob: formData.dob || null, // Use null if empty
-        status: formData.status,
-        // TODO: Add preferred_pharmacy_id, assigned_doctor_id if implemented
-        // preferred_pharmacy_id: formData.preferredPharmacyId || null,
-        // assigned_doctor_id: formData.assignedDoctorId || null,
-        // medical_notes: formData.medicalNotes?.trim() || null, // If notes are directly on patient table
-        is_active: formData.status === 'active', // Map status to boolean if needed
-    };
+         },
+         dob: formData.dob || null, // Use null if empty
+         // status: formData.status, // Removed status field from payload for create
+         // TODO: Add preferred_pharmacy_id, assigned_doctor_id if implemented
+         // preferred_pharmacy_id: formData.preferredPharmacyId || null,
+         // assigned_doctor_id: formData.assignedDoctorId || null,
+         // medical_notes: formData.medicalNotes?.trim() || null, // If notes are directly on patient table
+         // is_active: formData.status === 'active', // REMOVED - Field not in schema
+     };
 
      // Basic Validation
     if (!patientPayload.first_name || !patientPayload.last_name || !patientPayload.email) {

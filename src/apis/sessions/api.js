@@ -13,9 +13,9 @@ export const getSessions = async (currentPage = 1, filters = {}) => {
     .from('sessions')
     .select(`
       *,
-      practitioner:auth.users(id, email),
-      patient:patients(id, first_name, last_name)
-    `, { count: 'exact' }) // Join related data
+      practitioner:auth_users!user_id(id, email),
+      patient:patients!patient_id(id, first_name, last_name)
+    `, { count: 'exact' }) // Explicit join syntax
     .range(start, end);
 
   // Apply filters
@@ -56,9 +56,9 @@ export const getSessionById = async (id) => {
     .from('sessions')
     .select(`
       *,
-      practitioner:auth.users(id, email),
-      patient:patients(id, first_name, last_name)
-    `) // Join related data
+      practitioner:auth_users!user_id(id, email),
+      patient:patients!patient_id(id, first_name, last_name)
+    `) // Explicit join syntax
     .eq('id', id)
     .single();
 

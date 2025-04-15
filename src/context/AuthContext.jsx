@@ -14,32 +14,35 @@ const AuthContext = createContext();
 export const AuthProvider = ({ children }) => {
   const { setViewMode } = useAppContext(); // Get setViewMode from AppContext
   const [currentUser, setCurrentUser] = useState(null);
-  const [loading, setLoading] = useState(true); // Start loading true to check initial session
+  const [userRole, setUserRole] = useState(undefined); // Add state for user role
+  const [authLoading, setAuthLoading] = useState(true); // Renamed loading state for initial auth check
+  const [actionLoading, setActionLoading] = useState(false); // Separate loading state for actions like login/logout
   const [error, setError] = useState(null);
 
   // Check current user session on initial load
   useEffect(() => {
     const checkSession = async () => {
-      setLoading(true);
+      // setAuthLoading(true); // Already true by default
       const {
         data: { session },
         error: sessionError,
       } = await supabase.auth.getSession();
 
       if (sessionError) {
-        console.error('Error getting session:', sessionError.message);
+        console.error('AuthContext: Error getting session:', sessionError.message);
         setError(sessionError.message);
-        setViewMode('admin'); // Default to admin if error getting session
+        setCurrentUser(null);
+        setUserRole(undefined);
+        // setViewMode('admin'); // Avoid setting viewMode until auth is resolved
       } else {
         const user = session?.user ?? null;
-        setCurrentUser(user); // Set user if session exists, otherwise null
-        // Determine view mode based on user role, default to 'admin' if role is not 'admin' or undefined
-        const userRole = user?.app_metadata?.role; // Check role in app_metadata
-        const determinedViewMode = userRole === 'admin' ? 'admin' : 'admin'; // Default to ADMIN if role is not explicitly 'admin'
-        setViewMode(determinedViewMode);
-        console.log(`AuthContext: Session checked, user role: ${userRole}, viewMode set to ${determinedViewMode}`);
+        const role = user?.user_metadata?.role || (user ? 'user' : undefined); // Get role from user_metadata, default to 'user' if logged in but no role
+        setCurrentUser(user);
+        setUserRole(role);
+        console.log('AuthContext: Session checked, user found:', !!user, 'Role resolved:', role);
+        // setViewMode(role === 'admin' ? 'admin' : 'admin'); // Set viewMode based on resolved role - moved to separate effect
       }
-      setLoading(false);
+      setAuthLoading(false); // Indicate auth check is complete
     };
 
     checkSession();
@@ -50,25 +53,35 @@ export const AuthProvider = ({ children }) => {
     } = supabase.auth.onAuthStateChange((_event, session) => {
       console.log('Auth state changed:', _event, session);
       const user = session?.user ?? null;
+      const role = user?.user_metadata?.role || (user ? 'user' : undefined);
       setCurrentUser(user);
+      setUserRole(role);
       setError(null); // Clear errors on auth change
-      // Determine view mode based on user role, default to 'admin' if role is not 'admin' or undefined
-      const userRole = user?.app_metadata?.role; // Check role in app_metadata
-      const determinedViewMode = userRole === 'admin' ? 'admin' : 'admin'; // Default to ADMIN if role is not explicitly 'admin'
-      setViewMode(determinedViewMode);
-      console.log(`AuthContext: Auth state changed, user role: ${userRole}, viewMode set to ${determinedViewMode}`);
-      // No need to set loading here as getSession handles initial load
+      setAuthLoading(false); // Ensure loading is false on auth changes too
+      console.log(`AuthContext: Auth state changed (${_event}), user found:`, !!user, 'Role resolved:', role);
+      // setViewMode(role === 'admin' ? 'admin' : 'admin'); // Set viewMode based on resolved role - moved to separate effect
     });
 
     // Cleanup subscription on unmount
     return () => {
       subscription?.unsubscribe();
     };
-  }, [setViewMode]); // Added setViewMode to dependency array
+  }, []); // Removed setViewMode from here, handled in separate effect
+
+  // Effect to set viewMode and log when auth state is resolved
+  useEffect(() => {
+    if (!authLoading) {
+      // Set view mode based on the resolved role
+      const determinedViewMode = userRole === 'admin' ? 'admin' : 'admin'; // Default logic remains
+      setViewMode(determinedViewMode);
+      console.log(`✅ Auth ready, User role: ${userRole}, ViewMode set to: ${determinedViewMode}`);
+    }
+  }, [authLoading, userRole, setViewMode]);
+
 
   // Login function using Supabase
   const login = async (email, password) => {
-    setLoading(true);
+    setActionLoading(true); // Use actionLoading
     setError(null);
     try {
       const { data, error: loginError } =
@@ -87,13 +100,13 @@ export const AuthProvider = ({ children }) => {
       setError(err.message || 'Failed to log in.');
       return { success: false, error: err.message };
     } finally {
-      setLoading(false);
+      setActionLoading(false); // Use actionLoading
     }
   };
 
   // Logout function using Supabase
   const logout = async () => {
-    setLoading(true);
+    setActionLoading(true); // Use actionLoading
     setError(null);
     try {
       const { error: signOutError } = await supabase.auth.signOut();
@@ -104,14 +117,14 @@ export const AuthProvider = ({ children }) => {
       console.error('Logout error:', err.message);
       setError(err.message || 'Failed to log out.');
     } finally {
-      setLoading(false);
+      setActionLoading(false); // Use actionLoading
     }
   };
 
   // Register function using Supabase
   const register = async (email, password, options = {}) => {
     // Accept options for metadata etc.
-    setLoading(true);
+    setActionLoading(true); // Use actionLoading
     setError(null);
     try {
       const { data, error: signUpError } = await supabase.auth.signUp({
@@ -137,13 +150,13 @@ export const AuthProvider = ({ children }) => {
       setError(err.message || 'Failed to register.');
       return { success: false, error: err.message };
     } finally {
-      setLoading(false);
+      setActionLoading(false); // Use actionLoading
     }
   };
 
   // Update user profile using Supabase (e.g., metadata)
   const updateProfile = async (metadata) => {
-    setLoading(true);
+    setActionLoading(true); // Use actionLoading
     setError(null);
     try {
       // Need 'data' here to get the updated user object
@@ -162,13 +175,13 @@ export const AuthProvider = ({ children }) => {
       setError(err.message || 'Failed to update profile.');
       return { success: false, error: err.message };
     } finally {
-      setLoading(false);
+      setActionLoading(false); // Use actionLoading
     }
   };
 
   // Change password using Supabase (for logged-in user)
   const changePassword = async (newPassword) => {
-    setLoading(true);
+    setActionLoading(true); // Use actionLoading
     setError(null);
     try {
       // Removed unused 'data' from destructuring
@@ -186,13 +199,13 @@ export const AuthProvider = ({ children }) => {
       setError(err.message || 'Failed to change password.');
       return { success: false, error: err.message };
     } finally {
-      setLoading(false);
+      setActionLoading(false); // Use actionLoading
     }
   };
 
   // Request password reset using Supabase
   const forgotPassword = async (email) => {
-    setLoading(true);
+    setActionLoading(true); // Use actionLoading
     setError(null);
     try {
       const { error: resetError } = await supabase.auth.resetPasswordForEmail(
@@ -213,7 +226,7 @@ export const AuthProvider = ({ children }) => {
       setError(err.message || 'Failed to send password reset email.');
       return { success: false, error: err.message };
     } finally {
-      setLoading(false);
+      setActionLoading(false); // Use actionLoading
     }
   };
 
@@ -222,7 +235,7 @@ export const AuthProvider = ({ children }) => {
   // The user clicks the link, Supabase handles verification, and onAuthStateChange updates the state.
   // If implementing a custom reset form after link click:
   const updatePassword = async (newPassword) => {
-    setLoading(true);
+    setActionLoading(true); // Use actionLoading
     setError(null);
     try {
       // This assumes the user is already authenticated via the reset link session
@@ -238,7 +251,7 @@ export const AuthProvider = ({ children }) => {
       setError(err.message || 'Failed to update password.');
       return { success: false, error: err.message };
     } finally {
-      setLoading(false);
+      setActionLoading(false); // Use actionLoading
     }
   };
 
@@ -250,9 +263,10 @@ export const AuthProvider = ({ children }) => {
   // Derive isAuthenticated directly from currentUser state
   const value = {
     currentUser,
-    // Don't call getSession() directly here as it returns a Promise
+    userRole, // Provide userRole
     isAuthenticated: !!currentUser, // Derived state
-    loading,
+    authLoading, // Provide authLoading state
+    actionLoading, // Provide actionLoading state
     error: error
       ? typeof error === 'string'
         ? error

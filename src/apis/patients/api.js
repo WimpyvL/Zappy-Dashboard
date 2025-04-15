@@ -5,7 +5,7 @@ import {
   usePatients, // Assuming this hook exists for fetching all patients
   useDeletePatient, // Assuming this hook exists for deleting patients
 } from './hooks';
-import supabase from '../../lib/supabase'; // Assuming direct Supabase client might be needed for some operations or fallbacks
+import { supabase } from '../../lib/supabase'; // Correct: Use named import
 
 // This adapter provides a consistent interface for CRUD operations on patients,
 // using the underlying React Query hooks.

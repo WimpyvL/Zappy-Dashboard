@@ -2,10 +2,15 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, Edit, Calendar } from 'lucide-react';
-import PatientModal from '../PatientModal';
+// import PatientModal from '../PatientModal'; // Removed import for deleted component
+
+// TODO: Re-implement Edit functionality using the new CrudModal if needed here.
+// This header currently only displays info and links elsewhere.
+// The edit button might need to be moved or trigger a state change in the parent (PatientDetail.jsx)
+// to open the CrudModal there.
 
 const PatientHeader = ({ patient, patientId }) => {
-  const [showAddModal, setShowAddModal] = useState(false);
+  // const [showAddModal, setShowAddModal] = useState(false); // State for old modal removed
   // Removed unused calculateAge function
 
   // Format date for display (e.g., Jan 1, 1990)
@@ -61,10 +66,11 @@ const PatientHeader = ({ patient, patientId }) => {
       <div className="flex space-x-2">
         <button
           className="px-3 py-1 text-sm bg-white border border-gray-300 rounded-md hover:bg-gray-50 flex items-center"
-          onClick={() => setShowAddModal(true)}
+          // onClick={() => setShowAddModal(true)} // TODO: Re-wire this onClick
+          onClick={() => alert('Edit functionality needs to be re-implemented in the parent component.')} // Placeholder action
         >
           <Edit className="h-4 w-4 mr-1" />
-          Edit
+          Edit {/* TODO: Re-wire this button's onClick if edit is needed from header */}
         </button>
         <button
           className="px-3 py-1 text-sm bg-indigo-600 text-white rounded-md hover:bg-indigo-700 flex items-center"
@@ -76,11 +82,7 @@ const PatientHeader = ({ patient, patientId }) => {
           Schedule Session
         </button>
       </div>
-      <PatientModal
-        isOpen={showAddModal}
-        patientData={{ ...patient }}
-        onClose={() => setShowAddModal(false)}
-      />
+      {/* Removed old modal instance */}
     </div>
   );
 };

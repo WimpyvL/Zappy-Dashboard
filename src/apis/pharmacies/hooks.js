@@ -237,16 +237,3 @@ export const useTogglePharmacyActive = (options = {}) => {
     onSettled: options.onSettled,
   });
 };
-    onSuccess: (data, variables, context) => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.lists() });
-      queryClient.invalidateQueries({ queryKey: queryKeys.details(variables.id) });
-      toast.success(`Pharmacy ${variables.active ? 'activated' : 'deactivated'} successfully`);
-      options.onSuccess?.(data, variables, context);
-    },
-    onError: (error, variables, context) => {
-      toast.error(`Error updating pharmacy status: ${error.message || 'Unknown error'}`);
-      options.onError?.(error, variables, context);
-    },
-    onSettled: options.onSettled,
-  });
-};

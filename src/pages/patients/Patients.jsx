@@ -13,13 +13,43 @@ import {
   ChevronLeft,
   ChevronRight,
 } from 'lucide-react';
-import PatientModal from './PatientModal';
-// import apiService from '../../utils/apiService'; // Removed direct apiService import
-import { usePatients } from '../../apis/patients/hooks';
+// import PatientModal from './PatientModal'; // Removed old modal import
+import CrudModal from '../../components/common/CrudModal'; // Import the new generic modal
+import { usePatients, useCreatePatient, useUpdatePatient } from '../../apis/patients/hooks'; // Import mutation hooks
+import patientsApi from '../../apis/patients/api'; // Import the api adapter for fetchById
 import { useTags } from '../../apis/tags/hooks';
 import { useAppContext } from '../../context/AppContext'; // Import AppContext hook
 
 // Removed unused StatusBadge component definition
+
+// Define form fields configuration for the Patient entity
+const patientFormFields = [
+  { name: 'first_name', label: 'First Name', type: 'text', required: 'First name is required.', gridCols: 1 },
+  { name: 'last_name', label: 'Last Name', type: 'text', required: 'Last name is required.', gridCols: 1 },
+  { name: 'email', label: 'Email', type: 'email', required: 'A valid email is required.', validation: { pattern: { value: /^\S+@\S+$/i, message: 'Invalid email format' } }, gridCols: 2 },
+  { name: 'phone', label: 'Phone', type: 'tel', placeholder: '(XXX) XXX-XXXX', gridCols: 2 },
+  { name: 'date_of_birth', label: 'Date of Birth', type: 'date', gridCols: 1 },
+  {
+    name: 'status',
+    label: 'Status',
+    type: 'select',
+    defaultValue: 'active', // Default status
+    options: [
+      { value: 'active', label: 'Active' },
+      { value: 'inactive', label: 'Inactive' },
+      { value: 'suspended', label: 'Suspended' },
+      { value: 'blacklisted', label: 'Blacklisted' },
+      { value: 'pending', label: 'Pending' },
+    ],
+    gridCols: 1,
+  },
+  { name: 'street_address', label: 'Street Address', type: 'text', gridCols: 2 },
+  { name: 'city_name', label: 'City', type: 'text', gridCols: 1 },
+  { name: 'state', label: 'State', type: 'text', gridCols: 1 },
+  { name: 'zip_code', label: 'ZIP Code', type: 'text', gridCols: 1 },
+  // Add other fields as needed based on client_record schema and modal requirements
+];
+
 
 const Patients = () => {
   // Get subscription plans from context for the filter dropdown
@@ -160,7 +190,7 @@ const Patients = () => {
   // Handle opening the modal for editing
   const handleEditClick = (patient) => {
     setEditingPatientId(patient.id);
-    setShowEditModal(true);
+    setShowEditModal(true); // Keep this to trigger the modal visibility
   };
 
   // Handle closing the modal (for both add and edit)
@@ -261,7 +291,7 @@ const Patients = () => {
           )}
           <button
             className="px-4 py-2 bg-indigo-600 text-white rounded-md flex items-center hover:bg-indigo-700"
-            onClick={() => setShowAddModal(true)}
+            onClick={() => { setEditingPatientId(null); setShowAddModal(true); }} // Clear editing ID for Add
           >
             <Plus className="h-5 w-5 mr-2" /> Add Patient
           </button>
@@ -475,12 +505,23 @@ const Patients = () => {
         </div>
       </div>
 
-      {/* Modals */}
-       {showAddModal && (
-        <PatientModal isOpen={showAddModal} onClose={handleCloseModal} onSuccess={() => { handleCloseModal(); fetchPatients(); }} />
-      )}
-       {showEditModal && editingPatientId && (
-        <PatientModal isOpen={showEditModal} onClose={handleCloseModal} editingPatientId={editingPatientId} onSuccess={() => { handleCloseModal(); fetchPatients(); }} />
+      {/* Generic CRUD Modal for Add/Edit */}
+      {(showAddModal || showEditModal) && (
+        <CrudModal
+          isOpen={showAddModal || showEditModal}
+          onClose={handleCloseModal}
+          entityId={editingPatientId} // Pass null for add, ID for edit
+          resourceName="Patient"
+          fetchById={patientsApi.getById} // Pass the fetch function
+          useCreateHook={useCreatePatient} // Pass the create hook
+          useUpdateHook={useUpdatePatient} // Pass the update hook
+          formFields={patientFormFields} // Pass the field configuration
+          onSuccess={() => {
+            handleCloseModal();
+            fetchPatients(); // Refetch the list on success
+          }}
+          formGridCols={2} // Example: Use 2 columns for the patient form
+        />
       )}
     </div>
   );

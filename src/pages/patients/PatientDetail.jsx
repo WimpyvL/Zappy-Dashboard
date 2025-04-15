@@ -1,9 +1,10 @@
-// PatientDetail.jsx
+// PatientDetail.jsx - Refactored main data fetch
 import React, { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { toast } from "react-toastify";
 import { ArrowLeft, Calendar, Plus } from "lucide-react";
-import apiService from "../../utils/apiService";
+// import apiService from "../../utils/apiService"; // Removed
+import { usePatientById } from "../../apis/patients/hooks"; // Import the hook
 import LoadingSpinner from "./patientDetails/common/LoadingSpinner";
 import PatientNotFound from "./patientDetails/common/PatientNotFound";
 import PatientHeader from "./patientDetails/PatientHeader";
@@ -17,144 +18,36 @@ import PatientBilling from "./patientDetails/PatientBilling";
 import PatientFollowUpNotes from "./patientDetails/PatientFollowUpNotes";
 import PatientDocuments from "./patientDetails/PatientDocuments";
 
+// Removed apiService import
+
+
 const PatientDetail = () => {
   const { patientId } = useParams();
 
-  // Loading states for different data types
-  const [loading, setLoading] = useState({
-    patient: true,
-    sessions: false,
-    orders: false,
-    notes: false,
-    documents: false,
-    forms: false,
-    invoices: false,
-  });
+  // Fetch patient data using the hook
+  const {
+    data: patient, // Rename data to patient
+    isLoading: patientLoading, // Use isLoading from the hook
+    error: patientError, // Use error from the hook
+  } = usePatientById(patientId); // Pass patientId to the hook
 
-  // Data states
-  const [patient, setPatient] = useState(null);
-  const [patientSessions, setPatientSessions] = useState([]);
-  const [patientOrders, setPatientOrders] = useState([]);
-  const [patientNotes, setPatientNotes] = useState([]);
-  const [patientDocuments, setPatientDocuments] = useState([]);
-  const [patientForms, setPatientForms] = useState([]);
-  const [patientInvoices, setPatientInvoices] = useState([]);
+  // Remove loading/data states for related data - managed by child components now
+  // const [loading, setLoading] = useState({...});
+  // const [patientSessions, setPatientSessions] = useState([]);
+  // const [patientOrders, setPatientOrders] = useState([]);
+  // const [patientNotes, setPatientNotes] = useState([]);
+  // const [patientDocuments, setPatientDocuments] = useState([]);
+  // const [patientForms, setPatientForms] = useState([]);
+  // const [patientInvoices, setPatientInvoices] = useState([]);
 
   // UI states
-  const [activeTab, setActiveTab] = useState("info");
+  const [activeTab, setActiveTab] = useState("info"); // Default to info tab
   const [showFollowupNotes, setShowFollowupNotes] = useState(false);
   const [selectedSession, setSelectedSession] = useState(null);
 
-  // Fetch patient data using API
-  useEffect(() => {
-    const fetchPatientData = async () => {
-      try {
-        setLoading((prev) => ({ ...prev, patient: true }));
-        const patientResponse = await apiService.patients.getById(patientId);
-        setPatient(patientResponse);
+  // Removed useEffect for fetching main patient data
+  // Removed related data fetching functions (fetchPatientSessions, etc.) - handled by child components
 
-        // Fetch related data in parallel
-        // fetchPatientSessions(patientId);
-        // fetchPatientOrders(patientId);
-        // fetchPatientNotes(patientId);
-        // fetchPatientDocuments(patientId);
-        // fetchPatientForms(patientId);
-        // fetchPatientInvoices(patientId);
-      } catch (error) {
-        console.error("Error fetching patient data:", error);
-        toast.error("Failed to load patient information");
-      } finally {
-        setLoading((prev) => ({ ...prev, patient: false }));
-      }
-    };
-
-    if (patientId) {
-      fetchPatientData();
-    }
-  }, [patientId]);
-
-  // Data fetching functions
-  const fetchPatientSessions = async (id) => {
-    try {
-      setLoading((prev) => ({ ...prev, sessions: true }));
-      const response = await apiService.get(
-        `/api/v1/admin/patients/${id}/sessions`
-      );
-      setPatientSessions(response.data || []);
-    } catch (error) {
-      console.error("Error fetching patient sessions:", error);
-    } finally {
-      setLoading((prev) => ({ ...prev, sessions: false }));
-    }
-  };
-
-  const fetchPatientOrders = async (id) => {
-    try {
-      setLoading((prev) => ({ ...prev, orders: true }));
-      const response = await apiService.orders.getAll({ patient_id: id });
-      setPatientOrders(response.data || []);
-    } catch (error) {
-      console.error("Error fetching patient orders:", error);
-    } finally {
-      setLoading((prev) => ({ ...prev, orders: false }));
-    }
-  };
-
-  const fetchPatientNotes = async (id) => {
-    try {
-      setLoading((prev) => ({ ...prev, notes: true }));
-      const response = await apiService.get(
-        `/api/v1/admin/patients/${id}/notes`
-      );
-      setPatientNotes(response.data || []);
-    } catch (error) {
-      console.error("Error fetching patient notes:", error);
-    } finally {
-      setLoading((prev) => ({ ...prev, notes: false }));
-    }
-  };
-
-  const fetchPatientDocuments = async (id) => {
-    try {
-      setLoading((prev) => ({ ...prev, documents: true }));
-      const response = await apiService.get(
-        `/api/v1/admin/patients/${id}/documents`
-      );
-      setPatientDocuments(response.data || []);
-    } catch (error) {
-      console.error("Error fetching patient documents:", error);
-    } finally {
-      setLoading((prev) => ({ ...prev, documents: false }));
-    }
-  };
-
-  const fetchPatientForms = async (id) => {
-    try {
-      setLoading((prev) => ({ ...prev, forms: true }));
-      const response = await apiService.get(
-        `/api/v1/admin/patients/${id}/forms`
-      );
-      setPatientForms(response.data || []);
-    } catch (error) {
-      console.error("Error fetching patient forms:", error);
-    } finally {
-      setLoading((prev) => ({ ...prev, forms: false }));
-    }
-  };
-
-  const fetchPatientInvoices = async (id) => {
-    try {
-      setLoading((prev) => ({ ...prev, invoices: true }));
-      const response = await apiService.get(
-        `/api/v1/admin/patients/${id}/invoices`
-      );
-      setPatientInvoices(response.data || []);
-    } catch (error) {
-      console.error("Error fetching patient invoices:", error);
-    } finally {
-      setLoading((prev) => ({ ...prev, invoices: false }));
-    }
-  };
 
   // Event handlers
   const handleOpenFollowupNotes = (session = null) => {
@@ -167,15 +60,27 @@ const PatientDetail = () => {
     setSelectedSession(null);
   };
 
-  // Render loading state
-  if (loading.patient) {
+  // Render loading state using patientLoading from hook
+  if (patientLoading) {
     return <LoadingSpinner message="Loading patient data..." />;
   }
 
-  // Render not found state
+  // Handle error state from hook
+  if (patientError) {
+      console.error("Error fetching patient data:", patientError);
+      toast.error(`Failed to load patient information: ${patientError.message}`);
+      // Optionally render an error component or message
+      return <div className="text-red-600 p-4">Error loading patient data. Please try again later.</div>;
+  }
+
+
+  // Render not found state (if hook returns null/undefined data without error)
   if (!patient) {
     return <PatientNotFound patientId={patientId} />;
   }
+
+  // Removed refreshPatient function - invalidation handled by mutation hooks
+
 
   return (
     <div className="space-y-6">
@@ -186,21 +91,22 @@ const PatientDetail = () => {
       <PatientTabs
         activeTab={activeTab}
         setActiveTab={setActiveTab}
-        patientSessions={patientSessions}
-        patientOrders={patientOrders}
-        patientNotes={patientNotes}
-        patientDocuments={patientDocuments}
-        patientForms={patientForms}
+        // Remove related data props - child components fetch their own data
+        // patientSessions={patientSessions}
+        // patientOrders={patientOrders}
+        // patientNotes={patientNotes}
+        // patientDocuments={patientDocuments}
+        // patientForms={patientForms}
       />
 
       {/* Content based on active tab */}
+      {/* Pass patientId and patient object where needed */}
       {activeTab === "info" && <PatientInfo patient={patient} />}
 
       {activeTab === "sessions" && (
         <PatientSessions
           patientId={patientId}
-          sessions={patientSessions}
-          loading={loading.sessions}
+          // Remove sessions and loading props
           onOpenFollowupNotes={handleOpenFollowupNotes}
         />
       )}
@@ -208,16 +114,14 @@ const PatientDetail = () => {
       {activeTab === "orders" && (
         <PatientOrders
           patientId={patientId}
-          orders={patientOrders}
-          loading={loading.orders}
+          // Remove orders and loading props
         />
       )}
 
       {activeTab === "notes" && (
         <PatientNotes
           patientId={patientId}
-          notes={patientNotes}
-          loading={loading.notes}
+           // Remove notes and loading props
           onOpenFollowupNotes={handleOpenFollowupNotes}
         />
       )}
@@ -225,35 +129,21 @@ const PatientDetail = () => {
       {activeTab === "documents" && (
         <PatientDocuments
           patientId={patientId}
-          documents={patientDocuments}
-          loading={loading.documents}
-          fetchDocuments={() => fetchPatientDocuments(patientId)}
+           // Remove documents, loading, and fetchDocuments props
         />
       )}
 
       {activeTab === "forms" && (
         <PatientForms
           patientId={patientId}
-          forms={patientForms}
-          loading={loading.forms}
+           // Remove forms and loading props
         />
       )}
 
       {activeTab === "billing" && (
         <PatientBilling
-          patient={patient}
-          invoices={patientInvoices}
-          loading={loading.invoices}
-          refreshPatient={async () => {
-            try {
-              const patientResponse = await apiService.patients.getById(
-                patientId
-              );
-              setPatient(patientResponse.data);
-            } catch (error) {
-              console.error("Error refreshing patient data:", error);
-            }
-          }}
+          patient={patient} // Pass patient data for display
+           // Remove invoices, loading, and refreshPatient props
         />
       )}
 

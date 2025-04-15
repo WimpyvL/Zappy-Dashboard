@@ -8,47 +8,67 @@ import {
   Calendar,
   Tag,
   Building,
+  Loader // Added Loader icon
 } from "lucide-react";
-import apiService from "../../utils/apiService";
+// import apiService from "../../utils/apiService"; // Removed
 import { toast } from "react-toastify";
+import { useCreatePatient, useUpdatePatient } from "../../apis/patients/hooks"; // Import hooks
+import { useQueryClient } from '@tanstack/react-query'; // Import query client
 
 const PatientModal = ({ isOpen, onClose, patientData, onSuccess }) => {
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [formData, setFormData] = useState({
-    full_name: "",
+  // Removed local isSubmitting state, will use mutation hook state
+
+  // Initial form state matching DB schema more closely
+  const initialFormData = {
+    first_name: "",
+    last_name: "",
     email: "",
     phone: "",
     address: "",
     city: "",
     state: "",
-    zipCode: "",
-    dateOfBirth: "",
+    zip_code: "", // Use zip_code
+    dob: "", // Use dob
     status: "active",
-    preferredPharmacy: "",
-    assignedDoctor: "",
-    medicalNotes: "",
-  });
+    // preferredPharmacy: "", // TODO: Link to pharmacies table
+    // assignedDoctor: "", // TODO: Link to users table
+    // medicalNotes: "", // TODO: Link to notes table or handle differently
+    address: { street: '', city: '', state: '', zip_code: '' } // Address as object
+  };
+  const [formData, setFormData] = useState(initialFormData);
+  const queryClient = useQueryClient();
 
-  // Initialize form data when patientData changes
+  // Initialize form data when patientData changes or modal opens
   useEffect(() => {
-    if (patientData) {
-      setFormData(patientData);
-    } else {
-      // Reset form when adding a new patient
-      setFormData({
-        full_name: "",
-        email: "",
-        phone: "",
-        address: "",
-        city: "",
-        state: "",
-        zipCode: "",
-        dateOfBirth: "",
-        status: "active",
-        preferredPharmacy: "",
-        assignedDoctor: "",
-        medicalNotes: "",
-      });
+    if (isOpen) {
+        if (patientData) {
+            // Map existing patient data to form state
+            const [firstName, ...lastNameParts] = (patientData.full_name || '').split(' ');
+            const lastName = lastNameParts.join(' ');
+            setFormData({
+                first_name: firstName || "",
+                last_name: lastName || "",
+                email: patientData.email || "",
+                phone: patientData.phone || "",
+                // Assuming address was stored as a single string previously
+                // Adapt based on actual old structure if different
+                address: {
+                    street: patientData.address || '',
+                    city: patientData.city || '',
+                    state: patientData.state || '',
+                    zip_code: patientData.zipCode || '', // Map zipCode
+                },
+                dob: patientData.dateOfBirth || "", // Map dateOfBirth
+                status: patientData.status || "active",
+                // preferredPharmacy: patientData.preferredPharmacy || "",
+                // assignedDoctor: patientData.assignedDoctor || "",
+                // medicalNotes: patientData.medicalNotes || "",
+                is_active: patientData.status === 'active' // Map status to is_active if needed by update hook
+            });
+        } else {
+            // Reset form for new patient
+            setFormData(initialFormData);
+        }
     }
   }, [patientData, isOpen]);
 
@@ -60,54 +80,85 @@ const PatientModal = ({ isOpen, onClose, patientData, onSuccess }) => {
     });
   };
 
-  const handleSubmit = async (e) => {
+   const handleAddressChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+        ...prev,
+        address: {
+            ...prev.address,
+            [name]: value
+        }
+    }));
+  };
+
+
+  // --- Mutations ---
+  const createPatientMutation = useCreatePatient({
+      onSuccess: (data) => {
+          toast.success("Patient created successfully");
+          queryClient.invalidateQueries({ queryKey: ['patients'] }); // Invalidate patient list
+          onSuccess && onSuccess(data); // Call original onSuccess if provided
+          onClose(); // Close modal
+      },
+      onError: (error) => {
+          console.error("Error creating patient:", error);
+          toast.error(error.message || "Failed to create patient");
+      }
+  });
+
+  const updatePatientMutation = useUpdatePatient({
+       onSuccess: (data, variables) => {
+          toast.success("Patient updated successfully");
+          queryClient.invalidateQueries({ queryKey: ['patients'] }); // Invalidate list
+          queryClient.invalidateQueries({ queryKey: ['patient', variables.id] }); // Invalidate specific patient
+          onSuccess && onSuccess(data);
+          onClose();
+      },
+      onError: (error) => {
+          console.error("Error updating patient:", error);
+          toast.error(error.message || "Failed to update patient");
+      }
+  });
+
+
+  const handleSubmit = (e) => { // No longer async
     e.preventDefault();
-    setIsSubmitting(true);
 
-    try {
-      // Format data for API
-      const patientPayload = {
-        full_name: formData.full_name,
-        email: formData.email,
-        phone: formData.phone,
-        address: formData.address,
-        city: formData.city,
-        state: formData.state,
-        zip_code: formData.zipCode,
-        date_of_birth: formData.dateOfBirth,
+    // Prepare data matching Supabase schema
+    const patientPayload = {
+        first_name: formData.first_name?.trim(),
+        last_name: formData.last_name?.trim(),
+        email: formData.email?.trim(),
+        phone: formData.phone?.trim() || null, // Use null if empty
+        // Ensure address fields are included, use null if empty string
+        address: {
+            street: formData.address?.street?.trim() || null,
+            city: formData.address?.city?.trim() || null,
+            state: formData.address?.state?.trim() || null,
+            zip_code: formData.address?.zip_code?.trim() || null,
+        },
+        dob: formData.dob || null, // Use null if empty
         status: formData.status,
-        preferred_pharmacy: formData.preferredPharmacy,
-        assigned_doctor: formData.assignedDoctor,
-        medical_notes: formData.medicalNotes,
-      };
+        // TODO: Add preferred_pharmacy_id, assigned_doctor_id if implemented
+        // preferred_pharmacy_id: formData.preferredPharmacyId || null,
+        // assigned_doctor_id: formData.assignedDoctorId || null,
+        // medical_notes: formData.medicalNotes?.trim() || null, // If notes are directly on patient table
+        is_active: formData.status === 'active', // Map status to boolean if needed
+    };
 
-      // Determine if we're creating or updating
-      let response;
-      if (patientData && patientData.id) {
-        // Update existing patient
-        response = await apiService.patients.update(
-          patientData.id,
-          patientPayload
-        );
-        toast.success("Patient updated successfully");
-      } else {
-        // Create new patient
-        response = await apiService.patients.create(patientPayload);
-        toast.success("Patient created successfully");
-      }
+     // Basic Validation
+    if (!patientPayload.first_name || !patientPayload.last_name || !patientPayload.email) {
+        toast.error("First Name, Last Name, and Email are required.");
+        return;
+    }
 
-      // Call onSuccess callback with the response data
-      if (onSuccess) {
-        onSuccess(response);
-      }
 
-      // Close the modal
-      onClose();
-    } catch (error) {
-      console.error("Error saving patient:", error);
-      toast.error(error.response?.data?.error || "Failed to save patient");
-    } finally {
-      setIsSubmitting(false);
+    if (patientData && patientData.id) {
+      // Update existing patient
+      updatePatientMutation.mutate({ id: patientData.id, patientData: patientPayload });
+    } else {
+      // Create new patient
+      createPatientMutation.mutate(patientPayload);
     }
   };
 
@@ -116,9 +167,10 @@ const PatientModal = ({ isOpen, onClose, patientData, onSuccess }) => {
     return null;
   }
 
-  const isEditMode = patientData && patientData.id;
+  const isEditMode = !!patientData?.id; // Simpler check
   const modalTitle = isEditMode ? "Edit Patient" : "Add New Patient";
   const submitButtonText = isEditMode ? "Save Changes" : "Add Patient";
+  const isSubmitting = createPatientMutation.isPending || updatePatientMutation.isPending; // Use mutation state
 
   return (
     <div className="fixed inset-0 flex items-center justify-center p-4 z-50">
@@ -155,11 +207,30 @@ const PatientModal = ({ isOpen, onClose, patientData, onSuccess }) => {
                   </div>
                   <input
                     type="text"
-                    name="full_name"
+                    name="first_name" // Use first_name
                     className="block w-full pl-10 pr-3 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
-                    value={formData.full_name || ""}
+                    value={formData.first_name || ""}
                     onChange={handleChange}
-                    placeholder="Full Name"
+                    placeholder="First Name"
+                    required
+                  />
+                </div>
+              </div>
+               <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Last Name *
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    {/* Optional: Add different icon or remove */}
+                  </div>
+                  <input
+                    type="text"
+                    name="last_name" // Use last_name
+                    className="block w-full pl-3 pr-3 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
+                    value={formData.last_name || ""}
+                    onChange={handleChange}
+                    placeholder="Last Name"
                     required
                   />
                 </div>
@@ -216,9 +287,9 @@ const PatientModal = ({ isOpen, onClose, patientData, onSuccess }) => {
                   </div>
                   <input
                     type="date"
-                    name="dateOfBirth"
+                    name="dob" // Use dob
                     className="block w-full pl-10 pr-3 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
-                    value={formData.dateOfBirth || ""}
+                    value={formData.dob || ""}
                     onChange={handleChange}
                   />
                 </div>
@@ -249,14 +320,14 @@ const PatientModal = ({ isOpen, onClose, patientData, onSuccess }) => {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Address
+                Street Address
               </label>
               <input
                 type="text"
-                name="address"
+                name="street" // Use address.street
                 className="block w-full pl-3 pr-3 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
-                value={formData.address || ""}
-                onChange={handleChange}
+                value={formData.address?.street || ""}
+                onChange={handleAddressChange} // Use specific handler
                 placeholder="Street Address"
               />
             </div>
@@ -268,10 +339,10 @@ const PatientModal = ({ isOpen, onClose, patientData, onSuccess }) => {
                 </label>
                 <input
                   type="text"
-                  name="city"
+                  name="city" // Use address.city
                   className="block w-full pl-3 pr-3 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
-                  value={formData.city || ""}
-                  onChange={handleChange}
+                  value={formData.address?.city || ""}
+                  onChange={handleAddressChange}
                 />
               </div>
 
@@ -279,12 +350,13 @@ const PatientModal = ({ isOpen, onClose, patientData, onSuccess }) => {
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   State
                 </label>
+                 {/* TODO: Consider using a dropdown for states */}
                 <input
                   type="text"
-                  name="state"
+                  name="state" // Use address.state
                   className="block w-full pl-3 pr-3 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
-                  value={formData.state || ""}
-                  onChange={handleChange}
+                  value={formData.address?.state || ""}
+                  onChange={handleAddressChange}
                 />
               </div>
 
@@ -294,31 +366,14 @@ const PatientModal = ({ isOpen, onClose, patientData, onSuccess }) => {
                 </label>
                 <input
                   type="text"
-                  name="zipCode"
+                  name="zip_code" // Use address.zip_code
                   className="block w-full pl-3 pr-3 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
-                  value={formData.zipCode || ""}
-                  onChange={handleChange}
+                  value={formData.address?.zip_code || ""}
+                  onChange={handleAddressChange}
                 />
               </div>
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Preferred Pharmacy
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Building className="h-4 w-4 text-gray-400" />
-                </div>
-                <input
-                  type="text"
-                  name="preferredPharmacy"
-                  className="block w-full pl-10 pr-3 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
-                  value={formData.preferredPharmacy || ""}
-                  onChange={handleChange}
-                  placeholder="Preferred Pharmacy"
-                />
-              </div>
-            </div>
+             {/* Removed Preferred Pharmacy, Assigned Doctor, Medical Notes - handle separately */}
           </div>
 
           <div className="px-6 py-4 border-t border-gray-200 flex justify-end space-x-3">
@@ -335,7 +390,12 @@ const PatientModal = ({ isOpen, onClose, patientData, onSuccess }) => {
               className="px-4 py-2 bg-indigo-600 rounded-md text-sm font-medium text-white hover:bg-indigo-700 disabled:bg-indigo-300"
               disabled={isSubmitting}
             >
-              {isSubmitting ? "Saving..." : submitButtonText}
+              {isSubmitting ? (
+                  <>
+                    <Loader className="animate-spin h-4 w-4 mr-2 inline" />
+                    Saving...
+                  </>
+              ) : submitButtonText}
             </button>
           </div>
         </form>

@@ -3,15 +3,30 @@ import {
   useMutation,
   useQueryClient
 } from '@tanstack/react-query';
-
 import { toast } from 'react-toastify';
-import { createForm, getFormById, getForms, updateForm, deleteForm } from './api';
+import {
+  // Form Definition APIs
+  getForms,
+  getFormById,
+  createForm,
+  updateForm,
+  deleteForm,
+  // Form Submission APIs
+  getFormSubmissions,
+  getFormSubmissionById,
+  createFormSubmission
+} from './api';
 
-export const useForms = (params = {}) => {
+
+// --- Form Definition Hooks ---
+
+export const useForms = (currentPage = 1, filters = {}) => {
   return useQuery({
-    queryKey: ['forms', params],
-    queryFn: () => getForms(params),
-    select: (data) => data // Optional transformation if needed
+    queryKey: ['forms', currentPage, filters],
+    // The queryFn now returns an object: { data: formArray, pagination: {...} }
+    queryFn: () => getForms(currentPage, filters),
+    // Keep previous data while fetching new page for smoother UX
+    keepPreviousData: true,
   });
 };
 
@@ -68,10 +83,57 @@ export const useDeleteForm = (options = {}) => {
     mutationFn: (id) => deleteForm(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['forms'] });
+      toast.success('Form deleted successfully'); // Add toast for consistency
       options.onSuccess && options.onSuccess();
     },
     onError: (error) => {
+      toast.error(error.message || 'An error occurred while deleting the form.'); // Add toast
       options.onError && options.onError(error);
     }
   });
 };
+
+
+// --- Form Submission Hooks ---
+
+// Hook to fetch submissions for a specific form
+export const useFormSubmissions = (formId, currentPage = 1, filters = {}) => {
+  return useQuery({
+    queryKey: ['formSubmissions', formId, currentPage, filters],
+    queryFn: () => getFormSubmissions(formId, currentPage, filters),
+    enabled: !!formId, // Only run if formId is provided
+    keepPreviousData: true,
+  });
+};
+
+// Hook to fetch a specific form submission by ID
+export const useFormSubmissionById = (submissionId, options = {}) => {
+  return useQuery({
+    queryKey: ['formSubmission', submissionId],
+    queryFn: () => getFormSubmissionById(submissionId),
+    enabled: !!submissionId,
+    ...options
+  });
+};
+
+// Hook to create a new form submission
+export const useCreateFormSubmission = (options = {}) => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (submissionData) => createFormSubmission(submissionData),
+    onSuccess: (data, variables) => {
+      // Invalidate submissions for the specific form
+      queryClient.invalidateQueries({ queryKey: ['formSubmissions', variables.form_id] });
+      toast.success('Form submitted successfully');
+      options.onSuccess && options.onSuccess(data, variables); // Pass data/variables back
+    },
+    onError: (error) => {
+      toast.error(error.message || 'An error occurred while submitting the form.');
+      options.onError && options.onError(error);
+    }
+  });
+};
+
+// Note: Hooks for updating/deleting submissions are omitted as per api.js comment,
+// but can be added here if needed, following the pattern above.

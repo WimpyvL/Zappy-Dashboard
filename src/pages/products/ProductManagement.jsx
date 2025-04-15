@@ -24,12 +24,19 @@ import {
   FormTextarea,
   FormCheckbox
 } from './ProductComponents';
+import LoadingSpinner from '../patients/patientDetails/common/LoadingSpinner'; // Correct path
 
-// Assuming AppContext provides services
-import { useAppContext } from '../../context/AppContext';
+// Remove AppContext import
+// import { useAppContext } from '../../context/AppContext';
+import { useProducts, useCreateProduct, useUpdateProduct, useDeleteProduct } from '../../apis/products/hooks';
+import { useSubscriptionPlans, useCreateSubscriptionPlan, useUpdateSubscriptionPlan, useDeleteSubscriptionPlan } from '../../apis/subscription_plans/hooks';
+// TODO: Import useServices hook if services data is needed and fetched via hook
+import { useMemo } from 'react'; // Keep useState from original import below
+import { useQueryClient } from '@tanstack/react-query';
+import { toast } from 'react-toastify';
 
 
-// Component to manage medication doses (Price removed, allowOneTimePurchase added)
+// Component to manage medication doses (Keep as is for now, might need adjustments later)
 const DosesFormSection = ({ doses = [], onChange }) => {
   const [newDose, setNewDose] = useState({ value: '', description: '', allowOneTimePurchase: false });
 
@@ -138,47 +145,117 @@ const DosesFormSection = ({ doses = [], onChange }) => {
 
 
 const ProductManagement = () => {
-  const { services } = useAppContext(); // Get services from context
+  // const { services } = useAppContext(); // TODO: Replace with useServices hook if needed
+  const services = []; // Placeholder for services data
 
   // --- State Definitions ---
   const [activeTab, setActiveTab] = useState('products');
-  // Mock data - Includes fulfillmentSource, oneTimePurchasePrice, removed price from doses
-  const [products, setProducts] = useState([
-    { id: 1, name: 'Semaglutide', type: 'medication', description: 'GLP-1 agonist', active: true, requiresPrescription: true, category: 'weight-management', associatedServiceIds: [1, 2], stockStatus: 'in-stock', interactionWarnings: ['ACE inhibitors'], oneTimePurchasePrice: 219.99, fulfillmentSource: 'compounding_pharmacy', doses: [ { id: 101, value: '0.25mg', description: 'Starting dose', allowOneTimePurchase: true }, { id: 102, value: '0.5mg', description: 'Standard dose', allowOneTimePurchase: false }, { id: 103, value: '1.0mg', description: 'Higher dose', allowOneTimePurchase: false } ] },
-    { id: 2, name: 'Tirzepatide', type: 'medication', description: 'Dual GIP/GLP-1 agonist', active: true, requiresPrescription: true, category: 'weight-management', associatedServiceIds: [1, 2, 3], stockStatus: 'in-stock', interactionWarnings: ['Insulin'], oneTimePurchasePrice: 299.99, fulfillmentSource: 'compounding_pharmacy', doses: [ { id: 201, value: '5mg', description: 'Standard dose', allowOneTimePurchase: false }, { id: 202, value: '10mg', description: 'Higher dose', allowOneTimePurchase: false } ] },
-    { id: 3, name: 'Vitamin D3', type: 'supplement', description: 'High-potency D3', active: true, requiresPrescription: false, category: 'supplements', associatedServiceIds: [1, 3], stockStatus: 'in-stock', price: 19.99, allowOneTimePurchase: true, fulfillmentSource: 'internal_supplement' }
-  ]);
-  // Mock data - Updated plans to include specific doses
-  const [subscriptionPlans, setSubscriptionPlans] = useState([
-    { id: 1, name: 'Starter Weight Management', description: 'Initial starter plan', billingFrequency: 'monthly', deliveryFrequency: 'monthly', price: 169.99, active: true, discount: 0, allowedProductDoses: [{ productId: 1, doseId: 101 }], category: 'weight-management', popularity: 'high', requiresConsultation: true, additionalBenefits: ['Benefit 1'] },
-    { id: 2, name: 'Standard Weight Management', description: 'Standard plan', billingFrequency: 'monthly', deliveryFrequency: 'monthly', price: 199.00, active: true, discount: 0, allowedProductDoses: [{ productId: 1, doseId: 102 }, { productId: 2, doseId: 201 }], category: 'weight-management', popularity: 'high', requiresConsultation: true, additionalBenefits: ['Benefit 1', 'Benefit 2'] },
-  ]);
+  const [currentPageProducts, setCurrentPageProducts] = useState(1);
+  const [currentPagePlans, setCurrentPagePlans] = useState(1);
   const [searchTerm, setSearchTerm] = useState('');
-  const [typeFilter, setTypeFilter] = useState('all');
-  const [categoryFilter, setCategoryFilter] = useState('all');
-  const [serviceFilter, setServiceFilter] = useState('all');
+  const [typeFilter, setTypeFilter] = useState('all'); // For products
+  const [categoryFilter, setCategoryFilter] = useState('all'); // For both
+  const [serviceFilter, setServiceFilter] = useState('all'); // For products
   const [showProductModal, setShowProductModal] = useState(false);
   const [showPlanModal, setShowPlanModal] = useState(false);
   const [editMode, setEditMode] = useState(false);
   const [currentProduct, setCurrentProduct] = useState(null);
   const [currentPlan, setCurrentPlan] = useState(null);
 
-  // Initial form state - Product
-  const initialProductFormData = { name: '', type: 'medication', description: '', price: 0, oneTimePurchasePrice: 0, active: true, requiresPrescription: true, category: 'weight-management', associatedServiceIds: [], stockStatus: 'in-stock', interactionWarnings: [], doses: [], allowOneTimePurchase: false, fulfillmentSource: 'compounding_pharmacy' };
+  // Form State
+  const initialProductFormData = { name: '', type: 'medication', description: '', price: 0, oneTimePurchasePrice: 0, active: true, requiresPrescription: true, category: '', associatedServiceIds: [], stockStatus: 'in-stock', interactionWarnings: [], doses: [], allowOneTimePurchase: false, fulfillmentSource: 'compounding_pharmacy', image_url: '', metadata: {}, tags: [] };
   const [productFormData, setProductFormData] = useState(initialProductFormData);
-  // Initial form state - Plan (updated for doses)
-  const initialPlanFormData = { name: '', description: '', billingFrequency: 'monthly', deliveryFrequency: 'monthly', price: 0, active: true, discount: 0, allowedProductDoses: [], category: 'weight-management', popularity: 'medium', requiresConsultation: true, additionalBenefits: [] };
+  const initialPlanFormData = { name: '', description: '', billingFrequency: 'monthly', deliveryFrequency: 'monthly', price: 0, active: true, discount: 0, allowedProductDoses: [], category: '', popularity: 'medium', requiresConsultation: true, additionalBenefits: [], is_active: true };
   const [planFormData, setPlanFormData] = useState(initialPlanFormData);
 
+  const queryClient = useQueryClient();
+
+  // --- Data Fetching ---
+  const productFilters = useMemo(() => {
+      const filters = {};
+      if (searchTerm && activeTab === 'products') filters.name = searchTerm; // Simple name search for now
+      if (typeFilter !== 'all') filters.type = typeFilter;
+      if (categoryFilter !== 'all') filters.category = categoryFilter;
+      // TODO: Add service filter logic if needed (might require joining or separate query)
+      return filters;
+  }, [searchTerm, activeTab, typeFilter, categoryFilter, serviceFilter]);
+
+  const planFilters = useMemo(() => {
+      const filters = {};
+      if (searchTerm && activeTab === 'plans') filters.name = searchTerm;
+      if (categoryFilter !== 'all') filters.category = categoryFilter;
+      return filters;
+  }, [searchTerm, activeTab, categoryFilter]);
+
+  const { data: productsData, isLoading: productsLoading, error: productsError, isFetching: productsIsFetching } = useProducts(currentPageProducts, productFilters);
+  const { data: plansData, isLoading: plansLoading, error: plansError, isFetching: plansIsFetching } = useSubscriptionPlans(currentPagePlans, planFilters);
+
+  const products = productsData?.data || [];
+  const productPagination = productsData?.pagination || { totalPages: 1 };
+  const subscriptionPlans = plansData?.data || [];
+  const planPagination = plansData?.pagination || { totalPages: 1 };
+
   // --- Derived Data ---
-  const productCategories = [...new Set([...products.map(p => p.category), ...subscriptionPlans.map(p => p.category)])].filter(Boolean).sort();
-  const filteredProducts = products.filter(p =>
-    (typeFilter === 'all' || p.type === typeFilter) &&
-    (categoryFilter === 'all' || p.category === categoryFilter) &&
-    (serviceFilter === 'all' || (Array.isArray(p.associatedServiceIds) && p.associatedServiceIds.includes(parseInt(serviceFilter)))) &&
-    (p.name.toLowerCase().includes(searchTerm.toLowerCase()) || (p.description && p.description.toLowerCase().includes(searchTerm.toLowerCase())))
-  );
-  const filteredPlans = subscriptionPlans.filter(p => (categoryFilter === 'all' || p.category === categoryFilter) && (p.name.toLowerCase().includes(searchTerm.toLowerCase()) || (p.description && p.description.toLowerCase().includes(searchTerm.toLowerCase()))));
+  // Combine categories from fetched products and plans
+  const productCategories = useMemo(() => {
+      const categories = new Set();
+      products.forEach(p => p.category && categories.add(p.category));
+      subscriptionPlans.forEach(p => p.category && categories.add(p.category));
+      return [...categories].sort();
+  }, [products, subscriptionPlans]);
+
+  // Remove local filtering (filtering is done via API now)
+
+  // --- Mutations ---
+  const createProductMutation = useCreateProduct({
+      onSuccess: () => {
+          toast.success("Product created successfully.");
+          setShowProductModal(false);
+          queryClient.invalidateQueries({ queryKey: ['products'] });
+      },
+      onError: (error) => toast.error(`Error creating product: ${error.message}`)
+  });
+  const updateProductMutation = useUpdateProduct({
+       onSuccess: (data, variables) => {
+          toast.success("Product updated successfully.");
+          setShowProductModal(false);
+          queryClient.invalidateQueries({ queryKey: ['products'] });
+          queryClient.invalidateQueries({ queryKey: ['product', variables.id] });
+      },
+      onError: (error) => toast.error(`Error updating product: ${error.message}`)
+  });
+   const deleteProductMutation = useDeleteProduct({
+       onSuccess: () => {
+          toast.success("Product deleted successfully.");
+          queryClient.invalidateQueries({ queryKey: ['products'] });
+      },
+      onError: (error) => toast.error(`Error deleting product: ${error.message}`)
+  });
+
+  const createPlanMutation = useCreateSubscriptionPlan({
+       onSuccess: () => {
+          toast.success("Subscription plan created successfully.");
+          setShowPlanModal(false);
+          queryClient.invalidateQueries({ queryKey: ['subscriptionPlans'] });
+      },
+      onError: (error) => toast.error(`Error creating plan: ${error.message}`)
+  });
+  const updatePlanMutation = useUpdateSubscriptionPlan({
+       onSuccess: (data, variables) => {
+          toast.success("Subscription plan updated successfully.");
+          setShowPlanModal(false);
+          queryClient.invalidateQueries({ queryKey: ['subscriptionPlans'] });
+          queryClient.invalidateQueries({ queryKey: ['subscriptionPlan', variables.id] });
+      },
+      onError: (error) => toast.error(`Error updating plan: ${error.message}`)
+  });
+  const deletePlanMutation = useDeleteSubscriptionPlan({
+       onSuccess: () => {
+          toast.success("Subscription plan deleted successfully.");
+          queryClient.invalidateQueries({ queryKey: ['subscriptionPlans'] });
+      },
+      onError: (error) => toast.error(`Error deleting plan: ${error.message}`)
+  });
 
 
   // --- Handlers ---
@@ -275,72 +352,90 @@ const ProductManagement = () => {
     });
   };
 
-  // Updated product submit handler
+  // Refactored product submit handler
   const handleProductSubmit = () => {
-    const submissionData = { ...productFormData };
+    // TODO: Add form validation if needed
+    const { doses, ...restOfData } = productFormData;
 
-    if (submissionData.type !== 'medication') {
-      submissionData.doses = [];
-      submissionData.oneTimePurchasePrice = 0;
+    // Prepare data for Supabase (ensure doses are structured correctly if stored in product metadata)
+    // Assuming 'doses' field in products table is jsonb
+    const submissionData = {
+        ...restOfData,
+        // Convert dose IDs if they are temporary timestamps
+        doses: doses.map(d => ({
+            value: d.value,
+            description: d.description,
+            allowOneTimePurchase: !!d.allowOneTimePurchase
+            // Remove temporary ID before saving
+        })),
+        // Ensure boolean values are correct
+        active: !!restOfData.active,
+        requiresPrescription: !!restOfData.requiresPrescription,
+        allowOneTimePurchase: !!restOfData.allowOneTimePurchase,
+        // Ensure arrays are arrays
+        interactionWarnings: Array.isArray(restOfData.interactionWarnings) ? restOfData.interactionWarnings : (restOfData.interactionWarnings ? [restOfData.interactionWarnings] : []),
+        associatedServiceIds: Array.isArray(restOfData.associatedServiceIds) ? restOfData.associatedServiceIds : [],
+        tags: Array.isArray(restOfData.tags) ? restOfData.tags : [],
+    };
+
+    // Remove price if it's a medication (price is per dose/one-time)
+    if (submissionData.type === 'medication') {
+        delete submissionData.price;
     } else {
-      submissionData.price = 0;
-      submissionData.doses = submissionData.doses.map((dose, index) => ({
-        id: dose.id || Date.now() + index, // Ensure ID exists
-        value: dose.value,
-        description: dose.description,
-        allowOneTimePurchase: !!dose.allowOneTimePurchase
-      }));
+        // Remove medication-specific fields if not medication
+        delete submissionData.doses;
+        delete submissionData.oneTimePurchasePrice;
     }
-    submissionData.allowOneTimePurchase = !!submissionData.allowOneTimePurchase;
-    submissionData.active = !!submissionData.active;
-    submissionData.requiresPrescription = !!submissionData.requiresPrescription;
-    if (!submissionData.fulfillmentSource) {
-        submissionData.fulfillmentSource = submissionData.type === 'medication' ? 'compounding_pharmacy' : 'internal_supplement';
-    }
-    submissionData.associatedServiceIds = Array.isArray(submissionData.associatedServiceIds) ? submissionData.associatedServiceIds : [];
 
 
     if (editMode && currentProduct) {
-      setProducts(products.map(p => p.id === currentProduct.id ? { ...p, ...submissionData } : p));
+      updateProductMutation.mutate({ id: currentProduct.id, productData: submissionData });
     } else {
-      const newProduct = { id: Math.max(0, ...products.map(p => p.id)) + 1, ...submissionData };
-      setProducts([...products, newProduct]);
+      createProductMutation.mutate(submissionData);
     }
-    setShowProductModal(false);
   };
 
-  // Updated plan submit handler
+  // Refactored plan submit handler
   const handlePlanSubmit = () => {
-     const submissionData = { ...planFormData };
-     // Ensure allowedProductDoses is an array
-     submissionData.allowedProductDoses = Array.isArray(submissionData.allowedProductDoses) ? submissionData.allowedProductDoses : [];
-     // Remove the old allowedProducts if it exists
-     delete submissionData.allowedProducts;
+     // TODO: Add form validation if needed
+     const { allowedProductDoses, ...restOfData } = planFormData;
+
+     // Prepare allowedProductDoses for JSONB (assuming [{ product_id, dose_value }])
+     // This requires mapping temporary dose IDs back if necessary, or using dose_value directly
+     const formattedDoses = allowedProductDoses.map(d => {
+         // Find the product and dose based on temporary IDs to get the actual value
+         const product = products.find(p => p.id === d.productId);
+         const dose = product?.doses?.find(dose => dose.id === d.doseId);
+         return dose ? { product_id: d.productId, dose_value: dose.value } : null;
+     }).filter(Boolean); // Filter out nulls if product/dose not found
+
+     const submissionData = {
+         ...restOfData,
+         allowed_product_doses: formattedDoses,
+         is_active: !!restOfData.is_active, // Ensure boolean
+         requires_consultation: !!restOfData.requires_consultation,
+         additional_benefits: Array.isArray(restOfData.additionalBenefits) ? restOfData.additionalBenefits : (restOfData.additionalBenefits ? [restOfData.additionalBenefits] : []),
+     };
 
      if (editMode && currentPlan) {
-       setSubscriptionPlans(plans => plans.map(p => p.id === currentPlan.id ? { ...p, ...submissionData } : p));
+       updatePlanMutation.mutate({ id: currentPlan.id, planData: submissionData });
      } else {
-       const newPlan = { id: Math.max(0, ...subscriptionPlans.map(p => p.id)) + 1, ...submissionData };
-       setSubscriptionPlans(plans => [...plans, newPlan]);
+       createPlanMutation.mutate(submissionData);
      }
-     setShowPlanModal(false);
   };
 
-  // Updated Delete handlers
+  // Refactored Delete handlers
   const handleDeleteProduct = (id) => {
-     // Check if any dose of this product is in any plan
-     const isUsed = subscriptionPlans.some(plan =>
-        Array.isArray(plan.allowedProductDoses) &&
-        plan.allowedProductDoses.some(doseRef => doseRef.productId === id)
-     );
-     if (isUsed) {
-       alert("This product cannot be deleted as one of its doses is used in a subscription plan.");
-       return;
+     // TODO: Add check if product is in use by subscriptions or orders before deleting
+     if (window.confirm("Are you sure you want to delete this product?")) {
+        deleteProductMutation.mutate(id);
      }
-     setProducts(products.filter(p => p.id !== id));
   };
   const handleDeletePlan = (id) => {
-     setSubscriptionPlans(plans => plans.filter(p => p.id !== id));
+      // TODO: Add check if plan is in use by active subscriptions before deleting
+     if (window.confirm("Are you sure you want to delete this subscription plan?")) {
+        deletePlanMutation.mutate(id);
+     }
   };
 
   // Utility functions
@@ -417,40 +512,58 @@ const ProductManagement = () => {
                   <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
               </tr></thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {filteredProducts.flatMap(product => {
-                  if (product.type !== 'medication' || !product.doses || product.doses.length === 0) {
-                    return [{ ...product, displayName: product.name, key: `${product.id}-base`, allowOneTimePurchase: !!product.allowOneTimePurchase, price: product.price }];
+                {/* Map over products directly from hook data */}
+                {products.flatMap(product => {
+                  // Adapt logic for displaying doses based on Supabase structure (assuming doses is jsonb)
+                  const productDoses = Array.isArray(product.doses) ? product.doses : [];
+                  if (product.type !== 'medication' || productDoses.length === 0) {
+                     // Use product.is_active from DB
+                    return [{ ...product, displayName: product.name, key: `${product.id}-base`, allowOneTimePurchase: !!product.allowOneTimePurchase, price: product.price, active: product.is_active }];
                   }
-                  return product.doses.map((dose, index) => ({ ...product, displayName: `${product.name} ${dose.value}`, currentDose: dose, price: product.oneTimePurchasePrice, doseDescription: dose.description, key: `${product.id}-${dose.id}`, isFirstDose: index === 0, allowOneTimePurchase: !!dose.allowOneTimePurchase }));
-                }).map((product) => (
-                  <tr key={product.key} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap"><div className="text-sm font-medium text-gray-900">{product.displayName}</div></td>
-                    <td className="px-6 py-4 whitespace-nowrap"><Badge className={product.type === 'medication' ? 'bg-blue-100 text-blue-800' : product.type === 'supplement' ? 'bg-green-100 text-green-800' : 'bg-purple-100 text-purple-800'}>{product.type.charAt(0).toUpperCase() + product.type.slice(1)}</Badge></td>
+                   // Use product.is_active from DB
+                  return productDoses.map((dose, index) => ({ ...product, displayName: `${product.name} ${dose.value}`, currentDose: dose, price: product.oneTimePurchasePrice, doseDescription: dose.description, key: `${product.id}-${dose.value}`, isFirstDose: index === 0, allowOneTimePurchase: !!dose.allowOneTimePurchase, active: product.is_active }));
+                }).map((productRow) => ( // Renamed variable to avoid conflict
+                  <tr key={productRow.key} className="hover:bg-gray-50">
+                    <td className="px-6 py-4 whitespace-nowrap"><div className="text-sm font-medium text-gray-900">{productRow.displayName}</div></td>
+                    <td className="px-6 py-4 whitespace-nowrap"><Badge className={productRow.type === 'medication' ? 'bg-blue-100 text-blue-800' : productRow.type === 'supplement' ? 'bg-green-100 text-green-800' : 'bg-purple-100 text-purple-800'}>{productRow.type.charAt(0).toUpperCase() + productRow.type.slice(1)}</Badge></td>
                     <td className="px-6 py-4">
                         <div className="flex flex-wrap gap-1 max-w-xs">
-                            {Array.isArray(product.associatedServiceIds) && product.associatedServiceIds.map(serviceId => {
-                                const serviceName = getServiceNameById(serviceId);
+                            {/* TODO: Fetch/join associated services based on productRow.associatedServiceIds */}
+                            {Array.isArray(productRow.associatedServiceIds) && productRow.associatedServiceIds.map(serviceId => {
+                                const serviceName = getServiceNameById(serviceId); // Assumes services data is available
                                 return serviceName ? (
                                     <Badge key={serviceId} className="bg-gray-100 text-gray-800">
                                         {serviceName}
                                     </Badge>
                                 ) : null;
                             })}
-                            {(!Array.isArray(product.associatedServiceIds) || product.associatedServiceIds.length === 0) && <span className="text-xs text-gray-500">None</span>}
+                            {(!Array.isArray(productRow.associatedServiceIds) || productRow.associatedServiceIds.length === 0) && <span className="text-xs text-gray-500">None</span>}
                         </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{formatFulfillmentSource(product.fulfillmentSource)}</td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      {product.allowOneTimePurchase
-                        ? <span className="text-xs text-green-600 flex items-center"><Check size={12} className="mr-1"/>Allowed (${Number(product.price).toFixed(2)})</span>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{formatFulfillmentSource(productRow.fulfillmentSource)}</td>
+                     <td className="px-6 py-4 whitespace-nowrap">
+                      {/* Display logic based on dose or product level allowOneTimePurchase */}
+                      {productRow.allowOneTimePurchase
+                        ? <span className="text-xs text-green-600 flex items-center"><Check size={12} className="mr-1"/>Allowed (${Number(productRow.price).toFixed(2)})</span>
                         : <span className="text-xs text-gray-500">Subscription Only</span>
                       }
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap"><Badge className={product.active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}>{product.active ? 'Active' : 'Inactive'}</Badge></td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">{(!product.currentDose || product.isFirstDose) && (<> <button className="text-indigo-600 hover:text-indigo-900 mr-3" onClick={() => handleEditProduct(products.find(p => p.id === product.id))}><Edit className="h-5 w-5" /></button> <button className="text-red-600 hover:text-red-900" onClick={() => handleDeleteProduct(product.id)}><Trash2 className="h-5 w-5" /></button> </>)}</td>
+                    <td className="px-6 py-4 whitespace-nowrap"><Badge className={productRow.active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}>{productRow.active ? 'Active' : 'Inactive'}</Badge></td>
+                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        {/* Show edit/delete only once per product, not per dose row */}
+                        {(!productRow.currentDose || productRow.isFirstDose) && (
+                            <>
+                                <button className="text-indigo-600 hover:text-indigo-900 mr-3" onClick={() => handleEditProduct(products.find(p => p.id === productRow.id))}><Edit className="h-5 w-5" /></button>
+                                <button className="text-red-600 hover:text-red-900" onClick={() => handleDeleteProduct(productRow.id)} disabled={deleteProductMutation.isPending && deleteProductMutation.variables === productRow.id}><Trash2 className="h-5 w-5" /></button>
+                            </>
+                        )}
+                    </td>
                   </tr>
                 ))}
-                {filteredProducts.length === 0 && (<tr><td colSpan="7" className="px-6 py-4 text-center text-gray-500">No products found.</td></tr>)}
+                 {/* Loading and Error States */}
+                 {(productsLoading || productsIsFetching) && !productsData && (<tr><td colSpan="7" className="text-center py-10"><LoadingSpinner message="Loading products..." /></td></tr>)}
+                 {productsError && !productsLoading && (<tr><td colSpan="7" className="text-center py-10 text-red-600">Error loading products: {productsError.message}</td></tr>)}
+                 {!productsLoading && !productsError && products.length === 0 && (<tr><td colSpan="7" className="px-6 py-4 text-center text-gray-500">No products found matching criteria.</td></tr>)}
               </tbody>
             </table>
           </div>
@@ -473,17 +586,21 @@ const ProductManagement = () => {
                   <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
               </tr></thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {filteredPlans.map((plan) => (
+                 {/* Map over subscriptionPlans directly from hook data */}
+                {subscriptionPlans.map((plan) => (
                   <tr key={plan.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4"><div className="text-sm font-medium text-gray-900">{plan.name}</div><div className="text-xs text-gray-500 truncate mt-1">{plan.description}</div><div className="mt-1"><Badge className={plan.active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}>{plan.active ? 'Active' : 'Inactive'}</Badge></div></td>
-                    <td className="px-6 py-4 whitespace-nowrap"><Badge className="bg-purple-100 text-purple-800">{formatCategoryName(plan.category)}</Badge><div className="mt-1 text-xs"><span className="text-gray-500">Bill: </span><span className="font-medium capitalize">{plan.billingFrequency}</span></div><div className="mt-1 text-xs"><span className="text-gray-500">Delivery: </span><span className="font-medium capitalize">{plan.deliveryFrequency}</span></div></td>
-                    <td className="px-6 py-4 whitespace-nowrap"><div className="text-sm text-gray-900 font-medium">${plan.price.toFixed(2)}</div>{plan.discount > 0 && (<div className="text-xs text-green-600">{plan.discount}% discount</div>)}</td>
-                    {/* Updated Products column to show doses */}
-                    <td className="px-6 py-4"><div className="flex flex-col"><div className="mb-1 text-xs text-gray-500 font-medium">{plan.allowedProductDoses?.length || 0} doses included</div><div className="flex flex-wrap gap-1">{Array.isArray(plan.allowedProductDoses) && plan.allowedProductDoses.map((doseRef) => (<Badge key={`${doseRef.productId}-${doseRef.doseId}`} className="bg-gray-100 text-gray-800">{getProductDoseName(doseRef.productId, doseRef.doseId)}</Badge>))}</div></div></td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium"><button className="text-indigo-600 hover:text-indigo-900 mr-3" onClick={() => handleEditPlan(plan)}><Edit className="h-5 w-5" /></button><button className="text-red-600 hover:text-red-900" onClick={() => handleDeletePlan(plan.id)}><Trash2 className="h-5 w-5" /></button></td>
+                    <td className="px-6 py-4"><div className="text-sm font-medium text-gray-900">{plan.name}</div><div className="text-xs text-gray-500 truncate mt-1">{plan.description}</div><div className="mt-1"><Badge className={plan.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}>{plan.is_active ? 'Active' : 'Inactive'}</Badge></div></td>
+                    <td className="px-6 py-4 whitespace-nowrap"><Badge className="bg-purple-100 text-purple-800">{formatCategoryName(plan.category)}</Badge><div className="mt-1 text-xs"><span className="text-gray-500">Bill: </span><span className="font-medium capitalize">{plan.billing_frequency}</span></div><div className="mt-1 text-xs"><span className="text-gray-500">Delivery: </span><span className="font-medium capitalize">{plan.delivery_frequency}</span></div></td>
+                    <td className="px-6 py-4 whitespace-nowrap"><div className="text-sm text-gray-900 font-medium">${Number(plan.price).toFixed(2)}</div>{plan.discount > 0 && (<div className="text-xs text-green-600">{plan.discount}% discount</div>)}</td>
+                    {/* Adapt allowed_product_doses display */}
+                    <td className="px-6 py-4"><div className="flex flex-col"><div className="mb-1 text-xs text-gray-500 font-medium">{plan.allowed_product_doses?.length || 0} doses included</div><div className="flex flex-wrap gap-1">{Array.isArray(plan.allowed_product_doses) && plan.allowed_product_doses.map((doseRef, idx) => (<Badge key={`${doseRef.product_id}-${idx}`} className="bg-gray-100 text-gray-800">{getProductDoseName(doseRef.product_id, doseRef.dose_value)}</Badge>))}</div></div></td>
+                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium"><button className="text-indigo-600 hover:text-indigo-900 mr-3" onClick={() => handleEditPlan(plan)}><Edit className="h-5 w-5" /></button><button className="text-red-600 hover:text-red-900" onClick={() => handleDeletePlan(plan.id)} disabled={deletePlanMutation.isPending && deletePlanMutation.variables === plan.id}><Trash2 className="h-5 w-5" /></button></td>
                   </tr>
                 ))}
-                {filteredPlans.length === 0 && (<tr><td colSpan="5" className="px-6 py-4 text-center text-gray-500">No plans found.</td></tr>)}
+                 {/* Loading and Error States */}
+                 {(plansLoading || plansIsFetching) && !plansData && (<tr><td colSpan="5" className="text-center py-10"><LoadingSpinner message="Loading plans..." /></td></tr>)}
+                 {plansError && !plansLoading && (<tr><td colSpan="5" className="text-center py-10 text-red-600">Error loading plans: {plansError.message}</td></tr>)}
+                 {!plansLoading && !plansError && subscriptionPlans.length === 0 && (<tr><td colSpan="5" className="px-6 py-4 text-center text-gray-500">No plans found matching criteria.</td></tr>)}
               </tbody>
             </table>
           </div>

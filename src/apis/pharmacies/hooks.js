@@ -11,12 +11,14 @@ import {
   deletePharmacy,
   togglePharmacyActive
 } from './api';
+import { toast } from 'react-toastify'; // Assuming toast notifications
 
 // Get pharmacies hook
-export const usePharmacies = (filters) => {
+export const usePharmacies = (currentPage = 1, filters = {}) => {
   return useQuery({
-    queryKey: ['pharmacies', filters],
-    queryFn: () => getPharmacies(filters)
+    queryKey: ['pharmacies', currentPage, filters],
+    queryFn: () => getPharmacies(currentPage, filters),
+    keepPreviousData: true,
   });
 };
 
@@ -36,9 +38,14 @@ export const useCreatePharmacy = (options = {}) => {
 
   return useMutation({
     mutationFn: (pharmacyData) => createPharmacy(pharmacyData),
-    onSuccess: () => {
+    onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['pharmacies'] });
-      options.onSuccess && options.onSuccess();
+      toast.success('Pharmacy created successfully.');
+      options.onSuccess && options.onSuccess(data, variables);
+    },
+    onError: (error) => {
+        toast.error(`Error creating pharmacy: ${error.message}`);
+        options.onError && options.onError(error);
     }
   });
 };
@@ -49,10 +56,15 @@ export const useUpdatePharmacy = (options = {}) => {
 
   return useMutation({
     mutationFn: ({ id, pharmacyData }) => updatePharmacy(id, pharmacyData),
-    onSuccess: () => {
+    onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['pharmacies'] });
-      queryClient.invalidateQueries({ queryKey: ['pharmacy'] });
-      options.onSuccess && options.onSuccess();
+      queryClient.invalidateQueries({ queryKey: ['pharmacy', variables.id] });
+      toast.success('Pharmacy updated successfully.');
+      options.onSuccess && options.onSuccess(data, variables);
+    },
+     onError: (error) => {
+        toast.error(`Error updating pharmacy: ${error.message}`);
+        options.onError && options.onError(error);
     }
   });
 };
@@ -63,9 +75,15 @@ export const useDeletePharmacy = (options = {}) => {
 
   return useMutation({
     mutationFn: (id) => deletePharmacy(id),
-    onSuccess: () => {
+    onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['pharmacies'] });
-      options.onSuccess && options.onSuccess();
+      queryClient.removeQueries({ queryKey: ['pharmacy', variables] });
+      toast.success('Pharmacy deleted successfully.');
+      options.onSuccess && options.onSuccess(data, variables);
+    },
+     onError: (error) => {
+        toast.error(`Error deleting pharmacy: ${error.message}`);
+        options.onError && options.onError(error);
     }
   });
 };
@@ -76,10 +94,15 @@ export const useTogglePharmacyActive = (options = {}) => {
 
   return useMutation({
     mutationFn: ({ id, active }) => togglePharmacyActive(id, active),
-    onSuccess: () => {
+    onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['pharmacies'] });
-      queryClient.invalidateQueries({ queryKey: ['pharmacy'] });
-      options.onSuccess && options.onSuccess();
+      queryClient.invalidateQueries({ queryKey: ['pharmacy', variables.id] });
+      toast.success(`Pharmacy ${variables.active ? 'activated' : 'deactivated'} successfully.`);
+      options.onSuccess && options.onSuccess(data, variables);
+    },
+     onError: (error) => {
+        toast.error(`Error toggling pharmacy status: ${error.message}`);
+        options.onError && options.onError(error);
     }
   });
 };

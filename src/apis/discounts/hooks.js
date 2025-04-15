@@ -14,10 +14,13 @@ import {
 import { toast } from 'react-toastify';
 
 // Hook to fetch all discounts
-export const useDiscounts = (params = {}) => {
+export const useDiscounts = (currentPage = 1, filters = {}) => {
   return useQuery({
-    queryKey: ['discounts', params],
-    queryFn: () => getDiscounts(params)
+    queryKey: ['discounts', currentPage, filters],
+    // The queryFn now returns an object: { data: discountArray, pagination: {...} }
+    queryFn: () => getDiscounts(currentPage, filters),
+    // Keep previous data while fetching new page for smoother UX
+    keepPreviousData: true,
   });
 };
 

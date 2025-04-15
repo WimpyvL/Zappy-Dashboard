@@ -16,7 +16,10 @@ import auditLogService from '../../utils/auditLogService'; // Import the audit l
 export const usePatients = (currentPage, filters) => {
   return useQuery({
     queryKey: ['patients', currentPage, filters],
-    queryFn: () => getPatients(currentPage, filters)
+    // The queryFn now returns an object: { data: patientArray, pagination: {...} }
+    queryFn: () => getPatients(currentPage, filters),
+    // Keep previous data while fetching new page for smoother UX
+    keepPreviousData: true,
   });
 };
 

@@ -1,110 +1,82 @@
-// components/patients/components/PatientDocuments.jsx
-import React, { useState } from "react";
-import { Upload, CheckCircle, Clock, XCircle } from "lucide-react";
+// components/patients/components/PatientDocuments.jsx - Refactored for Supabase
+import React, { useState, useMemo, useEffect } from "react"; // Added useEffect
+import { Upload, Trash2, Download, ChevronDown } from "lucide-react"; // Added icons
 import { toast } from "react-toastify";
-import apiService from "../../../utils/apiService";
+import {
+  usePatientInsurances,
+  useUploadInsuranceDocument,
+  useDeleteInsuranceDocument
+} from "../../../apis/insurances/hooks"; // Import insurance hooks
+import { supabase } from "../../../lib/supabaseClient"; // Import for storage URL
 import LoadingSpinner from "./common/LoadingSpinner";
+import { useQueryClient } from '@tanstack/react-query';
 
-const DocumentUploadForm = ({ patientId, onCancel, onSuccess }) => {
-  const [documentType, setDocumentType] = useState("id");
+// --- Document Upload Form ---
+const DocumentUploadForm = ({ patientInsuranceId, onCancel, onSuccess }) => {
   const [documentFile, setDocumentFile] = useState(null);
-  const [uploading, setUploading] = useState(false);
+
+  // Initialize the upload mutation hook
+  const uploadMutation = useUploadInsuranceDocument({
+      onSuccess: () => {
+          toast.success("Document uploaded successfully!");
+          onSuccess(); // Call parent onSuccess (e.g., invalidate query)
+          onCancel(); // Close the form
+      },
+      onError: (error) => {
+          toast.error(`Upload failed: ${error.message}`);
+      }
+      // No need for onSettled to manage local state if using hook's isPending
+  });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     if (!documentFile) {
       toast.error("Please select a file to upload");
       return;
     }
-
-    try {
-      setUploading(true);
-
-      // Create form data for file upload
-      const formData = new FormData();
-      formData.append("file", documentFile);
-      formData.append("type", documentType);
-
-      // Upload document
-      await apiService.post(
-        `/api/v1/admin/patients/${patientId}/documents`,
-        formData,
-        {
-          headers: {
-            "Content-Type": "multipart/form-data",
-          },
-        }
-      );
-
-      toast.success("Document uploaded successfully");
-
-      // Notify parent component of success
-      onSuccess();
-
-      // Reset the form
-      setDocumentFile(null);
-      onCancel();
-    } catch (error) {
-      console.error("Error uploading document:", error);
-      toast.error("Failed to upload document");
-    } finally {
-      setUploading(false);
+    if (!patientInsuranceId) {
+        toast.error("Please select an insurance record to associate the document with.");
+        return;
     }
+    // Call the mutation
+    uploadMutation.mutate({ patientInsuranceId, file: documentFile });
   };
 
   return (
-    <div className="mb-6 p-4 border border-gray-200 rounded-lg">
+    <div className="mb-6 p-4 border border-gray-200 rounded-lg bg-gray-50">
       <h3 className="text-md font-medium text-gray-900 mb-3">
         Upload New Document
       </h3>
       <form onSubmit={handleSubmit}>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Document Type
-            </label>
-            <select
-              className="block w-full pl-3 pr-10 py-2 text-sm border border-gray-300 rounded-md"
-              value={documentType}
-              onChange={(e) => setDocumentType(e.target.value)}
-              required
-            >
-              <option value="id">Photo ID</option>
-              <option value="address">Proof of Address</option>
-              <option value="insurance">Insurance Card</option>
-              <option value="lab">Lab Results</option>
-              <option value="prescription">Prescription</option>
-              <option value="other">Other</option>
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              File
-            </label>
-            <input
-              type="file"
-              className="block w-full text-sm border border-gray-300 rounded-md px-3 py-2"
-              onChange={(e) => setDocumentFile(e.target.files[0])}
-              required
-            />
-          </div>
+        {/* Note: Document Type selection is removed as it's not part of the new schema */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            File <span className="text-red-600">*</span>
+          </label>
+          <input
+            type="file"
+            className="block w-full text-sm border border-gray-300 rounded-md px-3 py-1.5 bg-white"
+            onChange={(e) => setDocumentFile(e.target.files[0])}
+            required
+            disabled={uploadMutation.isPending}
+          />
+           {documentFile && <p className="mt-1 text-xs text-gray-500">{documentFile.name} ({(documentFile.size / 1024).toFixed(1)} KB)</p>}
         </div>
-        <div className="flex justify-end space-x-2">
+        <div className="flex justify-end space-x-2 mt-4">
           <button
             type="button"
             className="px-3 py-1 text-sm border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50"
             onClick={onCancel}
-            disabled={uploading}
+            disabled={uploadMutation.isPending}
           >
             Cancel
           </button>
           <button
             type="submit"
-            className="px-3 py-1 text-sm bg-indigo-600 text-white rounded-md hover:bg-indigo-700 flex items-center"
-            disabled={uploading}
+            className={`px-3 py-1 text-sm bg-indigo-600 text-white rounded-md hover:bg-indigo-700 flex items-center ${uploadMutation.isPending ? 'opacity-50 cursor-not-allowed' : ''}`}
+            disabled={uploadMutation.isPending}
           >
-            {uploading ? (
+            {uploadMutation.isPending ? (
               <>
                 <LoadingSpinner size="tiny" />
                 <span className="ml-1">Uploading...</span>
@@ -119,202 +91,209 @@ const DocumentUploadForm = ({ patientId, onCancel, onSuccess }) => {
   );
 };
 
-const DocumentTypeBadge = ({ type }) => {
-  const typeConfig = {
-    id: {
-      bgColor: "bg-blue-100",
-      textColor: "text-blue-800",
-      label: "Photo ID",
-    },
-    address: {
-      bgColor: "bg-green-100",
-      textColor: "text-green-800",
-      label: "Proof of Address",
-    },
-    insurance: {
-      bgColor: "bg-purple-100",
-      textColor: "text-purple-800",
-      label: "Insurance Card",
-    },
-    lab: {
-      bgColor: "bg-yellow-100",
-      textColor: "text-yellow-800",
-      label: "Lab Results",
-    },
-    prescription: {
-      bgColor: "bg-pink-100",
-      textColor: "text-pink-800",
-      label: "Prescription",
-    },
-    other: {
-      bgColor: "bg-gray-100",
-      textColor: "text-gray-800",
-      label: "Other",
-    },
-  };
 
-  const config = typeConfig[type] || typeConfig.other;
-  if (
-    type !== "id" &&
-    type !== "address" &&
-    type !== "insurance" &&
-    type !== "lab" &&
-    type !== "prescription" &&
-    type !== "other"
-  ) {
-    config.label = type.charAt(0).toUpperCase() + type.slice(1);
-  }
+// --- Main PatientDocuments Component ---
+const PatientDocuments = ({ patientId }) => {
+  const [showUploadForm, setShowUploadForm] = useState(false);
+  const [selectedInsuranceId, setSelectedInsuranceId] = useState(''); // For selecting which insurance to upload to
+  const queryClient = useQueryClient();
 
-  return (
-    <span
-      className={`px-2 py-1 text-xs font-medium rounded-full ${config.bgColor} ${config.textColor}`}
-    >
-      {config.label}
-    </span>
-  );
-};
+  // Fetch patient insurance records
+  const {
+    data: insuranceData,
+    isLoading: insurancesLoading,
+    error: insurancesError,
+  } = usePatientInsurances(1, { patientId }, {
+      // Fetch all records for this patient, disable pagination if needed by removing limit/offset in API
+      // Or implement local pagination/load more if list can be very long
+  });
 
-const DocumentStatusBadge = ({ status }) => {
-  return (
-    <span
-      className={`flex items-center px-2 py-1 text-xs font-medium rounded-full ${
-        status === "verified"
-          ? "bg-green-100 text-green-800"
-          : status === "pending"
-          ? "bg-yellow-100 text-yellow-800"
-          : status === "rejected"
-          ? "bg-red-100 text-red-800"
-          : "bg-gray-100 text-gray-800"
-      }`}
-    >
-      {status === "verified" ? (
-        <CheckCircle className="h-3 w-3 mr-1" />
-      ) : status === "pending" ? (
-        <Clock className="h-3 w-3 mr-1" />
-      ) : (
-        <XCircle className="h-3 w-3 mr-1" />
-      )}
-      {status.charAt(0).toUpperCase() + status.slice(1)}
-    </span>
-  );
-};
+  const patientInsurances = insuranceData?.data || [];
 
-const PatientDocuments = ({
-  patientId,
-  documents,
-  loading,
-  fetchDocuments,
-}) => {
-  const [uploadingDocument, setUploadingDocument] = useState(false);
+  // Initialize delete mutation hook
+  const deleteMutation = useDeleteInsuranceDocument({
+      onSuccess: (data, variables) => {
+          toast.success("Document deleted successfully.");
+          // Invalidate the query to refresh the list for the specific insurance record
+          queryClient.invalidateQueries({ queryKey: ['patientInsurances', 1, { patientId }] });
+          // Also invalidate the specific patientInsurance query if it exists elsewhere
+          queryClient.invalidateQueries({ queryKey: ['patientInsurance', variables.patientInsuranceId] });
+      },
+      onError: (error) => {
+          toast.error(`Failed to delete document: ${error.message}`);
+      }
+  });
 
   const formatDate = (dateString) => {
-    if (!dateString) return "Not available";
-    const date = new Date(dateString);
-    return new Intl.DateTimeFormat("en-US", {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-    }).format(date);
-  };
-
-  const handleDeleteDocument = async (docId) => {
+    if (!dateString) return "N/A";
     try {
-      await apiService.delete(
-        `/api/v1/admin/patients/${patientId}/documents/${docId}`
-      );
-      toast.success("Document deleted successfully");
-      fetchDocuments(); // Refresh documents list
-    } catch (error) {
-      console.error("Failed to delete document:", error);
-      toast.error("Failed to delete document");
+        const date = new Date(dateString);
+        return new Intl.DateTimeFormat("en-US", {
+          year: 'numeric', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit'
+        }).format(date);
+    } catch (e) {
+        return "Invalid Date";
     }
   };
+
+  const handleDeleteDocument = (patientInsuranceId, storagePath) => {
+     if (!patientInsuranceId || !storagePath) {
+        toast.error("Cannot delete document: Missing information.");
+        return;
+     }
+     if (window.confirm("Are you sure you want to delete this document? This cannot be undone.")) {
+        deleteMutation.mutate({ patientInsuranceId, storagePath });
+     }
+  };
+
+   // Function to get public URL for viewing/downloading
+   const getDocumentUrl = async (storagePath) => {
+    const { data, error } = await supabase.storage
+      .from('insurance_documents') // Use correct bucket name
+      .createSignedUrl(storagePath, 300); // URL valid for 5 minutes
+
+    if (error) {
+      console.error("Error creating signed URL:", error);
+      toast.error("Could not get document URL.");
+      return "#";
+    }
+    return data.signedUrl;
+  };
+
+  // Handle selection change for upload target
+  const handleInsuranceSelectChange = (e) => {
+      setSelectedInsuranceId(e.target.value);
+  };
+
+  // Set default selected insurance if only one exists or reset if list changes
+  useEffect(() => {
+      if (patientInsurances.length === 1) {
+          setSelectedInsuranceId(patientInsurances[0].id);
+      } else if (!patientInsurances.find(ins => ins.id === selectedInsuranceId)) {
+          // Reset if the previously selected ID is no longer valid
+          setSelectedInsuranceId('');
+      }
+  }, [patientInsurances, selectedInsuranceId]);
+
 
   return (
     <div className="bg-white p-6 rounded-lg shadow">
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-lg font-medium text-gray-900">Patient Documents</h2>
         <button
-          className="px-3 py-1 text-sm bg-indigo-600 text-white rounded-md hover:bg-indigo-700 flex items-center"
-          onClick={() => setUploadingDocument(true)}
+          className={`px-3 py-1 text-sm bg-indigo-600 text-white rounded-md hover:bg-indigo-700 flex items-center ${!patientInsurances || patientInsurances.length === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
+          onClick={() => setShowUploadForm(true)}
+          disabled={!patientInsurances || patientInsurances.length === 0}
+          title={!patientInsurances || patientInsurances.length === 0 ? "Add an insurance record first" : "Upload new document"}
         >
           <Upload className="h-4 w-4 mr-1" />
           Upload Document
         </button>
       </div>
 
-      {uploadingDocument && (
-        <DocumentUploadForm
-          patientId={patientId}
-          onCancel={() => setUploadingDocument(false)}
-          onSuccess={fetchDocuments}
-        />
+      {showUploadForm && (
+        <>
+         {/* Dropdown to select insurance record if more than one exists */}
+         {patientInsurances.length > 0 && ( // Show dropdown only if there are insurances
+             <div className="mb-4">
+                 <label htmlFor="insuranceSelect" className="block text-sm font-medium text-gray-700 mb-1">
+                     Upload document for: <span className="text-red-600">*</span>
+                 </label>
+                 <select
+                     id="insuranceSelect"
+                     value={selectedInsuranceId}
+                     onChange={handleInsuranceSelectChange}
+                     className="block w-full pl-3 pr-10 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                     required
+                 >
+                     <option value="" disabled>-- Select Insurance Record --</option>
+                     {patientInsurances.map(ins => (
+                         <option key={ins.id} value={ins.id}>
+                             {ins.insurance?.name || 'Unknown Provider'} - Policy: {ins.policy_number}
+                         </option>
+                     ))}
+                 </select>
+             </div>
+         )}
+         <DocumentUploadForm
+           patientInsuranceId={selectedInsuranceId} // Pass selected ID
+           onCancel={() => setShowUploadForm(false)}
+           onSuccess={() => {
+              setShowUploadForm(false);
+              // Invalidate the patient insurances query to refresh
+              queryClient.invalidateQueries({ queryKey: ['patientInsurances', 1, { patientId }] });
+           }}
+         />
+        </>
       )}
 
-      {loading ? (
-        <LoadingSpinner size="small" />
-      ) : documents && documents.length > 0 ? (
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Document Type
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Filename
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Uploaded
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Status
-                </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {documents.map((doc) => (
-                <tr key={doc.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <DocumentTypeBadge type={doc.type} />
-                  </td>
-                  <td className="px-6 py-4 text-sm text-gray-500">
-                    {doc.filename}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {formatDate(doc.uploadedAt)}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <DocumentStatusBadge status={doc.status} />
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                    <a
-                      href={doc.fileUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-indigo-600 hover:text-indigo-900 mr-3"
-                    >
-                      View
-                    </a>
-                    <button
-                      className="text-red-600 hover:text-red-900"
-                      onClick={() => handleDeleteDocument(doc.id)}
-                    >
-                      Delete
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+      {insurancesLoading ? (
+        <LoadingSpinner message="Loading insurance records..." />
+      ) : insurancesError ? (
+         <div className="text-center py-8 text-red-500">
+            Error loading insurance records: {insurancesError.message}
+         </div>
+      ) : patientInsurances.length === 0 ? (
+         <div className="text-center py-8 text-gray-500">
+           No insurance records found for this patient. Add an insurance record via the 'Info' tab to upload documents.
+         </div>
       ) : (
-        <div className="text-center py-8 text-gray-500">
-          No documents found for this patient.
-        </div>
+        // Iterate through insurance records, then documents within each
+        patientInsurances.map(insuranceRecord => (
+          <div key={insuranceRecord.id} className="mb-6 border rounded-lg p-4">
+             <h3 className="text-md font-medium text-gray-700 mb-3">
+               Insurance: {insuranceRecord.insurance?.name || 'Unknown Provider'} (Policy: {insuranceRecord.policy_number})
+             </h3>
+             {insuranceRecord.documents && insuranceRecord.documents.length > 0 ? (
+               <div className="overflow-x-auto">
+                 <table className="min-w-full divide-y divide-gray-200 text-sm">
+                   <thead className="bg-gray-50">
+                     <tr>
+                       <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Filename</th>
+                       <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Size</th>
+                       <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Uploaded</th>
+                       <th className="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                     </tr>
+                   </thead>
+                   <tbody className="bg-white divide-y divide-gray-200">
+                     {insuranceRecord.documents.map((doc, index) => (
+                       <tr key={doc.storagePath || index} className="hover:bg-gray-50">
+                         <td className="px-4 py-2 text-sm text-gray-700 font-medium">{doc.fileName}</td>
+                         <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-500">{(doc.size / 1024).toFixed(1)} KB</td>
+                         <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-500">
+                           {formatDate(doc.uploadedAt)}
+                         </td>
+                         <td className="px-4 py-2 whitespace-nowrap text-right text-sm font-medium">
+                           <button
+                             onClick={async () => {
+                               const url = await getDocumentUrl(doc.storagePath);
+                               if (url !== "#") window.open(url, '_blank');
+                             }}
+                             className="text-indigo-600 hover:text-indigo-900 mr-3 inline-flex items-center"
+                           >
+                             <Download className="h-4 w-4 mr-1"/> View
+                           </button>
+                           <button
+                             className={`text-red-600 hover:text-red-900 inline-flex items-center ${deleteMutation.isPending && deleteMutation.variables?.storagePath === doc.storagePath ? 'opacity-50' : ''}`}
+                             onClick={() => handleDeleteDocument(insuranceRecord.id, doc.storagePath)}
+                             disabled={deleteMutation.isPending && deleteMutation.variables?.storagePath === doc.storagePath}
+                           >
+                             <Trash2 className="h-4 w-4 mr-1"/>
+                             {deleteMutation.isPending && deleteMutation.variables?.storagePath === doc.storagePath ? 'Deleting...' : 'Delete'}
+                           </button>
+                         </td>
+                       </tr>
+                     ))}
+                   </tbody>
+                 </table>
+               </div>
+             ) : (
+               <div className="text-center py-4 text-gray-500 text-sm">
+                 No documents uploaded for this insurance record.
+               </div>
+             )}
+          </div>
+        ))
       )}
     </div>
   );

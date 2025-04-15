@@ -3,7 +3,8 @@ import { Typography, Input, Button, Statistic, Row, Col, Card, message, Spin, Ta
 import { CopyOutlined } from '@ant-design/icons';
 // import { useAppContext } from '../../../context/AppContext'; // Context might not be needed directly if using AuthContext
 import { useAuth } from '../../../context/AuthContext'; // Assuming AuthContext provides user role
-import apiService from '../../../utils/apiService'; // Use the actual apiService
+// import apiService from '../../../utils/apiService'; // Removed - TODO: Replace with hooks
+// TODO: Import useReferralSettings, useUpdateReferralSettings, useUserReferralInfo, useAdminReferrals hooks
 
 const { Title, Paragraph, Text } = Typography;
 
@@ -43,103 +44,24 @@ const ReferralSettings = () => {
   const [isLoadingReferrals, setIsLoadingReferrals] = useState(isAdmin);
   const [isUpdatingSettings, setIsUpdatingSettings] = useState(false);
 
-  // --- API Fetch Functions ---
-  const fetchUserReferralInfo = async () => {
-    if (isAdmin) return;
-    setIsLoadingCode(true);
-    setIsLoadingStats(true);
-    try {
-      // Use the new apiService method
-      const info = await apiService.users.getReferralInfo();
-      setReferralCode(info?.code || 'N/A');
-      // Adjust keys based on actual API response structure
-      setReferralStats({ count: info?.referralCount || 0, rewards: info?.totalRewards || 0 });
-    } catch (error) {
-      console.error("Error fetching user referral info:", error); // Log the actual error
-      message.error('Failed to load your referral information.');
-      setReferralCode('Error');
-      setReferralStats({ count: 0, rewards: 0 });
-    } finally {
-      setIsLoadingCode(false);
-      setIsLoadingStats(false);
-    }
-  };
+  // --- API Fetch Functions (Commented out - Replace with hook calls) ---
+  // const fetchUserReferralInfo = async () => { ... };
+  // const fetchReferralSettings = async () => { ... };
+  // const fetchAllReferrals = async () => { ... };
+  // const handleUpdateSettings = async () => { ... };
 
-  const fetchReferralSettings = async () => {
-    setIsLoadingAdminSettings(true);
-    try {
-      // Use the new apiService method
-      const settings = await apiService.referrals.getSettings();
-      const currentAmount = settings?.rewardAmount || 0;
-      const currentRecipient = settings?.rewardRecipient || 'referrer';
-
-      setRewardAmount(currentAmount);
-      setRewardRecipient(currentRecipient);
-
-      if (isAdmin) {
-        setNewRewardAmount(currentAmount.toString());
-        setNewRewardRecipient(currentRecipient);
-      }
-    } catch (error) {
-      console.error("Error fetching referral settings:", error); // Log the actual error
-      message.error('Failed to load referral settings.');
-      setRewardAmount(0);
-      setRewardRecipient('referrer');
-    } finally {
-      setIsLoadingAdminSettings(false);
-    }
-  };
-
-  const fetchAllReferrals = async () => {
-     if (!isAdmin) return;
-     setIsLoadingReferrals(true);
-     try {
-       // Use the new apiService method
-       const data = await apiService.referrals.getAllAdmin();
-       // Adjust key based on actual API response structure
-       setAllReferrals(data?.referrals || []);
-     } catch (error) {
-       console.error("Error fetching referral history:", error); // Log the actual error
-       message.error('Failed to load referral history.');
-       setAllReferrals([]);
-     } finally {
-       setIsLoadingReferrals(false);
-     }
-   };
-
-  const handleUpdateSettings = async () => {
-    if (!isAdmin) return;
-    const amount = parseFloat(newRewardAmount);
-    if (isNaN(amount) || amount < 0) {
-      message.error('Please enter a valid non-negative reward amount.');
-      return;
-    }
-    setIsUpdatingSettings(true);
-    try {
-      // Use the new apiService method
-      const updatedSettings = await apiService.referrals.updateSettings({
-          rewardAmount: amount,
-          rewardRecipient: newRewardRecipient
-      });
-      // Update local state from the response to be sure
-      setRewardAmount(updatedSettings?.rewardAmount || amount);
-      setRewardRecipient(updatedSettings?.rewardRecipient || newRewardRecipient);
-      message.success('Referral settings updated successfully!');
-    } catch (error) {
-      console.error("Error updating referral settings:", error); // Log the actual error
-      message.error('Failed to update referral settings.');
-    } finally {
-      setIsUpdatingSettings(false);
-    }
-  };
-
+  // TODO: Replace useEffect with React Query hook calls
   useEffect(() => {
-    fetchReferralSettings(); // Fetch settings for all users
-    if (!isAdmin) {
-      fetchUserReferralInfo();
+    // Placeholder: Set initial states or trigger hook fetches
+    if (isAdmin) {
+      setIsLoadingAdminSettings(false); // Assume settings loaded (placeholder)
+      setIsLoadingReferrals(false); // Assume referrals loaded (placeholder)
     } else {
-      fetchAllReferrals();
+      setIsLoadingCode(false); // Assume code loaded (placeholder)
+      setIsLoadingStats(false); // Assume stats loaded (placeholder)
+      setReferralCode('YOUR_CODE'); // Placeholder
     }
+     setIsLoadingAdminSettings(false); // Assume settings loaded for user view too
   }, [isAdmin]);
 
   const copyToClipboard = () => {
@@ -214,9 +136,9 @@ const ReferralSettings = () => {
                  </Radio.Group>
                  <Button
                     type="primary"
-                    onClick={handleUpdateSettings} // Updated handler
+                    // onClick={handleUpdateSettings} // Removed onClick as function is commented out
                     loading={isUpdatingSettings}
-                    disabled={isLoadingAdminSettings}
+                    disabled={isLoadingAdminSettings || isUpdatingSettings} // Disable while loading or updating
                     className="mt-4 w-full" // Make button full width on small screens
                   >
                     Update Settings

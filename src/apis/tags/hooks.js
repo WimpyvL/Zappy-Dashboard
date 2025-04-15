@@ -9,16 +9,17 @@ import {
   getTagById,
   createTag,
   updateTag,
-  deleteTag,
-  getTagUsage
+  deleteTag
+  // getTagUsage // Omitted from API
 } from './api';
 import { toast } from 'react-toastify';
 
 // Hook to fetch all tags
-export const useTags = (params = {}) => {
+export const useTags = (filters = {}) => {
   return useQuery({
-    queryKey: ['tags', params],
-    queryFn: () => getTags(params)
+    queryKey: ['tags', filters],
+    // API function now returns the array directly, no pagination object
+    queryFn: () => getTags(filters)
   });
 };
 
@@ -38,10 +39,10 @@ export const useCreateTag = (options = {}) => {
 
   return useMutation({
     mutationFn: (tagData) => createTag(tagData),
-    onSuccess: () => {
+    onSuccess: (data, variables) => { // Pass data/variables
       queryClient.invalidateQueries({ queryKey: ['tags'] });
       toast.success('Tag created successfully');
-      options.onSuccess && options.onSuccess();
+      options.onSuccess && options.onSuccess(data, variables);
     },
     onError: (error) => {
       toast.error(error.message || 'An error occurred while creating the tag.');
@@ -60,7 +61,7 @@ export const useUpdateTag = (options = {}) => {
       queryClient.invalidateQueries({ queryKey: ['tags'] });
       queryClient.invalidateQueries({ queryKey: ['tag', variables.id] });
       toast.success('Tag updated successfully');
-      options.onSuccess && options.onSuccess();
+      options.onSuccess && options.onSuccess(data, variables); // Pass data/variables
     },
     onError: (error) => {
       toast.error(error.message || 'An error occurred while updating the tag.');
@@ -75,10 +76,11 @@ export const useDeleteTag = (options = {}) => {
 
   return useMutation({
     mutationFn: (id) => deleteTag(id),
-    onSuccess: () => {
+    onSuccess: (data, variables) => { // Pass data/variables
       queryClient.invalidateQueries({ queryKey: ['tags'] });
+      queryClient.removeQueries({ queryKey: ['tag', variables] }); // Remove specific tag query
       toast.success('Tag deleted successfully');
-      options.onSuccess && options.onSuccess();
+      options.onSuccess && options.onSuccess(data, variables);
     },
     onError: (error) => {
       toast.error(error.message || 'An error occurred while deleting the tag.');
@@ -87,12 +89,4 @@ export const useDeleteTag = (options = {}) => {
   });
 };
 
-// Hook to get tag usage information
-export const useTagUsage = (id, options = {}) => {
-  return useQuery({
-    queryKey: ['tagUsage', id],
-    queryFn: () => getTagUsage(id),
-    enabled: !!id,
-    ...options
-  });
-};
+// Hook for getTagUsage is removed as the API function was omitted.

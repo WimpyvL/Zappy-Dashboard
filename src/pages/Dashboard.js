@@ -1,5 +1,5 @@
 import React from 'react';
-import { useAppContext } from '../context/AppContext';
+// import { useAppContext } from '../context/AppContext'; // Removed
 import { Link } from 'react-router-dom';
 import {
   Calendar,
@@ -27,14 +27,14 @@ const ConsultationStatusBadge = ({ status }) => {
 
 const Dashboard = () => {
   console.log("Dashboard component rendering!");
-  const context = useAppContext();
+  // const context = useAppContext(); // Removed
 
-  // Use default empty arrays if context is not available
-  const patients = context?.patients || [];
-  const sessions = context?.sessions || [];
-  const orders = context?.orders || [];
+  // Use default empty arrays or fetch specific dashboard data via hooks
+  const patients = []; // Placeholder - TODO: Fetch patient count
+  const sessions = []; // Placeholder - TODO: Fetch session data/counts
+  const orders = []; // Placeholder - TODO: Fetch order data/counts
 
-  // Placeholder for consultations data - in real app, get from context
+  // Placeholder for consultations data - TODO: Fetch consultation data
   const consultations = [
     {
       id: 'c1',
@@ -65,21 +65,18 @@ const Dashboard = () => {
     }
   ];
 
-  // Get pending consultations
+  // Get pending consultations - Use placeholder
   const pendingConsultations = consultations.filter(c => c.status === 'pending' || c.status === 'needs_more_info');
 
-  // Calculate statistics
-  const scheduledSessions = sessions.filter(s => s.status === 'scheduled').length;
-  const pendingOrders = orders.filter(o => o.status === 'pending').length;
+  // Calculate statistics - Use placeholders
+  const scheduledSessions = 0; // Placeholder
+  const pendingOrders = 0; // Placeholder
 
-  // Get today's sessions
+  // Get today's sessions - Use placeholder
   const today = new Date().toDateString();
-  const todaySessions = sessions.filter(s =>
-    new Date(s.scheduledDate).toDateString() === today &&
-    s.status === 'scheduled'
-  );
+  const todaySessions = []; // Placeholder
 
-  // Get pending tasks (this would come from a tasks collection in a real app)
+  // Get pending tasks - Use placeholder
   const pendingTasks = [
     { id: 1, title: "Review lab results for Jane Smith", priority: "high", dueDate: "2025-03-11" },
     { id: 2, title: "Complete prior authorization for Robert Johnson", priority: "medium", dueDate: "2025-03-12" },

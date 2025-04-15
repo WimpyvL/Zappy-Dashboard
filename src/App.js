@@ -2,7 +2,7 @@ import React from 'react';
 import './App.css';
 import AppRoutes from './constants/AppRoutes';
 import { ToastContainer } from 'react-toastify';
-import { AppProvider } from './context/AppContext';
+// import { AppProvider } from './context/AppContext'; // Removed AppProvider import
 import { AuthProvider } from './context/AuthContext';
 import { CartProvider } from './context/CartContext'; // Added CartProvider import
 import { BrowserRouter as Router } from 'react-router-dom';
@@ -24,14 +24,14 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <AppProvider>
-          <CartProvider> {/* Added CartProvider wrapper */}
-            <Router>
-              <AppRoutes />
+        {/* Removed AppProvider wrapper */}
+        <CartProvider>
+          <Router>
+            <AppRoutes />
               <ToastContainer />
             </Router>
           </CartProvider>
-        </AppProvider>
+        {/* Removed AppProvider wrapper */}
       </AuthProvider>
     </QueryClientProvider>
   );

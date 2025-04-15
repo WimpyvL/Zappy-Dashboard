@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { useAppContext } from '../../context/AppContext';
+// import { useAppContext } from '../../context/AppContext'; // Removed
+// TODO: Import useSessions hook
 import {
   Search,
   Plus,
@@ -245,7 +246,10 @@ const FormCompletedBadge = ({ completed }) => {
 };
 
 const InitialConsultations = () => {
-  const { patients, getPatientNotes } = useAppContext();
+  // const { patients, getPatientNotes } = useAppContext(); // Removed context usage
+  const patients = []; // Placeholder
+  const getPatientNotes = async (id) => []; // Placeholder function
+
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [consultations, setConsultations] = useState([]);

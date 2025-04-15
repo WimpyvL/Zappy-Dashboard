@@ -1,4 +1,6 @@
-import React, { useState, useEffect } from 'react';
+// src/pages/tasks/TaskManagement.js - Refactored for Supabase
+import React, { useState, useEffect, useMemo } from 'react';
+import { Link } from 'react-router-dom'; // Added Link import
 import {
   Search,
   Filter,
@@ -10,11 +12,14 @@ import {
   Calendar,
   ChevronDown,
   ChevronUp,
-  AlertTriangle
+  AlertTriangle,
+  ChevronLeft, // Added
+  ChevronRight // Added
 } from 'lucide-react';
 import TaskModal from './TaskModal';
 import { format, parseISO, isAfter } from 'date-fns';
 import { toast } from 'react-toastify';
+import { useQueryClient } from '@tanstack/react-query';
 // Import the React Query hooks
 import {
   useTasks,
@@ -24,12 +29,43 @@ import {
   useDeleteTask,
   useAssignees,
   useTaskablePatients
-} from '../../apis/tasks/hooks';
+} from '../../apis/tasks/hooks'; // Ensure path is correct
+import LoadingSpinner from '../patients/patientDetails/common/LoadingSpinner'; // Adjust path if needed
+
+// Status Badge Component
+const StatusBadge = ({ status }) => {
+  const lowerStatus = status?.toLowerCase();
+  let icon = <Clock className="h-3 w-3 mr-1" />; // Default to pending/todo
+  let style = "bg-yellow-100 text-yellow-800";
+
+  if (lowerStatus === 'completed') {
+    icon = <CheckCircle className="h-3 w-3 mr-1" />;
+    style = "bg-green-100 text-green-800";
+  } else if (lowerStatus === 'in_progress') {
+    icon = <Clock className="h-3 w-3 mr-1" />; // Or another icon for in progress
+    style = "bg-blue-100 text-blue-800";
+  } else if (lowerStatus === 'cancelled' || lowerStatus === 'archived') {
+    icon = <X className="h-3 w-3 mr-1" />;
+    style = "bg-gray-100 text-gray-800";
+  } else if (lowerStatus !== 'todo') {
+     // Default/unknown status
+     icon = null;
+     style = "bg-gray-100 text-gray-800";
+  }
+
+  return (
+    <span className={`flex items-center px-2 py-1 text-xs font-medium rounded-full ${style}`}>
+      {icon}
+      {status ? status.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) : 'Unknown'}
+    </span>
+  );
+};
+
 
 const TaskManagement = () => {
   // State for filters
-  const [nameFilter, setNameFilter] = useState('');
-  const [taskableFilter, setTaskableFilter] = useState('');
+  const [nameFilter, setNameFilter] = useState(''); // Search by title
+  const [patientFilter, setPatientFilter] = useState(''); // Changed from taskableFilter
   const [statusFilter, setStatusFilter] = useState('');
   const [assigneeFilter, setAssigneeFilter] = useState('');
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
@@ -46,108 +82,117 @@ const TaskManagement = () => {
 
   // State for pagination
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage] = useState(7);
+  // const [itemsPerPage] = useState(10); // Use API default or pass via filters
 
   // State for task modal
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingTask, setEditingTask] = useState(null);
 
-  // Status and priority options
-  const statusOptions = ['pending', 'in_progress', 'completed', 'cancelled'];
+  // Status and priority options from schema
+  const statusOptions = ['todo', 'in_progress', 'completed', 'archived']; // Match schema
   const priorityOptions = ['low', 'medium', 'high'];
 
-  // Combined filters and sorting for React Query
-  const filtersAndSorting = {
-    name: nameFilter || undefined,
-    taskable_id: taskableFilter || undefined,
-    status: statusFilter || undefined,
-    assignee_id: assigneeFilter || undefined,
-    due_date: dueDateFilter || undefined,
-    priority: priorityFilter || undefined,
-    per_page: itemsPerPage
-  };
+  const queryClient = useQueryClient();
 
-  const sortingDetails = {
-    sort_by: sortField,
-    sort_direction: sortDirection
-  };
+  // --- Data Fetching ---
+  // Combined filters and sorting for React Query
+   const filters = useMemo(() => {
+    const activeFilters = {};
+    if (nameFilter) activeFilters.title = nameFilter;
+    if (patientFilter) activeFilters.patientId = patientFilter; // Use patientId
+    if (statusFilter) activeFilters.status = statusFilter;
+    if (assigneeFilter) activeFilters.assignedToUserId = assigneeFilter; // Use assignedToUserId
+    if (dueDateFilter) activeFilters.dueDate = dueDateFilter; // Assuming API supports dueDate filter
+    if (priorityFilter) activeFilters.priority = priorityFilter;
+    // activeFilters.perPage = itemsPerPage; // Pass itemsPerPage if needed by API
+    return activeFilters;
+  }, [nameFilter, patientFilter, statusFilter, assigneeFilter, dueDateFilter, priorityFilter]);
+
+  const sortingDetails = useMemo(() => ({
+    sortBy: sortField,
+    ascending: sortDirection === 'asc'
+  }), [sortField, sortDirection]);
 
   // Use the tasks query hook
   const {
     data: tasksData,
-    isLoading: loading,
+    isLoading,
     error: queryError,
-    refetch: refetchTasks
-  } = useTasks(currentPage, filtersAndSorting, sortingDetails);
+    isFetching, // Use isFetching for background loading indicators
+  } = useTasks(currentPage, filters, sortingDetails);
 
-  // Extract tasks and total count from the response
+  // Extract tasks and pagination info from the response
   const tasks = tasksData?.data || [];
-  const totalTasks = tasksData?.meta?.total_count || 0;
+  const pagination = tasksData?.pagination || { totalCount: 0, totalPages: 1, itemsPerPage: 10 }; // Provide default
+  const totalTasks = pagination.totalCount;
+  const totalPages = pagination.totalPages;
+  const itemsPerPage = pagination.itemsPerPage; // Get itemsPerPage from response
 
   // Use the assignees query hook
-  const {
-    data: assigneesData,
-    isLoading: assigneesLoading
-  } = useAssignees();
-
+  const { data: assigneesData, isLoading: assigneesLoading } = useAssignees();
   // Use the patients query hook
-  const {
-    data: patientsData,
-    isLoading: patientsLoading
-  } = useTaskablePatients();
+  const { data: patientsData, isLoading: patientsLoading } = useTaskablePatients();
 
-  // Format assignees and patients data
-  const assignees = assigneesData?.data ? assigneesData.data.map(user => ({
-    id: user.id,
-    full_name: user.full_name || user.name,
-    email: user.email,
-    type: 'user'
-  })) : [];
+  // Format assignees and patients data for dropdowns
+  const assignees = useMemo(() =>
+    assigneesData?.map(user => ({
+      id: user.id,
+      // Prefer email as display name if available, fallback to ID
+      display_name: user.email || `User #${user.id.substring(0, 6)}`,
+    })) || [], [assigneesData]);
 
-  const patients = patientsData?.data ? patientsData.data.map(patient => ({
-    id: patient.id,
-    full_name: patient.full_name,
-    email: patient.email,
-    type: 'patient'
-  })) : [];
+  const patients = useMemo(() =>
+    patientsData?.map(patient => ({
+      id: patient.id,
+      // Combine first and last name for display
+      display_name: `${patient.first_name || ''} ${patient.last_name || ''}`.trim() || `Patient #${patient.id.substring(0, 6)}`,
+    })) || [], [patientsData]);
 
-  // Use mutation hooks
-  const markTaskCompleted = useMarkTaskCompleted({
-    onSuccess: () => {
+
+  // --- Mutations ---
+  const markTaskCompletedMutation = useMarkTaskCompleted({
+    onSuccess: (data, variables) => {
       toast.success('Task marked as completed');
-      refetchTasks();
-    }
+      queryClient.invalidateQueries({ queryKey: ['tasks', currentPage, filters, sortingDetails] });
+      queryClient.invalidateQueries({ queryKey: ['task', variables] });
+    },
+     onError: (error) => toast.error(`Error marking task complete: ${error.message}`)
   });
 
-  const createTask = useCreateTask({
+  const createTaskMutation = useCreateTask({
     onSuccess: () => {
       toast.success('Task created successfully');
       setIsModalOpen(false);
-      refetchTasks();
-    }
+      queryClient.invalidateQueries({ queryKey: ['tasks'] }); // Invalidate the list query
+    },
+     onError: (error) => toast.error(`Error creating task: ${error.message}`)
   });
 
-  const updateTask = useUpdateTask({
-    onSuccess: () => {
+  const updateTaskMutation = useUpdateTask({
+    onSuccess: (data, variables) => {
       toast.success('Task updated successfully');
       setIsModalOpen(false);
-      refetchTasks();
-    }
+      queryClient.invalidateQueries({ queryKey: ['tasks', currentPage, filters, sortingDetails] });
+      queryClient.invalidateQueries({ queryKey: ['task', variables.id] });
+    },
+     onError: (error) => toast.error(`Error updating task: ${error.message}`)
   });
 
-  const deleteTask = useDeleteTask({
-    onSuccess: () => {
+  const deleteTaskMutation = useDeleteTask({
+    onSuccess: (data, variables) => {
       toast.success('Task deleted successfully');
-      refetchTasks();
-    }
+      queryClient.invalidateQueries({ queryKey: ['tasks'] });
+      queryClient.removeQueries({ queryKey: ['task', variables] });
+    },
+     onError: (error) => toast.error(`Error deleting task: ${error.message}`)
   });
 
-  // Effect to show/hide bulk actions based on selection
+  // --- Effects ---
   useEffect(() => {
     setShowBulkActions(selectedTasks.length > 0);
   }, [selectedTasks]);
 
-  // Function to handle sorting
+  // --- Handlers ---
   const handleSort = (field) => {
     if (field === sortField) {
       setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
@@ -155,18 +200,17 @@ const TaskManagement = () => {
       setSortField(field);
       setSortDirection('asc');
     }
+     setCurrentPage(1); // Reset to first page on sort change
   };
 
-  // Function to handle filtering
   const applyFilters = () => {
-    setCurrentPage(1); // Reset to first page when applying filters
-    refetchTasks();
+    setCurrentPage(1);
+    // Refetch is handled by query key change
   };
 
-  // Function to clear filters
   const clearFilters = () => {
     setNameFilter('');
-    setTaskableFilter('');
+    setPatientFilter('');
     setStatusFilter('');
     setAssigneeFilter('');
     setDueDateFilter('');
@@ -174,19 +218,12 @@ const TaskManagement = () => {
     setCurrentPage(1);
   };
 
-  // Handle task selection for bulk actions
   const handleTaskSelection = (taskId) => {
-    if (selectedTasks.includes(taskId)) {
-      setSelectedTasks(selectedTasks.filter(id => id !== taskId));
-    } else {
-      setSelectedTasks([...selectedTasks, taskId]);
-    }
+    setSelectedTasks(prev =>
+        prev.includes(taskId) ? prev.filter(id => id !== taskId) : [...prev, taskId]
+    );
   };
 
-  // Check if all tasks are selected
-  const allSelected = tasks.length > 0 && tasks.every(task => selectedTasks.includes(task.id));
-
-  // Toggle select all
   const toggleSelectAll = () => {
     if (allSelected) {
       setSelectedTasks([]);
@@ -194,9 +231,8 @@ const TaskManagement = () => {
       setSelectedTasks(tasks.map(task => task.id));
     }
   };
+  const allSelected = tasks.length > 0 && selectedTasks.length === tasks.length;
 
-  // Function to handle pagination
-  const totalPages = Math.ceil(totalTasks / itemsPerPage);
 
   const handlePageChange = (page) => {
     if (page > 0 && page <= totalPages) {
@@ -204,20 +240,11 @@ const TaskManagement = () => {
     }
   };
 
-  // Action functions
-  const handleMarkComplete = async () => {
-    try {
-      // Mark each selected task as complete
-      const markPromises = selectedTasks.map(taskId =>
-        markTaskCompleted.mutateAsync(taskId)
-      );
-
-      await Promise.all(markPromises);
-      setSelectedTasks([]);
-    } catch (error) {
-      console.error('Error marking tasks as complete:', error);
-      toast.error('Failed to update tasks. Please try again.');
-    }
+  const handleMarkComplete = () => {
+    selectedTasks.forEach(taskId => {
+        markTaskCompletedMutation.mutate(taskId);
+    });
+    setSelectedTasks([]);
   };
 
   const openAddTaskModal = () => {
@@ -231,76 +258,63 @@ const TaskManagement = () => {
     setIsModalOpen(true);
   };
 
-  // Handle save from modal
-  const handleSaveTask = async (taskData) => {
-    try {
-      if (editingTask) {
-        // Update existing task
-        await updateTask.mutateAsync({ id: editingTask.id, taskData });
-      } else {
-        // Add new task
-        await createTask.mutateAsync(taskData);
-      }
-    } catch (error) {
-      console.error('Error saving task:', error);
-      toast.error('Failed to save task. Please try again.');
+  const handleSaveTask = (taskData) => {
+    // Add created_by_user_id if needed by RLS (fetch user from AuthContext)
+    if (editingTask) {
+      updateTaskMutation.mutate({ id: editingTask.id, taskData: taskData });
+    } else {
+      createTaskMutation.mutate(taskData);
     }
   };
 
-  // Handle task deletion
-  const handleDeleteTask = async (taskId) => {
+  const handleDeleteTask = (taskId) => {
     if (window.confirm('Are you sure you want to delete this task?')) {
-      try {
-        await deleteTask.mutateAsync(taskId);
-      } catch (error) {
-        console.error('Error deleting task:', error);
-        toast.error('Failed to delete task. Please try again.');
-      }
+       deleteTaskMutation.mutate(taskId);
     }
   };
 
-  // Render sort indicator
+  // --- Render Logic ---
   const renderSortIndicator = (field) => {
     if (sortField === field) {
       return sortDirection === 'asc' ?
-        <ChevronUp className="inline h-4 w-4" /> :
-        <ChevronDown className="inline h-4 w-4" />;
+        <ChevronUp className="inline h-4 w-4 ml-1 text-gray-600" /> :
+        <ChevronDown className="inline h-4 w-4 ml-1 text-gray-600" />;
     }
-    return null;
+    return <ChevronDown className="inline h-4 w-4 ml-1 text-gray-300 group-hover:text-gray-400" />; // Show default down arrow on hover
   };
 
-  // Format date for display
   const formatDate = (dateString) => {
     if (!dateString) return '';
     try {
       return format(parseISO(dateString), 'MM/dd/yyyy');
-    } catch (e) {
-      return dateString;
-    }
+    } catch (e) { return "Invalid Date"; }
   };
 
-  // Check if task is overdue
-  const isOverdue = (dueDate) => {
-    if (!dueDate) return false;
+   const formatDateTime = (dateString) => {
+    if (!dateString) return '';
+    try {
+      return format(parseISO(dateString), 'MM/dd/yyyy p'); // Include time
+    } catch (e) { return "Invalid Date"; }
+  };
+
+
+  const isOverdue = (dueDate, status) => {
+    if (!dueDate || status === 'completed' || status === 'cancelled' || status === 'archived') return false;
     try {
       return isAfter(new Date(), parseISO(dueDate));
-    } catch (e) {
-      return false;
-    }
+    } catch (e) { return false; }
   };
 
-  // Format task status for display
   const formatStatus = (status) => {
     if (!status) return 'Unknown';
-    return status.replace('_', ' ').charAt(0).toUpperCase() + status.replace('_', ' ').slice(1);
+    return status.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
   };
 
-  // Display error from React Query
-  const error = queryError?.message || null;
+  const error = queryError?.message || null; // Use queryError
 
   return (
     <div>
-      {/* Header with title and action buttons */}
+      {/* Header */}
       <div className="flex justify-between items-center mb-4">
         <h1 className="text-xl font-bold text-gray-800">Tasks</h1>
         <div className="flex space-x-3">
@@ -310,12 +324,12 @@ const TaskManagement = () => {
                 {selectedTasks.length} selected
               </span>
               <button
-                className="text-indigo-600 hover:text-indigo-900 text-sm font-medium mx-2 flex items-center"
+                className="text-indigo-600 hover:text-indigo-900 text-sm font-medium mx-2 flex items-center disabled:opacity-50 disabled:cursor-not-allowed"
                 onClick={handleMarkComplete}
-                disabled={markTaskCompleted.isLoading}
+                disabled={markTaskCompletedMutation.isPending || selectedTasks.length === 0} // Use isPending
               >
                 <CheckCircle className="h-4 w-4 mr-1" />
-                Mark Complete
+                Mark Complete {markTaskCompletedMutation.isPending ? '...' : ''}
               </button>
               <button
                 className="text-gray-400 hover:text-gray-600"
@@ -335,267 +349,141 @@ const TaskManagement = () => {
         </div>
       </div>
 
-      {/* Error message if any */}
+      {/* Error Display */}
       {error && (
-        <div className="bg-red-50 border-l-4 border-red-400 p-4 mb-4 rounded-md">
-          <div className="flex">
-            <div className="flex-shrink-0">
-              <AlertTriangle className="h-5 w-5 text-red-400" />
-            </div>
-            <div className="ml-3">
-              <p className="text-sm text-red-700">{error}</p>
-            </div>
-          </div>
-        </div>
-      )}
+         <div className="bg-red-50 border-l-4 border-red-400 p-4 mb-4 rounded-md">
+           <div className="flex">
+             <div className="flex-shrink-0">
+               <AlertTriangle className="h-5 w-5 text-red-400" />
+             </div>
+             <div className="ml-3">
+               <p className="text-sm text-red-700">{error}</p>
+             </div>
+           </div>
+         </div>
+       )}
 
-      {/* Filters and Search */}
-      <div className="bg-white p-4 rounded-lg shadow mb-4">
+      {/* Filters */}
+       <div className="bg-white p-4 rounded-lg shadow mb-4">
         <div className="flex flex-col md:flex-row md:items-center space-y-2 md:space-y-0 md:space-x-4 mb-2">
+          {/* Search Input */}
           <div className="flex-1 relative">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <Search className="h-5 w-5 text-gray-400" />
-            </div>
-            <input
-              type="text"
-              placeholder="Search by title..."
-              className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-              value={nameFilter}
-              onChange={(e) => setNameFilter(e.target.value)}
-            />
-          </div>
+             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+               <Search className="h-5 w-5 text-gray-400" />
+             </div>
+             <input type="text" placeholder="Search by title..." className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" value={nameFilter} onChange={(e) => setNameFilter(e.target.value)} />
+           </div>
+           {/* Patient Filter */}
+           <div className="flex items-center space-x-2">
+             <Filter className="h-5 w-5 text-gray-400" />
+             <select className="block w-full md:w-auto pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md" value={patientFilter} onChange={(e) => setPatientFilter(e.target.value)}>
+               <option value="">All Patients</option>
+               {patientsLoading ? <option disabled>Loading...</option> : patients.map(p => (<option key={p.id} value={p.id}>{p.display_name}</option>))}
+             </select>
+           </div>
+           {/* Status Filter */}
+           <div className="flex items-center space-x-2">
+             <Filter className="h-5 w-5 text-gray-400" />
+             <select className="block w-full md:w-auto pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
+               <option value="">All Statuses</option>
+               {statusOptions.map(s => (<option key={s} value={s}>{formatStatus(s)}</option>))}
+             </select>
+           </div>
+           {/* Advanced Filters Toggle */}
+           <button className="text-indigo-600 hover:text-indigo-900 text-sm font-medium" onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}>
+             {showAdvancedFilters ? "Hide Filters" : "Advanced Filters"}
+           </button>
+         </div>
+         {/* Advanced Filters Section */}
+         {showAdvancedFilters && (
+           <div className="flex flex-col md:flex-row md:items-center space-y-2 md:space-y-0 md:space-x-4 pt-2 border-t border-gray-200 mt-2">
+             {/* Assignee Filter */}
+             <div className="flex items-center space-x-2">
+               <span className="text-sm text-gray-500">Assignee:</span>
+               <select className="block w-full md:w-auto pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md" value={assigneeFilter} onChange={(e) => setAssigneeFilter(e.target.value)}>
+                 <option value="">All Assignees</option>
+                 {assigneesLoading ? <option disabled>Loading...</option> : assignees.map(a => (<option key={a.id} value={a.id}>{a.display_name}</option>))}
+               </select>
+             </div>
+             {/* Priority Filter */}
+             <div className="flex items-center space-x-2">
+               <span className="text-sm text-gray-500">Priority:</span>
+               <select className="block w-full md:w-auto pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md" value={priorityFilter} onChange={(e) => setPriorityFilter(e.target.value)}>
+                 <option value="">All Priorities</option>
+                 {priorityOptions.map(p => (<option key={p} value={p}>{p.charAt(0).toUpperCase() + p.slice(1)}</option>))}
+               </select>
+             </div>
+             {/* Due Date Filter */}
+             <div className="flex items-center space-x-2">
+               <span className="text-sm text-gray-500">Due Date:</span>
+               <input type="date" className="block w-full md:w-auto pl-3 pr-3 py-1.5 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md" value={dueDateFilter} onChange={(e) => setDueDateFilter(e.target.value)} />
+             </div>
+             {/* Action Buttons */}
+             <div className="flex items-center space-x-2 md:ml-auto">
+               <button className="px-3 py-1 border border-gray-300 text-gray-700 rounded text-sm hover:bg-gray-50" onClick={clearFilters}>Reset Filters</button>
+               <button className="px-3 py-1 bg-indigo-600 text-white rounded text-sm hover:bg-indigo-700" onClick={applyFilters}>Apply Filters</button>
+             </div>
+           </div>
+         )}
+       </div>
 
-          <div className="flex items-center space-x-2">
-            <Filter className="h-5 w-5 text-gray-400" />
-            <select
-              className="block pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
-              value={taskableFilter}
-              onChange={(e) => setTaskableFilter(e.target.value)}
-            >
-              <option value="">All Patients</option>
-              {patients.map(patient => (
-                <option key={patient.id} value={patient.id}>
-                  {patient.full_name || `Patient #${patient.id}`}
-                </option>
-              ))}
-            </select>
-          </div>
 
-          <div className="flex items-center space-x-2">
-            <Filter className="h-5 w-5 text-gray-400" />
-            <select
-              className="block pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-            >
-              <option value="">All Statuses</option>
-              {statusOptions.map(status => (
-                <option key={status} value={status}>
-                  {formatStatus(status)}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <button
-            className="text-indigo-600 hover:text-indigo-900 text-sm font-medium"
-            onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
-          >
-            {showAdvancedFilters ? "Hide Filters" : "Advanced Filters"}
-          </button>
-        </div>
-
-        {showAdvancedFilters && (
-          <div className="flex flex-col md:flex-row md:items-center space-y-2 md:space-y-0 md:space-x-4 pt-2 border-t border-gray-200">
-            <div className="flex items-center space-x-2">
-              <span className="text-sm text-gray-500">Assignee:</span>
-              <select
-                className="block pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
-                value={assigneeFilter}
-                onChange={(e) => setAssigneeFilter(e.target.value)}
-              >
-                <option value="">All Assignees</option>
-                {assignees.map(assignee => (
-                  <option key={assignee.id} value={assignee.id}>
-                    {assignee.full_name || assignee.email || `User #${assignee.id}`}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="flex items-center space-x-2">
-              <span className="text-sm text-gray-500">Priority:</span>
-              <select
-                className="block pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
-                value={priorityFilter}
-                onChange={(e) => setPriorityFilter(e.target.value)}
-              >
-                <option value="">All Priorities</option>
-                {priorityOptions.map(priority => (
-                  <option key={priority} value={priority}>
-                    {priority.charAt(0).toUpperCase() + priority.slice(1)}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="flex items-center space-x-2">
-              <span className="text-sm text-gray-500">Due Date:</span>
-              <input
-                type="date"
-                className="block pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
-                value={dueDateFilter}
-                onChange={(e) => setDueDateFilter(e.target.value)}
-              />
-            </div>
-
-            <div className="flex items-center space-x-2 ml-auto">
-              <button
-                className="px-3 py-1 border border-gray-300 text-gray-700 rounded text-sm hover:bg-gray-50"
-                onClick={clearFilters}
-              >
-                Reset Filters
-              </button>
-              <button
-                className="px-3 py-1 bg-indigo-600 text-white rounded text-sm hover:bg-indigo-700"
-                onClick={applyFilters}
-              >
-                Apply Filters
-              </button>
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Tasks Table with Horizontal Scrolling */}
+      {/* Tasks Table */}
       <div className="bg-white shadow rounded-lg mb-4">
         <div className="overflow-x-auto">
           <table className="min-w-full" style={{ minWidth: '1200px' }}>
             <thead className="bg-gray-50">
               <tr>
                 <th scope="col" className="py-3 pl-4 pr-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-10">
-                  <div className="flex items-center">
-                    <input
-                      type="checkbox"
-                      className="h-4 w-4 text-indigo-600 border-gray-300 rounded"
-                      checked={allSelected}
-                      onChange={toggleSelectAll}
-                    />
-                  </div>
+                  <input type="checkbox" className="h-4 w-4 text-indigo-600 border-gray-300 rounded" checked={allSelected} onChange={toggleSelectAll} />
                 </th>
-                <th scope="col" onClick={() => handleSort('created_at')} className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer w-32">
-                  Created At {renderSortIndicator('created_at')}
-                </th>
-                <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-48">
-                  Title
-                </th>
-                <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-48">
-                  Patient
-                </th>
-                <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-32">
-                  Assignee
-                </th>
-                <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-28">
-                  Status
-                </th>
-                <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-28">
-                  Priority
-                </th>
-                <th scope="col" onClick={() => handleSort('due_date')} className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer w-32">
-                  Due Date {renderSortIndicator('due_date')}
-                </th>
-                <th scope="col" onClick={() => handleSort('updated_at')} className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer w-32">
-                  Updated At {renderSortIndicator('updated_at')}
-                </th>
-                <th scope="col" className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider w-32">
-                  Actions
-                </th>
+                <th scope="col" onClick={() => handleSort('created_at')} className="group px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer w-32">Created At {renderSortIndicator('created_at')}</th>
+                <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-48">Title</th>
+                <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-48">Patient</th>
+                <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-32">Assignee</th>
+                <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-28">Status</th>
+                <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-28">Priority</th>
+                <th scope="col" onClick={() => handleSort('due_date')} className="group px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer w-32">Due Date {renderSortIndicator('due_date')}</th>
+                <th scope="col" onClick={() => handleSort('updated_at')} className="group px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer w-32">Updated At {renderSortIndicator('updated_at')}</th>
+                <th scope="col" className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider w-32">Actions</th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {loading ? (
-                <tr>
-                  <td colSpan="10" className="px-6 py-4 text-center text-gray-500">
-                    Loading tasks...
-                  </td>
-                </tr>
+              {(isLoading || isFetching) && !tasksData ? ( // Use isLoading from useTasks hook
+                 <tr><td colSpan="10" className="text-center py-10"><LoadingSpinner message="Loading tasks..." /></td></tr>
+              ) : queryError ? (
+                 <tr><td colSpan="10" className="text-center py-10 text-red-600">Error loading tasks: {queryError.message}</td></tr>
               ) : tasks.length === 0 ? (
-                <tr>
-                  <td colSpan="10" className="px-6 py-4 text-center text-gray-500">
-                    No tasks found matching your search criteria.
-                  </td>
-                </tr>
+                <tr><td colSpan="10" className="px-6 py-4 text-center text-gray-500">No tasks found matching criteria.</td></tr>
               ) : (
                 tasks.map((task) => (
                   <tr key={task.id} className="hover:bg-gray-50">
                     <td className="py-4 pl-4 pr-3 whitespace-nowrap">
-                      <input
-                        type="checkbox"
-                        className="h-4 w-4 text-indigo-600 border-gray-300 rounded"
-                        checked={selectedTasks.includes(task.id)}
-                        onChange={() => handleTaskSelection(task.id)}
-                      />
+                      <input type="checkbox" className="h-4 w-4 text-indigo-600 border-gray-300 rounded" checked={selectedTasks.includes(task.id)} onChange={() => handleTaskSelection(task.id)} />
+                    </td>
+                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">{formatDateTime(task.created_at)}</td>
+                    <td className="px-4 py-4 whitespace-nowrap"><div className="text-sm font-medium text-gray-900">{task.title}</div></td>
+                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {task.patient ? (<Link to={`/patients/${task.patient_id}`} className="hover:text-indigo-600">{task.patient.first_name} {task.patient.last_name}</Link>) : 'None'}
                     </td>
                     <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {formatDate(task.created_at)}
+                      {task.assigned_user ? (task.assigned_user.email || `User #${task.assigned_to_user_id?.substring(0,6)}`) : 'Unassigned'}
                     </td>
+                    <td className="px-4 py-4 whitespace-nowrap"><StatusBadge status={task.status} /></td>
                     <td className="px-4 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">{task.title}</div>
-                    </td>
-                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {task.taskable ?
-                        (task.taskable.patient?.full_name || task.taskable.type === 'patient' && `Patient #${task.taskable.id}` || `${task.taskable.type} #${task.taskable.id}`)
-                        : 'None'}
-                    </td>
-                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {task.assignee ?
-                        (task.assignee.full_name || task.assignee.email || `User #${task.assignee.id}`)
-                        : 'Unassigned'}
-                    </td>
-                    <td className="px-4 py-4 whitespace-nowrap">
-                      <span className={`px-2 py-1 text-xs font-medium rounded-full ${task.status === 'completed' ? 'bg-green-100 text-green-800' :
-                        task.status === 'in_progress' ? 'bg-blue-100 text-blue-800' :
-                          task.status === 'cancelled' ? 'bg-gray-100 text-gray-800' :
-                            'bg-yellow-100 text-yellow-800'
-                        }`}>
-                        {formatStatus(task.status)}
-                      </span>
-                    </td>
-                    <td className="px-4 py-4 whitespace-nowrap">
-                      <span className={`px-2 py-1 text-xs font-medium rounded-full ${task.priority === 'high' ? 'bg-red-100 text-red-800' :
-                        task.priority === 'medium' ? 'bg-orange-100 text-orange-800' :
-                          task.priority === 'urgent' ? 'bg-purple-100 text-purple-800' :
-                            'bg-green-100 text-green-800'
-                        }`}>
-                        {task.priority.charAt(0).toUpperCase() + task.priority.slice(1)}
-                      </span>
+                      {task.priority ? (<span className={`px-2 py-1 text-xs font-medium rounded-full ${task.priority === 'high' ? 'bg-red-100 text-red-800' : task.priority === 'medium' ? 'bg-orange-100 text-orange-800' : 'bg-green-100 text-green-800'}`}>{task.priority.charAt(0).toUpperCase() + task.priority.slice(1)}</span>) : <span className="text-xs text-gray-500">-</span> }
                     </td>
                     <td className="px-4 py-4 whitespace-nowrap text-sm">
-                      <div className={`${isOverdue(task.due_date) && task.status !== 'completed' ? 'text-red-600 font-medium' : 'text-gray-900'}`}>
+                      <div className={`${isOverdue(task.due_date, task.status) ? 'text-red-600 font-medium' : 'text-gray-900'}`}>
                         {formatDate(task.due_date)}
-                        {isOverdue(task.due_date) && task.status !== 'completed' && (
-                          <span className="ml-1">
-                            <Clock className="inline h-3 w-3" />
-                          </span>
-                        )}
+                        {isOverdue(task.due_date, task.status) && (<span className="ml-1"><Clock className="inline h-3 w-3" /></span>)}
                       </div>
                     </td>
-                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {formatDate(task.updated_at)}
-                    </td>
+                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">{formatDateTime(task.updated_at)}</td>
                     <td className="px-4 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <button
-                        className="text-indigo-600 hover:text-indigo-900 mr-2"
-                        onClick={() => openEditTaskModal(task.id)}
-                      >
-                        Edit
-                      </button>
-                      <button
-                        className="text-red-600 hover:text-red-900"
-                        onClick={() => handleDeleteTask(task.id)}
-                        disabled={deleteTask.isLoading}
-                      >
-                        Delete
+                      <button className="text-indigo-600 hover:text-indigo-900 mr-2" onClick={() => openEditTaskModal(task.id)}>Edit</button>
+                      <button className="text-red-600 hover:text-red-900" onClick={() => handleDeleteTask(task.id)} disabled={deleteTaskMutation.isPending && deleteTaskMutation.variables === task.id}>
+                        Delete {deleteTaskMutation.isPending && deleteTaskMutation.variables === task.id && '...'}
                       </button>
                     </td>
                   </tr>
@@ -607,73 +495,32 @@ const TaskManagement = () => {
       </div>
 
       {/* Pagination */}
-      <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6 rounded-lg">
-        <div className="flex-1 flex justify-between sm:hidden">
-          <button
-            className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
-            onClick={() => handlePageChange(currentPage - 1)}
-            disabled={currentPage === 1}
-          >
-            Previous
-          </button>
-          <button
-            className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
-            onClick={() => handlePageChange(currentPage + 1)}
-            disabled={currentPage === totalPages}
-          >
-            Next
-          </button>
-        </div>
-        <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
-          <div>
-            <p className="text-sm text-gray-700">
-              Showing <span className="font-medium">{Math.min((currentPage - 1) * itemsPerPage + 1, totalTasks)}</span> to <span className="font-medium">{Math.min(currentPage * itemsPerPage, totalTasks)}</span> of{' '}
-              <span className="font-medium">{totalTasks}</span> results
-            </p>
-          </div>
-          <div>
-            <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
-              <button
-                className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
-                onClick={() => handlePageChange(currentPage - 1)}
-                disabled={currentPage === 1}
-              >
-                <span className="sr-only">Previous</span>
-                <svg className="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                  <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
-                </svg>
-              </button>
+       {pagination.totalPages > 1 && (
+         <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6 rounded-lg">
+           <div className="flex-1 flex justify-between sm:hidden">
+             <button className={`relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 ${currentPage <= 1 ? "opacity-50 cursor-not-allowed" : ""}`} onClick={() => handlePageChange(currentPage - 1)} disabled={currentPage <= 1}>Previous</button>
+             <button className={`ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 ${currentPage >= totalPages ? "opacity-50 cursor-not-allowed" : ""}`} onClick={() => handlePageChange(currentPage + 1)} disabled={currentPage >= totalPages}>Next</button>
+           </div>
+           <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+             <div>
+               <p className="text-sm text-gray-700">Showing <span className="font-medium">{pagination.totalCount > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0}</span> to <span className="font-medium">{Math.min(currentPage * itemsPerPage, totalTasks)}</span> of <span className="font-medium">{totalTasks}</span> results</p>
+             </div>
+             <div>
+               <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                 <button className={`relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium ${currentPage > 1 ? 'text-gray-500 hover:bg-gray-50' : 'text-gray-300 cursor-not-allowed'}`} onClick={() => handlePageChange(currentPage - 1)} disabled={currentPage <= 1}>
+                   <span className="sr-only">Previous</span><ChevronLeft className="h-5 w-5" />
+                 </button>
+                 {/* TODO: Implement numbered pagination buttons */}
+                 <span className="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700">Page {currentPage} of {totalPages}</span>
+                 <button className={`relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium ${currentPage < totalPages ? 'text-gray-500 hover:bg-gray-50' : 'text-gray-300 cursor-not-allowed'}`} onClick={() => handlePageChange(currentPage + 1)} disabled={currentPage >= totalPages}>
+                   <span className="sr-only">Next</span><ChevronRight className="h-5 w-5" />
+                 </button>
+               </nav>
+             </div>
+           </div>
+         </div>
+       )}
 
-              {[...Array(Math.min(5, totalPages)).keys()].map(i => {
-                const pageNum = i + Math.max(1, currentPage - 2);
-                if (pageNum <= totalPages) {
-                  return (
-                    <button
-                      key={pageNum}
-                      className={`relative inline-flex items-center px-4 py-2 border ${currentPage === pageNum ? 'bg-indigo-50 border-indigo-500 text-indigo-600 z-10' : 'border-gray-300 bg-white text-gray-500 hover:bg-gray-50'} text-sm font-medium`}
-                      onClick={() => handlePageChange(pageNum)}
-                    >
-                      {pageNum}
-                    </button>
-                  );
-                }
-                return null;
-              })}
-
-              <button
-                className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
-                onClick={() => handlePageChange(currentPage + 1)}
-                disabled={currentPage === totalPages}
-              >
-                <span className="sr-only">Next</span>
-                <svg className="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                  <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
-                </svg>
-              </button>
-            </nav>
-          </div>
-        </div>
-      </div>
 
       {/* Task Modal */}
       <TaskModal
@@ -681,11 +528,11 @@ const TaskManagement = () => {
         onClose={() => setIsModalOpen(false)}
         task={editingTask}
         onSave={handleSaveTask}
-        assignees={assignees}
-        patients={patients}
+        assignees={assignees} // Pass formatted assignees
+        patients={patients} // Pass formatted patients
         statusOptions={statusOptions}
         priorityOptions={priorityOptions}
-        isSubmitting={createTask.isLoading || updateTask.isLoading}
+        isSubmitting={createTaskMutation.isPending || updateTaskMutation.isPending} // Use mutation state
       />
     </div>
   );

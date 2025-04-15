@@ -41,29 +41,33 @@ const PatientInfo = ({ patient }) => {
             <Mail className="h-4 w-4 text-gray-400 mr-2" />
             <div>
               <p className="text-sm text-gray-500">Email</p>
-              <p className="text-sm font-medium">{patient.email}</p>
+              {/* Use optional chaining for safety */}
+              <p className="text-sm font-medium">{patient?.email || 'N/A'}</p>
             </div>
           </div>
           <div className="flex items-center">
             <Phone className="h-4 w-4 text-gray-400 mr-2" />
             <div>
               <p className="text-sm text-gray-500">Phone</p>
-              <p className="text-sm font-medium">{patient.phone}</p>
+              {/* Assuming 'phone' column exists */}
+              <p className="text-sm font-medium">{patient?.phone || 'N/A'}</p>
             </div>
           </div>
           <div className="flex items-center">
             <MapPin className="h-4 w-4 text-gray-400 mr-2" />
             <div>
               <p className="text-sm text-gray-500">Address</p>
+              {/* Assuming 'address' is a jsonb object with fields like street, city, etc. */}
+              {/* Adjust display based on actual address structure */}
               <p className="text-sm font-medium">
-                {patient.address || "No address on file"}
+                {patient?.address ? `${patient.address.street || ''}, ${patient.address.city || ''}` : "No address on file"}
               </p>
             </div>
           </div>
           <div>
             <p className="text-sm text-gray-500">Date of Birth</p>
             <p className="text-sm font-medium">
-              {patient.dob} (Age: {calculateAge(patient.dob)})
+              {patient?.dob ? `${formatDate(patient.dob)} (Age: ${calculateAge(patient.dob)})` : 'N/A'}
             </p>
           </div>
           <div>
@@ -74,8 +78,9 @@ const PatientInfo = ({ patient }) => {
           </div>
           <div>
             <p className="text-sm text-gray-500">Preferred Pharmacy</p>
+            {/* TODO: Add preferred_pharmacy_id FK to patients table and join pharmacy name */}
             <p className="text-sm font-medium">
-              {patient.preferredPharmacy || "Not specified"}
+              {patient?.preferredPharmacy || "Not specified"} {/* Placeholder */}
             </p>
           </div>
         </div>
@@ -87,34 +92,38 @@ const PatientInfo = ({ patient }) => {
           Medical Information
         </h2>
         <div className="space-y-3">
+          {/* TODO: Add assigned_doctor_id FK to patients table and join doctor name */}
           <div>
             <p className="text-sm text-gray-500">Assigned Doctor</p>
-            <p className="text-sm font-medium">{patient.assignedDoctor}</p>
+            <p className="text-sm font-medium">{patient?.assignedDoctor || 'N/A'}</p> {/* Placeholder */}
           </div>
+          {/* TODO: Current Medication might come from orders or a separate prescriptions table */}
           <div>
             <p className="text-sm text-gray-500">Current Medication</p>
-            <p className="text-sm font-medium">{patient.medication}</p>
+            <p className="text-sm font-medium">{patient?.medication || 'N/A'}</p> {/* Placeholder */}
           </div>
+          {/* TODO: Medical Notes might be a separate table or field */}
           <div>
             <p className="text-sm text-gray-500">Medical Notes</p>
             <p className="text-sm font-medium">
-              {patient.medicalNotes || "No notes available"}
+              {patient?.medicalNotes || "No notes available"} {/* Placeholder */}
             </p>
           </div>
+          {/* TODO: Last Visit / Next Appointment likely come from a sessions/appointments table */}
           <div>
             <p className="text-sm text-gray-500">Last Visit</p>
             <p className="text-sm font-medium">
-              {patient.lastVisit
+              {patient?.lastVisit
                 ? formatDate(patient.lastVisit)
-                : "No visits recorded"}
+                : "No visits recorded"} {/* Placeholder */}
             </p>
           </div>
           <div>
             <p className="text-sm text-gray-500">Next Appointment</p>
             <p className="text-sm font-medium">
-              {patient.nextAppointment
+              {patient?.nextAppointment
                 ? formatDate(patient.nextAppointment)
-                : "No appointment scheduled"}
+                : "No appointment scheduled"} {/* Placeholder */}
             </p>
           </div>
         </div>

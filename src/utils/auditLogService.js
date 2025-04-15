@@ -7,53 +7,53 @@
 // in the place where the log is triggered.
 import { createAuditLog } from '../apis/auditlog/api';
 import errorHandling from './errorHandling'; // Assuming errorHandling utility exists
-
-// Get user info (example - adapt based on actual AuthContext structure)
-// This is a placeholder; ideally, get user info from AuthContext
-const getCurrentUserEmail = () => {
-  try {
-    const userString = localStorage.getItem('user');
-    if (userString) {
-      const user = JSON.parse(userString);
-      return user?.email || 'unknown@example.com'; // Adjust property name if needed
-    }
-  } catch (e) {
-    console.error("Failed to get user for audit log:", e);
-  }
-  return 'unknown@system.com';
-};
-
+import { supabase } from '../lib/supabaseClient'; // Import supabase client to get user
 
 /**
- * Records an audit log event by sending it to the backend.
+ * Records an audit log event by sending it to the Supabase backend.
  *
  * @param {string} action - A description of the action performed (e.g., 'Patient Created', 'User Logged In').
  * @param {object} [details={}] - An optional object containing relevant details (e.g., { patientId: 123, orderStatus: 'Shipped' }).
- * @param {string} [userId] - Optional: The ID or identifier of the user performing the action. Defaults to trying to get from context/storage.
+ * @param {string} [table_name] - Optional: The name of the primary table affected.
+ * @param {string} [record_id] - Optional: The ID of the record affected.
  */
-const logAuditEvent = async (action, details = {}, userId = null) => {
+const logAuditEvent = async (action, details = {}, table_name = null, record_id = null) => {
   // Avoid logging during development if noisy, or use a flag
   // if (process.env.NODE_ENV === 'development') {
   //   console.log(`[Audit Log (Dev)] Action: ${action}`, details);
   //   return;
   // }
 
+  let userId = null;
+  try {
+    // Get current user ID from Supabase session
+    const { data: { user } } = await supabase.auth.getUser();
+    userId = user?.id || null;
+  } catch (e) {
+      console.error("Failed to get user for audit log:", e);
+  }
+
   const logData = {
+    user_id: userId, // Use the actual user ID from Supabase auth
     action: action,
-    details: JSON.stringify(details), // Send details as a JSON string or structured object based on backend expectation
-    user: userId || getCurrentUserEmail(), // Get user identifier
-    timestamp: new Date().toISOString(), // Timestamp can also be set by backend
+    details: details, // Pass details as an object, api.js will handle stringify if needed by backend (though jsonb is preferred)
+    table_name: table_name,
+    record_id: record_id,
+    // created_at is set by the database default
   };
 
   try {
-    // Call the API function directly
-    // We might not need the full mutation hook state management here
-    await createAuditLog(logData);
-    console.log(`Audit event logged: ${action}`, details); // Log success locally for debugging
+    // Call the refactored API function directly
+    const result = await createAuditLog(logData);
+    if (result.success) {
+        console.log(`Audit event logged: ${action}`, details); // Log success locally for debugging
+    } else {
+        // Error was already logged in api.js, but we could add more handling here if needed
+        console.warn(`Failed to log audit event "${action}" to database.`);
+    }
   } catch (error) {
+    // Catch any unexpected errors during the service call itself
     errorHandling.logError(error, `AuditLogService (${action})`);
-    // Decide if the user needs to be notified about logging failure
-    // toast.error("Failed to record audit event."); // Maybe only for critical logs?
   }
 };
 

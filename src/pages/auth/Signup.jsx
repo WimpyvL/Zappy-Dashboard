@@ -1,7 +1,8 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Eye, EyeOff, Check, X } from "lucide-react";
-import apiService from "../../utils/apiService"; // Import apiService
+import { Eye, EyeOff, Check, X, AlertCircle } from "lucide-react"; // Added AlertCircle
+// Remove apiService import
+import { useRegister } from "../../apis/auth/hooks"; // Import the refactored hook
 
 const Signup = () => {
   const navigate = useNavigate();
@@ -67,44 +68,47 @@ const Signup = () => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = async (e) => {
+  // Initialize the useRegister mutation hook
+  const mutation = useRegister({
+    onSuccess: (data) => {
+      // Handle success - navigate to login with a message
+      // Consider if email confirmation is enabled in Supabase settings
+      const message = data?.user?.identities?.length > 0
+        ? "Account created successfully! Please log in."
+        : "Account created! Please check your email to confirm registration.";
+      navigate("/login", { state: { message } });
+    },
+    onError: (error) => {
+      // Handle error - display the error message from Supabase
+      setErrors({ form: error.message || "Registration failed. Please try again." });
+    }
+  });
+
+  const handleSubmit = (e) => { // No longer async directly
     e.preventDefault();
     if (!validateForm()) return;
 
-    setIsLoading(true);
     setErrors({}); // Clear previous form errors
 
-    // Prepare payload, excluding confirmPassword
-    const { confirmPassword, referralCode, ...basePayload } = formData;
-    const payload = { ...basePayload };
+    // Prepare payload for Supabase signUp
+    // Pass email, password, and potentially other data in options
+    const { confirmPassword, referralCode, firstName, lastName, role, ...rest } = formData;
+    const payload = {
+      email: formData.email,
+      password: formData.password,
+      options: {
+        data: { // Store additional info in user_metadata
+          first_name: firstName,
+          last_name: lastName,
+          role: role, // Store role if needed
+          // referral_code: referralCode.trim() || null // Store referral code if provided
+        }
+      }
+    };
+    // Note: Referral code logic might need a separate handling mechanism (e.g., backend function)
+    // depending on how it's supposed to work. Storing in metadata is one option.
 
-    // Only include referralCode if it's not empty
-    if (referralCode && referralCode.trim() !== "") {
-      payload.referralCode = referralCode.trim();
-    }
-
-    try {
-      // Use the actual API service call
-      await apiService.auth.register(payload); // Assuming register handles the payload structure
-
-      // Reset form (optional, as we navigate away)
-      // setFormData({ ...initial state... });
-
-      // Navigate to login page with success message
-      navigate("/login", {
-        state: { message: "Account created successfully! Please log in." },
-      });
-
-    } catch (error) {
-      console.error("Registration error:", error);
-      // Display specific error from API if available, otherwise generic message
-      const apiErrorMessage = error.response?.data?.error || error.message;
-      setErrors({
-        form: apiErrorMessage || "Registration failed. Please check your details or try again later.",
-      });
-    } finally {
-      setIsLoading(false);
-    }
+    mutation.mutate(payload); // Call the mutation hook
   };
 
   // --- Render ---
@@ -209,9 +213,9 @@ const Signup = () => {
               </div>
             </div>
             {/* Submit Button */}
-            <button type="submit" disabled={isLoading}
-              className={`w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white ${isLoading ? "bg-indigo-400" : "bg-indigo-600 hover:bg-indigo-700"} focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500`}>
-              {isLoading ? "Creating account..." : "Create account"}
+            <button type="submit" disabled={mutation.isPending} // Use mutation.isPending
+              className={`w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white ${mutation.isPending ? "bg-indigo-400 cursor-not-allowed" : "bg-indigo-600 hover:bg-indigo-700"} focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500`}>
+              {mutation.isPending ? "Creating account..." : "Create account"}
             </button>
             {/* Sign In Link */}
             <p className="mt-6 text-center text-sm text-gray-600">

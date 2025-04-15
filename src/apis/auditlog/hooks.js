@@ -5,14 +5,17 @@ import { toast } from 'react-toastify';
 /**
  * Hook to fetch audit logs with pagination and filtering.
  * @param {object} params - Query parameters (e.g., { page: 1, limit: 20, userId: '...', action: '...' })
+ * @param {number} [currentPage=1] - The current page number.
+ * @param {object} [filters={}] - Filtering criteria (e.g., { userId: '...', action: '...' }).
  * @param {object} options - React Query options
  * @returns {QueryResult} Result object from useQuery
  */
-export const useAuditLogs = (params = { page: 1, limit: 20 }, options = {}) => {
+export const useAuditLogs = (currentPage = 1, filters = {}, options = {}) => {
   return useQuery({
-    // Query key includes parameters to ensure refetching when params change
-    queryKey: ['auditLogs', params],
-    queryFn: () => getAuditLogs(params),
+    // Query key includes page and filters to ensure refetching when they change
+    queryKey: ['auditLogs', currentPage, filters],
+    // Pass currentPage and filters as separate arguments to the API function
+    queryFn: () => getAuditLogs(currentPage, filters),
     // Keep previous data while fetching new page/filters for smoother UX
     keepPreviousData: true,
     onError: (error) => {

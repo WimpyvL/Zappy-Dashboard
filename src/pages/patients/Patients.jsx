@@ -13,34 +13,41 @@ import {
   ChevronRight,
 } from "lucide-react";
 import PatientModal from "./PatientModal";
-import apiService from "../../utils/apiService";
+// Remove apiService import
+// import apiService from "../../utils/apiService";
+import { usePatients } from "../../apis/patients/hooks"; // Import patient hooks
+import { useTags } from "../../apis/tags/hooks"; // Import tag hooks
+import { useMemo } from "react"; // Import useMemo for filters object
+import { useQueryClient } from '@tanstack/react-query'; // Import useQueryClient
 
 const StatusBadge = ({ status }) => {
-  if (status === "active") {
+  // Make status check case-insensitive and handle null/undefined
+  const lowerStatus = status?.toLowerCase();
+  if (lowerStatus === "active") {
     return (
       <span className="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">
         Active
       </span>
     );
-  } else if (status === "inactive") {
+  } else if (lowerStatus === "inactive") {
     return (
       <span className="px-2 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-800">
         Inactive
       </span>
     );
-  } else if (status === "suspended") {
+  } else if (lowerStatus === "suspended") {
     return (
       <span className="px-2 py-1 text-xs font-medium rounded-full bg-red-100 text-red-800">
         Suspended
       </span>
     );
-  } else if (status === "pending") {
+  } else if (lowerStatus === "pending") {
     return (
       <span className="px-2 py-1 text-xs font-medium rounded-full bg-yellow-100 text-yellow-800">
         Pending
       </span>
     );
-  } else if (status === "blacklisted") {
+  } else if (lowerStatus === "blacklisted") {
     return (
       <span className="px-2 py-1 text-xs font-medium rounded-full bg-black text-white">
         Blacklisted
@@ -62,145 +69,76 @@ const AffiliateTag = ({ isAffiliate }) => {
 };
 
 const Patients = () => {
-  // State management
-  const [patients, setPatients] = useState([]);
-  const [tags, setTags] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-
-  // Pagination state
-  const [paginationLinks, setPaginationLinks] = useState({
-    first: null,
-    last: null,
-    next: null,
-    prev: null,
-  });
-
-  const [paginationMeta, setPaginationMeta] = useState({
-    count: 0,
-    total_count: 0,
-    total_pages: 1,
-    current_page: 1,
-  });
-
-  // Filter and search state
-  const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
-  const [affiliateFilter, setAffiliateFilter] = useState("all");
-  const [tagFilter, setTagFilter] = useState("all");
-  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
-  const [searchType, setSearchType] = useState("name"); // name, email, phone, order
+  const queryClient = useQueryClient(); // Initialize query client
+  // State for filters and pagination
   const [currentPage, setCurrentPage] = useState(1);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [searchType, setSearchType] = useState("name"); // name, email, phone
+  const [statusFilter, setStatusFilter] = useState("all");
+  // const [affiliateFilter, setAffiliateFilter] = useState("all"); // Assuming affiliate status is on patient record now
+  const [tagFilter, setTagFilter] = useState("all"); // Keep tag filter state
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
 
-  // Selected patients and modals
+  // Selected patients and modals state (keep as is)
   const [selectedPatients, setSelectedPatients] = useState([]);
   const [showBulkActions, setShowBulkActions] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
 
-  // Fetch patients data from API
-  const fetchPatients = async () => {
-    try {
-      setLoading(true);
-      setError(null);
+  // --- Data Fetching with React Query Hooks ---
 
-      // Build query parameters
-      const params = {
-        page: currentPage,
-      };
-
-      // Add filters if they are set
-      if (searchTerm) {
-        params.search = searchTerm;
-        params.search_by = searchType;
-      }
-
-      if (statusFilter !== "all") {
-        params.status = statusFilter;
-      }
-
-      if (tagFilter !== "all") {
-        params.tag_id = tagFilter;
-      }
-
-      if (affiliateFilter !== "all") {
-        params.is_affiliate = affiliateFilter === "yes";
-      }
-
-      // Call API
-      const result = await apiService.patients.getAll(params);
-
-      // Update state with response data
-      setPatients(result.data || []);
-      setPaginationLinks(result.links || {});
-      setPaginationMeta({
-        count: result.meta?.count || 0,
-        total_count: result.meta?.total_count || 0,
-        total_pages: result.meta?.total_pages || 1,
-        current_page: currentPage,
-      });
-    } catch (err) {
-      console.error("Error fetching patients:", err);
-      setError(err.message || "Failed to load patients");
-    } finally {
-      setLoading(false);
+  // Memoize filters object to prevent unnecessary refetches
+  const filters = useMemo(() => {
+    const activeFilters = {};
+    if (searchTerm && searchType === 'name') { // Adapt search based on type
+        activeFilters.name = searchTerm; // Assumes API handles partial match
     }
-  };
-
-  // Fetch tags for filtering
-  const fetchTags = async () => {
-    try {
-      const result = await apiService.tags.getAll();
-      setTags(result.data || []);
-    } catch (err) {
-      console.error("Error fetching tags:", err);
+    if (searchTerm && searchType === 'email') {
+        activeFilters.email = searchTerm; // Assumes API handles partial match
     }
-  };
+     if (searchTerm && searchType === 'phone') {
+        activeFilters.phone = searchTerm; // Assumes API handles partial match
+    }
+    if (statusFilter !== "all") {
+      activeFilters.status = statusFilter;
+    }
+    if (tagFilter !== "all") {
+      activeFilters.tag_id = tagFilter; // Assuming API filters by tag ID
+    }
+    // Add affiliate filter if needed, e.g., activeFilters.is_affiliate = affiliateFilter === 'yes';
+    return activeFilters;
+  }, [searchTerm, searchType, statusFilter, tagFilter /*, affiliateFilter*/]);
 
-  // Load data on component mount and when filters/pagination change
-  useEffect(() => {
-    fetchPatients();
-  }, [
-    currentPage,
-    searchTerm,
-    statusFilter,
-    tagFilter,
-    affiliateFilter,
-    searchType,
-  ]);
+  // Fetch Patients using usePatients hook
+  const {
+    data: patientsData, // Rename data to avoid conflict
+    isLoading: patientsLoading,
+    error: patientsError,
+    isFetching: patientsIsFetching, // Use isFetching for loading indicators during refetch
+  } = usePatients(currentPage, filters);
 
-  // Load tags once on component mount
-  useEffect(() => {
-    fetchTags();
-  }, []);
+  // Extract patients array and pagination info
+  const patients = patientsData?.data || [];
+  const pagination = patientsData?.pagination || { totalPages: 1, totalCount: 0, itemsPerPage: 10 }; // Provide default
 
-  // Effect to show/hide bulk actions based on selection
+  // Fetch Tags using useTags hook
+  const { data: tags = [], isLoading: tagsLoading, error: tagsError } = useTags(); // Default tags to empty array
+
+  // Remove old fetch functions: fetchPatients, fetchTags
+  // Remove old useEffects that called fetchPatients/fetchTags
+
+   // Effect to show/hide bulk actions based on selection (keep as is)
   useEffect(() => {
     setShowBulkActions(selectedPatients.length > 0);
   }, [selectedPatients]);
 
-  // Handle page change
+  // Handle page change - directly set the currentPage state
   const handlePageChange = (page) => {
-    if (page < 1 || page > paginationMeta.total_pages) return;
-    setCurrentPage(page);
-  };
-
-  // Extract page number from URL
-  const getPageFromUrl = (url) => {
-    if (!url) return null;
-    const match = url.match(/page=(\d+)/);
-    return match ? parseInt(match[1]) : null;
-  };
-
-  // Go to specific pagination link
-  const goToLink = (linkType) => {
-    const link = paginationLinks[linkType];
-    if (!link) return;
-
-    const page = getPageFromUrl(link);
-    if (page) {
-      handlePageChange(page);
+    if (page >= 1 && page <= pagination.totalPages) {
+      setCurrentPage(page);
     }
   };
+
+  // Remove getPageFromUrl and goToLink as pagination is now handled differently
 
   // Handle patient selection for bulk actions
   const handlePatientSelection = (patientId) => {
@@ -225,26 +163,25 @@ const Patients = () => {
     }
   };
 
-  // Reset filters
+  // Reset filters - ensure currentPage is reset
   const resetFilters = () => {
     setSearchTerm("");
     setStatusFilter("all");
-    setAffiliateFilter("all");
+    // setAffiliateFilter("all"); // Remove if affiliate filter state is removed
     setTagFilter("all");
     setSearchType("name");
-    setCurrentPage(1);
+    setCurrentPage(1); // Reset to page 1
   };
 
-  // Generate pagination controls
+  // Generate pagination controls using data from usePatients hook
   const renderPagination = () => {
-    if (paginationMeta.total_pages <= 1) return null;
+    if (!pagination || pagination.totalPages <= 1) return null;
 
-    // Create array of pages to show
     let pages = [];
-    const totalPages = paginationMeta.total_pages;
-    const currentPage = paginationMeta.current_page;
+    const totalPages = pagination.totalPages;
+    // Use currentPage state variable which drives the query
+    // const currentPage = pagination.currentPage; // This reflects the data's page, not necessarily the requested one if fetching
 
-    // Always show first and last page, and up to 3 pages around current
     if (totalPages <= 5) {
       // Show all pages if 5 or fewer
       pages = Array.from({ length: totalPages }, (_, i) => i + 1);
@@ -272,18 +209,19 @@ const Patients = () => {
       }
 
       // Add last page if not already included
-      if (totalPages > 1) {
+      if (totalPages > 1 && !pages.includes(totalPages)) { // Check if already included
         pages.push(totalPages);
       }
     }
 
     return (
       <div className="flex items-center space-x-1">
+        {/* Previous Button */}
         <button
-          onClick={() => goToLink("prev")}
-          disabled={!paginationLinks.prev}
+          onClick={() => handlePageChange(currentPage - 1)}
+          disabled={currentPage <= 1}
           className={`relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium ${
-            paginationLinks.prev
+            currentPage > 1
               ? "text-gray-500 hover:bg-gray-50"
               : "text-gray-300 cursor-not-allowed"
           }`}
@@ -292,6 +230,7 @@ const Patients = () => {
           <ChevronLeft className="h-5 w-5" />
         </button>
 
+        {/* Page Numbers */}
         {pages.map((page, index) =>
           page === "..." ? (
             <span
@@ -315,11 +254,12 @@ const Patients = () => {
           )
         )}
 
+        {/* Next Button */}
         <button
-          onClick={() => goToLink("next")}
-          disabled={!paginationLinks.next}
+          onClick={() => handlePageChange(currentPage + 1)}
+          disabled={currentPage >= totalPages}
           className={`relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium ${
-            paginationLinks.next
+            currentPage < totalPages
               ? "text-gray-500 hover:bg-gray-50"
               : "text-gray-300 cursor-not-allowed"
           }`}
@@ -426,20 +366,10 @@ const Patients = () => {
 
         {showAdvancedFilters && (
           <div className="flex flex-col md:flex-row md:items-center space-y-4 md:space-y-0 md:space-x-4 pt-4 border-t border-gray-200">
-            <div className="flex items-center space-x-2">
-              <span className="text-sm text-gray-500">Affiliate Status:</span>
-              <select
-                className="block pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
-                value={affiliateFilter}
-                onChange={(e) => setAffiliateFilter(e.target.value)}
-              >
-                <option value="all">All Patients</option>
-                <option value="yes">Affiliates Only</option>
-                <option value="no">Non-Affiliates</option>
-              </select>
-            </div>
+            {/* Affiliate Filter Removed - Add back if needed based on patient data */}
+            {/* <div className="flex items-center space-x-2"> ... </div> */}
 
-            {/* Tag Filter */}
+            {/* Tag Filter - Use tags from useTags hook */}
             <div className="flex items-center space-x-2">
               <span className="text-sm text-gray-500">Tags:</span>
               <select
@@ -517,7 +447,8 @@ const Patients = () => {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {loading ? (
+              {/* Use patientsLoading or patientsIsFetching for loading state */}
+              {(patientsLoading || patientsIsFetching) ? (
                 <tr>
                   <td colSpan="7" className="px-6 py-4 text-center">
                     <div className="flex justify-center">
@@ -528,16 +459,17 @@ const Patients = () => {
                     </p>
                   </td>
                 </tr>
-              ) : error ? (
+              ) : patientsError ? ( // Use patientsError for error state
                 <tr>
                   <td
                     colSpan="7"
                     className="px-6 py-4 text-center text-red-500"
                   >
-                    Error loading patients: {error}
+                    {/* Display error message from hook */}
+                    Error loading patients: {patientsError.message}
                   </td>
                 </tr>
-              ) : patients.length > 0 ? (
+              ) : patients.length > 0 ? ( // Use patients array from hook data
                 patients.map((patient) => (
                   <tr key={patient.id} className="hover:bg-gray-50">
                     <td className="pl-6 py-4 whitespace-nowrap">
@@ -552,10 +484,10 @@ const Patients = () => {
                       <div className="flex items-center">
                         <div>
                           <div className="text-sm font-medium text-gray-900">
-                            {patient.full_name}
-                            {patient.isAffiliate && (
-                              <AffiliateTag isAffiliate={patient.isAffiliate} />
-                            )}
+                            {/* Use first_name and last_name from Supabase schema */}
+                            {patient.first_name} {patient.last_name}
+                            {/* Add AffiliateTag back if is_affiliate field exists */}
+                            {/* {patient.is_affiliate && <AffiliateTag isAffiliate={patient.is_affiliate} />} */}
                           </div>
                           <div className="text-sm text-gray-500">
                             {patient.email}
@@ -615,39 +547,45 @@ const Patients = () => {
 
         {/* Pagination */}
         <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
+          {/* Mobile Pagination - Use currentPage and totalPages */}
           <div className="flex-1 flex justify-between sm:hidden">
             <button
               className={`relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 ${
-                !paginationLinks.prev ? "opacity-50 cursor-not-allowed" : ""
+                currentPage <= 1 ? "opacity-50 cursor-not-allowed" : ""
               }`}
-              onClick={() => goToLink("prev")}
-              disabled={!paginationLinks.prev}
+              onClick={() => handlePageChange(currentPage - 1)}
+              disabled={currentPage <= 1}
             >
               Previous
             </button>
             <button
               className={`ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 ${
-                !paginationLinks.next ? "opacity-50 cursor-not-allowed" : ""
+                 currentPage >= pagination.totalPages ? "opacity-50 cursor-not-allowed" : ""
               }`}
-              onClick={() => goToLink("next")}
-              disabled={!paginationLinks.next}
+              onClick={() => handlePageChange(currentPage + 1)}
+              disabled={currentPage >= pagination.totalPages}
             >
               Next
             </button>
           </div>
 
+          {/* Desktop Pagination Info - Use pagination object */}
           <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
             <div>
               <p className="text-sm text-gray-700">
                 Showing{" "}
                 <span className="font-medium">
-                  {paginationMeta.count > 0 ? 1 : 0}
+                  {/* Calculate starting item number */}
+                  {pagination.totalCount > 0 ? (currentPage - 1) * pagination.itemsPerPage + 1 : 0}
                 </span>{" "}
-                to <span className="font-medium">{paginationMeta.count}</span>{" "}
+                to <span className="font-medium">
+                  {/* Calculate ending item number */}
+                  {Math.min(currentPage * pagination.itemsPerPage, pagination.totalCount)}
+                  </span>{" "}
                 of{" "}
                 <span className="font-medium">
-                  {paginationMeta.total_count}
-                </span>{" "}
+                  {pagination.totalCount}
+                  </span>{" "}
                 results
               </p>
             </div>
@@ -668,8 +606,8 @@ const Patients = () => {
           isOpen={showAddModal}
           onClose={() => setShowAddModal(false)}
           onSuccess={() => {
-            // Refresh the patients list
-            fetchPatients();
+            // Invalidate the query instead of fetching manually
+            queryClient.invalidateQueries({ queryKey: ['patients'] });
           }}
         />
       )}

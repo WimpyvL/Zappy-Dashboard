@@ -2,14 +2,17 @@ import React, { useState, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Eye, EyeOff, AlertCircle, CheckCircle } from "lucide-react";
 import { useForm } from "react-hook-form";
-import { useAuth } from "../../context/AuthContext";
-import { useMutation } from "@tanstack/react-query";
-import apiService from "../../utils/apiService";
+import { useAuth } from "../../context/AuthContext"; // Still needed for isAuthenticated
+// Remove unused imports
+// import { useMutation } from "@tanstack/react-query";
+// import apiService from "../../utils/apiService";
+import { useLogin } from "../../apis/auth/hooks"; // Import the refactored hook
 
 const Login = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { setUser, error: authError, isAuthenticated, clearError } = useAuth();
+  // Update context destructuring: remove setUser, authError, clearError
+  const { isAuthenticated } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   const [successMessage, setSuccessMessage] = useState(
     location.state?.message || ""
@@ -25,10 +28,11 @@ const Login = () => {
     defaultValues: { email: "", password: "", rememberMe: false },
   });
 
-  useEffect(() => {
-    if (authError) setApiError(authError);
-    clearError && clearError();
-  }, [authError, clearError]);
+  // Remove useEffect related to old authError and clearError
+  // useEffect(() => {
+  //   if (authError) setApiError(authError);
+  //   clearError && clearError();
+  // }, [authError, clearError]);
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -38,41 +42,36 @@ const Login = () => {
 
   const togglePasswordVisibility = () => setShowPassword((prev) => !prev);
 
-  const mutation = useMutation({
-    mutationFn: ({ email, password }) => apiService.auth.login(email, password),
-    onSuccess: (response) => {
-      const authHeader =
-        response.headers?.authorization || response.headers?.Authorization;
-      const token = authHeader?.startsWith("Bearer ")
-        ? authHeader.split(" ")[1]
-        : null;
-  
-      if (token) localStorage.setItem("token", token);
-  
-      const userData = {
-        email: response.data?.attributes?.email,
-        role: response.data?.attributes?.role,
-        id: response.data?.id,
-      };
-  
-      localStorage.setItem("isAuthenticated", "true");
-      localStorage.setItem("user", JSON.stringify(userData));
-      setUser(userData);
+  // Use the imported useLogin hook
+  const mutation = useLogin({
+    onSuccess: (data) => {
+      // AuthContext handles session/user state via onAuthStateChange
+      // No need to manually set localStorage or call setUser
+      console.log("Login successful via hook:", data);
       reset();
+      // Navigation is handled by the useEffect watching isAuthenticated
     },
     onError: (error) => {
-      setApiError(
-        error?.response?.data || "An unexpected error occurred. Please try again."
-      );
+      // Use error.message for Supabase errors
+      setApiError(error.message || "An unexpected login error occurred.");
     },
   });
-  
 
   const onSubmit = (data) => {
-    setSuccessMessage("");
-    setApiError("");
-    mutation.mutate(data);
+    setSuccessMessage(""); // Clear previous success message
+    setApiError(""); // Clear previous errors
+    // Pass email and password to the mutation
+    mutation.mutate({ email: data.email, password: data.password });
   };
+
+  // Handle mutation errors (redundant with onError in useLogin, but kept for safety)
+  // useEffect(() => {
+  //   if (mutation.error) {
+  //     setApiError(
+  //       mutation.error.message || "An unexpected error occurred. Please try again."
+  //     );
+  //   }
+  // }, [mutation.error]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100 p-4">
@@ -169,12 +168,12 @@ const Login = () => {
 
           <button
             type="submit"
-            disabled={mutation.isLoading}
+            disabled={mutation.isPending} // Use isPending for TanStack Query v5+
             className={`w-full py-2 px-4 text-sm font-medium text-white rounded-md shadow-sm ${
-              mutation.isLoading
-                ? "bg-indigo-400"
+              mutation.isPending // Use isPending
+                ? "bg-indigo-400 cursor-not-allowed" // Add cursor style when disabled
                 : "bg-indigo-600 hover:bg-indigo-700"
-            } focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500`}
+            } focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500`}
           >
             {mutation.isPending ? "Signing in..." : "Sign in"}
           </button>

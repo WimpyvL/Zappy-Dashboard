@@ -12,16 +12,20 @@ import {
   markTaskCompleted,
   handleSessionCreation,
   handleUpdateStatus,
-  handleBulkSessionCreation,
+  // handleSessionCreation, // Omitted from API
+  // handleUpdateStatus, // Omitted from API
+  // handleBulkSessionCreation, // Omitted from API
   getAssignees,
   getTaskablePatients
 } from './api';
+import { toast } from 'react-toastify'; // Assuming toast notifications
 
 // Get tasks hook
-export const useTasks = (currentPage, tasksFilters, sortingDetails) => {
+export const useTasks = (currentPage = 1, filters = {}, sortingDetails = {}) => {
   return useQuery({
-    queryKey: ['tasks', currentPage, tasksFilters, sortingDetails],
-    queryFn: () => getTasks(currentPage, tasksFilters, undefined, sortingDetails)
+    queryKey: ['tasks', currentPage, filters, sortingDetails],
+    queryFn: () => getTasks(currentPage, filters, sortingDetails),
+    keepPreviousData: true,
   });
 };
 
@@ -41,9 +45,14 @@ export const useCreateTask = (options = {}) => {
 
   return useMutation({
     mutationFn: (taskData) => createTask(taskData),
-    onSuccess: () => {
+    onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
-      options.onSuccess && options.onSuccess();
+      toast.success('Task created successfully.');
+      options.onSuccess && options.onSuccess(data, variables);
+    },
+    onError: (error) => {
+        toast.error(`Error creating task: ${error.message}`);
+        options.onError && options.onError(error);
     }
   });
 };
@@ -54,9 +63,15 @@ export const useUpdateTask = (options = {}) => {
 
   return useMutation({
     mutationFn: ({ id, taskData }) => updateTask(id, taskData),
-    onSuccess: () => {
+    onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
-      options.onSuccess && options.onSuccess();
+      queryClient.invalidateQueries({ queryKey: ['task', variables.id] }); // Invalidate specific task
+      toast.success('Task updated successfully.');
+      options.onSuccess && options.onSuccess(data, variables);
+    },
+     onError: (error) => {
+        toast.error(`Error updating task: ${error.message}`);
+        options.onError && options.onError(error);
     }
   });
 };
@@ -67,9 +82,15 @@ export const useDeleteTask = (options = {}) => {
 
   return useMutation({
     mutationFn: (id) => deleteTask(id),
-    onSuccess: () => {
+    onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
-      options.onSuccess && options.onSuccess();
+      queryClient.removeQueries({ queryKey: ['task', variables] });
+      toast.success('Task deleted successfully.');
+      options.onSuccess && options.onSuccess(data, variables);
+    },
+     onError: (error) => {
+        toast.error(`Error deleting task: ${error.message}`);
+        options.onError && options.onError(error);
     }
   });
 };
@@ -80,69 +101,38 @@ export const useMarkTaskCompleted = (options = {}) => {
 
   return useMutation({
     mutationFn: (id) => markTaskCompleted(id),
-    onSuccess: () => {
+    onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
-      options.onSuccess && options.onSuccess();
+      queryClient.invalidateQueries({ queryKey: ['task', variables] });
+      toast.success('Task marked as completed.');
+      options.onSuccess && options.onSuccess(data, variables);
+    },
+     onError: (error) => {
+        toast.error(`Error marking task as completed: ${error.message}`);
+        options.onError && options.onError(error);
     }
   });
 };
 
-// Creating session hook
-export const useCreateSession = (options = {}) => {
-  const queryClient = useQueryClient();
+// Hooks for session creation and status updates are removed as API functions were commented out.
+// Implement specific hooks if/when those API functions are implemented with Supabase logic.
 
-  return useMutation({
-    mutationFn: (id) => handleSessionCreation(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['tasks'] });
-      queryClient.refetchQueries({ queryKey: ['tasks'] });
-      options.onSuccess && options.onSuccess();
-    }
-  });
-};
-
-// Creating bulk sessions hook
-export const useCreateBulkSessions = (selectedRows, options = {}) => {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: () => handleBulkSessionCreation(selectedRows),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['tasks'] });
-      queryClient.refetchQueries({ queryKey: ['tasks'] });
-      options.onSuccess && options.onSuccess();
-    }
-  });
-};
-
-// Archiving data hook
-export const useArchiveData = (selectedIds, options = {}) => {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: () => handleUpdateStatus(selectedIds),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['tasks'] });
-      queryClient.refetchQueries({ queryKey: ['tasks'] });
-      options.onSuccess && options.onSuccess();
-    }
-  });
-};
-
-// Get assignees hook
+// Get assignees hook (fetches users)
 export const useAssignees = (options = {}) => {
   return useQuery({
-    queryKey: ['assignees'],
+    queryKey: ['assignees'], // Consider more specific key if filters are added
     queryFn: getAssignees,
+    staleTime: 5 * 60 * 1000, // Cache assignees for 5 minutes
     ...options
   });
 };
 
-// Get taskable patients hook
+// Get taskable patients hook (fetches patients)
 export const useTaskablePatients = (options = {}) => {
   return useQuery({
-    queryKey: ['taskablePatients'],
+    queryKey: ['taskablePatients'], // Consider more specific key if filters are added
     queryFn: getTaskablePatients,
+    staleTime: 5 * 60 * 1000, // Cache patients for 5 minutes
     ...options
   });
 };

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
-import { useAppContext } from "../../context/AppContext";
+// import { useAppContext } from "../../context/AppContext"; // Removed
 import { Check, User } from "lucide-react"; // Import Check and User icons
+// TODO: Import necessary hooks (useServices, useProducts, useSubscriptionPlans)
 
 const InitialConsultationNotes = ({
   patient,
@@ -10,8 +11,15 @@ const InitialConsultationNotes = ({
 }) => {
   console.log("Refining product/dose selection state");
 
-  // Get products as well to determine fulfillment source and doses
-  const { services, getServiceById, getServicePlans, getAllPlans, products } = useAppContext();
+  // TODO: Replace context usage with hooks
+  // const { services, getServiceById, getServicePlans, getAllPlans, products } = useAppContext();
+  const services = []; // Placeholder
+  const products = []; // Placeholder
+  const allPlans = []; // Placeholder
+  const getServiceById = (id) => services.find(s => s.id === id); // Placeholder
+  const getServicePlans = (serviceId) => []; // Placeholder
+  const getAllPlans = () => []; // Placeholder
+
 
   // --- State Hooks ---
   const [hpi, setHpi] = useState("");
@@ -39,8 +47,7 @@ const InitialConsultationNotes = ({
   const selectedService = getServiceById(selectedServiceId);
   // Get plans specifically configured and available for the *selected* service
   const plansForSelectedService = selectedService ? getServicePlans(selectedServiceId) : [];
-  // Get all plans to look up names if needed
-  const allPlans = getAllPlans ? getAllPlans() : [];
+  // Removed duplicate declaration of allPlans
 
   // Filter available medication products (assuming products are loaded from context)
   // TODO: Filter based on products associated with the selectedServiceId if applicable

@@ -12,12 +12,14 @@ import {
   markInvoiceAsPaid,
   sendInvoice
 } from './api';
+import { toast } from 'react-toastify'; // Assuming toast notifications
 
 // Hook to fetch all invoices
-export const useInvoices = (params = {}) => {
+export const useInvoices = (currentPage = 1, filters = {}) => {
   return useQuery({
-    queryKey: ['invoices', params],
-    queryFn: () => getInvoices(params)
+    queryKey: ['invoices', currentPage, filters],
+    queryFn: () => getInvoices(currentPage, filters),
+    keepPreviousData: true,
   });
 };
 
@@ -37,11 +39,13 @@ export const useCreateInvoice = (options = {}) => {
 
   return useMutation({
     mutationFn: (invoiceData) => createInvoice(invoiceData),
-    onSuccess: () => {
+    onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['invoices'] });
-      options.onSuccess && options.onSuccess();
+      toast.success('Invoice created successfully.');
+      options.onSuccess && options.onSuccess(data, variables);
     },
     onError: (error) => {
+      toast.error(`Error creating invoice: ${error.message}`);
       options.onError && options.onError(error);
     }
   });
@@ -56,9 +60,11 @@ export const useUpdateInvoice = (options = {}) => {
     onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['invoices'] });
       queryClient.invalidateQueries({ queryKey: ['invoice', variables.id] });
-      options.onSuccess && options.onSuccess();
+      toast.success('Invoice updated successfully.');
+      options.onSuccess && options.onSuccess(data, variables);
     },
     onError: (error) => {
+      toast.error(`Error updating invoice: ${error.message}`);
       options.onError && options.onError(error);
     }
   });
@@ -70,11 +76,14 @@ export const useDeleteInvoice = (options = {}) => {
 
   return useMutation({
     mutationFn: (id) => deleteInvoice(id),
-    onSuccess: () => {
+    onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['invoices'] });
-      options.onSuccess && options.onSuccess();
+      queryClient.removeQueries({ queryKey: ['invoice', variables] }); // Remove specific invoice query
+      toast.success('Invoice deleted successfully.');
+      options.onSuccess && options.onSuccess(data, variables);
     },
     onError: (error) => {
+      toast.error(`Error deleting invoice: ${error.message}`);
       options.onError && options.onError(error);
     }
   });
@@ -85,19 +94,22 @@ export const useMarkInvoiceAsPaid = (options = {}) => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (id) => markInvoiceAsPaid(id),
+    // Allow passing optional amountPaid
+    mutationFn: ({ id, amountPaid }) => markInvoiceAsPaid(id, amountPaid),
     onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['invoices'] });
-      queryClient.invalidateQueries({ queryKey: ['invoice', variables] });
-      options.onSuccess && options.onSuccess();
+      queryClient.invalidateQueries({ queryKey: ['invoice', variables.id] }); // Use variables.id
+      toast.success('Invoice marked as paid.');
+      options.onSuccess && options.onSuccess(data, variables);
     },
     onError: (error) => {
+      toast.error(`Error marking invoice as paid: ${error.message}`);
       options.onError && options.onError(error);
     }
   });
 };
 
-// Hook to send invoice to customer
+// Hook to send invoice (marks as sent)
 export const useSendInvoice = (options = {}) => {
   const queryClient = useQueryClient();
 
@@ -105,10 +117,12 @@ export const useSendInvoice = (options = {}) => {
     mutationFn: (id) => sendInvoice(id),
     onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['invoices'] });
-      queryClient.invalidateQueries({ queryKey: ['invoice', variables] });
-      options.onSuccess && options.onSuccess();
+      queryClient.invalidateQueries({ queryKey: ['invoice', variables] }); // variables is the id here
+      toast.info('Invoice marked as sent. Actual sending requires backend implementation.');
+      options.onSuccess && options.onSuccess(data, variables);
     },
     onError: (error) => {
+      toast.error(`Error marking invoice as sent: ${error.message}`);
       options.onError && options.onError(error);
     }
   });

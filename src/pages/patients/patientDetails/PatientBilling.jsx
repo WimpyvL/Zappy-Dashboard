@@ -1,30 +1,36 @@
-// components/patients/components/PatientBilling.jsx
-import React from "react";
+// components/patients/components/PatientBilling.jsx - Refactored for Supabase Invoices
+import React, { useState, useMemo } from "react"; // Added state/memo
 import {
   CreditCard,
   DollarSign,
   CheckCircle,
   Clock,
   XCircle,
+  Link as LinkIcon // Renamed Link icon to avoid conflict
 } from "lucide-react";
 import { toast } from "react-toastify";
+import { Link } from "react-router-dom"; // React Router Link
 import { redirectToCheckout } from "../../../utils/stripeCheckout";
 import LoadingSpinner from "./common/LoadingSpinner";
-import apiService from "../../../utils/apiService";
+// import apiService from "../../../utils/apiService"; // Keep commented/remove later
+import { useInvoices } from "../../../apis/invoices/hooks"; // Import invoice hook
+import { useQueryClient } from '@tanstack/react-query'; // Import query client for refreshPatient placeholder
 
+// --- PaymentMethodCard ---
+// TODO: Refactor handleMakeDefault to use a mutation hook when payment methods API is migrated
 const PaymentMethodCard = ({
   method,
   isDefault,
   patientId,
-  refreshPatient,
+  refreshPatient, // This refresh might need updating too
 }) => {
   const handleMakeDefault = async () => {
     try {
-      await apiService.put(
-        `/api/v1/admin/patients/${patientId}/payment_methods/${method.id}/make_default`
-      );
-      toast.success("Default payment method updated");
-      refreshPatient();
+      // Placeholder for old logic - Replace with mutation hook call
+      console.warn("handleMakeDefault needs refactoring with mutation hook.");
+      // await apiService.put(`/api/v1/admin/patients/${patientId}/payment_methods/${method.id}/make_default`);
+      toast.info("Updating default payment method needs refactoring.");
+      // refreshPatient(); // Invalidate query instead
     } catch (error) {
       console.error("Failed to update default payment method:", error);
       toast.error("Failed to update payment method");
@@ -68,6 +74,7 @@ const PaymentMethodCard = ({
           <button
             className="text-sm text-indigo-600 hover:text-indigo-900"
             onClick={handleMakeDefault}
+            // TODO: Replace onClick with mutation hook call
           >
             Make Default
           </button>
@@ -77,57 +84,84 @@ const PaymentMethodCard = ({
   );
 };
 
+// --- PaymentStatusBadge ---
+// Adapting to invoice statuses
 const PaymentStatusBadge = ({ status }) => {
+  const lowerStatus = status?.toLowerCase();
   return (
     <span
       className={`flex items-center px-2 py-1 text-xs font-medium rounded-full ${
-        status === "paid"
+        lowerStatus === "paid"
           ? "bg-green-100 text-green-800"
-          : status === "pending"
+          : lowerStatus === "pending" || lowerStatus === "draft" || lowerStatus === "sent"
           ? "bg-yellow-100 text-yellow-800"
-          : status === "failed"
+          : lowerStatus === "failed" || lowerStatus === "overdue" || lowerStatus === "void"
           ? "bg-red-100 text-red-800"
-          : "bg-gray-100 text-gray-800"
+          : "bg-gray-100 text-gray-800" // Default for unknown/other statuses
       }`}
     >
-      {status === "paid" ? (
+      {lowerStatus === "paid" ? (
         <CheckCircle className="h-3 w-3 mr-1" />
-      ) : status === "pending" ? (
+      ) : lowerStatus === "pending" || lowerStatus === "sent" ? (
         <Clock className="h-3 w-3 mr-1" />
       ) : (
-        <XCircle className="h-3 w-3 mr-1" />
+        <XCircle className="h-3 w-3 mr-1" /> // Icon for failed/overdue/void
       )}
-      {status.charAt(0).toUpperCase() + status.slice(1)}
+      {status ? status.charAt(0).toUpperCase() + status.slice(1) : 'Unknown'}
     </span>
   );
 };
 
-const PatientBilling = ({ patient, invoices, loading, refreshPatient }) => {
+
+// --- PatientBilling Component ---
+const PatientBilling = ({ patient, refreshPatient }) => { // Removed invoices, loading props
+  const [currentPage, setCurrentPage] = useState(1); // State for invoice pagination
+  const queryClient = useQueryClient();
+
+  // Memoize filters for invoices
+  const filters = useMemo(() => ({ patientId: patient?.id }), [patient?.id]);
+
+  // Fetch invoices using the hook
+  const {
+      data: invoicesData,
+      isLoading: invoicesLoading, // Use hook's loading state
+      error: invoicesError,
+  } = useInvoices(currentPage, filters, {
+      enabled: !!patient?.id, // Only fetch if patientId is available
+  });
+
+  const invoices = invoicesData?.data || [];
+  const pagination = invoicesData?.pagination || { totalPages: 1 };
+
   // Format date for display
   const formatDate = (dateString) => {
-    if (!dateString) return "Not available";
-    const date = new Date(dateString);
-    return new Intl.DateTimeFormat("en-US", {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-    }).format(date);
+    if (!dateString) return "N/A";
+     try {
+        const date = new Date(dateString);
+        return new Intl.DateTimeFormat("en-US", {
+          month: "short",
+          day: "numeric",
+          year: "numeric",
+        }).format(date);
+    } catch (e) {
+        return "Invalid Date";
+    }
   };
 
-  // Handle initiating a payment through Stripe Checkout
+  // Handle initiating a payment through Stripe Checkout (keep as is for now)
   const handlePayment = async () => {
     try {
-      // Prepare plan details to send to checkout
+      // TODO: Update planDetails based on actual subscription data structure if available
       const planDetails = {
         name: `${
-          patient.subscriptionPlan
+          patient?.subscriptionPlan // Use optional chaining
             ? patient.subscriptionPlan.charAt(0).toUpperCase() +
               patient.subscriptionPlan.slice(1)
             : "Basic"
         } Plan`,
-        description: `Monthly subscription for ${patient.medication}`,
+        description: `Monthly subscription for ${patient?.medication || 'service'}`, // Use optional chaining
         price: 199.99, // This would come from your actual plan data
-        medication: patient.medication,
+        medication: patient?.medication, // Use optional chaining
       };
 
       await redirectToCheckout(patient.id, planDetails);
@@ -137,12 +171,45 @@ const PatientBilling = ({ patient, invoices, loading, refreshPatient }) => {
     }
   };
 
+  // TODO: Refactor subscription management functions (pause, cancel)
+  // These will require dedicated mutation hooks once the backend logic/tables exist
+  const handlePauseSubscription = async () => {
+      console.warn("Pausing subscription needs refactoring with mutation hook.");
+      toast.info("Pausing subscription needs refactoring.");
+      // try {
+      //   await apiService.post(`/api/v1/admin/patients/${patient.id}/subscription/pause`);
+      //   toast.success("Subscription paused successfully");
+      //   refreshPatient(); // Replace with query invalidation
+      // } catch (error) { ... }
+  };
+
+  const handleCancelSubscription = async () => {
+      if (window.confirm("Are you sure you want to cancel this subscription? This action cannot be undone.")) {
+          console.warn("Cancelling subscription needs refactoring with mutation hook.");
+          toast.info("Cancelling subscription needs refactoring.");
+          // try {
+          //   await apiService.post(`/api/v1/admin/patients/${patient.id}/subscription/cancel`);
+          //   toast.success("Subscription cancelled successfully");
+          //   refreshPatient(); // Replace with query invalidation
+          // } catch (error) { ... }
+      }
+  };
+
+  // TODO: Refactor refreshPatient to use queryClient.invalidateQueries
+   const handleRefreshPatient = () => {
+       console.warn("refreshPatient needs to be updated to use query invalidation.");
+       // Example: queryClient.invalidateQueries({ queryKey: ['patient', patient.id] });
+       if (refreshPatient) refreshPatient(); // Keep old prop call temporarily if needed elsewhere
+   };
+
+
   return (
     <div className="space-y-6">
       {/* Payment Methods */}
       <div className="bg-white p-6 rounded-lg shadow">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-lg font-medium text-gray-900">Payment Methods</h2>
+          {/* TODO: Update onClick to potentially open Stripe portal or dedicated update form */}
           <button
             className="px-3 py-1 text-sm bg-indigo-600 text-white rounded-md hover:bg-indigo-700 flex items-center"
             onClick={handlePayment}
@@ -152,9 +219,9 @@ const PatientBilling = ({ patient, invoices, loading, refreshPatient }) => {
           </button>
         </div>
 
-        {loading.patient ? (
-          <LoadingSpinner size="small" />
-        ) : patient.paymentMethods && patient.paymentMethods.length > 0 ? (
+        {/* TODO: Fetch payment methods from Stripe/backend */}
+        {/* {loading.patient ? ( <LoadingSpinner size="small" /> ) : */}
+        {patient?.paymentMethods && patient.paymentMethods.length > 0 ? (
           <div className="space-y-3">
             {patient.paymentMethods.map((method, index) => (
               <PaymentMethodCard
@@ -162,7 +229,7 @@ const PatientBilling = ({ patient, invoices, loading, refreshPatient }) => {
                 method={method}
                 isDefault={method.isDefault}
                 patientId={patient.id}
-                refreshPatient={refreshPatient}
+                refreshPatient={handleRefreshPatient} // Pass updated refresh handler
               />
             ))}
           </div>
@@ -170,6 +237,7 @@ const PatientBilling = ({ patient, invoices, loading, refreshPatient }) => {
           <div className="text-center py-8 text-gray-500">
             No payment methods on file.
             <div className="mt-2">
+              {/* TODO: Update onClick to potentially open Stripe portal or dedicated add form */}
               <button
                 className="px-4 py-2 text-sm font-medium bg-indigo-600 text-white rounded-md hover:bg-indigo-700"
                 onClick={handlePayment}
@@ -187,8 +255,12 @@ const PatientBilling = ({ patient, invoices, loading, refreshPatient }) => {
           Billing History
         </h2>
 
-        {loading.invoices ? (
-          <LoadingSpinner size="small" />
+        {invoicesLoading ? ( // Use hook's loading state
+          <LoadingSpinner message="Loading invoices..." />
+        ) : invoicesError ? ( // Use hook's error state
+           <div className="text-center py-8 text-red-500">
+              Error loading invoices: {invoicesError.message}
+           </div>
         ) : invoices && invoices.length > 0 ? (
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
@@ -198,7 +270,10 @@ const PatientBilling = ({ patient, invoices, loading, refreshPatient }) => {
                     Invoice #
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Date
+                    Issue Date
+                  </th>
+                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Due Date
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Amount
@@ -215,30 +290,33 @@ const PatientBilling = ({ patient, invoices, loading, refreshPatient }) => {
                 {invoices.map((invoice) => (
                   <tr key={invoice.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                      {invoice.number}
+                      {invoice.invoice_number}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {formatDate(invoice.date)}
+                      {formatDate(invoice.issue_date)}
+                    </td>
+                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {formatDate(invoice.due_date)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      ${invoice.amount.toFixed(2)}
+                      ${invoice.total_amount?.toFixed(2)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <PaymentStatusBadge status={invoice.status} />
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <a
-                        href={invoice.viewUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-indigo-600 hover:text-indigo-900 mr-3"
+                      {/* TODO: Add link/button to view invoice details page */}
+                      <Link
+                        to={`/invoices/${invoice.id}`} // Example route
+                        className="text-indigo-600 hover:text-indigo-900 mr-3 inline-flex items-center"
                       >
-                        View
-                      </a>
-                      {invoice.status === "pending" && (
+                         <LinkIcon className="h-4 w-4 mr-1"/> View
+                      </Link>
+                      {/* Keep Pay Now button, assuming handlePayment can handle invoices */}
+                      {(invoice.status === "pending" || invoice.status === "draft" || invoice.status === "sent" || invoice.status === "overdue") && (
                         <button
                           className="text-indigo-600 hover:text-indigo-900"
-                          onClick={handlePayment}
+                          onClick={handlePayment} // This might need adjustment for specific invoice payment
                         >
                           Pay Now
                         </button>
@@ -248,6 +326,7 @@ const PatientBilling = ({ patient, invoices, loading, refreshPatient }) => {
                 ))}
               </tbody>
             </table>
+             {/* TODO: Add pagination controls for invoices if needed */}
           </div>
         ) : (
           <div className="text-center py-8 text-gray-500">
@@ -257,14 +336,14 @@ const PatientBilling = ({ patient, invoices, loading, refreshPatient }) => {
       </div>
 
       {/* Subscription Summary */}
+      {/* TODO: Refactor this section once subscription data/API/hooks are available */}
       <div className="bg-white p-6 rounded-lg shadow">
         <h2 className="text-lg font-medium text-gray-900 mb-4">
           Subscription Summary
         </h2>
 
-        {loading.patient ? (
-          <LoadingSpinner size="small" />
-        ) : patient.subscriptionPlan ? (
+        {/* {loading.patient ? ( <LoadingSpinner size="small" /> ) : */}
+        {patient?.subscriptionPlan ? ( // Use optional chaining
           <div className="space-y-4">
             <div className="flex justify-between items-center pb-4 border-b border-gray-200">
               <div>
@@ -277,13 +356,12 @@ const PatientBilling = ({ patient, invoices, loading, refreshPatient }) => {
               </div>
               <div className="text-right">
                 <p className="text-lg font-medium text-gray-900">
-                  $199.99/month
+                  $199.99/month {/* Placeholder price */}
                 </p>
+                {/* TODO: Link to subscription management page/modal */}
                 <button
                   className="text-sm text-indigo-600 hover:text-indigo-900"
-                  onClick={() =>
-                    (window.location.href = `/patients/${patient.id}/subscription/change`)
-                  }
+                  // onClick={() => (window.location.href = `/patients/${patient.id}/subscription/change`)}
                 >
                   Change Plan
                 </button>
@@ -317,41 +395,13 @@ const PatientBilling = ({ patient, invoices, loading, refreshPatient }) => {
             <div className="flex justify-end space-x-2 pt-4">
               <button
                 className="px-3 py-1 text-sm border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50"
-                onClick={async () => {
-                  try {
-                    await apiService.post(
-                      `/api/v1/admin/patients/${patient.id}/subscription/pause`
-                    );
-                    toast.success("Subscription paused successfully");
-                    refreshPatient();
-                  } catch (error) {
-                    console.error("Failed to pause subscription:", error);
-                    toast.error("Failed to pause subscription");
-                  }
-                }}
+                onClick={handlePauseSubscription} // Use refactored handler
               >
                 Pause Subscription
               </button>
               <button
                 className="px-3 py-1 text-sm border border-red-300 text-red-700 rounded-md hover:bg-red-50"
-                onClick={async () => {
-                  if (
-                    window.confirm(
-                      "Are you sure you want to cancel this subscription? This action cannot be undone."
-                    )
-                  ) {
-                    try {
-                      await apiService.post(
-                        `/api/v1/admin/patients/${patient.id}/subscription/cancel`
-                      );
-                      toast.success("Subscription cancelled successfully");
-                      refreshPatient();
-                    } catch (error) {
-                      console.error("Failed to cancel subscription:", error);
-                      toast.error("Failed to cancel subscription");
-                    }
-                  }
-                }}
+                onClick={handleCancelSubscription} // Use refactored handler
               >
                 Cancel Subscription
               </button>
@@ -361,6 +411,7 @@ const PatientBilling = ({ patient, invoices, loading, refreshPatient }) => {
           <div className="text-center py-8 text-gray-500">
             Patient does not have an active subscription.
             <div className="mt-2">
+              {/* TODO: Update onClick to initiate subscription flow */}
               <button
                 className="px-4 py-2 text-sm font-medium bg-indigo-600 text-white rounded-md hover:bg-indigo-700"
                 onClick={handlePayment}

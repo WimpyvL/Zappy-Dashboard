@@ -16,7 +16,10 @@ import {
 export const useOrders = (currentPage, filters) => {
   return useQuery({
     queryKey: ['orders', currentPage, filters],
-    queryFn: () => getOrders(currentPage, filters)
+    // The queryFn now returns an object: { data: orderArray, pagination: {...} }
+    queryFn: () => getOrders(currentPage, filters),
+    // Keep previous data while fetching new page for smoother UX
+    keepPreviousData: true,
   });
 };
 

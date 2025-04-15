@@ -10,12 +10,14 @@ import {
   updateProduct,
   deleteProduct
 } from './api';
+import { toast } from 'react-toastify'; // Assuming toast notifications
 
 // Get products hook
-export const useProducts = (filters) => {
+export const useProducts = (currentPage = 1, filters = {}) => {
   return useQuery({
-    queryKey: ['products', filters],
-    queryFn: () => getProducts(filters)
+    queryKey: ['products', currentPage, filters],
+    queryFn: () => getProducts(currentPage, filters),
+    keepPreviousData: true,
   });
 };
 
@@ -35,9 +37,14 @@ export const useCreateProduct = (options = {}) => {
 
   return useMutation({
     mutationFn: (productData) => createProduct(productData),
-    onSuccess: () => {
+    onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['products'] });
-      options.onSuccess && options.onSuccess();
+      toast.success('Product created successfully.');
+      options.onSuccess && options.onSuccess(data, variables);
+    },
+    onError: (error) => {
+        toast.error(`Error creating product: ${error.message}`);
+        options.onError && options.onError(error);
     }
   });
 };
@@ -48,10 +55,15 @@ export const useUpdateProduct = (options = {}) => {
 
   return useMutation({
     mutationFn: ({ id, productData }) => updateProduct(id, productData),
-    onSuccess: () => {
+    onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['products'] });
-      queryClient.invalidateQueries({ queryKey: ['product'] });
-      options.onSuccess && options.onSuccess();
+      queryClient.invalidateQueries({ queryKey: ['product', variables.id] });
+      toast.success('Product updated successfully.');
+      options.onSuccess && options.onSuccess(data, variables);
+    },
+     onError: (error) => {
+        toast.error(`Error updating product: ${error.message}`);
+        options.onError && options.onError(error);
     }
   });
 };
@@ -62,9 +74,15 @@ export const useDeleteProduct = (options = {}) => {
 
   return useMutation({
     mutationFn: (id) => deleteProduct(id),
-    onSuccess: () => {
+    onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['products'] });
-      options.onSuccess && options.onSuccess();
+      queryClient.removeQueries({ queryKey: ['product', variables] });
+      toast.success('Product deleted successfully.');
+      options.onSuccess && options.onSuccess(data, variables);
+    },
+     onError: (error) => {
+        toast.error(`Error deleting product: ${error.message}`);
+        options.onError && options.onError(error);
     }
   });
 };

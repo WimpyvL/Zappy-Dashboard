@@ -1,37 +1,30 @@
 // components/patients/components/PatientForms.jsx
-import React, { useState } from "react";
-import { Plus, CheckCircle, Clock, XCircle } from "lucide-react";
-import { toast } from "react-toastify";
-import apiService from "../../../utils/apiService";
+import React, { useState, useMemo } from "react"; // Added useMemo
+import { Link } from "react-router-dom"; // Added Link
+import { Plus, Eye } from "lucide-react"; // Changed icons
+// import { toast } from "react-toastify"; // Keep if needed for future actions
+// import apiService from "../../../utils/apiService"; // Removed
+import { useFormSubmissions } from "../../../apis/forms/hooks"; // Import correct hook
 import LoadingSpinner from "./common/LoadingSpinner";
 
-const FormStatusBadge = ({ status }) => {
-  return (
-    <span
-      className={`flex items-center px-2 py-1 text-xs font-medium rounded-full ${
-        status === "completed"
-          ? "bg-green-100 text-green-800"
-          : status === "pending"
-          ? "bg-yellow-100 text-yellow-800"
-          : status === "expired"
-          ? "bg-red-100 text-red-800"
-          : "bg-gray-100 text-gray-800"
-      }`}
-    >
-      {status === "completed" ? (
-        <CheckCircle className="h-3 w-3 mr-1" />
-      ) : status === "pending" ? (
-        <Clock className="h-3 w-3 mr-1" />
-      ) : (
-        <XCircle className="h-3 w-3 mr-1" />
-      )}
-      {status.charAt(0).toUpperCase() + status.slice(1)}
-    </span>
-  );
-};
+// Remove FormStatusBadge as submission status isn't directly stored this way
 
-const PatientForms = ({ patientId, forms, loading }) => {
-  const [formFilter, setFormFilter] = useState("all");
+const PatientForms = ({ patientId }) => { // Removed forms, loading props
+  const [currentPage, setCurrentPage] = useState(1); // Add pagination state if needed
+
+  // Memoize filters
+  const filters = useMemo(() => ({ patientId }), [patientId]);
+
+  // Fetch form submissions using the hook
+  const {
+    data: submissionsData,
+    isLoading,
+    error,
+    isFetching,
+  } = useFormSubmissions(null, currentPage, filters); // Pass null for formId initially if fetching all for patient
+
+  const submissions = submissionsData?.data || [];
+  const pagination = submissionsData?.pagination || { totalPages: 1 }; // Add pagination handling later if needed
 
   // Format date for display
   const formatDate = (dateString) => {
@@ -44,140 +37,72 @@ const PatientForms = ({ patientId, forms, loading }) => {
     }).format(date);
   };
 
-  // Filter forms based on status
-  const filteredForms =
-    formFilter === "all"
-      ? forms
-      : forms.filter((form) => form.status === formFilter);
+  // Remove filtering logic based on old status
+  // const filteredForms = ...
 
-  // Send form reminder
-  const handleSendFormReminder = async (formId) => {
-    try {
-      await apiService.post(
-        `/api/v1/admin/patients/${patientId}/forms/${formId}/send_reminder`
-      );
-      toast.success("Reminder sent successfully");
-    } catch (error) {
-      console.error("Error sending form reminder:", error);
-      toast.error("Failed to send reminder");
-    }
-  };
-
-  // Resend form
-  const handleResendForm = async (formId) => {
-    try {
-      await apiService.post(
-        `/api/v1/admin/patients/${patientId}/forms/${formId}/resend`
-      );
-      toast.success("Form resent successfully");
-    } catch (error) {
-      console.error("Failed to resend form:", error);
-      toast.error("Failed to resend form");
-    }
-  };
+  // Remove reminder/resend handlers as they are backend-dependent
+  // const handleSendFormReminder = ...
+  // const handleResendForm = ...
 
   return (
     <div className="bg-white p-6 rounded-lg shadow">
       <div className="flex justify-between items-center mb-4">
-        <h2 className="text-lg font-medium text-gray-900">Patient Forms</h2>
-        <div className="flex space-x-2">
-          <select
-            className="text-sm border border-gray-300 rounded-md px-3 py-1"
-            value={formFilter}
-            onChange={(e) => setFormFilter(e.target.value)}
-          >
-            <option value="all">All Forms</option>
-            <option value="completed">Completed</option>
-            <option value="pending">Pending</option>
-            <option value="expired">Expired</option>
-          </select>
-          <button
-            className="px-3 py-1 text-sm bg-indigo-600 text-white rounded-md hover:bg-indigo-700 flex items-center"
-            onClick={() =>
-              (window.location.href = `/patients/${patientId}/forms/new`)
-            }
-          >
-            <Plus className="h-4 w-4 mr-1" />
-            Send Form
-          </button>
-        </div>
+        <h2 className="text-lg font-medium text-gray-900">Submitted Forms</h2>
+        {/* Remove filter dropdown and Send Form button */}
+        {/* Add button to assign/send a new form if needed, linking elsewhere */}
       </div>
 
-      {loading ? (
-        <LoadingSpinner size="small" />
-      ) : filteredForms && filteredForms.length > 0 ? (
+      {isLoading ? (
+        <LoadingSpinner message="Loading submitted forms..." />
+      ) : error ? (
+         <div className="text-center py-8 text-red-500">
+            Error loading form submissions: {error.message}
+         </div>
+      ) : submissions && submissions.length > 0 ? (
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Form Name
+                  Form Name {/* TODO: Need to join form name */}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Sent
+                  Submitted Date
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Deadline
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Status
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Completed
-                </th>
+                {/* Remove Sent, Deadline, Status columns */}
                 <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Actions
                 </th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {filteredForms.map((form) => (
-                <tr key={form.id} className="hover:bg-gray-50">
+              {submissions.map((submission) => (
+                <tr key={submission.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                    {form.name}
+                    {submission.form?.title || submission.form_id} {/* Display form title if joined, else ID */}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {formatDate(form.sentDate)}
+                    {formatDate(submission.created_at)}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {formatDate(form.deadlineDate)}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <FormStatusBadge status={form.status} />
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {form.completedDate ? formatDate(form.completedDate) : "-"}
-                  </td>
+                  {/* Remove Sent, Deadline, Status, Completed columns */}
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                    {form.status === "completed" ? (
-                      <button className="text-indigo-600 hover:text-indigo-900 mr-3">
-                        View Responses
-                      </button>
-                    ) : (
-                      <button
-                        className="text-indigo-600 hover:text-indigo-900 mr-3"
-                        onClick={() => handleSendFormReminder(form.id)}
-                      >
-                        Send Reminder
-                      </button>
-                    )}
-                    <button
-                      className="text-indigo-600 hover:text-indigo-900"
-                      onClick={() => handleResendForm(form.id)}
-                    >
-                      Resend
-                    </button>
+                    {/* Link to view the specific submission details */}
+                     <Link
+                       to={`/forms/submissions/${submission.id}`} // Example route
+                       className="text-indigo-600 hover:text-indigo-900 inline-flex items-center"
+                     >
+                       <Eye className="h-4 w-4 mr-1"/> View Submission
+                     </Link>
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
+          {/* TODO: Add pagination controls if needed */}
         </div>
       ) : (
         <div className="text-center py-8 text-gray-500">
-          {formFilter === "all"
-            ? "No forms have been sent to this patient."
-            : `No ${formFilter} forms found for this patient.`}
+          No forms have been submitted by this patient.
         </div>
       )}
     </div>

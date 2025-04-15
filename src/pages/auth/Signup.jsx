@@ -81,29 +81,15 @@ const Signup = () => {
     if (!formData.email) newErrors.email = 'Email is required';
     else if (!/\S+@\S+\.\S+/.test(formData.email))
       newErrors.email = 'Email is invalid';
-    if (!formData.password) {
-      newErrors.password = 'Password is required';
-      console.log('Password validation failed: Password is empty');
-    } else {
-      console.log('Validating password:', formData.password); // Log the password being checked
-      const failedRequirements = passwordRequirements.filter((req) => {
-        const result = req.test(formData.password);
-        console.log(`Requirement '${req.label}': ${result ? 'Passed' : 'Failed'}`); // Log each requirement check
-        return !result;
-      });
-      if (failedRequirements.length > 0) {
+    if (!formData.password) newErrors.password = 'Password is required';
+    else {
+      const failedRequirements = passwordRequirements.filter(
+        (req) => !req.test(formData.password)
+      );
+      if (failedRequirements.length > 0)
         newErrors.password = 'Password does not meet all requirements';
-        console.log('Password validation failed: Requirements not met', failedRequirements.map(r => r.label));
-      } else {
-        console.log('Password validation passed: All requirements met.');
-      }
     }
-    if (formData.password !== formData.confirmPassword) {
-      newErrors.confirmPassword = 'Passwords do not match';
-      console.log('Password confirmation failed: Passwords do not match');
-    } else if (formData.password && !newErrors.password) {
-      console.log('Password confirmation passed: Passwords match.');
-    }
+    if (formData.password !== formData.confirmPassword)
       newErrors.confirmPassword = 'Passwords do not match';
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;

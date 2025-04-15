@@ -36,11 +36,34 @@ export const AuthProvider = ({ children }) => {
         // setViewMode('admin'); // Avoid setting viewMode until auth is resolved
       } else {
         const user = session?.user ?? null;
-        const role = user?.user_metadata?.role || (user ? 'user' : undefined); // Get role from user_metadata, default to 'user' if logged in but no role
         setCurrentUser(user);
-        setUserRole(role);
-        console.log('AuthContext: Session checked, user found:', !!user, 'Role resolved:', role);
-        // setViewMode(role === 'admin' ? 'admin' : 'admin'); // Set viewMode based on resolved role - moved to separate effect
+        // Fetch role separately if user exists
+        if (user) {
+          try {
+            const { data: profile, error: profileError } = await supabase
+              .from('profiles')
+              .select('role')
+              .eq('id', user.id)
+              .single();
+
+            if (profileError && profileError.code !== 'PGRST116') { // Ignore 'No rows found' error initially
+              throw profileError;
+            }
+
+            const role = profile?.role || 'patient'; // Default to 'patient' if profile exists but role is null/undefined or profile doesn't exist yet
+            setUserRole(role);
+            console.log('AuthContext: Session checked, user found:', !!user, 'Role fetched:', role);
+          } catch (profileError) {
+             console.error('AuthContext: Error fetching profile role during session check:', profileError.message);
+             // Handle error - maybe default role or log out? For now, set role undefined.
+             setUserRole(undefined);
+             setError('Failed to fetch user profile.');
+          }
+        } else {
+          setUserRole(undefined); // No user, no role
+          console.log('AuthContext: Session checked, no user found.');
+        }
+        // setViewMode logic moved to separate effect
       }
       setAuthLoading(false); // Indicate auth check is complete
     };
@@ -53,13 +76,47 @@ export const AuthProvider = ({ children }) => {
     } = supabase.auth.onAuthStateChange((_event, session) => {
       console.log('Auth state changed:', _event, session);
       const user = session?.user ?? null;
-      const role = user?.user_metadata?.role || (user ? 'user' : undefined);
       setCurrentUser(user);
-      setUserRole(role);
       setError(null); // Clear errors on auth change
-      setAuthLoading(false); // Ensure loading is false on auth changes too
-      console.log(`AuthContext: Auth state changed (${_event}), user found:`, !!user, 'Role resolved:', role);
-      // setViewMode(role === 'admin' ? 'admin' : 'admin'); // Set viewMode based on resolved role - moved to separate effect
+
+      // Fetch role when user logs in, session is restored, or token refreshed
+      if (user && (_event === 'SIGNED_IN' || _event === 'INITIAL_SESSION' || _event === 'TOKEN_REFRESHED')) {
+        setAuthLoading(true); // Set loading true while fetching role
+        const fetchRole = async () => {
+          try {
+            const { data: profile, error: profileError } = await supabase
+              .from('profiles')
+              .select('role')
+              .eq('id', user.id)
+              .single();
+
+            // Ignore 'No rows found' error as profile might be created slightly after auth event
+            if (profileError && profileError.code !== 'PGRST116') {
+               throw profileError;
+            }
+
+            const role = profile?.role || 'patient'; // Default to 'patient'
+            setUserRole(role);
+            console.log(`AuthContext (${_event}): User detected, Role fetched:`, role);
+          } catch (profileError) {
+            console.error(`AuthContext (${_event}): Error fetching profile role:`, profileError.message);
+            setUserRole(undefined); // Or handle appropriately
+            setError('Failed to fetch user profile on auth change.');
+          } finally {
+             setAuthLoading(false); // Ensure loading is false after role fetch attempt
+          }
+        };
+        fetchRole();
+      } else if (!user) {
+        // User logged out
+        setUserRole(undefined);
+        setAuthLoading(false); // Ensure loading is false on logout
+        console.log(`AuthContext (${_event}): User logged out.`);
+      } else {
+        // Other events might not require role refetch, keep loading false
+        // We might already have the role from initial load or previous fetch
+        setAuthLoading(false);
+      }
     });
 
     // Cleanup subscription on unmount
@@ -71,8 +128,9 @@ export const AuthProvider = ({ children }) => {
   // Effect to set viewMode and log when auth state is resolved
   useEffect(() => {
     if (!authLoading) {
-      // Set view mode based on the resolved role
-      const determinedViewMode = userRole === 'admin' ? 'admin' : 'admin'; // Default logic remains
+      // Set view mode based on the resolved role from the profiles table
+      // Default to 'patient' if role is not 'admin' or is undefined
+      const determinedViewMode = userRole === 'admin' ? 'admin' : 'patient';
       setViewMode(determinedViewMode);
       console.log(`✅ Auth ready, User role: ${userRole}, ViewMode set to: ${determinedViewMode}`);
     }

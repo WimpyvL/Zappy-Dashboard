@@ -50,13 +50,35 @@ export const AuthProvider = ({ children }) => {
 
   // Value provided by the context
   // Remove action functions like register, updateProfile, etc.
-  // Components should use mutation hooks for those actions.
+  const register = async (email, password, userData) => {
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            full_name: userData.fullName,
+            phone: userData.phone
+          }
+        }
+      });
+  
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error("Registration error:", error);
+      throw error;
+    }
+  };
+  
+  // Update the context value to include register
   const value = {
     session,
     currentUser,
-    isAuthenticated: !!session?.user, // Derive isAuthenticated from session
+    isAuthenticated: !!session?.user,
     loading,
-    logout, // Provide the simplified logout function
+    logout,
+    register, // Add the register function
   };
 
   // Render children only when not loading (or handle loading state in consuming components)

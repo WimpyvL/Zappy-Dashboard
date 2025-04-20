@@ -8,11 +8,21 @@ interface PatientData {
   [key: string]: any;
 }
 
+const corsHeaders = {
+  'Access-Control-Allow-Origin': 'https://gsibecpblnccefqepjqb.supabase.co',
+  'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE',
+  'Access-Control-Allow-Headers': 'Authorization, Content-Type',
+}
+
 serve(async (req: Request) => {
+  // Handle OPTIONS method for CORS preflight
+  if (req.method === 'OPTIONS') {
+    return new Response('ok', { headers: corsHeaders })
+  }
   try {
     const supabaseClient = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+      Deno.env.get('REACT_APP_SUPABASE_URL') ?? '',
+      Deno.env.get('REACT_APP_SUPABASE_ANON_KEY') ?? ''
     )
 
     // Parse request body
@@ -50,7 +60,10 @@ serve(async (req: Request) => {
       JSON.stringify({ data: patient }),
       { 
         status: 201,
-        headers: { 'Content-Type': 'application/json' }
+        headers: { 
+          'Content-Type': 'application/json',
+          ...corsHeaders
+        }
       }
     )
 
@@ -60,7 +73,10 @@ serve(async (req: Request) => {
       JSON.stringify({ error: message }),
       { 
         status: 500,
-        headers: { 'Content-Type': 'application/json' }
+        headers: { 
+          'Content-Type': 'application/json',
+          ...corsHeaders
+        }
       }
     )
   }

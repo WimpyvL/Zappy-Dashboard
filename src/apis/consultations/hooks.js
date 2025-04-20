@@ -25,8 +25,8 @@ export const useConsultations = (params = {}, pageSize = 10) => {
         .select(
           `
           *,
-          client_record ( id, first_name, last_name, date_of_birth )
-        `, // Join with 'client_record' table
+          patients ( id, first_name, last_name, date_of_birth )
+        `, // Join with 'patients' table
           { count: 'exact' }
         )
         .order('datesubmitted', { ascending: false }) // Revert to lowercase based on DB hint
@@ -37,14 +37,14 @@ export const useConsultations = (params = {}, pageSize = 10) => {
         query = query.eq('status', status);
       }
       if (patientId) {
-        query = query.eq('client_id', patientId); // Corrected FK column name
+        query = query.eq('patient_id', patientId); // Corrected FK column name
       }
       // Add server-side search filter
       if (searchTerm) {
         // Search on joined client_record fields and potentially consultation notes
         // Removed invalid 'provider' column search. Corrected 'email' to reference joined table.
         query = query.or(
-          `client_record.first_name.ilike.%${searchTerm}%,client_record.last_name.ilike.%${searchTerm}%,client_record.email.ilike.%${searchTerm}%,provider_notes.ilike.%${searchTerm}%,client_notes.ilike.%${searchTerm}%`
+          `patients.first_name.ilike.%${searchTerm}%,patients.last_name.ilike.%${searchTerm}%,provider_notes.ilike.%${searchTerm}%,client_notes.ilike.%${searchTerm}%`
         );
       }
       // Add other filters as needed based on otherFilters
@@ -61,8 +61,8 @@ export const useConsultations = (params = {}, pageSize = 10) => {
         data?.map((consult) => ({
           ...consult,
           // Use the correct joined table name 'client_record'
-          patientName: consult.client_record 
-            ? `${consult.client_record.first_name || ''} ${consult.client_record.last_name || ''}`.trim()
+          patientName: consult.patients 
+            ? `${consult.patients.first_name || ''} ${consult.patients.last_name || ''}`.trim()
             : 'N/A',
         })) || [];
 
@@ -92,8 +92,8 @@ export const useConsultationById = (id, options = {}) => {
         .select(
           `
           *,
-          client_record ( id, first_name, last_name )
-        ` // Join with 'client_record' table
+          patients ( id, first_name, last_name )
+        ` // Join with 'patients' table
         )
         .eq('id', id)
         .single();
@@ -108,8 +108,8 @@ export const useConsultationById = (id, options = {}) => {
          ? {
             ...data,
             // Use the correct joined table name 'client_record'
-            patientName: data.client_record 
-              ? `${data.client_record.first_name || ''} ${data.client_record.last_name || ''}`.trim()
+          patientName: data.patients 
+              ? `${data.patients.first_name || ''} ${data.patients.last_name || ''}`.trim()
               : 'N/A',
           }
         : null;

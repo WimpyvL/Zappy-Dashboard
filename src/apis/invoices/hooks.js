@@ -24,7 +24,7 @@ export const useInvoices = (params = {}, pageSize = 10) => {
         .from('pb_invoices') // Target the pb_invoices table
         .select(`
           *,
-          client_record ( id, first_name, last_name )
+          patients ( id, first_name, last_name )
         `, { count: 'exact' }) 
         .order('created_at', { ascending: false }) 
         .range(rangeFrom, rangeTo);
@@ -50,7 +50,7 @@ export const useInvoices = (params = {}, pageSize = 10) => {
       // Map data if needed
       const mappedData = data?.map(inv => ({
           ...inv,
-          patientName: inv.client_record ? `${inv.client_record.first_name || ''} ${inv.client_record.last_name || ''}`.trim() : 'N/A',
+          patientName: inv.patients ? `${inv.patients.first_name || ''} ${inv.patients.last_name || ''}`.trim() : 'N/A',
           amount: inv.pb_invoice_metadata?.total || 0, 
           items: inv.pb_invoice_metadata?.items || [], 
       })) || [];
@@ -80,7 +80,7 @@ export const useInvoiceById = (id, options = {}) => {
         .from('pb_invoices')
         .select(`
           *,
-          client_record ( id, first_name, last_name )
+          patients ( id, first_name, last_name )
         `) 
         .eq('id', id)
         .single();
@@ -93,7 +93,7 @@ export const useInvoiceById = (id, options = {}) => {
        // Map data if needed
        const mappedData = data ? {
            ...data,
-           patientName: data.client_record ? `${data.client_record.first_name || ''} ${data.client_record.last_name || ''}`.trim() : 'N/A',
+           patientName: data.patients ? `${data.patients.first_name || ''} ${data.patients.last_name || ''}`.trim() : 'N/A',
            amount: data.pb_invoice_metadata?.total || 0,
            items: data.pb_invoice_metadata?.items || [],
        } : null;

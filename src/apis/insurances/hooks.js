@@ -20,7 +20,7 @@ export const useInsuranceRecords = (filters = {}) => { // Keep hook name for now
         .from('insurance_records') // Ensure correct table name
         .select(`
           *,
-          client_record ( id, first_name, last_name )
+          patients ( id, first_name, last_name )
         `) // Ensure correct join table name
         .order('created_at', { ascending: false });
 
@@ -42,7 +42,7 @@ export const useInsuranceRecords = (filters = {}) => { // Keep hook name for now
        // Map data if needed (patientName is now joined)
        const mappedData = data?.map(rec => ({
            ...rec,
-           patientName: rec.client_record ? `${rec.client_record.first_name || ''} ${rec.client_record.last_name || ''}`.trim() : 'N/A', // Corrected join table name
+           patientName: rec.patients ? `${rec.patients.first_name || ''} ${rec.patients.last_name || ''}`.trim() : 'N/A', // Corrected join table name
            // Documents might need separate fetching or a different join structure
            documents: rec.insurance_documents || [], // Corrected relation name
        })) || [];
@@ -64,7 +64,7 @@ export const useInsuranceRecordById = (id, options = {}) => {
         .from('insurance_records') 
         .select(`
           *,
-          client_record ( id, first_name, last_name ),
+          patients ( id, first_name, last_name ),
           insurance_documents (*) 
         `) // Join client_record and insurance_documents
         .eq('id', id)
@@ -81,7 +81,7 @@ export const useInsuranceRecordById = (id, options = {}) => {
        // Combine and map data
        const mappedData = recordData ? {
            ...recordData,
-           patientName: recordData.client_record ? `${recordData.client_record.first_name || ''} ${recordData.client_record.last_name || ''}`.trim() : 'N/A', // Corrected join table name
+           patientName: recordData.patients ? `${recordData.patients.first_name || ''} ${recordData.patients.last_name || ''}`.trim() : 'N/A', // Corrected join table name
            documents: recordData.insurance_documents || [], // Use joined documents
        } : null;
 

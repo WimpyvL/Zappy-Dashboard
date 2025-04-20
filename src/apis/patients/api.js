@@ -27,7 +27,7 @@ const patientsApi = {
       'patientsApi.getAll: Using direct Supabase call. Align with usePatients if possible.',
     );
     const { data, error } = await supabase
-      .from('client_record') // Assuming 'client_record' is the correct table
+      .from('patients') // Updated to use 'patients' table
       .select('*')
       // Add filtering/pagination based on params if needed
       .order('created_at', { ascending: false });
@@ -55,7 +55,7 @@ const patientsApi = {
       'patientsApi.getById: Using direct Supabase call. Ensure consistency with usePatientById hook logic.',
     );
     const { data, error } = await supabase
-      .from('client_record')
+      .from('patients')
       .select('*')
       .eq('id', id)
       .single(); // Use .single() if expecting one record

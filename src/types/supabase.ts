@@ -100,7 +100,7 @@ export type Database = {
         Row: {
           adjusted_dose: number | null
           adjusted_units: number | null
-          client_record_id: string
+          patient_id: string
           created_at: string
           date: string
           id: string
@@ -113,7 +113,7 @@ export type Database = {
         Insert: {
           adjusted_dose?: number | null
           adjusted_units?: number | null
-          client_record_id: string
+          patient_id: string
           created_at: string
           date: string
           id?: string
@@ -126,7 +126,7 @@ export type Database = {
         Update: {
           adjusted_dose?: number | null
           adjusted_units?: number | null
-          client_record_id?: string
+          patient_id?: string
           created_at?: string
           date?: string
           id?: string
@@ -138,7 +138,7 @@ export type Database = {
         }
         Relationships: []
       }
-      client_record: {
+      patients: {
         Row: {
           blacklisted: boolean | null
           date_created: string
@@ -276,7 +276,7 @@ export type Database = {
             foreignKeyName: "consultations_client_id_fkey"
             columns: ["client_id"]
             isOneToOne: false
-            referencedRelation: "client_record"
+            referencedRelation: "patients"
             referencedColumns: ["id"]
           },
         ]

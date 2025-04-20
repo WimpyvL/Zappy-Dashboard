@@ -21,13 +21,13 @@ export const usePatients = (currentPage = 1, filters = {}, pageSize = 10) => {
     queryKey: ['patients', currentPage, filters, pageSize], // Use 'patients' for query key consistency
     queryFn: async () => {
       let query = supabase
-        .from('client_record') // Corrected table name
+        .from('patients') // Updated table name
         .select('*', { count: 'exact' }) // Select all columns and request total count
         .order('created_at', { ascending: false }) // Use created_at
         .range(rangeFrom, rangeTo); // Apply pagination
 
       // Apply filters (example: filter by status)
-      // Note: client_record doesn't have a 'status' column by default in the provided schema
+// Note: patients table doesn't have a 'status' column by default in the provided schema
       // if (filters.status) {
       //   query = query.eq('status', filters.status);
       // }
@@ -42,7 +42,7 @@ export const usePatients = (currentPage = 1, filters = {}, pageSize = 10) => {
       const { data, error, count } = await query;
 
       if (error) {
-        console.error('Error fetching client_records (patients):', error);
+        console.error('Error fetching patients:', error);
         throw new Error(error.message);
       }
 
@@ -69,13 +69,13 @@ export const usePatientById = (id, options = {}) => {
       if (!id) return null; // Don't fetch if no ID is provided
 
       const { data, error } = await supabase
-        .from('client_record') // Corrected table name
+        .from('patients') // Updated table name
         .select('*')
         .eq('id', id)
         .single(); // Use .single() if expecting one record or null
 
       if (error) {
-        console.error(`Error fetching client_record (patient) ${id}:`, error);
+        console.error(`Error fetching patient ${id}:`, error);
         // Handle specific errors like 'PGRST116' (resource not found) if needed
         if (error.code === 'PGRST116') return null; // Return null if not found
         throw new Error(error.message);
@@ -100,13 +100,16 @@ export const useCreatePatient = (options = {}) => {
         last_name: patientData.last_name,
         email: patientData.email,
         phone: patientData.phone,
-        address: patientData.street_address, // Map from form field
-        city: patientData.city_name,       // Map from form field
+        address: patientData.address,
+        city: patientData.city,
         state: patientData.state,
-        zip: patientData.zip_code,         // Map from form field
+        zip: patientData.zip,
         date_of_birth: patientData.date_of_birth,
-        insurance_provider: patientData.insurance_provider, // Add if available
-        insurance_id: patientData.insurance_id,       // Add if available
+        insurance_provider: patientData.insurance_provider,
+        insurance_id: patientData.insurance_id,
+        status: patientData.status || 'active',
+        preferred_pharmacy: patientData.preferred_pharmacy,
+        tags: patientData.tags || [],
         // created_at and updated_at are handled by DB defaults
       };
 
@@ -117,16 +120,20 @@ export const useCreatePatient = (options = {}) => {
         }
       });
 
-      console.log('[useCreatePatient] Inserting into client_record:', JSON.stringify(dataToInsert, null, 2));
+      console.log('[useCreatePatient] Inserting into patients:', JSON.stringify(dataToInsert, null, 2));
 
       const { data, error } = await supabase
-        .from('client_record') // Corrected table name
+        .from('patients') // Updated table name
         .insert(dataToInsert)
         .select() // Select the newly created record
         .single(); // Expecting a single record back
 
       if (error) {
-        console.error('Error creating client_record (patient):', error);
+        console.error('Error creating patient:', error);
+        // Handle RLS violations specifically
+        if (error.message.includes('permission denied')) {
+          throw new Error('You do not have permission to create patients');
+        }
         throw new Error(error.message);
       }
       return data;
@@ -167,13 +174,16 @@ export const useUpdatePatient = (options = {}) => {
         last_name: patientData.last_name,
         email: patientData.email,
         phone: patientData.phone,
-        address: patientData.street_address, // Map from form field
-        city: patientData.city_name,       // Map from form field
+        address: patientData.address,
+        city: patientData.city,
         state: patientData.state,
-        zip: patientData.zip_code,         // Map from form field
+        zip: patientData.zip,
         date_of_birth: patientData.date_of_birth,
-        insurance_provider: patientData.insurance_provider, // Add if available
-        insurance_id: patientData.insurance_id,       // Add if available
+        insurance_provider: patientData.insurance_provider,
+        insurance_id: patientData.insurance_id,
+        status: patientData.status,
+        preferred_pharmacy: patientData.preferred_pharmacy,
+        tags: patientData.tags,
         // Note: 'status', 'related_tags', 'subscription_plan_id', 'assigned_doctor_id', 'preferred_pharmacy'
         // are not part of the client_record schema provided. These might belong in the 'profiles' table or another related table.
         updated_at: new Date().toISOString(), // Set updated_at timestamp
@@ -186,17 +196,21 @@ export const useUpdatePatient = (options = {}) => {
         }
       });
 
-      console.log(`[useUpdatePatient] Updating client_record ${id}:`, JSON.stringify(dataToUpdate, null, 2));
+      console.log(`[useUpdatePatient] Updating patients ${id}:`, JSON.stringify(dataToUpdate, null, 2));
 
       const { data, error } = await supabase
-        .from('client_record') // Corrected table name
+        .from('patients') // Updated table name
         .update(dataToUpdate)
         .eq('id', id)
         .select() // Select the updated record
         .single(); // Expecting a single record back
 
       if (error) {
-        console.error(`Error updating client_record (patient) ${id}:`, error);
+        console.error(`Error updating patient ${id}:`, error);
+        // Handle RLS violations specifically
+        if (error.message.includes('permission denied')) {
+          throw new Error('You do not have permission to update this patient');
+        }
         throw new Error(error.message);
       }
       return data;
@@ -234,12 +248,16 @@ export const useDeletePatient = (options = {}) => {
       if (!id) throw new Error('Patient ID is required for deletion.');
 
       const { error } = await supabase
-        .from('client_record') // Corrected table name
+        .from('patients') // Updated table name
         .delete()
         .eq('id', id);
 
       if (error) {
-        console.error(`Error deleting client_record (patient) ${id}:`, error);
+        console.error(`Error deleting patient ${id}:`, error);
+        // Handle RLS violations specifically
+        if (error.message.includes('permission denied')) {
+          throw new Error('You do not have permission to delete this patient');
+        }
         throw new Error(error.message);
       }
       return { success: true, id }; // Return success and id

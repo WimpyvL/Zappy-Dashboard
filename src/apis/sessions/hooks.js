@@ -26,7 +26,7 @@ export const useSessions = (params = {}, pageSize = 10) => {
         // Join with client_record table to get name
         .select(`
           *,
-          client_record ( id, first_name, last_name )
+          patients ( id, first_name, last_name )
         `, { count: 'exact' })
         .order('created_at', { ascending: false }) // Example order
         .range(rangeFrom, rangeTo);
@@ -43,7 +43,7 @@ export const useSessions = (params = {}, pageSize = 10) => {
       if (searchTerm) {
         // Adjust columns to search as needed (e.g., provider name if joined, notes)
         query = query.or(
-          `client_record.first_name.ilike.%${searchTerm}%,client_record.last_name.ilike.%${searchTerm}%` // Search joined client_record name
+          `patients.first_name.ilike.%${searchTerm}%,patients.last_name.ilike.%${searchTerm}%` // Search joined patients name
           // Add other searchable fields like session_notes if they exist
           // `,session_notes.ilike.%${searchTerm}%` 
         );
@@ -62,8 +62,8 @@ export const useSessions = (params = {}, pageSize = 10) => {
         data?.map((session) => ({
           ...session,
           // Construct patientName from the joined 'client_record' data
-          patientName: session.client_record 
-            ? `${session.client_record.first_name || ''} ${session.client_record.last_name || ''}`.trim()
+          patientName: session.patients 
+            ? `${session.patients.first_name || ''} ${session.patients.last_name || ''}`.trim()
             : 'N/A',
           // Ensure patientId is correctly mapped (assuming FK is patient_id)
           patientId: session.patient_id 

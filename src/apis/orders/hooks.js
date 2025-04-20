@@ -15,7 +15,7 @@ export const useOrders = (currentPage = 1, filters = {}, pageSize = 10) => {
         // Join with client_record table (assuming FK is patient_id)
         .select(`
           *,
-          client_record!inner(id, first_name, last_name)
+          patients!inner(id, first_name, last_name)
         `, { count: 'exact' })
         .order('order_date', { ascending: false })
         .range(rangeFrom, rangeTo);
@@ -31,7 +31,7 @@ export const useOrders = (currentPage = 1, filters = {}, pageSize = 10) => {
       if (filters.search) {
         // Use the joined table alias 'client_record' for patient name fields
         query = query.or(
-          `medication.ilike.%${filters.search}%,pharmacy.ilike.%${filters.search}%,client_record.first_name.ilike.%${filters.search}%,client_record.last_name.ilike.%${filters.search}%`
+          `medication.ilike.%${filters.search}%,pharmacy.ilike.%${filters.search}%,patients.first_name.ilike.%${filters.search}%,patients.last_name.ilike.%${filters.search}%`
         );
       }
 
@@ -47,8 +47,8 @@ export const useOrders = (currentPage = 1, filters = {}, pageSize = 10) => {
         data?.map((order) => ({
           ...order,
           // Construct patientName from the joined 'client_record' data
-          patientName: order.client_record 
-            ? `${order.client_record.first_name || ''} ${order.client_record.last_name || ''}`.trim()
+          patientName: order.patients 
+            ? `${order.patients.first_name || ''} ${order.patients.last_name || ''}`.trim()
             : 'N/A',
           // Ensure patientId is correctly mapped (assuming FK is patient_id)
           patientId: order.patient_id 

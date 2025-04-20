@@ -26,14 +26,15 @@ import { useAppContext } from '../../context/AppContext'; // Import AppContext h
 const patientFormFields = [
   { name: 'first_name', label: 'First Name', type: 'text', required: 'First name is required.', gridCols: 1 },
   { name: 'last_name', label: 'Last Name', type: 'text', required: 'Last name is required.', gridCols: 1 },
-  { name: 'email', label: 'Email', type: 'email', required: 'A valid email is required.', validation: { pattern: { value: /^\S+@\S+$/i, message: 'Invalid email format' } }, gridCols: 2 },
+  { name: 'email', label: 'Email', type: 'email', required: 'A valid email is required.', 
+    validation: { pattern: { value: /^\S+@\S+$/i, message: 'Invalid email format' } }, gridCols: 2 },
   { name: 'phone', label: 'Phone', type: 'tel', placeholder: '(XXX) XXX-XXXX', gridCols: 2 },
   { name: 'date_of_birth', label: 'Date of Birth', type: 'date', gridCols: 1 },
   {
     name: 'status',
     label: 'Status',
     type: 'select',
-    defaultValue: 'active', // Default status
+    defaultValue: 'active',
     options: [
       { value: 'active', label: 'Active' },
       { value: 'inactive', label: 'Inactive' },
@@ -43,11 +44,36 @@ const patientFormFields = [
     ],
     gridCols: 1,
   },
-  { name: 'street_address', label: 'Street Address', type: 'text', gridCols: 2 },
-  { name: 'city_name', label: 'City', type: 'text', gridCols: 1 },
+  { name: 'address', label: 'Address', type: 'text', gridCols: 2 },
+  { name: 'city', label: 'City', type: 'text', gridCols: 1 },
   { name: 'state', label: 'State', type: 'text', gridCols: 1 },
-  { name: 'zip_code', label: 'ZIP Code', type: 'text', gridCols: 1 },
-  // Add other fields as needed based on client_record schema and modal requirements
+  { name: 'zip', label: 'ZIP Code', type: 'text', gridCols: 1 },
+  { 
+    name: 'preferred_pharmacy', 
+    label: 'Preferred Pharmacy', 
+    type: 'select',
+    options: [], // Will be populated dynamically from pharmacies data
+    gridCols: 2 
+  },
+  { 
+    name: 'tags', 
+    label: 'Tags', 
+    type: 'multiselect',
+    options: [], // Will be populated dynamically from tags data
+    gridCols: 2 
+  },
+  { 
+    name: 'insurance_provider', 
+    label: 'Insurance Provider', 
+    type: 'text', 
+    gridCols: 2 
+  },
+  { 
+    name: 'insurance_id', 
+    label: 'Insurance ID', 
+    type: 'text', 
+    gridCols: 2 
+  }
 ];
 
 
@@ -434,15 +460,15 @@ const Patients = () => {
                             {`${patient.first_name || ''} ${patient.last_name || ''}`.trim() || 'Unnamed Patient'}
                           </Link>
                           <div className="text-sm text-gray-500">{patient.email || 'No email'}</div>
-                          <div className="text-sm text-gray-500">{patient.mobile_phone || patient.phone || 'No phone'}</div> {/* Prefer mobile_phone if exists */}
+                          <div className="text-sm text-gray-500">{patient.phone || 'No phone'}</div>
                         </div>
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex flex-wrap gap-1">
                         {/* Use patient.related_tags based on schema */}
-                        {Array.isArray(patient.related_tags) && patient.related_tags.length > 0 ? (
-                          patient.related_tags.map((tagId) => {
+                        {Array.isArray(patient.tags) && patient.tags.length > 0 ? (
+                          patient.tags.map((tagId) => {
                              const tag = tags.find(t => t.id === tagId);
                              return tag ? (<span key={tag.id} className="px-2 py-0.5 text-xs font-medium rounded-full bg-blue-100 text-blue-800">{tag.name}</span>) : null;
                            })
@@ -450,13 +476,13 @@ const Patients = () => {
                       </div>
                     </td>
                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                       {patient.subscriptionPlanName || (<span className="text-xs text-gray-400">None</span>)}
+                       {patient.subscription_plan_id ? 'Plan ' + patient.subscription_plan_id.substring(0, 8) : (<span className="text-xs text-gray-400">None</span>)}
                      </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {patient.next_session_date ? new Date(patient.next_session_date).toLocaleDateString() : 'None scheduled'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {patient.doctor || 'Not assigned'}
+                      {patient.preferred_pharmacy ? 'Pharmacy ' + patient.preferred_pharmacy.substring(0, 8) : 'Not assigned'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <div className="flex items-center justify-end">

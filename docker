@@ -1,0 +1,49 @@
+# ──────────────────────────────────────────────────────────────
+#  Developer Workbench – Node LTS + Supabase CLI + hot tools
+#  Spin it up with:  docker build -t devbox .  &&  docker run -it --rm -v ${PWD}:/workspace devbox
+# ----------------------------------------------------------------
+
+FROM ubuntu:22.04
+
+# ---- 1. Non‑interactive apt and core tooling ------------------
+ENV DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+        curl ca-certificates git build-essential libssl-dev unzip \
+        zsh less nano openssh-client postgresql-client && \
+    rm -rf /var/lib/apt/lists/*
+
+# ---- 2. Node.js (LTS) + pnpm ----------------------------------
+ARG NODE_MAJOR=20
+RUN curl -fsSL https://deb.nodesource.com/setup_${NODE_MAJOR}.x | bash - && \
+    apt-get install -y nodejs && \
+    npm install -g pnpm@latest
+
+# ---- 3. Supabase CLI (stand‑alone binary) ---------------------
+ARG SUPABASE_VERSION=1.184.0
+RUN curl -L https://github.com/supabase/cli/releases/download/v${SUPABASE_VERSION}/supabase_${SUPABASE_VERSION}_linux_amd64.tar.gz \
+    | tar -xz && \
+    mv supabase /usr/local/bin/ && \
+    chmod +x /usr/local/bin/supabase
+
+# ---- 4. QoL dev goodies ---------------------------------------
+RUN pnpm add -g nodemon@latest ts-node@latest eslint@latest prettier@latest && \
+    curl -fsSL https://starship.rs/install.sh | bash -s -- --yes && \
+    echo '\n# prompt candy\neval "$(starship init bash)"' >> /etc/bash.bashrc
+
+# ---- 5. Set up a user so npm modules aren’t root‑owned --------
+ARG USERNAME=dev
+ARG UID=1000
+RUN useradd -ms /bin/bash -u ${UID} ${USERNAME}
+USER ${USERNAME}
+WORKDIR /workspace
+
+# ---- 6. Default shell 💅 --------------------------------------
+SHELL ["/bin/bash", "-lc"]
+
+# ---- 7. Smoke‑test the toolchain on build ---------------------
+RUN node -v && pnpm -v && supabase --version
+
+# ---- 8. Helpful entrypoint banner -----------------------------
+CMD echo -e "\e[92mReady!  🔥  Type 'supabase init' or 'pnpm dev'.  Your code lives in /workspace.\e[0m" && bash

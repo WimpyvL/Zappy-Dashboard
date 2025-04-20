@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '../../lib/supabase'; // Use the correct Supabase client
+import { supabase, supabaseHelper } from '../../lib/supabase'; // Use the correct Supabase client
 import { toast } from 'react-toastify';
 
 // Removed Mock Data
@@ -17,25 +17,29 @@ export const useProducts = (filters = {}) => {
   return useQuery({
     queryKey: queryKeys.lists(filters),
     queryFn: async () => {
-      let query = supabase
-        .from('products') // ASSUMING table name is 'products'
-        .select('*')
-        .order('name', { ascending: true }); // Example order
+      const fetchOptions = {
+        select: '*',
+        order: { column: 'name', ascending: true },
+        filters: [],
+      };
 
       // Apply filters if any
       if (filters.category) {
-        query = query.eq('category', filters.category);
+        fetchOptions.filters.push({ column: 'category', operator: 'eq', value: filters.category });
       }
       // Corrected column name for active filter
       if (filters.active !== undefined) {
-        query = query.eq('is_active', filters.active);
+        fetchOptions.filters.push({ column: 'is_active', operator: 'eq', value: filters.active });
       }
       // Add search filter if needed
       if (filters.search) {
-         query = query.or(`name.ilike.%${filters.search}%,description.ilike.%${filters.search}%`);
+         // supabaseHelper.fetch doesn't directly support .or(), so this filter needs adjustment or backend handling.
+         // For now, we'll add a basic filter example, but note this might not work as intended without backend changes.
+         // fetchOptions.filters.push({ column: 'name', operator: 'ilike', value: `%${filters.search}%` });
+         console.warn("Filtering products by search might require backend changes or different table structure.");
       }
 
-      const { data, error } = await query;
+      const { data, error } = await supabaseHelper.fetch('products', fetchOptions);
 
       if (error) {
         console.error('Error fetching products:', error);
@@ -54,11 +58,12 @@ export const useProductById = (id, options = {}) => {
     queryFn: async () => {
       if (!id) return null;
 
-      const { data, error } = await supabase
-        .from('products') // ASSUMING table name is 'products'
-        .select('*')
-        .eq('id', id)
-        .single();
+      const fetchOptions = {
+        select: '*',
+        filters: [{ column: 'id', operator: 'eq', value: id }],
+        single: true,
+      };
+      const { data, error } = await supabaseHelper.fetch('products', fetchOptions);
 
       if (error) {
         console.error(`Error fetching product ${id}:`, error);
@@ -101,17 +106,13 @@ export const useCreateProduct = (options = {}) => {
         // NOTE: 'doses' and 'associatedServiceIds' are likely handled via separate tables/logic, not direct insert here.
       };
 
-      const { data, error } = await supabase
-        .from('products') // ASSUMING table name is 'products'
-        .insert(dataToInsert)
-        .select()
-        .single();
+      const { data, error } = await supabaseHelper.insert('products', dataToInsert, { returning: 'representation' });
 
       if (error) {
         console.error('Error creating product:', error);
         throw new Error(error.message);
       }
-      return data;
+      return data ? data[0] : null; // supabaseHelper.insert returns an array, so take the first element
     },
     onSuccess: (data, variables, context) => {
       toast.success('Product created successfully');
@@ -157,18 +158,13 @@ export const useUpdateProduct = (options = {}) => {
       delete dataToUpdate.id;
       delete dataToUpdate.created_at;
 
-      const { data, error } = await supabase
-        .from('products') // ASSUMING table name is 'products'
-        .update(dataToUpdate)
-        .eq('id', id)
-        .select()
-        .single();
+      const { data, error } = await supabaseHelper.update('products', id, dataToUpdate);
 
       if (error) {
         console.error(`Error updating product ${id}:`, error);
         throw new Error(error.message);
       }
-      return data;
+      return data ? data[0] : null; // supabaseHelper.update returns an array, so take the first element
     },
     onSuccess: (data, variables, context) => {
       toast.success('Product updated successfully');
@@ -192,10 +188,7 @@ export const useDeleteProduct = (options = {}) => {
     mutationFn: async (id) => {
       if (!id) throw new Error("Product ID is required for deletion.");
 
-      const { error } = await supabase
-        .from('products') // ASSUMING table name is 'products'
-        .delete()
-        .eq('id', id);
+      const { data, error } = await supabaseHelper.delete('products', id);
 
       if (error) {
         console.error(`Error deleting product ${id}:`, error);

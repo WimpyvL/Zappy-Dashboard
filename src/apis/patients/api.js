@@ -1,131 +1,183 @@
-import {
-  useCreatePatient,
-  useUpdatePatient,
-  usePatientById,
-  usePatients, // Assuming this hook exists for fetching all patients
-  useDeletePatient, // Assuming this hook exists for deleting patients
-} from './hooks';
-import { supabase } from '../../lib/supabase'; // Correct: Use named import
+import { supabase, supabaseHelper } from '../../lib/supabase';
+import { getErrorMessage } from '../../utils/errorHandling';
+import { SupabaseQueryResult } from '../../types/supabase';
 
-// This adapter provides a consistent interface for CRUD operations on patients,
-// using the underlying React Query hooks.
-// Note: This is a conceptual structure. The actual implementation within these functions
-// might need adjustments based on how the hooks precisely work (e.g., returning promises, handling data shapes).
-
+/**
+ * Standardized API for patient operations with Supabase
+ */
 const patientsApi = {
   /**
-   * Fetches a list of patients.
-   * Corresponds to the hook managing the list state (e.g., usePatients).
-   * The useCrud hook will primarily use this via its own internal fetchAll.
-   * @param {object} params - Optional query parameters.
-   * @returns {Promise<Array>} - A promise resolving to the list of patients.
+   * Fetches patients with consistent query pattern
+   * @param {object} params - Query parameters
+   * @returns {Promise<SupabaseQueryResult>} Standardized query result
    */
   getAll: async (params = {}) => {
-    // This might directly call Supabase or adapt a hook if usePatients provides a direct fetch function.
-    // For simplicity, let's assume a direct Supabase call here, but ideally, it aligns with usePatients.
-    console.warn(
-      'patientsApi.getAll: Using direct Supabase call. Align with usePatients if possible.',
-    );
-    const { data, error } = await supabase
-      .from('patients') // Updated to use 'patients' table
-      .select('*')
-      // Add filtering/pagination based on params if needed
-      .order('created_at', { ascending: false });
+    try {
+      const fetchOptions = {
+        select: '*',
+        order: { column: 'created_at', ascending: false },
+        filters: params.filters || [],
+      };
 
-    if (error) {
-      console.error('Error fetching patients:', error);
-      throw error; // Let errorHandling catch this
+      // Add pagination if provided
+      if (params.page && params.pageSize) {
+        const from = (params.page - 1) * params.pageSize;
+        const to = from + params.pageSize - 1;
+        fetchOptions.range = { from, to };
+      }
+
+      const { data, error, count } = await supabaseHelper.fetch('client_record', fetchOptions);
+
+      if (error) {
+        throw error;
+      }
+
+      return {
+        data,
+        error: null,
+        count,
+        status: 200,
+        statusText: 'OK'
+      };
+    } catch (error) {
+      return {
+        data: null,
+        error: getErrorMessage(error),
+        count: null,
+        status: error.status || 500,
+        statusText: error.message || 'Internal Server Error'
+      };
     }
-    return data || [];
   },
 
   /**
-   * Fetches a single patient by ID.
-   * Uses the usePatientById hook.
-   * @param {string} id - The ID of the patient to fetch.
-   * @returns {Promise<object>} - A promise resolving to the patient data.
+   * Gets patient by ID with standardized response
+   * @param {string} id - Patient ID
+   * @returns {Promise<SupabaseQueryResult>} Standardized query result
    */
   getById: async (id) => {
-    // React Query hooks are typically used within components.
-    // This adapter function needs to perform the fetch directly or find a way
-    // to trigger the hook's fetch function if possible outside a component context.
-    // Often, the hook itself might return a fetch function, or we call Supabase directly.
-    // Let's assume a direct call for simplicity in this adapter structure.
-    console.warn(
-      'patientsApi.getById: Using direct Supabase call. Ensure consistency with usePatientById hook logic.',
-    );
-    const { data, error } = await supabase
-      .from('patients')
-      .select('*')
-      .eq('id', id)
-      .single(); // Use .single() if expecting one record
+    try {
+      const fetchOptions = {
+        select: '*',
+        filters: [{ column: 'id', operator: 'eq', value: id }],
+        single: true,
+      };
+      const { data, error } = await supabaseHelper.fetch('patients', fetchOptions);
 
-    if (error) {
-      console.error(`Error fetching patient ${id}:`, error);
-      // Handle 'not found' specifically if needed, or let the generic error handler manage it.
-      if (error.code === 'PGRST116') { // PostgREST code for zero rows returned by single()
-         throw new Error(`Patient with ID ${id} not found.`);
+      if (error) {
+        throw error;
       }
-      throw error;
+
+      return {
+        data,
+        error: null,
+        count: data ? 1 : 0,
+        status: data ? 200 : 404,
+        statusText: data ? 'OK' : 'Not Found'
+      };
+    } catch (error) {
+      return {
+        data: null,
+        error: getErrorMessage(error),
+        count: null,
+        status: error.status || 500,
+        statusText: error.message || 'Internal Server Error'
+      };
     }
-    return data;
   },
 
   /**
-   * Creates a new patient.
-   * Uses the useCreatePatient mutation hook.
-   * @param {object} patientData - The data for the new patient.
-   * @returns {Promise<object>} - A promise resolving to the newly created patient data.
+   * Creates a new patient with standardized response
+   * @param {object} patientData - Patient data
+   * @returns {Promise<SupabaseQueryResult>} Standardized query result
    */
   create: async (patientData) => {
-    // The useCreatePatient hook returns a mutateAsync function.
-    // This adapter needs access to that function. This is tricky outside a component.
-    // A common pattern is to have the hook setup in a context or higher-level component,
-    // and pass the mutateAsync function down or make it accessible via the context.
-    // For this adapter, we might have to instantiate the hook temporarily (less ideal)
-    // or assume the calling component (CrudModal) will handle the hook invocation.
-    // Let's assume CrudModal will use the hook directly for mutations for now.
-    // This adapter function might just define the *intent* or structure.
-    // ---
-    // Alternative: If hooks provide static methods (unlikely for mutations)
-    // ---
-    // Revisit: How to best integrate mutation hooks here?
-    // For now, this function might not be directly callable in this structure
-    // if it relies on calling mutateAsync from a hook instance.
-    // The CrudModal will likely need to instantiate and use the specific mutation hook.
-    throw new Error(
-      'patientsApi.create: Direct call not implemented. Use useCreatePatient hook in the component.',
-    );
-    // Placeholder: return Promise.resolve(patientData);
+    try {
+      const { data, error } = await supabaseHelper.insert('patients', patientData, { returning: 'representation' });
+
+      if (error) {
+        throw error;
+      }
+
+      return {
+        data: data ? data[0] : null, // supabaseHelper.insert returns an array, so take the first element
+        error: null,
+        count: data ? 1 : 0,
+        status: data ? 201 : 500,
+        statusText: data ? 'Created' : 'Internal Server Error'
+      };
+    } catch (error) {
+      return {
+        data: null,
+        error: getErrorMessage(error),
+        count: null,
+        status: error.status || 500,
+        statusText: error.message || 'Internal Server Error'
+      };
+    }
   },
 
   /**
-   * Updates an existing patient.
-   * Uses the useUpdatePatient mutation hook.
-   * @param {string} id - The ID of the patient to update.
-   * @param {object} patientData - The updated data.
-   * @returns {Promise<object>} - A promise resolving to the updated patient data.
+   * Updates a patient with standardized response
+   * @param {string} id - Patient ID
+   * @param {object} patientData - Updated patient data
+   * @returns {Promise<SupabaseQueryResult>} Standardized query result
    */
   update: async (id, patientData) => {
-    // Similar challenge as 'create' regarding mutation hooks.
-    throw new Error(
-      'patientsApi.update: Direct call not implemented. Use useUpdatePatient hook in the component.',
-    );
-    // Placeholder: return Promise.resolve({ id, ...patientData });
+    try {
+      const { data, error } = await supabaseHelper.update('patients', id, patientData);
+
+      if (error) {
+        throw error;
+      }
+
+      return {
+        data: data ? data[0] : null, // supabaseHelper.update returns an array, so take the first element
+        error: null,
+        count: data ? 1 : 0,
+        status: data ? 200 : 500,
+        statusText: data ? 'OK' : 'Internal Server Error'
+      };
+    } catch (error) {
+      return {
+        data: null,
+        error: getErrorMessage(error),
+        count: null,
+        status: error.status || 500,
+        statusText: error.message || 'Internal Server Error'
+      };
+    }
   },
 
   /**
-   * Deletes a patient by ID.
-   * Uses the useDeletePatient mutation hook.
-   * @param {string} id - The ID of the patient to delete.
-   * @returns {Promise<void>} - A promise resolving when deletion is complete.
+   * Deletes a patient with standardized response
+   * @param {string} id - Patient ID
+   * @returns {Promise<SupabaseQueryResult>} Standardized query result
    */
   delete: async (id) => {
-    // Similar challenge as 'create'/'update'.
-    throw new Error(
-      'patientsApi.delete: Direct call not implemented. Use useDeletePatient hook in the component.',
-    );
-    // Placeholder: return Promise.resolve();
+    try {
+      const { data, error } = await supabaseHelper.delete('patients', id);
+
+      if (error) {
+        throw error;
+      }
+
+      return {
+        data: { id },
+        error: null,
+        count: 1,
+        status: 204,
+        statusText: 'No Content'
+      };
+    } catch (error) {
+      return {
+        data: null,
+        error: getErrorMessage(error),
+        count: null,
+        status: error.status || 500,
+        statusText: error.message || 'Internal Server Error'
+      };
+    }
   },
 };
 

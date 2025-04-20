@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '../../lib/supabase'; // Use the correct Supabase client
+import { supabase, supabaseHelper } from '../../lib/supabase'; // Use the correct Supabase client
 // Removed unused auditLogService import
 
 // Get orders hook using Supabase
@@ -10,32 +10,36 @@ export const useOrders = (currentPage = 1, filters = {}, pageSize = 10) => {
   return useQuery({
     queryKey: ['orders', currentPage, filters, pageSize],
     queryFn: async () => {
-      let query = supabase
-        .from('orders') // Use quoted table name if needed, or adjust if different
-        // Join with client_record table (assuming FK is patient_id)
-        .select(`
-          *,
-          patients!inner(id, first_name, last_name)
-        `, { count: 'exact' })
-        .order('order_date', { ascending: false })
-        .range(rangeFrom, rangeTo);
+      const select = `
+        *,
+        patients!inner(id, first_name, last_name)
+      `; // Join with client_record table (assuming FK is patient_id)
 
+      const queryFilters = [];
       // Apply filters (adjust column names based on schema.sql)
       if (filters.status) {
-        query = query.eq('status', filters.status);
+        queryFilters.push({ column: 'status', operator: 'eq', value: filters.status });
       }
       if (filters.patientId) {
-        query = query.eq('patient_id', filters.patientId); // Corrected FK name
+        queryFilters.push({ column: 'patient_id', operator: 'eq', value: filters.patientId }); // Corrected FK name
       }
       // Add search filter if needed (adjust based on actual schema and join)
       if (filters.search) {
-        // Use the joined table alias 'client_record' for patient name fields
-        query = query.or(
-          `medication.ilike.%${filters.search}%,pharmacy.ilike.%${filters.search}%,patients.first_name.ilike.%${filters.search}%,patients.last_name.ilike.%${filters.search}%`
-        );
+        // Note: supabaseHelper.fetch does not directly support .or() with joined tables.
+        // For complex queries like this, you might need to use the direct supabase client
+        // or handle filtering client-side after fetching.
+        // For now, we'll omit the search filter when using the helper.
+        console.warn("Search filter is not supported by supabaseHelper.fetch for this query structure.");
       }
 
-      const { data, error, count } = await query;
+      const { data, error, count } = await supabaseHelper.fetch('orders', {
+        select,
+        filters: queryFilters,
+        order: { column: 'order_date', ascending: false },
+        limit: pageSize,
+        range: { from: rangeFrom, to: rangeTo },
+        count: 'exact'
+      });
 
       if (error) {
         console.error('Error fetching orders:', error);
@@ -47,11 +51,11 @@ export const useOrders = (currentPage = 1, filters = {}, pageSize = 10) => {
         data?.map((order) => ({
           ...order,
           // Construct patientName from the joined 'client_record' data
-          patientName: order.patients 
+          patientName: order.patients
             ? `${order.patients.first_name || ''} ${order.patients.last_name || ''}`.trim()
             : 'N/A',
           // Ensure patientId is correctly mapped (assuming FK is patient_id)
-          patientId: order.patient_id 
+          patientId: order.patient_id
         })) || [];
 
       return {
@@ -75,11 +79,13 @@ export const useOrderById = (id, options = {}) => {
     queryFn: async () => {
       if (!id) return null;
 
-      const { data, error } = await supabase
-        .from('orders')
-        .select('*') // Select without join
-        .eq('id', id)
-        .single();
+      const filters = [{ column: 'id', operator: 'eq', value: id }];
+
+      const { data, error } = await supabaseHelper.fetch('orders', {
+        select: '*', // Select without join
+        filters,
+        single: true,
+      });
 
       if (error) {
         console.error(`Error fetching order ${id}:`, error);
@@ -108,11 +114,13 @@ export const useMyOrders = (patientId, options = {}) => {
     queryFn: async () => {
       if (!patientId) return []; // Return empty if no patientId
 
-      const { data, error } = await supabase
-        .from('orders') 
-        .select('*') 
-        .eq('patient_id', patientId) // Corrected FK name
-        .order('order_date', { ascending: false }); 
+      const filters = [{ column: 'patient_id', operator: 'eq', value: patientId }]; // Corrected FK name
+
+      const { data, error } = await supabaseHelper.fetch('orders', {
+        select: '*',
+        filters,
+        order: { column: 'order_date', ascending: false },
+      });
 
       if (error) {
         console.error(`Error fetching orders for patient ${patientId}:`, error);
@@ -141,11 +149,7 @@ export const useCreateOrder = (options = {}) => {
         is_deleted: false,
       };
 
-      const { data, error } = await supabase
-        .from('orders')
-        .insert(dataToInsert)
-        .select()
-        .single();
+      const { data, error } = await supabaseHelper.insert('orders', dataToInsert, { returning: 'single' });
 
       if (error) {
         console.error('Error creating order:', error);
@@ -178,12 +182,7 @@ export const useUpdateOrder = (options = {}) => {
         updated_at: new Date().toISOString(),
       };
 
-      const { data, error } = await supabase
-        .from('orders')
-        .update(dataToUpdate)
-        .eq('id', id)
-        .select()
-        .single();
+      const { data, error } = await supabaseHelper.update('orders', id, dataToUpdate);
 
       if (error) {
         console.error(`Error updating order ${id}:`, error);
@@ -212,12 +211,9 @@ export const useUpdateOrderStatus = (options = {}) => {
     mutationFn: async ({ orderId, status }) => {
       if (!orderId) throw new Error('Order ID is required for status update.');
 
-      const { data, error } = await supabase
-        .from('orders')
-        .update({ status: status, updated_at: new Date().toISOString() })
-        .eq('id', orderId)
-        .select()
-        .single();
+      const dataToUpdate = { status: status, updated_at: new Date().toISOString() };
+
+      const { data, error } = await supabaseHelper.update('orders', orderId, dataToUpdate);
 
       if (error) {
         console.error(`Error updating order status ${orderId}:`, error);
@@ -249,13 +245,9 @@ export const useDeleteOrder = (options = {}) => {
     mutationFn: async (id) => {
       if (!id) throw new Error('Order ID is required for deletion.');
 
-      // Removed unused 'data' from destructuring
-      const { error } = await supabase
-        .from('orders')
-        .update({ is_deleted: true, deleted_at: new Date().toISOString() })
-        .eq('id', id)
-        .select()
-        .single();
+      const dataToUpdate = { is_deleted: true, deleted_at: new Date().toISOString() };
+
+      const { data, error } = await supabaseHelper.update('orders', id, dataToUpdate);
 
       if (error) {
         console.error(`Error 'deleting' order ${id}:`, error);

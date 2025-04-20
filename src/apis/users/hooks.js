@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '../../lib/supabase'; // Use the correct Supabase client
+import { supabase, supabaseHelper } from '../../lib/supabase'; // Use the correct Supabase client
 import { useAuth } from '../../context/AuthContext'; // Import useAuth to potentially get user ID
 import { toast } from 'react-toastify';
 
@@ -124,19 +124,21 @@ export const useGetUsers = (filters = {}, options = {}) => {
        // Assuming a 'profiles' table linked to auth.users via 'id'
        // and containing 'first_name', 'last_name', 'role' columns.
        // Adjust table and column names based on your actual schema.
-       let query = supabase
-         .from('profiles') // Query the profiles table
-         .select('id, first_name, last_name, role'); // Select necessary fields
+       const fetchOptions = {
+         select: 'id, first_name, last_name, role', // Select necessary fields
+         filters: [],
+         order: [
+           { column: 'last_name', ascending: true },
+           { column: 'first_name', ascending: true },
+         ],
+       };
 
        // Apply role filter if provided
        if (filters.role) {
-         query = query.eq('role', filters.role); // Filter by role column
+         fetchOptions.filters.push({ column: 'role', operator: 'eq', value: filters.role }); // Filter by role column
        }
 
-       // Add ordering
-       query = query.order('last_name', { ascending: true }).order('first_name', { ascending: true });
-
-       const { data, error } = await query;
+       const { data, error } = await supabaseHelper.fetch('profiles', fetchOptions);
 
        if (error) {
          console.error('Error fetching users/profiles:', error);

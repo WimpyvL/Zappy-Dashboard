@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '../../lib/supabase'; // Use the correct Supabase client
+import { supabase, supabaseHelper } from '../../lib/supabase'; // Use the correct Supabase client
 import { toast } from 'react-toastify';
 
 // Removed Mock Data
@@ -18,19 +18,21 @@ export const useNotes = (patientId, params = {}, options = {}) => {
     queryFn: async () => {
       if (!patientId) return []; // Return empty if no patientId
 
-      let query = supabase
-        .from('notes') 
-        .select(`
-          *,
-          author:user_id ( id, first_name, last_name ) 
-        `) // Join with profiles table using user_id FK
-        .eq('patient_id', patientId) // Corrected FK name
-        .order('created_at', { ascending: false }); 
+      const select = `
+        *,
+        author:user_id ( id, first_name, last_name )
+      `; // Join with profiles table using user_id FK
+
+      const filters = [{ column: 'patient_id', operator: 'eq', value: patientId }]; // Corrected FK name
 
       // Add other filters from params if needed
-      // if (params.type) { query = query.eq('type', params.type); }
+      // if (params.type) { filters.push({ column: 'type', operator: 'eq', value: params.type }); }
 
-      const { data, error } = await query;
+      const { data, error } = await supabaseHelper.fetch('notes', {
+        select,
+        filters,
+        order: { column: 'created_at', ascending: false },
+      });
 
       if (error) {
         console.error(`Error fetching notes for patient ${patientId}:`, error);
@@ -43,7 +45,7 @@ export const useNotes = (patientId, params = {}, options = {}) => {
           authorName: note.author ? `${note.author.first_name || ''} ${note.author.last_name || ''}`.trim() : 'System', // Use joined author name
       })) || [];
 
-      return mappedData; 
+      return mappedData;
     },
     enabled: !!patientId, // Only run query if patientId is truthy
     keepPreviousData: true,
@@ -58,14 +60,18 @@ export const useNoteById = (noteId, options = {}) => {
     queryFn: async () => {
       if (!noteId) return null;
 
-      const { data, error } = await supabase
-        .from('notes') 
-        .select(`
-          *,
-          author:user_id ( id, first_name, last_name ) 
-        `) // Join with profiles table using user_id FK
-        .eq('id', noteId)
-        .single();
+      const select = `
+        *,
+        author:user_id ( id, first_name, last_name )
+      `; // Join with profiles table using user_id FK
+
+      const filters = [{ column: 'id', operator: 'eq', value: noteId }];
+
+      const { data, error } = await supabaseHelper.fetch('notes', {
+        select,
+        filters,
+        single: true,
+      });
 
       if (error) {
         console.error(`Error fetching note ${noteId}:`, error);
@@ -105,11 +111,7 @@ export const useCreateNote = (options = {}) => {
         updated_at: new Date().toISOString(),
       };
 
-      const { data, error } = await supabase
-        .from('notes') 
-        .insert(dataToInsert)
-        .select()
-        .single();
+      const { data, error } = await supabaseHelper.insert('notes', dataToInsert, { returning: 'single' });
 
       if (error) {
         console.error('Error creating note:', error);
@@ -147,12 +149,7 @@ export const useUpdateNote = (options = {}) => {
        delete dataToUpdate.patient_id; // Don't allow changing patient link
        delete dataToUpdate.user_id; // Don't allow changing author
 
-      const { data, error } = await supabase
-        .from('notes') 
-        .update(dataToUpdate)
-        .eq('id', noteId)
-        .select()
-        .single();
+      const { data, error } = await supabaseHelper.update('notes', noteId, dataToUpdate);
 
       if (error) {
         console.error(`Error updating note ${noteId}:`, error);
@@ -187,10 +184,7 @@ export const useDeleteNote = (options = {}) => {
     mutationFn: async ({ noteId, patientId }) => { // Accept patientId for invalidation
       if (!noteId) throw new Error("Note ID is required for deletion.");
 
-      const { error } = await supabase
-        .from('notes') 
-        .delete()
-        .eq('id', noteId);
+      const { data, error } = await supabaseHelper.delete('notes', noteId);
 
       if (error) {
         console.error(`Error deleting note ${noteId}:`, error);

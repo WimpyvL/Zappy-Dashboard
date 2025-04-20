@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '../../lib/supabase'; // Use the correct Supabase client
+import { supabase, supabaseHelper } from '../../lib/supabase'; // Use the correct Supabase client
 import { toast } from 'react-toastify';
 import { useAuth } from '../../context/AuthContext'; // To get current user ID if needed
 
@@ -18,11 +18,12 @@ export const useReferralSettings = (options = {}) => {
     queryKey: queryKeys.settings,
     queryFn: async () => {
       // Settings are stored in referral_settings with primary key id=1
-      const { data, error } = await supabase
-        .from('referral_settings') 
-        .select('*')
-        .eq('id', 1) // Fetch the single settings row
-        .maybeSingle(); 
+      const fetchOptions = {
+        select: '*',
+        filters: [{ column: 'id', operator: 'eq', value: 1 }],
+        single: true,
+      };
+      const { data, error } = await supabaseHelper.fetch('referral_settings', fetchOptions);
 
       if (error) {
         console.error('Error fetching referral settings:', error);
@@ -51,17 +52,14 @@ export const useUpdateReferralSettings = (options = {}) => {
         updated_at: new Date().toISOString(),
       };
 
-      const { data, error } = await supabase
-        .from('referral_settings') 
-        .upsert(dataToUpdate) // Upsert ensures the row is created if it doesn't exist
-        .select()
-        .single();
+      // Use insert with onConflict to achieve upsert behavior
+      const { data, error } = await supabaseHelper.insert('referral_settings', dataToUpdate, { onConflict: 'id', returning: 'representation' });
 
       if (error) {
         console.error('Error updating referral settings:', error);
         throw new Error(error.message);
       }
-      return data;
+      return data ? data[0] : null; // supabaseHelper.insert returns an array, so take the first element
     },
     onSuccess: (data, variables, context) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.settings });
@@ -81,22 +79,23 @@ export const useReferralHistory = (filters = {}, options = {}) => {
   return useQuery({
     queryKey: queryKeys.history(filters),
     queryFn: async () => {
-      // Join referrals with profiles table to get names
-      let query = supabase
-        .from('referrals') 
-        .select(`
+      const fetchOptions = {
+        // Join referrals with profiles table to get names
+        select: `
           *,
           referrer:profiles!referrals_referrer_user_id_fkey ( id, first_name, last_name, email ), 
           referee:profiles!referrals_referred_user_id_fkey ( id, first_name, last_name, email ) 
-        `) // Use explicit foreign key names for joins
-        .order('created_at', { ascending: false });
+        `, // Use explicit foreign key names for joins
+        order: { column: 'created_at', ascending: false },
+        filters: [],
+      };
 
       // Add filters if needed (e.g., by status)
       if (filters.status) {
-        query = query.eq('status', filters.status);
+        fetchOptions.filters.push({ column: 'status', operator: 'eq', value: filters.status });
       }
 
-      const { data, error } = await query;
+      const { data, error } = await supabaseHelper.fetch('referrals', fetchOptions);
 
       if (error) {
         console.error('Error fetching referral history:', error);
@@ -138,11 +137,12 @@ export const useUserReferralInfo = (options = {}) => {
         // 2. Get referral count/rewards 
 
         // Fetch profile which now contains the referral_code
-        const { data: profileData, error: profileError } = await supabase
-            .from('profiles') 
-            .select('referral_code')
-            .eq('id', userId)
-            .single();
+        const profileFetchOptions = {
+          select: 'referral_code',
+          filters: [{ column: 'id', operator: 'eq', value: userId }],
+          single: true,
+        };
+        const { data: profileData, error: profileError } = await supabaseHelper.fetch('profiles', profileFetchOptions);
 
         if (profileError) {
             console.error("Error fetching user profile for referral code:", profileError);
@@ -150,11 +150,17 @@ export const useUserReferralInfo = (options = {}) => {
         }
 
         // Fetch referral stats (count successful referrals for this user)
-        const { count, error: statsError } = await supabase
-            .from('referrals') 
-            .select('*', { count: 'exact', head: true }) 
-            .eq('referrer_user_id', userId)
-            .eq('status', 'rewarded'); // Count only rewarded referrals
+        const statsFetchOptions = {
+          select: '*',
+          filters: [
+            { column: 'referrer_user_id', operator: 'eq', value: userId },
+            { column: 'status', operator: 'eq', value: 'rewarded' },
+          ],
+          count: 'exact', // supabaseHelper.fetch supports count
+          head: true,
+        };
+        const { count, error: statsError } = await supabaseHelper.fetch('referrals', statsFetchOptions);
+
 
          if (statsError) {
             console.error("Error fetching referral stats:", statsError);
@@ -162,11 +168,13 @@ export const useUserReferralInfo = (options = {}) => {
          }
 
          // 3. Get reward amount from settings
-         const { data: settingsData, error: settingsError } = await supabase
-            .from('referral_settings')
-            .select('reward_amount')
-            .eq('id', 1)
-            .single();
+         const settingsFetchOptions = {
+           select: 'reward_amount',
+           filters: [{ column: 'id', operator: 'eq', value: 1 }],
+           single: true,
+         };
+         const { data: settingsData, error: settingsError } = await supabaseHelper.fetch('referral_settings', settingsFetchOptions);
+
 
          if (settingsError) {
              console.error("Error fetching referral settings for reward calculation:", settingsError);

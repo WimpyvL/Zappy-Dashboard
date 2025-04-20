@@ -1,31 +1,59 @@
 import { createClient } from '@supabase/supabase-js';
 
-// Use environment variables for Supabase credentials
-// CRA requires prefixing env vars with REACT_APP_
-const supabaseUrl = process.env.REACT_APP_SUPABASE_URL;
-const supabaseAnonKey = process.env.REACT_APP_SUPABASE_ANON_KEY;
+// Support both development and production environments
+const isDevelopment = process.env.NODE_ENV === 'development';
 
-// Basic check to ensure variables are loaded
+const supabaseUrl = isDevelopment 
+  ? 'http://localhost:54321' 
+  : process.env.REACT_APP_SUPABASE_URL;
+
+const supabaseAnonKey = isDevelopment
+  ? 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRlbGVoZWFsdGgiLCJyb2xlIjoiYW5vbiIsImlhdCI6MTY0ODM4MTQ5OSwiZXhwIjoxOTYzOTU3NDk5fQ.0sF9y5JQ5Q5Q5Q5Q5Q5Q5Q5Q5Q5Q5Q5Q5Q5Q5Q5Q5Q'
+  : process.env.REACT_APP_SUPABASE_ANON_KEY;
+
 if (!supabaseUrl || !supabaseAnonKey) {
   console.error(
-    'Supabase URL or Anon Key is missing. Make sure REACT_APP_SUPABASE_URL and REACT_APP_SUPABASE_ANON_KEY environment variables are set.'
+    'Supabase configuration is missing. Please check your environment variables.'
   );
-  // Optionally throw an error or handle appropriately
-  // throw new Error('Supabase environment variables are not set.');
 }
 
-// Create a single supabase client for interacting with your database
+// Create supabase client with environment-specific config
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
     persistSession: true,
     autoRefreshToken: true,
     detectSessionInUrl: true,
+    flowType: 'pkce',
+  },
+  db: {
+    schema: 'public',
   },
 });
 
-// Helper functions for common database operations (Optional, but kept for consistency if used elsewhere)
+// Schema validation helper
+export async function validateSchema() {
+  if (isDevelopment) {
+    try {
+      const { data: tables } = await supabase
+        .from('pg_tables')
+        .select('tablename')
+        .eq('schemaname', 'public');
+      
+      if (!tables || tables.length === 0) {
+        console.warn('No tables found in public schema. Run migrations first.');
+        return false;
+      }
+      return true;
+    } catch (error) {
+      console.error('Schema validation failed:', error);
+      return false;
+    }
+  }
+  return true; // Skip validation in production
+}
+
+// Helper functions remain the same as before
 export const supabaseHelper = {
-  // Generic fetch function
   async fetch(table, options = {}) {
     if (!supabase) return { data: null, error: new Error('Supabase client not initialized') };
     const {
@@ -61,7 +89,6 @@ export const supabaseHelper = {
     }
   },
 
-  // Insert data
   async insert(table, data, options = {}) {
     if (!supabase) return { data: null, error: new Error('Supabase client not initialized') };
     const { returning = 'minimal' } = options;
@@ -73,7 +100,6 @@ export const supabaseHelper = {
     return { data: result, error };
   },
 
-  // Update data
   async update(table, id, data) {
     if (!supabase) return { data: null, error: new Error('Supabase client not initialized') };
     const { data: result, error } = await supabase
@@ -85,7 +111,6 @@ export const supabaseHelper = {
     return { data: result, error };
   },
 
-  // Delete data
   async delete(table, id) {
     if (!supabase) return { data: null, error: new Error('Supabase client not initialized') };
     const { data, error } = await supabase.from(table).delete().eq('id', id);
@@ -93,7 +118,6 @@ export const supabaseHelper = {
     return { data, error };
   },
 
-  // Real-time subscription
   subscribe(table, callback, event = '*') {
     if (!supabase) {
        console.error('Supabase client not initialized for subscription');
@@ -116,6 +140,5 @@ export const supabaseHelper = {
   },
 };
 
-// Export the URL and key (primarily for debugging or specific needs, use with caution)
 export const SUPABASE_URL = supabaseUrl;
 export const SUPABASE_ANON_KEY = supabaseAnonKey;

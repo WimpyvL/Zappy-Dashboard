@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '../../lib/supabase'; // Use the correct Supabase client
+import { supabase, supabaseHelper } from '../../lib/supabase'; // Use the correct Supabase client
 import { toast } from 'react-toastify';
 
 // Define query keys
@@ -18,10 +18,11 @@ export const useSubscriptionPlans = (options = {}) => {
   return useQuery({
     queryKey: queryKeys.lists(),
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('subscription_plans')
-        .select('*')
-        .order('name', { ascending: true });
+      const fetchOptions = {
+        select: '*',
+        order: { column: 'name', ascending: true },
+      };
+      const { data, error } = await supabaseHelper.fetch('subscription_plans', fetchOptions);
 
       if (error) {
         console.error('Error fetching subscription plans:', error);
@@ -102,11 +103,12 @@ export const useSubscriptionPlanById = (id, options = {}) => {
       queryKey: queryKeys.details(id),
       queryFn: async () => {
         if (!id) return null;
-        const { data, error } = await supabase
-          .from('subscription_plans')
-          .select('*')
-          .eq('id', id)
-          .single();
+        const fetchOptions = {
+          select: '*',
+          filters: [{ column: 'id', operator: 'eq', value: id }],
+          single: true,
+        };
+        const { data, error } = await supabaseHelper.fetch('subscription_plans', fetchOptions);
 
         if (error) {
           console.error(`Error fetching subscription plan ${id}:`, error);
@@ -137,17 +139,13 @@ export const useCreateSubscriptionPlan = (options = {}) => {
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       };
-      const { data, error } = await supabase
-        .from('subscription_plans')
-        .insert(dataToInsert)
-        .select()
-        .single();
+      const { data, error } = await supabaseHelper.insert('subscription_plans', dataToInsert, { returning: 'representation' });
 
       if (error) {
         console.error('Error creating subscription plan:', error);
         throw new Error(error.message);
       }
-      return data;
+      return data ? data[0] : null; // supabaseHelper.insert returns an array, so take the first element
     },
      onSuccess: (data, variables, context) => {
        queryClient.invalidateQueries({ queryKey: queryKeys.lists() });
@@ -181,18 +179,13 @@ export const useUpdateSubscriptionPlan = (options = {}) => {
        delete dataToUpdate.id;
        delete dataToUpdate.created_at;
 
-       const { data, error } = await supabase
-         .from('subscription_plans')
-         .update(dataToUpdate)
-         .eq('id', id)
-         .select()
-         .single();
+       const { data, error } = await supabaseHelper.update('subscription_plans', id, dataToUpdate);
 
        if (error) {
          console.error(`Error updating subscription plan ${id}:`, error);
          throw new Error(error.message);
        }
-       return data;
+       return data ? data[0] : null; // supabaseHelper.update returns an array, so take the first element
      },
       onSuccess: (data, variables, context) => {
         queryClient.invalidateQueries({ queryKey: queryKeys.lists() });
@@ -215,10 +208,7 @@ export const useDeleteSubscriptionPlan = (options = {}) => {
      mutationFn: async (id) => {
        if (!id) throw new Error("Plan ID is required for deletion.");
        // TODO: Check if plan is linked to active subscriptions before deleting?
-       const { error } = await supabase
-         .from('subscription_plans')
-         .delete()
-         .eq('id', id);
+       const { data, error } = await supabaseHelper.delete('subscription_plans', id);
 
        if (error) {
          console.error(`Error deleting subscription plan ${id}:`, error);
@@ -292,19 +282,18 @@ export const useMySubscription = (patientId, options = {}) => {
        if (!patientId) return null;
        
        // Query the 'subscriptions' table, joining with 'subscription_plans'
-       const { data, error } = await supabase
-         .from('subscriptions') 
-         .select(`
+       const fetchOptions = {
+         select: `
            *,
            subscription_plans ( name, price, billing_cycle )
-         `)
-         .eq('patient_id', patientId) // Filter by the patient ID
-         // Fetch the most relevant subscription (e.g., active or trialing)
-         // Adjust status filter as needed based on business logic
-         .in('status', ['active', 'trialing', 'past_due', 'paused']) 
-         .order('created_at', { ascending: false }) // Get the latest if multiple match
-         .limit(1) 
-         .maybeSingle(); // Expect one or zero matching subscriptions
+         `,
+         filters: [{ column: 'patient_id', operator: 'eq', value: patientId }],
+         in: { column: 'status', values: ['active', 'trialing', 'past_due', 'paused'] },
+         order: { column: 'created_at', ascending: false },
+         limit: 1,
+         single: true,
+       };
+       const { data, error } = await supabaseHelper.fetch('subscriptions', fetchOptions);
 
        if (error) {
          console.error(`Error fetching subscription for patient ${patientId}:`, error);
@@ -337,11 +326,12 @@ export const useMyInvoices = (patientId, options = {}) => {
       queryFn: async () => {
         if (!patientId) return [];
 
-        const { data, error } = await supabase
-          .from('pb_invoices')
-          .select('*')
-          .eq('client_record_id', patientId) // Filter by patient
-          .order('created_at', { ascending: false });
+        const fetchOptions = {
+          select: '*',
+          filters: [{ column: 'client_record_id', operator: 'eq', value: patientId }],
+          order: { column: 'created_at', ascending: false },
+        };
+        const { data, error } = await supabaseHelper.fetch('pb_invoices', fetchOptions);
 
         if (error) {
           console.error(`Error fetching invoices for patient ${patientId}:`, error);

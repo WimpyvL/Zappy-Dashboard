@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '../../lib/supabase'; // Use the correct Supabase client
+import { supabase, supabaseHelper } from '../../lib/supabase'; // Use the correct Supabase client
 import { toast } from 'react-toastify';
 
 // Removed Mock Data
@@ -16,20 +16,20 @@ export const useDiscounts = (params = {}) => {
   return useQuery({
     queryKey: queryKeys.lists(params),
     queryFn: async () => {
-      let query = supabase
-        .from('discounts')
-        .select('*')
-        .order('name', { ascending: true }); // Example order
-
+      const filters = [];
       // Apply filters if any
       if (params.status !== undefined) {
-        query = query.eq('status', params.status);
+        filters.push({ column: 'status', operator: 'eq', value: params.status });
       }
       if (params.code) {
-         query = query.ilike('code', `%${params.code}%`);
+         filters.push({ column: 'code', operator: 'ilike', value: `%${params.code}%` });
       }
 
-      const { data, error } = await query;
+      const { data, error } = await supabaseHelper.fetch('discounts', {
+        select: '*',
+        filters,
+        order: { column: 'name', ascending: true }, // Example order
+      });
 
       if (error) {
         console.error('Error fetching discounts:', error);
@@ -52,11 +52,13 @@ export const useDiscountById = (id, options = {}) => {
     queryFn: async () => {
       if (!id) return null;
 
-      const { data, error } = await supabase
-        .from('discounts')
-        .select('*')
-        .eq('id', id)
-        .single();
+      const filters = [{ column: 'id', operator: 'eq', value: id }];
+
+      const { data, error } = await supabaseHelper.fetch('discounts', {
+        select: '*',
+        filters,
+        single: true,
+      });
 
       if (error) {
         console.error(`Error fetching discount ${id}:`, error);
@@ -90,15 +92,11 @@ export const useCreateDiscount = (options = {}) => {
         updated_at: new Date().toISOString(),
       };
       // Remove frontend-specific fields not in DB table
-      delete dataToInsert.discount_type; 
-      delete dataToInsert.value; 
+      delete dataToInsert.discount_type;
+      delete dataToInsert.value;
 
 
-      const { data, error } = await supabase
-        .from('discounts')
-        .insert(dataToInsert)
-        .select()
-        .single();
+      const { data, error } = await supabaseHelper.insert('discounts', dataToInsert, { returning: 'single' });
 
       if (error) {
         console.error('Error creating discount:', error);
@@ -142,12 +140,7 @@ export const useUpdateDiscount = (options = {}) => {
       delete dataToUpdate.value;
       delete dataToUpdate.usage_count; // Assuming usage_count is managed by backend triggers/logic
 
-      const { data, error } = await supabase
-        .from('discounts')
-        .update(dataToUpdate)
-        .eq('id', id)
-        .select()
-        .single();
+      const { data, error } = await supabaseHelper.update('discounts', id, dataToUpdate);
 
       if (error) {
         console.error(`Error updating discount ${id}:`, error);
@@ -179,10 +172,7 @@ export const useDeleteDiscount = (options = {}) => {
     mutationFn: async (id) => {
       if (!id) throw new Error("Discount ID is required for deletion.");
 
-      const { error } = await supabase
-        .from('discounts')
-        .delete()
-        .eq('id', id);
+      const { data, error } = await supabaseHelper.delete('discounts', id);
 
       if (error) {
         console.error(`Error deleting discount ${id}:`, error);
@@ -215,12 +205,9 @@ export const useToggleDiscountActive = (options = {}) => {
     mutationFn: async ({ id, active }) => {
        if (!id) throw new Error("Discount ID is required.");
 
-       const { data, error } = await supabase
-         .from('discounts')
-         .update({ status: active, updated_at: new Date().toISOString() })
-         .eq('id', id)
-         .select()
-         .single();
+       const dataToUpdate = { status: active, updated_at: new Date().toISOString() };
+
+       const { data, error } = await supabaseHelper.update('discounts', id, dataToUpdate);
 
        if (error) {
          console.error(`Error toggling discount ${id} status:`, error);

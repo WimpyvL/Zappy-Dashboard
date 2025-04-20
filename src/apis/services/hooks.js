@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '../../lib/supabase'; // Use the correct Supabase client
+import { supabase, supabaseHelper } from '../../lib/supabase'; // Use the correct Supabase client
 import { toast } from 'react-toastify';
 
 // Removed Mock Data
@@ -16,18 +16,19 @@ export const useServices = (params = {}) => {
   return useQuery({
     queryKey: queryKeys.lists(params),
     queryFn: async () => {
-      let query = supabase
-        .from('services') // ASSUMING table name is 'services'
-        .select('*')
-        .order('name', { ascending: true }); // Example order
+      const fetchOptions = {
+        select: '*',
+        order: { column: 'name', ascending: true },
+        filters: [],
+      };
 
       // Apply filters if any
       if (params.active !== undefined) {
-        query = query.eq('active', params.active);
+        fetchOptions.filters.push({ column: 'active', operator: 'eq', value: params.active });
       }
       // Add other filters as needed
 
-      const { data, error } = await query;
+      const { data, error } = await supabaseHelper.fetch('services', fetchOptions);
 
       if (error) {
         console.error('Error fetching services:', error);
@@ -45,11 +46,12 @@ export const useServiceById = (id, options = {}) => {
     queryFn: async () => {
       if (!id) return null;
 
-      const { data, error } = await supabase
-        .from('services') // ASSUMING table name is 'services'
-        .select('*')
-        .eq('id', id)
-        .single();
+      const fetchOptions = {
+        select: '*',
+        filters: [{ column: 'id', operator: 'eq', value: id }],
+        single: true,
+      };
+      const { data, error } = await supabaseHelper.fetch('services', fetchOptions);
 
       if (error) {
         console.error(`Error fetching service ${id}:`, error);
@@ -83,17 +85,13 @@ export const useCreateService = (options = {}) => {
         // TODO: Handle associated_products and available_plans if they are separate tables/relations
       };
 
-      const { data, error } = await supabase
-        .from('services') // ASSUMING table name is 'services'
-        .insert(dataToInsert)
-        .select()
-        .single();
+      const { data, error } = await supabaseHelper.insert('services', dataToInsert, { returning: 'representation' });
 
       if (error) {
         console.error('Error creating service:', error);
         throw new Error(error.message);
       }
-      return data;
+      return data ? data[0] : null; // supabaseHelper.insert returns an array, so take the first element
     },
     onSuccess: (data, variables, context) => {
       toast.success('Service created successfully');
@@ -132,18 +130,13 @@ export const useUpdateService = (options = {}) => {
       delete dataToUpdate.id;
       delete dataToUpdate.created_at;
 
-      const { data, error } = await supabase
-        .from('services') // ASSUMING table name is 'services'
-        .update(dataToUpdate)
-        .eq('id', id)
-        .select()
-        .single();
+      const { data, error } = await supabaseHelper.update('services', id, dataToUpdate);
 
       if (error) {
         console.error(`Error updating service ${id}:`, error);
         throw new Error(error.message);
       }
-      return data;
+      return data ? data[0] : null; // supabaseHelper.update returns an array, so take the first element
     },
     onSuccess: (data, variables, context) => {
       toast.success('Service updated successfully');
@@ -166,10 +159,7 @@ export const useDeleteService = (options = {}) => {
     mutationFn: async (id) => {
       if (!id) throw new Error("Service ID is required for deletion.");
 
-      const { error } = await supabase
-        .from('services') // ASSUMING table name is 'services'
-        .delete()
-        .eq('id', id);
+      const { data, error } = await supabaseHelper.delete('services', id);
 
       if (error) {
         console.error(`Error deleting service ${id}:`, error);

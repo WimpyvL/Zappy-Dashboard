@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '../../lib/supabase'; // Use the correct Supabase client
+import { supabase, supabaseHelper } from '../../lib/supabase'; // Use the correct Supabase client
 import { toast } from 'react-toastify';
 
 // Removed Mock Data
@@ -17,15 +17,15 @@ export const useForms = (params = {}) => {
   return useQuery({
     queryKey: queryKeys.lists(params),
     queryFn: async () => {
-      let query = supabase
-        .from('questionnaire') // Target the questionnaire table
-        .select('*')
-        .order('name', { ascending: true });
-
+      const filters = [];
       // Add filters if needed
-      // if (params.status !== undefined) { query = query.eq('status', params.status); }
+      // if (params.status !== undefined) { filters.push({ column: 'status', operator: 'eq', value: params.status }); }
 
-      const { data, error } = await query;
+      const { data, error } = await supabaseHelper.fetch('questionnaire', {
+        select: '*',
+        filters,
+        order: { column: 'name', ascending: true },
+      });
 
       if (error) {
         console.error('Error fetching forms (questionnaires):', error);
@@ -92,12 +92,14 @@ export const useFormById = (id, options = {}) => {
     queryFn: async () => {
       if (!id) return null;
 
+      const filters = [{ column: 'id', operator: 'eq', value: id }];
+
       // Fetch questionnaire details
-      const { data: formData, error: formError } = await supabase
-        .from('questionnaire')
-        .select('*') // Select all columns, assuming 'structure' JSONB exists
-        .eq('id', id)
-        .single();
+      const { data: formData, error: formError } = await supabaseHelper.fetch('questionnaire', {
+        select: '*', // Select all columns, assuming 'structure' JSONB exists
+        filters,
+        single: true,
+      });
 
       if (formError) {
         console.error(`Error fetching form ${id}:`, formError);
@@ -150,11 +152,7 @@ export const useCreateForm = (options = {}) => {
       };
 
       // Insert into questionnaire table
-      const { data: newQuestionnaire, error: insertError } = await supabase
-        .from('questionnaire')
-        .insert(questionnaireData)
-        .select()
-        .single();
+      const { data: newQuestionnaire, error: insertError } = await supabaseHelper.insert('questionnaire', questionnaireData, { returning: 'single' });
 
       if (insertError) {
         console.error('Error creating form (questionnaire):', insertError);
@@ -264,12 +262,7 @@ export const useUpdateForm = (options = {}) => {
        delete dataToUpdate.id;
        delete dataToUpdate.created_at;
 
-      const { data, error } = await supabase
-        .from('questionnaire')
-        .update(dataToUpdate)
-        .eq('id', id)
-        .select()
-        .single();
+      const { data, error } = await supabaseHelper.update('questionnaire', id, dataToUpdate);
 
       if (error) {
         console.error(`Error updating form ${id}:`, error);
@@ -306,10 +299,7 @@ export const useDeleteForm = (options = {}) => {
       // const { error: questionError } = await supabase.from('questionnaire_question').delete().eq('questionnaire_id', id);
       // if (questionError) { /* Handle error */ }
 
-      const { error } = await supabase
-        .from('questionnaire')
-        .delete()
-        .eq('id', id);
+      const { data, error } = await supabaseHelper.delete('questionnaire', id);
 
       if (error) {
         console.error(`Error deleting form ${id}:`, error);

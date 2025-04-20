@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '../../lib/supabase'; // Use the correct Supabase client
+import { supabase, supabaseHelper } from '../../lib/supabase'; // Use the correct Supabase client
 import { toast } from 'react-toastify';
 
 // Hook to fetch all tags using Supabase
@@ -7,15 +7,16 @@ export const useTags = (params = {}) => {
   return useQuery({
     queryKey: ['tags', params],
     queryFn: async () => {
-      let query = supabase
-        .from('tags') // Corrected table name
-        .select('*')
-        .order('name', { ascending: true }); // Example order
+      const fetchOptions = {
+        select: '*',
+        order: { column: 'name', ascending: true },
+        filters: [],
+      };
 
       // Add any filters based on params if needed
-      // if (params.someFilter) { query = query.eq('column', params.someFilter); }
+      // if (params.someFilter) { fetchOptions.filters.push({ column: 'column', operator: 'eq', value: params.someFilter }); }
 
-      const { data, error } = await query;
+      const { data, error } = await supabaseHelper.fetch('tags', fetchOptions);
 
       if (error) {
         console.error('Error fetching tags:', error);
@@ -35,11 +36,12 @@ export const useTagById = (id, options = {}) => {
     queryFn: async () => {
       if (!id) return null;
 
-      const { data, error } = await supabase
-        .from('tags') // Corrected table name
-        .select('*')
-        .eq('id', id)
-        .single();
+      const fetchOptions = {
+        select: '*',
+        filters: [{ column: 'id', operator: 'eq', value: id }],
+        single: true,
+      };
+      const { data, error } = await supabaseHelper.fetch('tags', fetchOptions);
 
       if (error) {
         console.error(`Error fetching tag ${id}:`, error);
@@ -74,11 +76,7 @@ export const useCreateTag = (options = {}) => {
 
       console.log('[useCreateTag] Inserting tag data:', dataToInsert); // Add logging
 
-      const { data, error } = await supabase
-        .from('tags') // Corrected table name
-        .insert(dataToInsert)
-        .select()
-        .single();
+      const { data, error } = await supabaseHelper.insert('tags', dataToInsert, { returning: 'representation' });
 
       if (error) {
         console.error('Error creating tag:', error);
@@ -87,7 +85,7 @@ export const useCreateTag = (options = {}) => {
         }
         throw new Error(error.message);
       }
-      return data;
+      return data ? data[0] : null; // supabaseHelper.insert returns an array, so take the first element
     },
     onSuccess: (data, variables, context) => {
       queryClient.invalidateQueries({ queryKey: ['tags'] });
@@ -118,12 +116,7 @@ export const useUpdateTag = (options = {}) => {
       delete dataToUpdate.created_at;
 
 
-      const { data, error } = await supabase
-        .from('tags') // Corrected table name
-        .update(dataToUpdate)
-        .eq('id', id)
-        .select()
-        .single();
+      const { data, error } = await supabaseHelper.update('tags', id, dataToUpdate);
 
       if (error) {
         console.error(`Error updating tag ${id}:`, error);
@@ -132,7 +125,7 @@ export const useUpdateTag = (options = {}) => {
          }
         throw new Error(error.message);
       }
-      return data;
+      return data ? data[0] : null; // supabaseHelper.update returns an array, so take the first element
     },
     onSuccess: (data, variables, context) => {
       queryClient.invalidateQueries({ queryKey: ['tags'] });
@@ -156,10 +149,7 @@ export const useDeleteTag = (options = {}) => {
     mutationFn: async (id) => {
       if (!id) throw new Error("Tag ID is required for deletion.");
 
-      const { error } = await supabase
-        .from('tags') // Corrected table name
-        .delete()
-        .eq('id', id);
+      const { data, error } = await supabaseHelper.delete('tags', id);
 
       if (error) {
         console.error(`Error deleting tag ${id}:`, error);

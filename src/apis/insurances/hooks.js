@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '../../lib/supabase'; // Use the correct Supabase client
+import { supabase, supabaseHelper } from '../../lib/supabase'; // Use the correct Supabase client
 import { toast } from 'react-toastify';
 
 // Removed Mock Data
@@ -16,24 +16,26 @@ export const useInsuranceRecords = (filters = {}) => { // Keep hook name for now
   return useQuery({
     queryKey: queryKeys.lists(filters),
     queryFn: async () => {
-      let query = supabase
-        .from('insurance_records') // Ensure correct table name
-        .select(`
-          *,
-          patients ( id, first_name, last_name )
-        `) // Ensure correct join table name
-        .order('created_at', { ascending: false });
+      const select = `
+        *,
+        patients ( id, first_name, last_name )
+      `; // Ensure correct join table name
 
+      const queryFilters = [];
       // Apply filters
       if (filters.patientId) {
-        query = query.eq('patient_id', filters.patientId); // Assuming FK is patient_id
+        queryFilters.push({ column: 'patient_id', operator: 'eq', value: filters.patientId }); // Assuming FK is patient_id
       }
       if (filters.status) {
         // Use the 'status' column from insurance_records table
-        query = query.eq('status', filters.status);
+        queryFilters.push({ column: 'status', operator: 'eq', value: filters.status });
       }
 
-      const { data, error } = await query;
+      const { data, error } = await supabaseHelper.fetch('insurance_records', {
+        select,
+        filters: queryFilters,
+        order: { column: 'created_at', ascending: false },
+      });
 
       if (error) {
         console.error('Error fetching insurance records:', error);
@@ -59,16 +61,20 @@ export const useInsuranceRecordById = (id, options = {}) => {
     queryFn: async () => {
       if (!id) return null;
 
+      const select = `
+        *,
+        patients ( id, first_name, last_name ),
+        insurance_documents (*)
+      `; // Join client_record and insurance_documents
+
+      const filters = [{ column: 'id', operator: 'eq', value: id }];
+
       // Fetch main insurance record
-      const { data: recordData, error: recordError } = await supabase
-        .from('insurance_records') 
-        .select(`
-          *,
-          patients ( id, first_name, last_name ),
-          insurance_documents (*) 
-        `) // Join client_record and insurance_documents
-        .eq('id', id)
-        .single();
+      const { data: recordData, error: recordError } = await supabaseHelper.fetch('insurance_records', {
+        select,
+        filters,
+        single: true,
+      });
 
       if (recordError) {
         console.error(`Error fetching insurance record ${id}:`, recordError);
@@ -111,16 +117,12 @@ export const useCreateInsuranceRecord = (options = {}) => {
         updated_at: new Date().toISOString(),
       };
       // Remove frontend-specific fields if they exist in recordData
-      delete dataToInsert.patientId; 
-      delete dataToInsert.provider; 
+      delete dataToInsert.patientId;
+      delete dataToInsert.provider;
       delete dataToInsert.verification_status;
       // delete dataToInsert.documents; // Handled separately
 
-      const { data, error } = await supabase
-        .from('insurance_records') // Corrected table name
-        .insert(dataToInsert)
-        .select()
-        .single();
+      const { data, error } = await supabaseHelper.insert('insurance_records', dataToInsert, { returning: 'single' });
 
       if (error) {
         console.error('Error creating insurance record:', error);
@@ -165,17 +167,12 @@ export const useUpdateInsuranceRecord = (options = {}) => {
       // Remove fields not in the table or not meant to be updated this way
       delete dataToUpdate.id;
       delete dataToUpdate.created_at;
-      delete dataToUpdate.patientId; 
-      delete dataToUpdate.provider; 
+      delete dataToUpdate.patientId;
+      delete dataToUpdate.provider;
       delete dataToUpdate.verification_status;
       // delete dataToUpdate.documents; // Handled separately
 
-      const { data, error } = await supabase
-        .from('insurance_records') // Corrected table name
-        .update(dataToUpdate)
-        .eq('id', id)
-        .select()
-        .single();
+      const { data, error } = await supabaseHelper.update('insurance_records', id, dataToUpdate);
 
       if (error) {
         console.error(`Error updating insurance record ${id}:`, error);

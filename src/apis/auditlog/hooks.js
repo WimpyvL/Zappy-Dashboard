@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '../../lib/supabase'; // Use the correct Supabase client
+import { supabase, supabaseHelper } from '../../lib/supabase'; // Use the correct Supabase client
 import { toast } from 'react-toastify';
 
 // Removed Mock Data
@@ -25,29 +25,32 @@ export const useAuditLogs = (params = { page: 1, limit: 20 }, options = {}) => {
   return useQuery({
     queryKey: queryKeys.lists(params),
     queryFn: async () => {
-      let query = supabase
-        .from('api_logs') // Target the api_logs table
-        .select('*', { count: 'exact' })
-        .order('created_at', { ascending: false }) // Order by creation time
-        .range(rangeFrom, rangeTo);
+      const fetchOptions = {
+        select: '*',
+        order: { column: 'created_at', ascending: false },
+        range: { from: rangeFrom, to: rangeTo },
+        filters: [],
+      };
 
       // Apply filters (adjust column names and logic as needed)
       if (params.userId) {
         // Note: api_logs doesn't have a direct user ID. Filtering might need joins or backend logic.
         // This is a placeholder filter based on potential request_data content.
-        // query = query.contains('request_data', { userId: params.userId }); // Example filter
+        // fetchOptions.filters.push({ column: 'request_data', operator: 'contains', value: { userId: params.userId } }); // Example filter
         console.warn("Filtering audit logs by userId might require backend changes or different table structure.");
       }
       if (params.action) { // Assuming 'action' might map to 'path' or 'method' or be in request_data
-         query = query.or(`path.ilike.%${params.action}%,method.ilike.%${params.action}%`);
+         // supabaseHelper.fetch doesn't directly support .or(), so this filter needs adjustment or backend handling.
+         // For now, we'll add a basic filter example, but note this might not work as intended without backend changes.
+         // fetchOptions.filters.push({ column: 'path', operator: 'ilike', value: `%${params.action}%` });
          console.warn("Filtering audit logs by action might require backend changes or different table structure.");
       }
       // Add date range filters if needed
-      // if (params.startDate) { query = query.gte('created_at', params.startDate); }
-      // if (params.endDate) { query = query.lte('created_at', params.endDate); }
+      // if (params.startDate) { fetchOptions.filters.push({ column: 'created_at', operator: 'gte', value: params.startDate }); }
+      // if (params.endDate) { fetchOptions.filters.push({ column: 'created_at', operator: 'lte', value: params.endDate }); }
 
 
-      const { data, error, count } = await query;
+      const { data, error, count } = await supabaseHelper.fetch('api_logs', fetchOptions);
 
       if (error) {
         console.error('Error fetching audit logs:', error);

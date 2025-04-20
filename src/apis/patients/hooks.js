@@ -1,101 +1,87 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '../../lib/supabase'; // Use the correct Supabase client
-// Removed unused imports like apiService and commented out local api functions
-// import {
-//   getPatients,
-//   getPatientById,
-//   createPatient,
-//   updatePatient,
-//   deletePatient
+import patientsApi from './api';
+import { logError } from '../../utils/errorHandling';
 import auditLogService from '../../utils/auditLogService';
 
 // Removed Mock Data
 
-// Get patients hook using Supabase
+// Get patients hook using standardized API
 export const usePatients = (currentPage = 1, filters = {}, pageSize = 10) => {
-  // Calculate range for Supabase pagination
-  const rangeFrom = (currentPage - 1) * pageSize;
-  const rangeTo = rangeFrom + pageSize - 1;
-
   return useQuery({
-    queryKey: ['patients', currentPage, filters, pageSize], // Use 'patients' for query key consistency
+    queryKey: ['patients', currentPage, filters, pageSize],
     queryFn: async () => {
-      let query = supabase
-        .from('patients') // Updated table name
-        .select('*', { count: 'exact' }) // Select all columns and request total count
-        .order('created_at', { ascending: false }) // Use created_at
-        .range(rangeFrom, rangeTo); // Apply pagination
+      const result = await patientsApi.getAll({
+        page: currentPage,
+        pageSize,
+        filters: filters.search ? [
+          {
+            column: 'first_name',
+            operator: 'ilike',
+            value: `%${filters.search}%`
+          },
+          {
+            column: 'last_name', 
+            operator: 'ilike',
+            value: `%${filters.search}%`
+          },
+          {
+            column: 'email',
+            operator: 'ilike',
+            value: `%${filters.search}%`
+          }
+        ] : []
+      });
 
-      // Apply filters (example: filter by status)
-// Note: patients table doesn't have a 'status' column by default in the provided schema
-      // if (filters.status) {
-      //   query = query.eq('status', filters.status);
-      // }
-      // Add more filters as needed based on the 'filters' object structure
-      if (filters.search) {
-        // Example: Search across multiple fields (adjust fields as needed)
-        query = query.or(
-          `first_name.ilike.%${filters.search}%,last_name.ilike.%${filters.search}%,email.ilike.%${filters.search}%`
-        );
+      if (result.error) {
+        logError(result.error, 'usePatients');
+        throw new Error(result.error);
       }
 
-      const { data, error, count } = await query;
-
-      if (error) {
-        console.error('Error fetching patients:', error);
-        throw new Error(error.message);
-      }
-
-      // Return data in a structure compatible with pagination components
       return {
-        data: data || [],
+        data: result.data || [],
         meta: {
-          total: count || 0,
+          total: result.count || 0,
           per_page: pageSize,
           current_page: currentPage,
-          last_page: Math.ceil((count || 0) / pageSize),
-        },
+          last_page: Math.ceil((result.count || 0) / pageSize),
+        }
       };
     },
-    // staleTime: 5 * 60 * 1000, // Example: 5 minutes stale time
+    staleTime: 1000 * 60 * 5, // 5 minutes cache
+    retry: 2 // Retry failed queries twice
   });
 };
 
-// Get patient by ID hook using Supabase
+// Get patient by ID hook using standardized API
 export const usePatientById = (id, options = {}) => {
   return useQuery({
-    queryKey: ['patient', id], // Use 'patient' for query key consistency
+    queryKey: ['patient', id],
     queryFn: async () => {
-      if (!id) return null; // Don't fetch if no ID is provided
-
-      const { data, error } = await supabase
-        .from('patients') // Updated table name
-        .select('*')
-        .eq('id', id)
-        .single(); // Use .single() if expecting one record or null
-
-      if (error) {
-        console.error(`Error fetching patient ${id}:`, error);
-        // Handle specific errors like 'PGRST116' (resource not found) if needed
-        if (error.code === 'PGRST116') return null; // Return null if not found
-        throw new Error(error.message);
+      if (!id) return null;
+      
+      const result = await patientsApi.getById(id);
+      
+      if (result.error) {
+        logError(result.error, 'usePatientById');
+        throw new Error(result.error);
       }
-      return data;
+      
+      return result.data;
     },
-    enabled: !!id, // Only run query if id is truthy
-    // staleTime: 5 * 60 * 1000, // Example stale time
-    ...options,
+    enabled: !!id,
+    staleTime: 1000 * 60 * 10, // 10 minutes cache
+    retry: false, // Don't retry 404 errors
+    ...options
   });
 };
 
-// Create patient hook using Supabase
+// Create patient hook using standardized API
 export const useCreatePatient = (options = {}) => {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (patientData) => {
-      // Map frontend data to client_record schema columns
-      const dataToInsert = {
+      const result = await patientsApi.create({
         first_name: patientData.first_name,
         last_name: patientData.last_name,
         email: patientData.email,
@@ -109,34 +95,15 @@ export const useCreatePatient = (options = {}) => {
         insurance_id: patientData.insurance_id,
         status: patientData.status || 'active',
         preferred_pharmacy: patientData.preferred_pharmacy,
-        tags: patientData.tags || [],
-        // created_at and updated_at are handled by DB defaults
-      };
-
-      // Remove undefined fields to avoid inserting nulls unintentionally
-      Object.keys(dataToInsert).forEach(key => {
-        if (dataToInsert[key] === undefined) {
-          delete dataToInsert[key];
-        }
+        tags: patientData.tags || []
       });
 
-      console.log('[useCreatePatient] Inserting into patients:', JSON.stringify(dataToInsert, null, 2));
-
-      const { data, error } = await supabase
-        .from('patients') // Updated table name
-        .insert(dataToInsert)
-        .select() // Select the newly created record
-        .single(); // Expecting a single record back
-
-      if (error) {
-        console.error('Error creating patient:', error);
-        // Handle RLS violations specifically
-        if (error.message.includes('permission denied')) {
-          throw new Error('You do not have permission to create patients');
-        }
-        throw new Error(error.message);
+      if (result.error) {
+        logError(result.error, 'useCreatePatient');
+        throw new Error(result.error);
       }
-      return data;
+
+      return result.data;
     },
     onSuccess: (data, variables, context) => {
       queryClient.invalidateQueries({ queryKey: ['patients'] }); // Invalidate the list
@@ -160,7 +127,7 @@ export const useCreatePatient = (options = {}) => {
   });
 };
 
-// Update patient hook using Supabase
+// Update patient hook using standardized API
 export const useUpdatePatient = (options = {}) => {
   const queryClient = useQueryClient();
 
@@ -168,8 +135,7 @@ export const useUpdatePatient = (options = {}) => {
     mutationFn: async ({ id, patientData }) => {
       if (!id) throw new Error('Patient ID is required for update.');
 
-      // Map frontend data to client_record schema columns
-      const dataToUpdate = {
+      const result = await patientsApi.update(id, {
         first_name: patientData.first_name,
         last_name: patientData.last_name,
         email: patientData.email,
@@ -184,36 +150,15 @@ export const useUpdatePatient = (options = {}) => {
         status: patientData.status,
         preferred_pharmacy: patientData.preferred_pharmacy,
         tags: patientData.tags,
-        // Note: 'status', 'related_tags', 'subscription_plan_id', 'assigned_doctor_id', 'preferred_pharmacy'
-        // are not part of the client_record schema provided. These might belong in the 'profiles' table or another related table.
-        updated_at: new Date().toISOString(), // Set updated_at timestamp
-      };
-
-      // Remove undefined fields so they don't overwrite existing data with null
-      Object.keys(dataToUpdate).forEach(key => {
-        if (dataToUpdate[key] === undefined) {
-          delete dataToUpdate[key];
-        }
+        updated_at: new Date().toISOString()
       });
 
-      console.log(`[useUpdatePatient] Updating patients ${id}:`, JSON.stringify(dataToUpdate, null, 2));
-
-      const { data, error } = await supabase
-        .from('patients') // Updated table name
-        .update(dataToUpdate)
-        .eq('id', id)
-        .select() // Select the updated record
-        .single(); // Expecting a single record back
-
-      if (error) {
-        console.error(`Error updating patient ${id}:`, error);
-        // Handle RLS violations specifically
-        if (error.message.includes('permission denied')) {
-          throw new Error('You do not have permission to update this patient');
-        }
-        throw new Error(error.message);
+      if (result.error) {
+        logError(result.error, 'useUpdatePatient');
+        throw new Error(result.error);
       }
-      return data;
+
+      return result.data;
     },
     onSuccess: (data, variables, context) => {
       queryClient.invalidateQueries({ queryKey: ['patients'] }); // Invalidate the list
@@ -239,7 +184,7 @@ export const useUpdatePatient = (options = {}) => {
   });
 };
 
-// Delete patient hook using Supabase
+// Delete patient hook using standardized API
 export const useDeletePatient = (options = {}) => {
   const queryClient = useQueryClient();
 
@@ -247,20 +192,14 @@ export const useDeletePatient = (options = {}) => {
     mutationFn: async (id) => {
       if (!id) throw new Error('Patient ID is required for deletion.');
 
-      const { error } = await supabase
-        .from('patients') // Updated table name
-        .delete()
-        .eq('id', id);
-
-      if (error) {
-        console.error(`Error deleting patient ${id}:`, error);
-        // Handle RLS violations specifically
-        if (error.message.includes('permission denied')) {
-          throw new Error('You do not have permission to delete this patient');
-        }
-        throw new Error(error.message);
+      const result = await patientsApi.delete(id);
+      
+      if (result.error) {
+        logError(result.error, 'useDeletePatient');
+        throw new Error(result.error);
       }
-      return { success: true, id }; // Return success and id
+
+      return { success: true, id };
     },
     onSuccess: (data, variables, context) => {
       // variables here is the id

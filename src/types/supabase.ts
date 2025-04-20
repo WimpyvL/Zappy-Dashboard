@@ -1954,3 +1954,39 @@ export type CompositeTypes<
   : PublicCompositeTypeNameOrOptions extends keyof PublicSchema["CompositeTypes"]
     ? PublicSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
     : never
+
+// Supabase Error Types
+export type SupabaseError = {
+  message: string
+  details?: string
+  hint?: string
+  code?: string
+}
+
+export type SupabaseQueryResult<T = any> = {
+  data: T | null
+  error: string | null
+  count?: number | null
+  status: number
+  statusText: string
+}
+
+export type Patient = {
+  id: string
+  first_name: string | null
+  last_name: string | null
+  email: string | null
+  phone: string | null
+  address: string | null
+  city: string | null
+  state: string | null
+  zip: string | null
+  date_of_birth: string | null
+  insurance_provider: string | null
+  insurance_id: string | null
+  status: string | null
+  preferred_pharmacy: string | null
+  tags: string[] | null
+  created_at: string
+  updated_at: string
+}

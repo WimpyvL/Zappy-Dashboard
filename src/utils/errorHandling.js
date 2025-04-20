@@ -19,6 +19,11 @@ export const getErrorMessage = (error) => {
     return 'An unknown error occurred';
   }
 
+  // Handle Supabase errors
+  if (error?.code?.startsWith('PGRST') || error?.code?.startsWith('SUPABASE')) {
+    return error.message || 'Database operation failed';
+  }
+
   if (typeof error === 'object' && error !== null) {
     // If error is an object, convert it to a string
     if (error.message) {
@@ -32,6 +37,10 @@ export const getErrorMessage = (error) => {
   if (error.response) {
     // The request was made and the server responded with an error status
     if (error.response.data) {
+      // Handle Supabase API response format
+      if (error.response.data.error) {
+        return error.response.data.error.message || 'Database operation failed';
+      }
       // If the server returns a specific error message
       if (error.response.data.message) {
         return error.response.data.message;

@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '../../lib/supabase'; // Use the correct Supabase client
+import { supabase, supabaseHelper } from '../../lib/supabase'; // Use the correct Supabase client
 import { message } from 'antd';
 
 // --- Fetch All Prompts ---
@@ -7,10 +7,11 @@ export const usePrompts = (options = {}) => {
   return useQuery({
     queryKey: ['prompts'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('ai_prompts') // Assuming table name is 'ai_prompts'
-        .select('*')
-        .order('task_key', { ascending: true }); // Order for consistency
+      const fetchOptions = {
+        select: '*',
+        order: { column: 'task_key', ascending: true },
+      };
+      const { data, error } = await supabaseHelper.fetch('ai_prompts', fetchOptions);
 
       if (error) {
         console.error('Error fetching prompts:', error);
@@ -30,18 +31,13 @@ export const useUpdatePrompt = (options = {}) => {
     mutationFn: async ({ id, prompt_text }) => {
       if (!id) throw new Error('Prompt ID is required for update.');
 
-      const { data, error } = await supabase
-        .from('ai_prompts')
-        .update({ prompt_text: prompt_text, updated_at: new Date().toISOString() })
-        .eq('id', id)
-        .select()
-        .single(); // Assuming update returns the updated row
+      const { data, error } = await supabaseHelper.update('ai_prompts', id, { prompt_text: prompt_text, updated_at: new Date().toISOString() });
 
       if (error) {
         console.error(`Error updating prompt ${id}:`, error);
         throw new Error(error.message);
       }
-      return data;
+      return data ? data[0] : null; // supabaseHelper.update returns an array, so take the first element
     },
     onSuccess: (data, variables, context) => {
       // Invalidate the prompts query to refetch the list

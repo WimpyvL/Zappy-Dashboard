@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '../../lib/supabase'; // Use the correct Supabase client
+import { supabase, supabaseHelper } from '../../lib/supabase'; // Use the correct Supabase client
 import { toast } from 'react-toastify';
 
 // Removed Mock Data
@@ -20,27 +20,31 @@ export const useInvoices = (params = {}, pageSize = 10) => {
   return useQuery({
     queryKey: queryKeys.lists(params),
     queryFn: async () => {
-      let query = supabase
-        .from('pb_invoices') // Target the pb_invoices table
-        .select(`
-          *,
-          patients ( id, first_name, last_name )
-        `, { count: 'exact' }) 
-        .order('created_at', { ascending: false }) 
-        .range(rangeFrom, rangeTo);
+      const select = `
+        *,
+        patients ( id, first_name, last_name )
+      `;
 
+      const filters = [];
       // Apply filters
       if (params.status) {
-        query = query.eq('status', params.status);
+        filters.push({ column: 'status', operator: 'eq', value: params.status });
       }
       if (params.patientId) {
-         query = query.eq('patient_id', params.patientId); // Corrected FK name
+         filters.push({ column: 'patient_id', operator: 'eq', value: params.patientId }); // Corrected FK name
       }
       // Add date range filters if needed
-      // if (params.startDate) { query = query.gte('date_created', params.startDate); }
-      // if (params.endDate) { query = query.lte('date_created', params.endDate); }
+      // if (params.startDate) { filters.push({ column: 'date_created', operator: 'gte', value: params.startDate }); }
+      // if (params.endDate) { filters.push({ column: 'date_created', operator: 'lte', value: params.endDate }); }
 
-      const { data, error, count } = await query;
+      const { data, error, count } = await supabaseHelper.fetch('pb_invoices', {
+        select,
+        filters,
+        order: { column: 'created_at', ascending: false },
+        limit: pageSize,
+        range: { from: rangeFrom, to: rangeTo },
+        count: 'exact'
+      });
 
       if (error) {
         console.error('Error fetching invoices:', error);
@@ -51,8 +55,8 @@ export const useInvoices = (params = {}, pageSize = 10) => {
       const mappedData = data?.map(inv => ({
           ...inv,
           patientName: inv.patients ? `${inv.patients.first_name || ''} ${inv.patients.last_name || ''}`.trim() : 'N/A',
-          amount: inv.pb_invoice_metadata?.total || 0, 
-          items: inv.pb_invoice_metadata?.items || [], 
+          amount: inv.pb_invoice_metadata?.total || 0,
+          items: inv.pb_invoice_metadata?.items || [],
       })) || [];
 
       return {
@@ -76,14 +80,18 @@ export const useInvoiceById = (id, options = {}) => {
     queryFn: async () => {
       if (!id) return null;
 
-      const { data, error } = await supabase
-        .from('pb_invoices')
-        .select(`
-          *,
-          patients ( id, first_name, last_name )
-        `) 
-        .eq('id', id)
-        .single();
+      const select = `
+        *,
+        patients ( id, first_name, last_name )
+      `;
+
+      const filters = [{ column: 'id', operator: 'eq', value: id }];
+
+      const { data, error } = await supabaseHelper.fetch('pb_invoices', {
+        select,
+        filters,
+        single: true,
+      });
 
       if (error) {
         console.error(`Error fetching invoice ${id}:`, error);
@@ -113,8 +121,8 @@ export const useCreateInvoice = (options = {}) => {
       // Map frontend fields to DB columns
       const dataToInsert = {
         patient_id: invoiceData.patientId, // Corrected FK name
-        status: invoiceData.status || 'pending', 
-        pb_invoice_metadata: { 
+        status: invoiceData.status || 'pending',
+        pb_invoice_metadata: {
             items: invoiceData.items || [],
             total: invoiceData.amount || 0,
             // Add other relevant metadata
@@ -128,11 +136,7 @@ export const useCreateInvoice = (options = {}) => {
         // Add other required fields from schema
       };
 
-      const { data, error } = await supabase
-        .from('pb_invoices')
-        .insert(dataToInsert)
-        .select()
-        .single();
+      const { data, error } = await supabaseHelper.insert('pb_invoices', dataToInsert, { returning: 'single' });
 
       if (error) {
         console.error('Error creating invoice:', error);
@@ -178,12 +182,7 @@ export const useUpdateInvoice = (options = {}) => {
        delete dataToUpdate.date_created;
        delete dataToUpdate.pb_invoice_id; // Assuming this is external ID
 
-      const { data, error } = await supabase
-        .from('pb_invoices')
-        .update(dataToUpdate)
-        .eq('id', id)
-        .select()
-        .single();
+      const { data, error } = await supabaseHelper.update('pb_invoices', id, dataToUpdate);
 
       if (error) {
         console.error(`Error updating invoice ${id}:`, error);
@@ -212,10 +211,7 @@ export const useDeleteInvoice = (options = {}) => {
     mutationFn: async (id) => {
       if (!id) throw new Error("Invoice ID is required for deletion.");
 
-      const { error } = await supabase
-        .from('pb_invoices')
-        .delete()
-        .eq('id', id);
+      const { data, error } = await supabaseHelper.delete('pb_invoices', id);
 
       if (error) {
         console.error(`Error deleting invoice ${id}:`, error);
@@ -246,12 +242,9 @@ export const useMarkInvoiceAsPaid = (options = {}) => {
     mutationFn: async (id) => {
        if (!id) throw new Error("Invoice ID is required.");
 
-       const { data, error } = await supabase
-         .from('pb_invoices')
-         .update({ status: 'paid', updated_at: new Date().toISOString(), date_modified: new Date().toISOString() }) // Assuming 'paid' is a valid status
-         .eq('id', id)
-         .select()
-         .single();
+       const dataToUpdate = { status: 'paid', updated_at: new Date().toISOString(), date_modified: new Date().toISOString() }; // Assuming 'paid' is a valid status
+
+       const { data, error } = await supabaseHelper.update('pb_invoices', id, dataToUpdate);
 
        if (error) {
          console.error(`Error marking invoice ${id} as paid:`, error);
@@ -284,20 +277,20 @@ export const useViewInvoice = (options = {}) => {
       // Invoke the Supabase Edge Function
       // This function should fetch full details and potentially generate a PDF/link
       const { data, error } = await supabase.functions.invoke('get-invoice-details', {
-        body: { invoiceId }, 
+        body: { invoiceId },
       });
 
       if (error) {
         console.error(`Error invoking get-invoice-details function for invoice ${invoiceId}:`, error);
         throw new Error(error.message || 'Failed to fetch invoice details.');
       }
-      
+
       // Expecting the function to return data needed for display or a URL to a PDF
       if (!data) {
           throw new Error('No details returned for the invoice.');
       }
-      
-      return data; 
+
+      return data;
     },
     onSuccess: (data, variables, context) => {
       // Handle the response - e.g., open a PDF URL in a new tab
@@ -306,7 +299,7 @@ export const useViewInvoice = (options = {}) => {
           toast.success('Invoice opened in new tab.');
       } else {
           // Handle cases where raw data might be returned for display in a modal
-          console.log("Invoice details fetched:", data); 
+          console.log("Invoice details fetched:", data);
           toast.info('Invoice details loaded (display logic needed).');
           // TODO: Implement logic to display invoice details, perhaps in a modal
       }

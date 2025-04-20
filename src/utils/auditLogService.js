@@ -47,6 +47,9 @@ const logAuditEvent = async (action, details = {}, userId = null) => {
 
 const auditLogService = {
   log: logAuditEvent,
+  logError: (error, context = 'General Error') => {
+    console.error(`[Audit Log Error] Context: ${context}`, error);
+  },
 };
 
 export default auditLogService;

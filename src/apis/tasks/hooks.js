@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useEffect } from 'react';
 import { supabase, supabaseHelper } from '../../lib/supabase'; // Use the correct Supabase client
 import { toast } from 'react-toastify';
 
@@ -95,6 +96,26 @@ export const useTasks = (
     },
     keepPreviousData: true,
   });
+};
+
+// Add real-time subscriptions for tasks
+export const useTasksSubscription = () => {
+  const queryClient = useQueryClient();
+
+  useEffect(() => {
+    const subscription = supabaseHelper.subscribe('pb_tasks', (payload) => {
+      console.log('Task change received:', payload);
+      // Invalidate the tasks query to refetch data when changes occur
+      queryClient.invalidateQueries({ queryKey: queryKeys.lists() });
+    });
+
+    // Cleanup the subscription on component unmount
+    return () => {
+      if (subscription && subscription.unsubscribe) {
+        subscription.unsubscribe();
+      }
+    };
+  }, [queryClient]); // Re-run effect if queryClient changes (rare)
 };
 
 // Get task by ID hook using Supabase
@@ -322,7 +343,7 @@ export const useTaskablePatients = (options = {}) => {
         select: 'id, first_name, last_name',
         order: { column: 'last_name', ascending: true },
       };
-      const { data, error } = await supabaseHelper.fetch('client_record', fetchOptions);
+      const { data, error } = await supabaseHelper.fetch('patients', fetchOptions);
 
       if (error) {
         console.error('Error fetching taskable patients:', error);

@@ -1,12 +1,17 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useEffect } from 'react';
 import patientsApi from './api';
 import { logError } from '../../utils/errorHandling';
 import auditLogService from '../../utils/auditLogService';
+import { supabaseHelper } from '../../lib/supabase';
 
 // Removed Mock Data
 
 // Get patients hook using standardized API
 export const usePatients = (currentPage = 1, filters = {}, pageSize = 10) => {
+  const queryClient = useQueryClient();
+  usePatientsSubscription(queryClient); // Integrate the real-time subscription
+
   return useQuery({
     queryKey: ['patients', currentPage, filters, pageSize],
     queryFn: async () => {
@@ -20,7 +25,7 @@ export const usePatients = (currentPage = 1, filters = {}, pageSize = 10) => {
             value: `%${filters.search}%`
           },
           {
-            column: 'last_name', 
+            column: 'last_name',
             operator: 'ilike',
             value: `%${filters.search}%`
           },
@@ -51,6 +56,24 @@ export const usePatients = (currentPage = 1, filters = {}, pageSize = 10) => {
     retry: 2 // Retry failed queries twice
   });
 };
+
+// Real-time subscription for patients
+const usePatientsSubscription = (queryClient) => {
+  useEffect(() => {
+    const subscription = supabaseHelper.subscribe('patients', (payload) => {
+      console.log('Realtime update received:', payload);
+      // Invalidate the cache for the patients query to refetch data
+      queryClient.invalidateQueries({ queryKey: ['patients'] });
+    });
+
+    return () => {
+      if (subscription && typeof subscription.unsubscribe === 'function') {
+        subscription.unsubscribe();
+      }
+    };
+  }, [queryClient]);
+};
+
 
 // Get patient by ID hook using standardized API
 export const usePatientById = (id, options = {}) => {

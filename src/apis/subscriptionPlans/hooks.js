@@ -328,7 +328,7 @@ export const useMyInvoices = (patientId, options = {}) => {
 
         const fetchOptions = {
           select: '*',
-          filters: [{ column: 'client_record_id', operator: 'eq', value: patientId }],
+          filters: [{ column: 'patient_id', operator: 'eq', value: patientId }],
           order: { column: 'created_at', ascending: false },
         };
         const { data, error } = await supabaseHelper.fetch('pb_invoices', fetchOptions);

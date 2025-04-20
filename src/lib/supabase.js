@@ -1,24 +1,19 @@
 import { createClient } from '@supabase/supabase-js';
 
-// Support both development and production environments
-const isDevelopment = process.env.NODE_ENV === 'development';
+const isDevelopment = process.env.NODE_ENV !== 'production';
 
-const supabaseUrl = isDevelopment 
-  ? 'http://localhost:54321' 
-  : process.env.REACT_APP_SUPABASE_URL;
+// Ensure the correct environment variables are used
+const supabaseUrl = process.env.REACT_APP_SUPABASE_URL;
+const supabaseKey = process.env.REACT_APP_SUPABASE_ANON_KEY;
 
-const supabaseAnonKey = isDevelopment
-  ? 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRlbGVoZWFsdGgiLCJyb2xlIjoiYW5vbiIsImlhdCI6MTY0ODM4MTQ5OSwiZXhwIjoxOTYzOTU3NDk5fQ.0sF9y5JQ5Q5Q5Q5Q5Q5Q5Q5Q5Q5Q5Q5Q5Q5Q5Q5Q5Q'
-  : process.env.REACT_APP_SUPABASE_ANON_KEY;
-
-if (!supabaseUrl || !supabaseAnonKey) {
+if (!supabaseUrl || !supabaseKey) {
   console.error(
     'Supabase configuration is missing. Please check your environment variables.'
   );
 }
 
 // Create supabase client with environment-specific config
-export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+export const supabase = createClient(supabaseUrl, supabaseKey, {
   auth: {
     persistSession: true,
     autoRefreshToken: true,
@@ -141,4 +136,4 @@ export const supabaseHelper = {
 };
 
 export const SUPABASE_URL = supabaseUrl;
-export const SUPABASE_ANON_KEY = supabaseAnonKey;
+export const SUPABASE_ANON_KEY = supabaseKey;

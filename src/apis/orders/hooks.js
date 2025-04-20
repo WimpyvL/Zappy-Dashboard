@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useEffect } from 'react';
 import { supabase, supabaseHelper } from '../../lib/supabase'; // Use the correct Supabase client
 // Removed unused auditLogService import
 
@@ -13,7 +14,7 @@ export const useOrders = (currentPage = 1, filters = {}, pageSize = 10) => {
       const select = `
         *,
         patients!inner(id, first_name, last_name)
-      `; // Join with client_record table (assuming FK is patient_id)
+      `; // Join with patients table (assuming FK is patient_id)
 
       const queryFilters = [];
       // Apply filters (adjust column names based on schema.sql)
@@ -50,7 +51,7 @@ export const useOrders = (currentPage = 1, filters = {}, pageSize = 10) => {
       const mappedData =
         data?.map((order) => ({
           ...order,
-          // Construct patientName from the joined 'client_record' data
+          // Construct patientName from the joined 'patients' data
           patientName: order.patients
             ? `${order.patients.first_name || ''} ${order.patients.last_name || ''}`.trim()
             : 'N/A',
@@ -70,6 +71,26 @@ export const useOrders = (currentPage = 1, filters = {}, pageSize = 10) => {
     },
     // staleTime: 5 * 60 * 1000, // Example: 5 minutes stale time
   });
+};
+
+// Add real-time subscriptions for orders
+export const useOrdersSubscription = () => {
+  const queryClient = useQueryClient();
+
+  useEffect(() => {
+    const subscription = supabaseHelper.subscribe('orders', (payload) => {
+      console.log('Order change received:', payload);
+      // Invalidate the orders query to refetch data when changes occur
+      queryClient.invalidateQueries({ queryKey: ['orders'] });
+    });
+
+    // Cleanup the subscription on component unmount
+    return () => {
+      if (subscription && subscription.unsubscribe) {
+        subscription.unsubscribe();
+      }
+    };
+  }, [queryClient]); // Re-run effect if queryClient changes (rare)
 };
 
 // Get order by ID hook using Supabase

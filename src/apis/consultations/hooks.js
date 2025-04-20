@@ -43,7 +43,7 @@ export const useConsultations = (params = {}, pageSize = 10) => {
       const { data, error, count } = await supabaseHelper.fetch('consultations', {
         select,
         filters,
-        order: { column: 'datesubmitted', ascending: false }, // Revert to lowercase based on DB hint
+        order: { column: 'scheduled_at', ascending: false },
         limit: pageSize,
         range: { from: rangeFrom, to: rangeTo }, // supabaseHelper.fetch needs range
         count: 'exact' // supabaseHelper.fetch needs count option

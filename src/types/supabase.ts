@@ -239,7 +239,7 @@ export type Database = {
           created_at: string | null
           datecompleted: string | null
           datescheduled: string | null
-          datesubmitted: string | null
+          scheduled_at: string | null
           id: string
           provider_notes: string | null
           status: string
@@ -252,7 +252,7 @@ export type Database = {
           created_at?: string | null
           datecompleted?: string | null
           datescheduled?: string | null
-          datesubmitted?: string | null
+          scheduled_at?: string | null
           id?: string
           provider_notes?: string | null
           status?: string
@@ -265,7 +265,7 @@ export type Database = {
           created_at?: string | null
           datecompleted?: string | null
           datescheduled?: string | null
-          datesubmitted?: string | null
+          scheduled_at?: string | null
           id?: string
           provider_notes?: string | null
           status?: string

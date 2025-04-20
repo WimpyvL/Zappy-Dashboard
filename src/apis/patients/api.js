@@ -26,7 +26,7 @@ const patientsApi = {
         fetchOptions.range = { from, to };
       }
 
-      const { data, error, count } = await supabaseHelper.fetch('client_record', fetchOptions);
+      const { data, error, count } = await supabaseHelper.fetch('patients', fetchOptions);
 
       if (error) {
         throw error;
@@ -93,18 +93,27 @@ const patientsApi = {
    */
   create: async (patientData) => {
     try {
-      const { data, error } = await supabaseHelper.insert('patients', patientData, { returning: 'representation' });
+      const response = await fetch(`${supabase.supabaseUrl}/functions/v1/patients/create`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${supabase.supabaseKey}`
+        },
+        body: JSON.stringify({ data: patientData })
+      });
 
-      if (error) {
-        throw error;
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to create patient');
       }
 
       return {
-        data: data ? data[0] : null, // supabaseHelper.insert returns an array, so take the first element
+        data: result.data || null,
         error: null,
-        count: data ? 1 : 0,
-        status: data ? 201 : 500,
-        statusText: data ? 'Created' : 'Internal Server Error'
+        count: result.data ? 1 : 0,
+        status: response.status,
+        statusText: response.statusText
       };
     } catch (error) {
       return {

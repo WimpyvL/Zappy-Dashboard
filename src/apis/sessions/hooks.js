@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useEffect } from 'react';
 import { supabase, supabaseHelper } from '../../lib/supabase'; // Use the correct Supabase client
 import { toast } from 'react-toastify'; // Keep for feedback
 // Removed auditLogService import as it wasn't used here previously
@@ -22,7 +23,7 @@ export const useSessions = (params = {}, pageSize = 10) => {
     queryKey: queryKeys.lists(params),
     queryFn: async () => {
       const fetchOptions = {
-        // Join with client_record table to get name
+          // Join with patients table to get name
         select: `
           *,
           patients ( id, first_name, last_name )
@@ -62,7 +63,7 @@ export const useSessions = (params = {}, pageSize = 10) => {
       const mappedData =
         data?.map((session) => ({
           ...session,
-          // Construct patientName from the joined 'client_record' data
+          // Construct patientName from the joined 'patients' data
           patientName: session.patients 
             ? `${session.patients.first_name || ''} ${session.patients.last_name || ''}`.trim()
             : 'N/A',
@@ -82,6 +83,26 @@ export const useSessions = (params = {}, pageSize = 10) => {
     },
     keepPreviousData: true,
   });
+};
+
+// Add real-time subscriptions for sessions
+export const useSessionsSubscription = () => {
+  const queryClient = useQueryClient();
+
+  useEffect(() => {
+    const subscription = supabaseHelper.subscribe('sessions', (payload) => {
+      console.log('Session change received:', payload);
+      // Invalidate the sessions query to refetch data when changes occur
+      queryClient.invalidateQueries({ queryKey: ['sessions'] });
+    });
+
+    // Cleanup the subscription on component unmount
+    return () => {
+      if (subscription && subscription.unsubscribe) {
+        subscription.unsubscribe();
+      }
+    };
+  }, [queryClient]); // Re-run effect if queryClient changes (rare)
 };
 
 // Get session by ID hook using Supabase

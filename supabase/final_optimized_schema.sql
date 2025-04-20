@@ -1,49 +1,4 @@
--- Final Optimized Schema File
--- WARNING: Running this script will DROP existing tables and DELETE all data.
 
--- Drop existing tables in reverse order of dependency, or use CASCADE
-DROP TABLE IF EXISTS patient_tags CASCADE;
-DROP TABLE IF EXISTS plan_features CASCADE;
-DROP TABLE IF EXISTS features CASCADE;
-DROP TABLE IF EXISTS plan_doses CASCADE;
-DROP TABLE IF EXISTS product_doses CASCADE;
-DROP TABLE IF EXISTS order_items CASCADE;
-DROP TABLE IF EXISTS orders CASCADE;
-DROP TABLE IF EXISTS sessions CASCADE;
-DROP TABLE IF EXISTS notes CASCADE;
-DROP TABLE IF EXISTS pb_invoices CASCADE;
-DROP TABLE IF EXISTS insurance_document CASCADE;
-DROP TABLE IF EXISTS insurance_policy CASCADE;
-DROP TABLE IF EXISTS pb_tasks CASCADE;
-DROP TABLE IF EXISTS consultations CASCADE;
-DROP TABLE IF EXISTS api_logs CASCADE;
-DROP TABLE IF EXISTS frontend_errors CASCADE;
-DROP TABLE IF EXISTS notifications CASCADE;
-DROP TABLE IF EXISTS discounts CASCADE;
-DROP TABLE IF EXISTS pharmacies CASCADE;
-DROP TABLE IF EXISTS questionnaire CASCADE;
-DROP TABLE IF EXISTS subscription_plans CASCADE;
-DROP TABLE IF EXISTS services CASCADE;
-DROP TABLE IF EXISTS products CASCADE;
-DROP TABLE IF EXISTS tag CASCADE;
-DROP TABLE IF EXISTS patients CASCADE; -- Formerly client_record
-DROP TABLE IF EXISTS client_record CASCADE; -- Drop old name just in case
-DROP TABLE IF EXISTS test CASCADE; -- Drop test table if it exists
-
--- Drop ENUM types if they exist (in reverse order of potential dependency)
-DROP TYPE IF EXISTS task_priority;
-DROP TYPE IF EXISTS session_status;
-DROP TYPE IF EXISTS order_status;
-DROP TYPE IF EXISTS discount_status;
-DROP TYPE IF EXISTS consultation_status;
-DROP TYPE IF EXISTS insurance_status;
-DROP TYPE IF EXISTS invoice_status;
-DROP TYPE IF EXISTS product_stock_status;
-
--- Ensure the uuid-ossp extension is enabled
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
-
--- Create ENUM types (Define before tables that use them)
 CREATE TYPE consultation_status AS ENUM ('pending', 'scheduled', 'completed', 'cancelled', 'reviewed', 'followup', 'archived');
 CREATE TYPE order_status AS ENUM ('pending', 'processing', 'shipped', 'delivered', 'cancelled', 'on_hold');
 CREATE TYPE session_status AS ENUM ('scheduled', 'completed', 'cancelled', 'no_show', 'missed');
@@ -67,10 +22,75 @@ CREATE TABLE patients (
   state TEXT,
   zip TEXT,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
+  owner_id UUID REFERENCES auth.users(id) ON DELETE CASCADE, -- Link to the owning user
+  -- Add CHECK constraints for comprehensive validation
+  CONSTRAINT email_format_check CHECK (
+    email IS NULL OR 
+    email ~* '^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]+$'
+  ),
+  CONSTRAINT phone_format_check CHECK (
+    phone IS NULL OR 
+    phone ~ '^\+?[0-9]{10,15}$'
+  ),
+  CONSTRAINT date_of_birth_check CHECK (
+    date_of_birth IS NULL OR
+    date_of_birth BETWEEN '1900-01-01' AND CURRENT_DATE
+  ),
+  CONSTRAINT zip_format_check CHECK (
+    zip IS NULL OR 
+    (zip ~ '^\d{5}(-\d{4})?$' AND length(zip) BETWEEN 5 AND 10)
+  ),
+  CONSTRAINT first_name_not_empty CHECK (
+    first_name IS NOT NULL AND 
+    first_name != '' AND 
+    length(first_name) <= 100
+  ),
+  CONSTRAINT last_name_not_empty CHECK (
+    last_name IS NOT NULL AND 
+    last_name != '' AND 
+    length(last_name) <= 100
+  ),
+  CONSTRAINT address_length_check CHECK (
+    address IS NULL OR 
+    length(address) <= 255
+  ),
+  CONSTRAINT city_length_check CHECK (
+    city IS NULL OR 
+    length(city) <= 100
+  ),
+  CONSTRAINT state_length_check CHECK (
+    state IS NULL OR 
+    length(state) <= 50
+  )
 );
+CREATE INDEX idx_patients_owner_id ON patients(owner_id);
 CREATE INDEX idx_patients_email ON patients(email);
 CREATE INDEX idx_patients_name ON patients(last_name, first_name);
+CREATE INDEX idx_patients_email ON patients(email);
+CREATE INDEX idx_patients_name ON patients(last_name, first_name);
+
+-- Enable RLS for patients table
+ALTER TABLE patients ENABLE ROW LEVEL SECURITY;
+
+-- Policies for patients table
+-- Allow authenticated users to view their own patient record
+CREATE POLICY "Allow authenticated users to view their own patients"
+ON patients FOR SELECT
+TO authenticated
+USING (auth.uid() = owner_id);
+
+-- Allow authenticated users to insert their own patient record
+CREATE POLICY "Allow authenticated users to insert their own patients"
+ON patients FOR INSERT
+TO authenticated
+WITH CHECK (auth.uid() = owner_id);
+
+-- Allow authenticated users to update their own patient record
+CREATE POLICY "Allow authenticated users to update their own patients"
+ON patients FOR UPDATE
+TO authenticated
+USING (auth.uid() = owner_id);
 
 CREATE TABLE insurance_policy (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -84,10 +104,100 @@ CREATE TABLE insurance_policy (
   verification_date TIMESTAMP WITH TIME ZONE,
   notes TEXT,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
+  -- Add comprehensive validation constraints
+  CONSTRAINT provider_name_not_empty CHECK (
+    provider_name IS NOT NULL AND 
+    provider_name != '' AND 
+    length(provider_name) <= 100
+  ),
+  CONSTRAINT policy_number_required_when_active CHECK (
+    status != 'Active' OR 
+    (policy_number IS NOT NULL AND policy_number != '')
+  ),
+  CONSTRAINT subscriber_dob_valid CHECK (
+    subscriber_dob IS NULL OR
+    subscriber_dob BETWEEN '1900-01-01' AND CURRENT_DATE
+  ),
+  CONSTRAINT verification_date_valid CHECK (
+    verification_date IS NULL OR
+    verification_date >= created_at
+  ),
+  CONSTRAINT status_transition_valid CHECK (
+    status != 'Denied' OR 
+    (status = 'Denied' AND notes IS NOT NULL)
+  ),
+  CONSTRAINT notes_length_check CHECK (
+    notes IS NULL OR 
+    length(notes) <= 1000
+  )
 );
 CREATE INDEX idx_insurance_policy_patient_id ON insurance_policy(patient_id);
 CREATE INDEX idx_insurance_policy_status ON insurance_policy(status);
+
+-- Enable RLS for insurance_policy table
+ALTER TABLE insurance_policy ENABLE ROW LEVEL SECURITY;
+
+-- Policies for insurance_policy table
+-- Allow authenticated users, providers, and admins to view insurance policies based on ownership/management/admin status
+CREATE POLICY "Allow access to insurance policies based on role and ownership"
+ON insurance_policy FOR SELECT
+TO authenticated
+USING (
+  patient_id IN (
+    SELECT p.id
+    FROM patients p
+    LEFT JOIN provider_patient pp ON pp.patient_id = p.id
+    WHERE p.owner_id = auth.uid() -- User's own patients
+       OR pp.provider_id = auth.uid() -- Patients managed by the provider
+  )
+  OR is_admin(auth.uid()) -- Admins can see all
+);
+
+-- Allow authenticated users, providers, and admins to insert insurance policies based on role and ownership
+CREATE POLICY "Allow insert of insurance policies based on role and ownership"
+ON insurance_policy FOR INSERT
+TO authenticated
+WITH CHECK (
+  patient_id IN (
+    SELECT p.id
+    FROM patients p
+    LEFT JOIN provider_patient pp ON pp.patient_id = p.id
+    WHERE p.owner_id = auth.uid() -- User's own patients
+       OR pp.provider_id = auth.uid() -- Patients managed by the provider
+  )
+  OR is_admin(auth.uid()) -- Admins can insert all
+);
+
+-- Allow authenticated users, providers, and admins to update insurance policies based on role and ownership
+CREATE POLICY "Allow update of insurance policies based on role and ownership"
+ON insurance_policy FOR UPDATE
+TO authenticated
+USING (
+  patient_id IN (
+    SELECT p.id
+    FROM patients p
+    LEFT JOIN provider_patient pp ON pp.patient_id = p.id
+    WHERE p.owner_id = auth.uid() -- User's own patients
+       OR pp.provider_id = auth.uid() -- Patients managed by the provider
+  )
+  OR is_admin(auth.uid()) -- Admins can update all
+);
+
+-- Allow providers and admins to delete insurance policies
+CREATE POLICY "Allow providers and admins to delete insurance policies"
+ON insurance_policy FOR DELETE
+TO authenticated -- Assuming providers and admins are authenticated
+USING (
+  EXISTS (
+    SELECT 1
+    FROM provider_patient pp
+    WHERE pp.patient_id = insurance_policy.patient_id
+      AND pp.provider_id = auth.uid() -- Provider managing the patient
+  )
+  OR is_admin(auth.uid()) -- Admins can delete all
+);
+
 
 CREATE TABLE insurance_document (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -101,6 +211,70 @@ CREATE TABLE insurance_document (
 );
 CREATE INDEX idx_insurance_document_policy_id ON insurance_document(insurance_policy_id);
 
+-- Enable RLS for insurance_document table
+ALTER TABLE insurance_document ENABLE ROW LEVEL SECURITY;
+
+-- Policies for insurance_document table
+-- Allow authenticated users, providers, and admins to view insurance documents based on access to the parent policy
+CREATE POLICY "Allow access to insurance documents based on parent policy access"
+ON insurance_document FOR SELECT
+TO authenticated
+USING (insurance_policy_id IN (SELECT id FROM insurance_policy WHERE
+  patient_id IN (
+    SELECT p.id
+    FROM patients p
+    LEFT JOIN provider_patient pp ON pp.patient_id = p.id
+    WHERE p.owner_id = auth.uid() -- User's own patients
+       OR pp.provider_id = auth.uid() -- Patients managed by the provider
+  )
+  OR is_admin(auth.uid()) -- Admins can see all policies
+));
+
+-- Allow providers and admins to insert insurance documents
+CREATE POLICY "Allow providers and admins to insert insurance documents"
+ON insurance_document FOR INSERT
+TO authenticated -- Assuming providers are authenticated
+WITH CHECK (
+  insurance_policy_id IN (SELECT id FROM insurance_policy WHERE
+    patient_id IN (
+      SELECT pp.patient_id
+      FROM provider_patient pp
+      WHERE pp.provider_id = auth.uid() -- Policies for patients managed by the provider
+    )
+    OR is_admin(auth.uid()) -- Admins can insert for any policy
+  )
+);
+
+-- Allow providers and admins to update insurance documents
+CREATE POLICY "Allow providers and admins to update insurance documents"
+ON insurance_document FOR UPDATE
+TO authenticated -- Assuming providers are authenticated
+USING (
+  insurance_policy_id IN (SELECT id FROM insurance_policy WHERE
+    patient_id IN (
+      SELECT pp.patient_id
+      FROM provider_patient pp
+      WHERE pp.provider_id = auth.uid() -- Policies for patients managed by the provider
+    )
+    OR is_admin(auth.uid()) -- Admins can update for any policy
+  )
+);
+
+-- Allow providers and admins to delete insurance documents
+CREATE POLICY "Allow providers and admins to delete insurance documents"
+ON insurance_document FOR DELETE
+TO authenticated -- Assuming providers and admins are authenticated
+USING (
+  insurance_policy_id IN (SELECT id FROM insurance_policy WHERE
+    patient_id IN (
+      SELECT pp.patient_id
+      FROM provider_patient pp
+      WHERE pp.provider_id = auth.uid() -- Policies for patients managed by the provider
+    )
+    OR is_admin(auth.uid()) -- Admins can delete for any policy
+  )
+);
+
 CREATE TABLE consultations (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   patient_id UUID NOT NULL REFERENCES patients(id) ON DELETE CASCADE,
@@ -112,11 +286,73 @@ CREATE TABLE consultations (
   provider_notes TEXT,
   client_notes TEXT,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
+  -- Add comprehensive validation constraints
+  CONSTRAINT consultation_type_not_empty CHECK (
+    consultation_type IS NOT NULL AND 
+    consultation_type != '' AND 
+    length(consultation_type) <= 100
+  ),
+  CONSTRAINT scheduled_at_required_when_scheduled CHECK (
+    status != 'scheduled' OR 
+    scheduled_at IS NOT NULL
+  ),
+  CONSTRAINT completed_at_valid CHECK (
+    completed_at IS NULL OR
+    (scheduled_at IS NOT NULL AND completed_at >= scheduled_at)
+  ),
+  CONSTRAINT status_transition_valid CHECK (
+    (status != 'completed' OR 
+      (status = 'completed' AND completed_at IS NOT NULL)) AND
+    (status != 'cancelled' OR 
+      (status = 'cancelled' AND provider_notes IS NOT NULL))
+  ),
+  CONSTRAINT provider_notes_length CHECK (
+    provider_notes IS NULL OR 
+    length(provider_notes) <= 2000
+  ),
+  CONSTRAINT client_notes_length CHECK (
+    client_notes IS NULL OR 
+    length(client_notes) <= 2000
+  )
 );
 CREATE INDEX idx_consultations_patient_id ON consultations(patient_id);
 CREATE INDEX idx_consultations_status ON consultations(status);
 CREATE INDEX idx_consultations_scheduled_at ON consultations(scheduled_at);
+
+-- Enable RLS for consultations table
+ALTER TABLE consultations ENABLE ROW LEVEL SECURITY;
+
+-- Policies for consultations table
+-- Allow authenticated users to view their own consultations (via patient ownership)
+CREATE POLICY "Allow authenticated users to view their own consultations"
+ON consultations FOR SELECT
+TO authenticated
+USING (patient_id IN (SELECT id FROM patients WHERE owner_id = auth.uid()));
+
+-- Allow providers to access consultations where they are the provider
+CREATE POLICY "Allow providers to access their assigned consultations"
+ON consultations FOR SELECT
+TO authenticated -- Assuming providers are authenticated
+USING (provider_id = auth.uid());
+
+-- Allow providers to insert consultations
+CREATE POLICY "Allow providers to insert consultations"
+ON consultations FOR INSERT
+TO authenticated -- Assuming providers are authenticated
+WITH CHECK (provider_id = auth.uid()); -- Ensure provider is setting themselves as the provider
+
+-- Allow providers to update consultations where they are the provider
+CREATE POLICY "Allow providers to update their assigned consultations"
+ON consultations FOR UPDATE
+TO authenticated -- Assuming providers are authenticated
+USING (provider_id = auth.uid());
+
+-- Allow admins full access to consultations
+CREATE POLICY "Allow admins full access to consultations"
+ON consultations FOR ALL
+TO authenticated -- Assuming admins are authenticated
+USING (is_admin(auth.uid()));
 
 CREATE TABLE products (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -157,296 +393,181 @@ CREATE TABLE product_doses (
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
   UNIQUE (product_id, value) -- Ensure unique dose values per product
 );
-CREATE INDEX idx_product_doses_product_id ON product_doses(product_id);
-CREATE INDEX idx_product_doses_stripe_price_id ON product_doses(stripe_price_id);
-CREATE INDEX idx_product_doses_is_active ON product_doses(is_active);
-
-CREATE TABLE services (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  name TEXT NOT NULL UNIQUE,
-  description TEXT,
-  price DECIMAL(10, 2) NOT NULL DEFAULT 0.00,
-  duration_minutes INTEGER,
-  category TEXT,
-  is_active BOOLEAN DEFAULT true NOT NULL,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL
-);
-CREATE INDEX idx_services_category ON services(category);
-CREATE INDEX idx_services_is_active ON services(is_active);
-
--- New table for features (Created before subscription_plans)
-CREATE TABLE features (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  name TEXT NOT NULL UNIQUE,
-  description TEXT,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL
-);
-
-CREATE TABLE subscription_plans (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  name TEXT NOT NULL UNIQUE,
-  description TEXT,
-  price DECIMAL(10, 2) NOT NULL DEFAULT 0.00,
-  billing_frequency TEXT NOT NULL,
-  delivery_frequency TEXT,
-  discount INTEGER DEFAULT 0,
-  category TEXT,
-  popularity TEXT DEFAULT 'medium',
-  requires_consultation BOOLEAN DEFAULT TRUE,
-  additional_benefits TEXT[],
-  stripe_price_id TEXT UNIQUE, -- Stripe Price ID for the plan itself
-  is_active BOOLEAN DEFAULT true NOT NULL,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL
-  -- Removed features JSONB, allowed_product_doses JSONB
-);
-CREATE INDEX idx_subscription_plans_category ON subscription_plans(category);
-CREATE INDEX idx_subscription_plans_is_active ON subscription_plans(is_active);
-CREATE INDEX idx_subscription_plans_stripe_price_id ON subscription_plans(stripe_price_id);
-
--- New junction table for plan features
-CREATE TABLE plan_features (
-  plan_id UUID NOT NULL REFERENCES subscription_plans(id) ON DELETE CASCADE,
-  feature_id UUID NOT NULL REFERENCES features(id) ON DELETE CASCADE,
-  PRIMARY KEY (plan_id, feature_id)
-);
-
--- New junction table for plan doses
-CREATE TABLE plan_doses (
-  plan_id UUID NOT NULL REFERENCES subscription_plans(id) ON DELETE CASCADE,
-  dose_id UUID NOT NULL REFERENCES product_doses(id) ON DELETE CASCADE,
-  PRIMARY KEY (plan_id, dose_id)
-);
-
-CREATE TABLE pb_tasks (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  title TEXT NOT NULL,
-  notes TEXT,
-  due_date TIMESTAMP WITH TIME ZONE,
-  completed BOOLEAN DEFAULT false NOT NULL,
-  user_id UUID REFERENCES auth.users(id) ON DELETE SET NULL,
-  patient_id UUID REFERENCES patients(id) ON DELETE SET NULL,
-  priority task_priority, -- Using ENUM
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL
-);
-CREATE INDEX idx_pb_tasks_user_id ON pb_tasks(user_id);
-CREATE INDEX idx_pb_tasks_patient_id ON pb_tasks(patient_id);
-CREATE INDEX idx_pb_tasks_completed ON pb_tasks(completed);
-CREATE INDEX idx_pb_tasks_due_date ON pb_tasks(due_date);
-CREATE INDEX idx_pb_tasks_priority ON pb_tasks(priority);
-
-CREATE TABLE pharmacies (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  name TEXT NOT NULL,
-  address TEXT,
-  city TEXT,
-  state TEXT,
-  zip TEXT,
-  phone TEXT,
-  fax TEXT,
-  email TEXT,
-  website TEXT,
-  notes TEXT,
-  is_active BOOLEAN DEFAULT true NOT NULL,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL
-);
-CREATE INDEX idx_pharmacies_name ON pharmacies(name);
-CREATE INDEX idx_pharmacies_is_active ON pharmacies(is_active);
-
-CREATE TABLE discounts (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  name TEXT NOT NULL,
-  code TEXT UNIQUE NOT NULL,
-  description TEXT,
-  discount_type TEXT NOT NULL DEFAULT 'percentage', -- percentage, fixed
-  value DECIMAL(10, 2) NOT NULL DEFAULT 0.00,
-  valid_from TIMESTAMP WITH TIME ZONE,
-  valid_until TIMESTAMP WITH TIME ZONE,
-  requirement TEXT DEFAULT 'None',
-  min_purchase DECIMAL(10, 2) DEFAULT 0.00,
-  status discount_status DEFAULT 'Active', -- Using ENUM
-  usage_limit INTEGER,
-  usage_limit_per_user INTEGER,
-  usage_count INTEGER DEFAULT 0 NOT NULL,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL
-);
-CREATE INDEX idx_discounts_code ON discounts(code);
-CREATE INDEX idx_discounts_status ON discounts(status);
-CREATE INDEX idx_discounts_valid_until ON discounts(valid_until);
-
-CREATE TABLE questionnaire (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  name TEXT NOT NULL,
-  description TEXT,
-  structure JSONB,
-  slug TEXT UNIQUE NOT NULL,
-  form_type TEXT,
-  is_active BOOLEAN DEFAULT true NOT NULL,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL
-);
-CREATE INDEX idx_questionnaire_slug ON questionnaire(slug);
-CREATE INDEX idx_questionnaire_is_active ON questionnaire(is_active);
-
-CREATE TABLE pb_invoices (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  patient_id UUID REFERENCES patients(id) ON DELETE SET NULL,
-  status invoice_status DEFAULT 'pending' NOT NULL, -- Using ENUM
-  pb_invoice_id TEXT,
-  pb_invoice_metadata JSONB,
-  notes TEXT,
-  due_date TIMESTAMP WITH TIME ZONE,
-  paid_date TIMESTAMP WITH TIME ZONE,
-  invoice_amount DECIMAL(10, 2) DEFAULT 0.00 NOT NULL,
-  amount_paid DECIMAL(10, 2) DEFAULT 0.00 NOT NULL,
-  due_amount DECIMAL(10, 2) DEFAULT 0.00 NOT NULL,
-  refunded BOOLEAN DEFAULT false NOT NULL,
-  refunded_amount DECIMAL(10, 2) DEFAULT 0.00 NOT NULL,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL
-);
-CREATE INDEX idx_pb_invoices_patient_id ON pb_invoices(patient_id);
-CREATE INDEX idx_pb_invoices_status ON pb_invoices(status);
-CREATE INDEX idx_pb_invoices_due_date ON pb_invoices(due_date);
-
-CREATE TABLE notes (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  patient_id UUID NOT NULL REFERENCES patients(id) ON DELETE CASCADE,
-  user_id UUID REFERENCES auth.users(id) ON DELETE SET NULL,
-  note_type TEXT,
-  title TEXT,
-  content TEXT NOT NULL,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL
-);
-CREATE INDEX idx_notes_patient_id ON notes(patient_id);
-CREATE INDEX idx_notes_user_id ON notes(user_id);
-CREATE INDEX idx_notes_note_type ON notes(note_type);
-
-CREATE TABLE notifications (
-    id BIGINT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
-    user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-    message TEXT NOT NULL,
-    is_read BOOLEAN DEFAULT false NOT NULL,
-    link_url TEXT,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT now() NOT NULL
-);
-CREATE INDEX idx_notifications_user_id_is_read ON notifications(user_id, is_read);
-
--- Moved sessions definition before orders
-CREATE TABLE sessions (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  patient_id UUID NOT NULL REFERENCES patients(id) ON DELETE CASCADE,
-  provider_id UUID REFERENCES auth.users(id) ON DELETE SET NULL,
-  service_id UUID REFERENCES services(id) ON DELETE SET NULL,
-  consultation_id UUID REFERENCES consultations(id) ON DELETE SET NULL,
-  scheduled_date TIMESTAMP WITH TIME ZONE NOT NULL,
-  end_time TIMESTAMP WITH TIME ZONE,
-  duration_minutes INTEGER,
-  status session_status DEFAULT 'scheduled' NOT NULL, -- Using ENUM
-  session_notes TEXT,
-  meeting_link TEXT,
-  follow_up_needed BOOLEAN DEFAULT FALSE,
-  type TEXT,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL
-);
-CREATE INDEX idx_sessions_patient_id ON sessions(patient_id);
-CREATE INDEX idx_sessions_provider_id ON sessions(provider_id);
-CREATE INDEX idx_sessions_scheduled_date ON sessions(scheduled_date);
-CREATE INDEX idx_sessions_status ON sessions(status);
 
 CREATE TABLE orders (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   patient_id UUID NOT NULL REFERENCES patients(id) ON DELETE CASCADE,
-  order_date TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
-  status order_status DEFAULT 'pending' NOT NULL, -- Using ENUM
-  hold_reason TEXT,
-  total_amount DECIMAL(10, 2) NOT NULL DEFAULT 0.00,
-  shipping_street_address TEXT, -- Standardized address
+  status order_status DEFAULT 'pending' NOT NULL,
+  total_amount DECIMAL(10, 2) DEFAULT 0.00 NOT NULL,
+  tax_amount DECIMAL(10, 2) DEFAULT 0.00 NOT NULL,
+  discount_amount DECIMAL(10, 2) DEFAULT 0.00 NOT NULL,
+  shipping_amount DECIMAL(10, 2) DEFAULT 0.00 NOT NULL,
+  payment_method TEXT,
+  payment_status TEXT,
+  shipping_address TEXT,
   shipping_city TEXT,
   shipping_state TEXT,
   shipping_zip TEXT,
   shipping_country TEXT,
-  billing_street_address TEXT, -- Standardized address
-  billing_city TEXT,
-  billing_state TEXT,
-  billing_zip TEXT,
-  billing_country TEXT,
-  invoice_id UUID REFERENCES pb_invoices(id) ON DELETE SET NULL,
-  pharmacy_id UUID REFERENCES pharmacies(id) ON DELETE SET NULL,
-  linked_session_id UUID REFERENCES sessions(id) ON DELETE SET NULL, -- Now references sessions correctly
   tracking_number TEXT,
-  estimated_delivery DATE,
+  shipped_date TIMESTAMP WITH TIME ZONE,
+  delivered_date TIMESTAMP WITH TIME ZONE,
   notes TEXT,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
+  -- Comprehensive validation constraints
+  CONSTRAINT total_amount_non_negative CHECK (total_amount >= 0),
+  CONSTRAINT tax_amount_non_negative CHECK (tax_amount >= 0),
+  CONSTRAINT discount_amount_non_negative CHECK (discount_amount >= 0),
+  CONSTRAINT shipping_amount_non_negative CHECK (shipping_amount >= 0),
+  CONSTRAINT shipped_date_valid CHECK (
+    shipped_date IS NULL OR 
+    (shipped_date >= created_at AND (delivered_date IS NULL OR shipped_date <= delivered_date))
+  ),
+  CONSTRAINT delivered_date_valid CHECK (
+    delivered_date IS NULL OR 
+    (delivered_date >= created_at AND (shipped_date IS NOT NULL OR status = 'delivered'))
+  ),
+  CONSTRAINT status_transition_valid CHECK (
+    (status != 'shipped' OR shipped_date IS NOT NULL) AND
+    (status != 'delivered' OR delivered_date IS NOT NULL) AND
+    (status != 'cancelled' OR notes IS NOT NULL)
+  ),
+  CONSTRAINT shipping_zip_format CHECK (
+    shipping_zip IS NULL OR 
+    (shipping_zip ~ '^\d{5}(-\d{4})?$' AND length(shipping_zip) BETWEEN 5 AND 10)
+  ),
+  CONSTRAINT notes_length CHECK (notes IS NULL OR length(notes) <= 2000)
 );
 CREATE INDEX idx_orders_patient_id ON orders(patient_id);
 CREATE INDEX idx_orders_status ON orders(status);
-CREATE INDEX idx_orders_order_date ON orders(order_date);
+CREATE INDEX idx_orders_created_at ON orders(created_at);
+
+-- Enable RLS for orders table
+ALTER TABLE orders ENABLE ROW LEVEL SECURITY;
+
+-- Policies for orders table
+-- Allow authenticated users to view their own orders
+CREATE POLICY "Allow authenticated users to view their own orders"
+ON orders FOR SELECT
+TO authenticated
+USING (patient_id IN (SELECT id FROM patients WHERE owner_id = auth.uid()));
+
+-- Allow authenticated users to insert their own orders
+CREATE POLICY "Allow authenticated users to insert their own orders"
+ON orders FOR INSERT
+TO authenticated
+WITH CHECK (patient_id IN (SELECT id FROM patients WHERE owner_id = auth.uid()));
+
+-- Allow providers to view orders for their patients
+CREATE POLICY "Allow providers to view orders for their patients"
+ON orders FOR SELECT
+TO authenticated
+USING (
+  patient_id IN (
+    SELECT pp.patient_id
+    FROM provider_patient pp
+    WHERE pp.provider_id = auth.uid()
+  )
+);
+
+-- Allow admins full access to orders
+CREATE POLICY "Allow admins full access to orders"
+ON orders FOR ALL
+TO authenticated
+USING (is_admin(auth.uid()));
 
 CREATE TABLE order_items (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   order_id UUID NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
-  product_id UUID REFERENCES products(id) ON DELETE SET NULL,
-  service_id UUID REFERENCES services(id) ON DELETE SET NULL,
-  product_dose_id UUID REFERENCES product_doses(id) ON DELETE SET NULL, -- Link to specific dose if applicable
-  description TEXT, -- Store description at time of order
+  product_id UUID NOT NULL REFERENCES products(id) ON DELETE RESTRICT,
+  product_dose_id UUID REFERENCES product_doses(id) ON DELETE SET NULL,
   quantity INTEGER NOT NULL DEFAULT 1,
-  price_at_order DECIMAL(10, 2) NOT NULL,
-  CONSTRAINT check_order_item_type CHECK (product_id IS NOT NULL OR service_id IS NOT NULL)
+  unit_price DECIMAL(10, 2) NOT NULL,
+  discount_amount DECIMAL(10, 2) DEFAULT 0.00,
+  status TEXT DEFAULT 'pending',
+  fulfillment_date TIMESTAMP WITH TIME ZONE,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
+  -- Comprehensive validation constraints
+  CONSTRAINT quantity_positive CHECK (quantity > 0),
+  CONSTRAINT unit_price_positive CHECK (unit_price >= 0),
+  CONSTRAINT discount_amount_valid CHECK (
+    discount_amount >= 0 AND 
+    discount_amount <= (unit_price * quantity)
+  ),
+  CONSTRAINT fulfillment_date_valid CHECK (
+    fulfillment_date IS NULL OR
+    fulfillment_date >= created_at
+  ),
+  CONSTRAINT status_valid CHECK (
+    status IN ('pending', 'processing', 'shipped', 'delivered', 'cancelled')
+  ),
+  CONSTRAINT dose_consistency CHECK (
+    (product_dose_id IS NULL) OR 
+    (product_dose_id IS NOT NULL AND EXISTS (
+      SELECT 1 FROM product_doses 
+      WHERE id = product_dose_id AND product_id = order_items.product_id
+    ))
+  )
 );
 CREATE INDEX idx_order_items_order_id ON order_items(order_id);
 CREATE INDEX idx_order_items_product_id ON order_items(product_id);
-CREATE INDEX idx_order_items_service_id ON order_items(service_id);
-CREATE INDEX idx_order_items_product_dose_id ON order_items(product_dose_id);
+CREATE INDEX idx_order_items_status ON order_items(status);
 
-CREATE TABLE tag (
+-- Enable RLS for order_items table
+ALTER TABLE order_items ENABLE ROW LEVEL SECURITY;
+
+-- Policies for order_items table
+-- Allow authenticated users to view their own order items
+CREATE POLICY "Allow authenticated users to view their own order items"
+ON order_items FOR SELECT
+TO authenticated
+USING (order_id IN (SELECT id FROM orders WHERE patient_id IN (
+  SELECT id FROM patients WHERE owner_id = auth.uid()
+)));
+
+-- Allow authenticated users to insert their own order items
+CREATE POLICY "Allow authenticated users to insert their own order items"
+ON order_items FOR INSERT
+TO authenticated
+WITH CHECK (order_id IN (SELECT id FROM orders WHERE patient_id IN (
+  SELECT id FROM patients WHERE owner_id = auth.uid()
+)));
+
+-- Allow providers to view order items for their patients
+CREATE POLICY "Allow providers to view order items for their patients"
+ON order_items FOR SELECT
+TO authenticated
+USING (order_id IN (
+  SELECT o.id FROM orders o
+  JOIN provider_patient pp ON pp.patient_id = o.patient_id
+  WHERE pp.provider_id = auth.uid()
+));
+
+-- Allow admins full access to order items
+CREATE POLICY "Allow admins full access to order items"
+ON order_items FOR ALL
+TO authenticated
+USING (is_admin(auth.uid()));
+
+-- Webhook logs table for tracking incoming webhook requests
+CREATE TABLE webhook_logs (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  name TEXT NOT NULL UNIQUE,
-  description TEXT,
-  color TEXT,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL
-);
-CREATE INDEX idx_tag_name ON tag(name);
-
-CREATE TABLE patient_tags (
-  patient_id UUID NOT NULL REFERENCES patients(id) ON DELETE CASCADE,
-  tag_id UUID NOT NULL REFERENCES tag(id) ON DELETE CASCADE,
-  PRIMARY KEY (patient_id, tag_id)
-);
-
-CREATE TABLE api_logs (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  user_id UUID REFERENCES auth.users(id) ON DELETE SET NULL,
-  method TEXT,
-  path TEXT,
+  method TEXT NOT NULL,
+  headers JSONB NOT NULL,
+  body TEXT,
+  received_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
+  processed_at TIMESTAMP WITH TIME ZONE,
   status_code INTEGER,
-  request_body JSONB,
-  response_body JSONB,
-  ip_address INET,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL
+  response_body TEXT
 );
-CREATE INDEX idx_api_logs_user_id ON api_logs(user_id);
-CREATE INDEX idx_api_logs_path ON api_logs(path);
-CREATE INDEX idx_api_logs_created_at ON api_logs(created_at);
 
-CREATE TABLE frontend_errors (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  user_id UUID REFERENCES auth.users(id) ON DELETE SET NULL,
-  error_message TEXT NOT NULL,
-  stack_trace TEXT,
-  component_context TEXT,
-  additional_details JSONB,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL
-);
-CREATE INDEX idx_frontend_errors_user_id ON frontend_errors(user_id);
-CREATE INDEX idx_frontend_errors_created_at ON frontend_errors(created_at);
+-- Enable RLS for webhook_logs table
+ALTER TABLE webhook_logs ENABLE ROW LEVEL SECURITY;
 
-COMMENT ON TABLE frontend_errors IS 'Stores errors logged from the frontend application.';
+-- Only allow admins to access webhook logs
+CREATE POLICY "Allow admins full access to webhook logs"
+ON webhook_logs FOR ALL
+TO authenticated
+USING (is_admin(auth.uid()));

@@ -11,7 +11,10 @@ import { supabase } from './lib/supabase';
 function App() {
   // Initialize Tempo Devtools
   useEffect(() => {
-    if (process.env.REACT_APP_TEMPO === 'true') {
+    if (
+      process.env.REACT_APP_TEMPO === 'true' ||
+      process.env.TEMPO === 'true'
+    ) {
       TempoDevtools.init();
     }
 

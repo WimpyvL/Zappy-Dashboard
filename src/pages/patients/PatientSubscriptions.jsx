@@ -16,6 +16,7 @@ import {
   XCircle, // Added for Cancel button
   Edit, // Re-added Edit icon
 } from 'lucide-react';
+import { toast } from 'react-toastify'; // Import toast
 // Import necessary functions from stripeCheckout utility, including the new one
 import {
   redirectToCheckout,
@@ -118,8 +119,8 @@ const PatientSubscriptions = ({ patient }) => {
       try {
         // Example: Pausing collection. Backend needs to handle this specific update.
         await updateSubscription(mockSubscriptionId, { pause_collection: { behavior: 'void' } });
-        // TODO: Update local state to reflect paused status if needed, ideally refetch data
-        alert('Subscription paused successfully.'); // Placeholder feedback
+        // Ideally, refetch subscription data here or invalidate a query if using React Query mutations
+        toast.success('Subscription paused successfully.'); // Use toast for feedback
       } catch (err) {
         console.error('Failed to pause subscription:', err);
         setError('Failed to pause subscription. Please try again.');
@@ -141,9 +142,9 @@ const PatientSubscriptions = ({ patient }) => {
       try {
         // Cancel at period end by default
         await cancelSubscription(mockSubscriptionId, false);
-        // TODO: Update local state to reflect cancelled status, ideally refetch data
-        alert('Subscription cancelled successfully.'); // Placeholder feedback
-        setPaymentStatus('cancelled'); // Basic local state update for demo
+        // Ideally, refetch subscription data here or invalidate a query if using React Query mutations
+        toast.success('Subscription cancelled successfully.'); // Use toast for feedback
+        setPaymentStatus('cancelled'); // Keep basic local state update for demo
       } catch (err) {
         console.error('Failed to cancel subscription:', err);
         setError('Failed to cancel subscription. Please try again.');

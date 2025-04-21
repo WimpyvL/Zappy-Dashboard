@@ -23,7 +23,7 @@ const sampleTagsData = [
 
 // Hook to fetch all tags (Mocked)
 export const useTags = (params = {}) => {
-  console.log('Using mock tags data in useTags hook');
+  // console.log('Using mock tags data in useTags hook'); // Removed log
   return useQuery({
     queryKey: ['tags', params],
     // queryFn: () => getTags(params), // Original direct API call
@@ -35,7 +35,7 @@ export const useTags = (params = {}) => {
 
 // Hook to fetch a specific tag by ID (Mocked)
 export const useTagById = (id, options = {}) => {
-  console.log(`Using mock tag data for ID: ${id} in useTagById hook`);
+  // console.log(`Using mock tag data for ID: ${id} in useTagById hook`); // Removed log
   return useQuery({
     queryKey: ['tag', id],
     // queryFn: () => apiService.tags.getById(id), // Original API call
@@ -56,7 +56,7 @@ export const useCreateTag = (options = {}) => {
   return useMutation({
     // mutationFn: (tagData) => apiService.tags.create(tagData), // Original API call
     mutationFn: async (tagData) => {
-      console.log('Mock Creating tag:', tagData);
+      // console.log('Mock Creating tag:', tagData); // Removed log
       await new Promise((resolve) => setTimeout(resolve, 300)); // Simulate delay
       const newTag = {
         id: tagData.name.toLowerCase().replace(/\s+/g, '-'), // Generate mock ID from name
@@ -87,7 +87,7 @@ export const useUpdateTag = (options = {}) => {
   return useMutation({
     // mutationFn: ({ id, tagData }) => apiService.tags.update(id, tagData), // Original API call
     mutationFn: async ({ id, tagData }) => {
-      console.log(`Mock Updating tag ${id}:`, tagData);
+      // console.log(`Mock Updating tag ${id}:`, tagData); // Removed log
       await new Promise((resolve) => setTimeout(resolve, 300)); // Simulate delay
       return { data: { id, ...tagData } }; // Simulate API response
     },
@@ -114,7 +114,7 @@ export const useDeleteTag = (options = {}) => {
   return useMutation({
     // mutationFn: (id) => apiService.tags.delete(id), // Original API call
     mutationFn: async (id) => {
-      console.log(`Mock Deleting tag ${id}`);
+      // console.log(`Mock Deleting tag ${id}`); // Removed log
       await new Promise((resolve) => setTimeout(resolve, 300)); // Simulate delay
       return { success: true }; // Simulate API response
     },
@@ -137,7 +137,7 @@ export const useDeleteTag = (options = {}) => {
 
 // Hook to get tag usage information (Mocked)
 export const useTagUsage = (id, options = {}) => {
-  console.log(`Using mock tag usage data for ID: ${id}`);
+  // console.log(`Using mock tag usage data for ID: ${id}`); // Removed log
   return useQuery({
     queryKey: ['tagUsage', id],
     // queryFn: () => apiService.tags.getUsage(id), // Original API call

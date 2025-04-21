@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Plus, Edit, Trash2 } from 'lucide-react';
+import { toast } from 'react-toastify'; // Import toast
 
 // Mock Data for Templates
 const initialTemplates = [
@@ -46,27 +47,26 @@ const PatientNoteTemplateSettings = () => {
   };
 
   const handleDelete = (templateId) => {
+    // TODO: Implement API call using a dedicated useDeleteNoteTemplate mutation hook when available.
     if (window.confirm('Are you sure you want to delete this template?')) {
-      console.log('Deleting template (mock):', templateId);
-      setTemplates(prev => prev.filter(t => t.id !== templateId));
-      // TODO: Add API call for deletion
-      alert('Template deleted (mock).');
+      // console.log('Deleting template (mock):', templateId); // Removed log
+      setTemplates(prev => prev.filter(t => t.id !== templateId)); // Keep local state update for now
+      toast.info('Template deleted (mock).'); // Use toast for feedback
     }
   };
 
   const handleSave = (e) => {
      e.preventDefault();
+     // TODO: Implement API calls using dedicated useCreateNoteTemplate/useUpdateNoteTemplate mutation hooks when available.
      if (isEditing) {
-       console.log('Updating template (mock):', currentTemplate);
-       setTemplates(prev => prev.map(t => t.id === currentTemplate.id ? currentTemplate : t));
-       // TODO: Add API call for update
-       alert('Template updated (mock).');
+       // console.log('Updating template (mock):', currentTemplate); // Removed log
+       setTemplates(prev => prev.map(t => t.id === currentTemplate.id ? currentTemplate : t)); // Keep local state update
+       toast.info('Template updated (mock).'); // Use toast
      } else {
        const newTemplate = { ...currentTemplate, id: `tpl_${Date.now()}` }; // Generate temporary ID
-       console.log('Adding template (mock):', newTemplate);
-       setTemplates(prev => [newTemplate, ...prev]);
-       // TODO: Add API call for creation
-       alert('Template added (mock).');
+       // console.log('Adding template (mock):', newTemplate); // Removed log
+       setTemplates(prev => [newTemplate, ...prev]); // Keep local state update
+       toast.info('Template added (mock).'); // Use toast
      }
      setShowModal(false);
   };

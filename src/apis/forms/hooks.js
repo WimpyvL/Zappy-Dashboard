@@ -85,7 +85,7 @@ const sampleFormsData = [
 
 // Hook to fetch all forms (Mocked)
 export const useForms = (params = {}) => {
-  console.log('Using mock forms data in useForms hook');
+  // console.log('Using mock forms data in useForms hook'); // Removed log
   return useQuery({
     queryKey: ['forms', params],
     // queryFn: () => getForms(params), // Original API call
@@ -101,7 +101,7 @@ export const useForms = (params = {}) => {
 
 // Hook to fetch a specific form by ID (Mocked)
 export const useFormById = (id, options = {}) => {
-  console.log(`Using mock form data for ID: ${id} in useFormById hook`);
+  // console.log(`Using mock form data for ID: ${id} in useFormById hook`); // Removed log
   return useQuery({
     queryKey: ['form', id],
     // queryFn: () => getFormById(id), // Original API call
@@ -123,7 +123,7 @@ export const useCreateForm = (options = {}) => {
   return useMutation({
     // mutationFn: (formData) => createForm(formData), // Original API call
     mutationFn: async (formData) => {
-      console.log('Mock Creating form:', formData);
+      // console.log('Mock Creating form:', formData); // Removed log
       await new Promise((resolve) => setTimeout(resolve, 300)); // Simulate delay
       const newForm = {
         id: Date.now(), // Generate mock ID
@@ -160,7 +160,7 @@ export const useUpdateForm = (options = {}) => {
   return useMutation({
     // mutationFn: ({ id, formData }) => updateForm(id, formData), // Original API call
     mutationFn: async ({ id, formData }) => {
-      console.log(`Mock Updating form ${id}:`, formData);
+      // console.log(`Mock Updating form ${id}:`, formData); // Removed log
       await new Promise((resolve) => setTimeout(resolve, 300)); // Simulate delay
       return { data: { id, ...formData } }; // Simulate API response
     },
@@ -186,7 +186,7 @@ export const useDeleteForm = (options = {}) => {
   return useMutation({
     // mutationFn: (id) => deleteForm(id), // Original API call
     mutationFn: async (id) => {
-      console.log(`Mock Deleting form ${id}`);
+      // console.log(`Mock Deleting form ${id}`); // Removed log
       await new Promise((resolve) => setTimeout(resolve, 300)); // Simulate delay
       return { success: true }; // Simulate API response
     },

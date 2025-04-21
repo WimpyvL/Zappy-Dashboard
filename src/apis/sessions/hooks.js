@@ -63,7 +63,7 @@ const queryKeys = {
 
 // Get sessions hook (Mocked)
 export const useSessions = (params = {}) => {
-  console.log('Using mock sessions data in useSessions hook');
+  // console.log('Using mock sessions data in useSessions hook'); // Removed log
   return useQuery({
     queryKey: queryKeys.lists(params),
     // queryFn: () => apiService.sessions.getAll(params), // Original API call
@@ -79,7 +79,7 @@ export const useSessions = (params = {}) => {
 
 // Get session by ID hook (Mocked)
 export const useSessionById = (id, options = {}) => {
-  console.log(`Using mock session data for ID: ${id} in useSessionById hook`);
+  // console.log(`Using mock session data for ID: ${id} in useSessionById hook`); // Removed log
   return useQuery({
     queryKey: queryKeys.details(id),
     // queryFn: () => apiService.sessions.getById(id), // Original API call
@@ -99,7 +99,7 @@ export const useCreateSession = (options = {}) => {
   return useMutation({
     // mutationFn: (sessionData) => apiService.sessions.create(sessionData), // Original API call
     mutationFn: async (sessionData) => {
-      console.log('Mock Creating session:', sessionData);
+      // console.log('Mock Creating session:', sessionData); // Removed log
       await new Promise((resolve) => setTimeout(resolve, 300)); // Simulate delay
       const newSession = {
         id: `s${Date.now()}`, // Generate mock ID
@@ -127,7 +127,7 @@ export const useUpdateSession = (options = {}) => {
   return useMutation({
     // mutationFn: ({ id, sessionData }) => apiService.sessions.update(id, sessionData), // Original API call
     mutationFn: async ({ id, sessionData }) => {
-      console.log(`Mock Updating session ${id}:`, sessionData);
+      // console.log(`Mock Updating session ${id}:`, sessionData); // Removed log
       await new Promise((resolve) => setTimeout(resolve, 300)); // Simulate delay
       return { data: { id, ...sessionData } }; // Simulate API response
     },
@@ -151,7 +151,7 @@ export const useUpdateSessionStatus = (options = {}) => {
   return useMutation({
     // mutationFn: ({ sessionId, status }) => apiService.sessions.updateStatus(sessionId, status), // Original API call
     mutationFn: async ({ sessionId, status }) => {
-      console.log(`Mock Updating session ${sessionId} status to: ${status}`);
+      // console.log(`Mock Updating session ${sessionId} status to: ${status}`); // Removed log
       await new Promise((resolve) => setTimeout(resolve, 300)); // Simulate delay
       return { success: true, id: sessionId, status: status }; // Simulate API response
     },
@@ -175,7 +175,7 @@ export const useDeleteSession = (options = {}) => {
   return useMutation({
     // mutationFn: (id) => apiService.sessions.delete(id), // Original API call
     mutationFn: async (id) => {
-      console.log(`Mock Deleting session ${id}`);
+      // console.log(`Mock Deleting session ${id}`); // Removed log
       await new Promise((resolve) => setTimeout(resolve, 300)); // Simulate delay
       return { success: true }; // Simulate API response
     },
@@ -198,7 +198,7 @@ export const useAddSessionTag = (options = {}) => {
   return useMutation({
     // mutationFn: ({ entityId, tagId }) => apiService.sessions.addTag(entityId, tagId), // Original API call
     mutationFn: async ({ entityId, tagId }) => {
-      console.log(`Mock Adding tag ${tagId} to session ${entityId}`);
+      // console.log(`Mock Adding tag ${tagId} to session ${entityId}`); // Removed log
       await new Promise((resolve) => setTimeout(resolve, 300)); // Simulate delay
       return { success: true }; // Simulate success
     },
@@ -219,7 +219,7 @@ export const useRemoveSessionTag = (options = {}) => {
   return useMutation({
     // mutationFn: ({ entityId, tagId }) => apiService.sessions.removeTag(entityId, tagId), // Original API call
     mutationFn: async ({ entityId, tagId }) => {
-      console.log(`Mock Removing tag ${tagId} from session ${entityId}`);
+      // console.log(`Mock Removing tag ${tagId} from session ${entityId}`); // Removed log
       await new Promise((resolve) => setTimeout(resolve, 300)); // Simulate delay
       return { success: true }; // Simulate success
     },

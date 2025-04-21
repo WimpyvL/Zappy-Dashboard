@@ -47,7 +47,7 @@ const sampleInvoicesData = [
 
 // Hook to fetch all invoices (Mocked)
 export const useInvoices = (params = {}) => {
-  console.log('Using mock invoices data in useInvoices hook');
+  // console.log('Using mock invoices data in useInvoices hook'); // Removed log
   return useQuery({
     queryKey: ['invoices', params],
     // queryFn: () => getInvoices(params), // Original API call
@@ -62,7 +62,7 @@ export const useInvoices = (params = {}) => {
 
 // Hook to fetch a specific invoice by ID (Mocked)
 export const useInvoiceById = (id, options = {}) => {
-  console.log(`Using mock invoice data for ID: ${id} in useInvoiceById hook`);
+  // console.log(`Using mock invoice data for ID: ${id} in useInvoiceById hook`); // Removed log
   return useQuery({
     queryKey: ['invoice', id],
     // queryFn: () => getInvoiceById(id), // Original API call
@@ -83,7 +83,7 @@ export const useCreateInvoice = (options = {}) => {
   return useMutation({
     // mutationFn: (invoiceData) => createInvoice(invoiceData), // Original API call
     mutationFn: async (invoiceData) => {
-      console.log('Mock Creating invoice:', invoiceData);
+      // console.log('Mock Creating invoice:', invoiceData); // Removed log
       await new Promise((resolve) => setTimeout(resolve, 300)); // Simulate delay
       const newInvoice = {
         id: `inv${Date.now()}`, // Generate mock ID
@@ -113,7 +113,7 @@ export const useUpdateInvoice = (options = {}) => {
   return useMutation({
     // mutationFn: ({ id, invoiceData }) => updateInvoice(id, invoiceData), // Original API call
     mutationFn: async ({ id, invoiceData }) => {
-      console.log(`Mock Updating invoice ${id}:`, invoiceData);
+      // console.log(`Mock Updating invoice ${id}:`, invoiceData); // Removed log
       await new Promise((resolve) => setTimeout(resolve, 300)); // Simulate delay
       return { data: { id, ...invoiceData } }; // Simulate API response
     },
@@ -135,7 +135,7 @@ export const useDeleteInvoice = (options = {}) => {
   return useMutation({
     // mutationFn: (id) => deleteInvoice(id), // Original API call
     mutationFn: async (id) => {
-      console.log(`Mock Deleting invoice ${id}`);
+      // console.log(`Mock Deleting invoice ${id}`); // Removed log
       await new Promise((resolve) => setTimeout(resolve, 300)); // Simulate delay
       return { success: true }; // Simulate API response
     },
@@ -159,7 +159,7 @@ export const useMarkInvoiceAsPaid = (options = {}) => {
   return useMutation({
     // mutationFn: (id) => markInvoiceAsPaid(id), // Original API call
     mutationFn: async (id) => {
-      console.log(`Mock Marking invoice ${id} as paid`);
+      // console.log(`Mock Marking invoice ${id} as paid`); // Removed log
       await new Promise((resolve) => setTimeout(resolve, 300)); // Simulate delay
       return { success: true, id, status: 'paid' }; // Simulate API response
     },
@@ -181,7 +181,7 @@ export const useSendInvoice = (options = {}) => {
   return useMutation({
     // mutationFn: (id) => sendInvoice(id), // Original API call
     mutationFn: async (id) => {
-      console.log(`Mock Sending invoice ${id}`);
+      // console.log(`Mock Sending invoice ${id}`); // Removed log
       await new Promise((resolve) => setTimeout(resolve, 300)); // Simulate delay
       return { success: true, id, status: 'sent' }; // Simulate API response
     },

@@ -256,7 +256,7 @@ const FormViewer = () => {
   // Function to handle form submission
   const onSubmit = (data) => {
     // In a real app, you would submit this data to your backend
-    console.log('Form submitted with data:', data);
+    // console.log('Form submitted with data:', data); // Removed log
 
     // Show success message
     setSubmitted(true);

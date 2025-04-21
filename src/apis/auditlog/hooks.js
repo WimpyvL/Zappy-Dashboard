@@ -50,7 +50,7 @@ const sampleAuditLogsData = [
  */
 // Hook to fetch audit logs with pagination and filtering (Mocked)
 export const useAuditLogs = (params = { page: 1, limit: 20 }, options = {}) => {
-  console.log('Using mock audit logs data');
+  // console.log('Using mock audit logs data'); // Removed mock log
   return useQuery({
     queryKey: ['auditLogs', params],
     // queryFn: () => getAuditLogs(params), // Original API call
@@ -80,9 +80,9 @@ export const useAuditLogs = (params = { page: 1, limit: 20 }, options = {}) => {
     keepPreviousData: true,
     staleTime: Infinity, // Keep mock data fresh
     onError: (error) => {
-      // TODO: Use error handling utility
+      // TODO: Use error handling utility (e.g., errorHandling.logError(error, 'useAuditLogs'))
       toast.error(
-        `Error fetching audit logs: ${error.message || 'Unknown error'}`
+        `Error fetching audit logs: ${error.message || 'Unknown error'}` // Keep user feedback for now
       );
     },
     ...options, // Allow overriding query options
@@ -101,7 +101,7 @@ export const useCreateAuditLog = (options = {}) => {
   return useMutation({
     // mutationFn: (logData) => createAuditLog(logData), // Original API call
     mutationFn: async (logData) => {
-      console.log('Mock Creating audit log:', logData);
+      // console.log('Mock Creating audit log:', logData); // Removed mock log
       await new Promise((resolve) => setTimeout(resolve, 300)); // Simulate delay
       const newLog = {
         id: Date.now(), // Generate mock ID
@@ -120,9 +120,9 @@ export const useCreateAuditLog = (options = {}) => {
       options.onSuccess && options.onSuccess(data, variables, context);
     },
     onError: (error, variables, context) => {
-      // TODO: Use error handling utility
+      // TODO: Use error handling utility (e.g., errorHandling.logError(error, 'useCreateAuditLog'))
       toast.error(
-        `Error creating audit log: ${error.message || 'Unknown error'}`
+        `Error creating audit log: ${error.message || 'Unknown error'}` // Keep user feedback for now
       );
       // Allow chaining custom onError logic
       options.onError && options.onError(error, variables, context);

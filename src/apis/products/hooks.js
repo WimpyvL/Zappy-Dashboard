@@ -61,7 +61,7 @@ const sampleProductsData = [
 
 // Get products hook (Mocked)
 export const useProducts = (filters) => {
-  console.log('Using mock products data in useProducts hook');
+  // console.log('Using mock products data in useProducts hook'); // Removed log
   return useQuery({
     queryKey: ['products', filters],
     // queryFn: () => apiService.products.getAll(filters), // Original API call
@@ -76,7 +76,7 @@ export const useProducts = (filters) => {
 
 // Get product by ID hook (Mocked)
 export const useProductById = (id, options = {}) => {
-  console.log(`Using mock product data for ID: ${id} in useProductById hook`);
+  // console.log(`Using mock product data for ID: ${id} in useProductById hook`); // Removed log
   return useQuery({
     queryKey: ['product', id],
     // queryFn: () => apiService.products.getById(id), // Original API call
@@ -97,7 +97,7 @@ export const useCreateProduct = (options = {}) => {
   return useMutation({
     // mutationFn: (productData) => apiService.products.create(productData), // Original API call
     mutationFn: async (productData) => {
-      console.log('Mock Creating product:', productData);
+      // console.log('Mock Creating product:', productData); // Removed log
       await new Promise((resolve) => setTimeout(resolve, 300)); // Simulate delay
       const newProduct = {
         id: Date.now(), // Generate mock ID
@@ -125,7 +125,7 @@ export const useUpdateProduct = (options = {}) => {
   return useMutation({
     // mutationFn: ({ id, productData }) => apiService.products.update(id, productData), // Original API call
     mutationFn: async ({ id, productData }) => {
-      console.log(`Mock Updating product ${id}:`, productData);
+      // console.log(`Mock Updating product ${id}:`, productData); // Removed log
       await new Promise((resolve) => setTimeout(resolve, 300)); // Simulate delay
       return { data: { id, ...productData } }; // Simulate API response
     },
@@ -148,7 +148,7 @@ export const useDeleteProduct = (options = {}) => {
   return useMutation({
     // mutationFn: (id) => apiService.products.delete(id), // Original API call
     mutationFn: async (id) => {
-      console.log(`Mock Deleting product ${id}`);
+      // console.log(`Mock Deleting product ${id}`); // Removed log
       await new Promise((resolve) => setTimeout(resolve, 300)); // Simulate delay
       return { success: true }; // Simulate API response
     },

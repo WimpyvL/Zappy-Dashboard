@@ -70,7 +70,7 @@ const queryKeys = {
 
 // Get subscription plans hook (Mocked)
 export const useSubscriptionPlans = (params = {}) => {
-  console.log('Using mock subscription plans data in useSubscriptionPlans hook');
+  // console.log('Using mock subscription plans data in useSubscriptionPlans hook'); // Removed log
   return useQuery({
     queryKey: queryKeys.lists(params),
     // queryFn: () => apiService.subscriptionPlans.getAll(params), // Original API call
@@ -86,9 +86,9 @@ export const useSubscriptionPlans = (params = {}) => {
 
 // Get subscription plan by ID hook (Mocked)
 export const useSubscriptionPlanById = (id, options = {}) => {
-  console.log(
-    `Using mock subscription plan data for ID: ${id} in useSubscriptionPlanById hook`
-  );
+  // console.log(
+  //   `Using mock subscription plan data for ID: ${id} in useSubscriptionPlanById hook`
+  // ); // Removed log
   return useQuery({
     queryKey: queryKeys.details(id),
     // queryFn: () => apiService.subscriptionPlans.getById(id), // Original API call
@@ -109,7 +109,7 @@ export const useAddSubscriptionPlan = (options = {}) => {
   return useMutation({
     // mutationFn: (planData) => apiService.subscriptionPlans.create(planData), // Original API call
     mutationFn: async (planData) => {
-      console.log('Mock Creating subscription plan:', planData);
+      // console.log('Mock Creating subscription plan:', planData); // Removed log
       await new Promise((resolve) => setTimeout(resolve, 300)); // Simulate delay
       const newPlan = {
         id: Date.now(), // Generate mock ID
@@ -138,7 +138,7 @@ export const useUpdateSubscriptionPlan = (options = {}) => {
   return useMutation({
     // mutationFn: ({ id, ...planData }) => apiService.subscriptionPlans.update(id, planData), // Original API call
     mutationFn: async ({ id, ...planData }) => {
-      console.log(`Mock Updating subscription plan ${id}:`, planData);
+      // console.log(`Mock Updating subscription plan ${id}:`, planData); // Removed log
       await new Promise((resolve) => setTimeout(resolve, 300)); // Simulate delay
       return { data: { id, ...planData } }; // Simulate API response
     },
@@ -164,7 +164,7 @@ export const useDeleteSubscriptionPlan = (options = {}) => {
   return useMutation({
     // mutationFn: (id) => apiService.subscriptionPlans.delete(id), // Original API call
     mutationFn: async (id) => {
-      console.log(`Mock Deleting subscription plan ${id}`);
+      // console.log(`Mock Deleting subscription plan ${id}`); // Removed log
       await new Promise((resolve) => setTimeout(resolve, 300)); // Simulate delay
       return { success: true }; // Simulate API response
     },

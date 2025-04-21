@@ -15,6 +15,7 @@ import {
   Form,
   Switch,
   Popconfirm,
+  message, // Import message
 } from 'antd';
 import {
   PlusOutlined,
@@ -103,7 +104,8 @@ const FormConditionals = ({
         setModalVisible(false);
       })
       .catch((errorInfo) => {
-        console.log('Validate Failed:', errorInfo);
+        // console.log('Validate Failed:', errorInfo); // Removed log
+        message.error('Validation failed. Please check the form fields.'); // Optionally add user feedback
       });
   };
 

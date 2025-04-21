@@ -232,9 +232,9 @@ const InitialConsultations = () => {
 
   // Handle email sending confirmation (placeholder for API call)
   const handleConfirmSendEmail = () => {
-    console.log(
-      `Sending email to ${selectedConsultation.email} with content: ${emailContent}`
-    );
+    // console.log(
+    //   `Sending email to ${selectedConsultation.email} with content: ${emailContent}`
+    // ); // Removed log
     // TODO: Integrate with an email sending API/service
     // Optionally update status after sending email using mutation
     // updateStatusMutation.mutate({ consultationId: selectedConsultation.id, status: 'followup' });

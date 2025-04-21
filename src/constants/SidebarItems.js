@@ -117,5 +117,6 @@ export const settingsItems = [
 export const logoutItem = {
   title: 'Logout',
   icon: LogOut,
-  action: () => console.log('Logging out...'),
+  // Action should likely trigger logout from AuthContext, not just log
+  action: () => { /* Logout logic handled elsewhere */ },
 };

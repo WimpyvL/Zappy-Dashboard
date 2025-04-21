@@ -1,722 +1,972 @@
-import axios from 'axios';
+
+import { supabase } from './supabaseClient'; // Import the Supabase client
 import { toast } from 'react-toastify';
-// Removed unused imports: useQuery, useMutation, useQueryClient
 import 'react-toastify/dist/ReactToastify.css';
 
-// Create axios instance with default config
-const apiClient = axios.create({
-  baseURL: process.env.REACT_APP_API_URL,
-  withCredentials: false, // Explicitly prevent sending cookies
-  headers: {
-    'Content-Type': 'application/json',
-    'ngrok-skip-browser-warning': true,
-  },
-  timeout: 30000, // 30 seconds timeout
-});
-
-// Request interceptor to add Authorization header if token exists
-apiClient.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem('token');
-    if (token) {
-      config.headers['Authorization'] = `Bearer ${token}`;
-    }
-    // config.headers['ngrok-skip-browser-warning'] = true; // Already set in defaults
-    return config;
-  },
-  (error) => {
-    return Promise.reject(error);
-  }
-);
-
-// Response interceptor for handling common errors
-apiClient.interceptors.response.use(
-  (response) => {
-    // Check for meta message in the response and show success toast
-    if (response.data.meta && response.data.meta.message) {
-      toast.success(response.data.meta.message);
-    }
-    return response;
-  },
-  async (error) => {
-    const originalRequest = error.config;
-
-    // Skip token handling for login/register requests to prevent redirect loops
-    const isAuthRequest =
-      originalRequest.url.includes('/sign_in') ||
-      originalRequest.url.includes('/register');
-
-    // Handle token expiration/401 errors, but not for auth requests
-    if (
-      error.response &&
-      error.response.status === 401 &&
-      !originalRequest._retry &&
-      !isAuthRequest
-    ) {
-      originalRequest._retry = true;
-
-      // If a refresh token exists, try to get a new access token
-      const refreshToken = localStorage.getItem('refreshToken');
-      if (refreshToken) {
-        try {
-          const res = await apiClient.post('/auth/refresh-token', {
-            refreshToken,
-          });
-          const { token } = res.data;
-
-          localStorage.setItem('token', token);
-          apiClient.defaults.headers['Authorization'] = `Bearer ${token}`;
-
-          return apiClient(originalRequest);
-        } catch (refreshError) {
-          // If refresh fails, clear auth state
-          clearAuthState();
-
-          // Only redirect if not already on login page
-          if (!window.location.pathname.includes('/login')) {
-            window.location.href = '/login';
-          }
-          return Promise.reject(refreshError);
-        }
-      } else {
-        // No refresh token, clear auth state
-        clearAuthState();
-
-        // Only redirect if not already on login page
-        if (!window.location.pathname.includes('/login')) {
-          window.location.href = '/login';
-        }
-      }
-    }
-
-    // Handle errors and show error messages using React Toastify
-    if (error.response) {
-      const errorMessage =
-        error.response.data.error || 'An error occurred. Please try again.';
-      toast.error(errorMessage);
-    } else {
-      toast.error(
-        'An error occurred. Please check your network connection and try again.'
-      );
-    }
-
-    return Promise.reject(error);
-  }
-);
-
-// Helper function to clear auth state
-const clearAuthState = () => {
-  localStorage.removeItem('token');
-  localStorage.removeItem('refreshToken');
-  localStorage.removeItem('isAuthenticated');
-  localStorage.removeItem('user');
+// Helper to handle Supabase errors
+const handleSupabaseError = (error, context = 'Supabase operation') => {
+  console.error(`${context} error:`, error);
+  toast.error(error.message || `An error occurred during ${context}.`);
+  throw error; // Re-throw the error for React Query to handle
 };
 
-// API service object with methods for common operations
+// API service object using Supabase
 const apiService = {
-  // Authentication endpoints
+  // Authentication endpoints using Supabase Auth
   auth: {
     login: async (email, password) => {
-      try {
-        const response = await apiClient.post('/admin/sign_in', {
-          user: { email, password },
-        });
-        return response;
-      } catch (error) {
-        // Just throw the error, don't redirect on login failures
-        console.error('Login error:', error);
-        throw error;
-      }
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+      if (error) handleSupabaseError(error, 'Login');
+      // Supabase client handles session/token storage automatically
+      return data; // Contains user and session info
     },
     register: async (userData) => {
-      const response = await apiClient.post('/auth/register', userData);
-      return response.data;
+      // Assuming userData contains email, password, and potentially other metadata
+      const { data, error } = await supabase.auth.signUp({
+        email: userData.email,
+        password: userData.password,
+        options: {
+          data: {
+            // Add other user metadata here if needed during signup
+            // e.g., first_name: userData.firstName, last_name: userData.lastName
+          },
+        },
+      });
+      if (error) handleSupabaseError(error, 'Registration');
+      return data; // Contains user info (might require email confirmation)
     },
     forgotPassword: async (email) => {
-      const response = await apiClient.post('/auth/forgot-password', { email });
-      return response.data;
-    },
-    resetPassword: async (token, newPassword) => {
-      const response = await apiClient.post('/auth/reset-password', {
-        token,
-        newPassword,
+      const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
+        // Optional: specify redirect URL if needed
+        // redirectTo: 'http://localhost:3001/update-password',
       });
-      return response.data;
+      if (error) handleSupabaseError(error, 'Forgot Password');
+      return data;
+    },
+    resetPassword: async (accessToken, newPassword) => {
+      // This typically happens after the user clicks the email link.
+      // Supabase handles the token verification via onAuthStateChange with 'PASSWORD_RECOVERY' event.
+      // The update happens within the component handling that event.
+      // This function might not be directly called from here in a typical Supabase flow.
+      // If you need direct update via access token (less common):
+      // const { data, error } = await supabase.auth.updateUser({ password: newPassword }, { accessToken });
+      // if (error) handleSupabaseError(error, 'Reset Password');
+      // return data;
+      console.warn('resetPassword function in apiService might need adjustment for Supabase flow.');
+      return { success: true }; // Placeholder
     },
     logout: async () => {
-      const response = await apiClient.post('/auth/logout');
-      clearAuthState();
-      return response.data;
+      const { error } = await supabase.auth.signOut();
+      if (error) handleSupabaseError(error, 'Logout');
+      // Supabase client handles clearing the session
+      return { success: !error };
     },
+    // Helper to get current session (useful for initial load check)
+    getSession: async () => {
+      const { data, error } = await supabase.auth.getSession();
+      if (error) handleSupabaseError(error, 'Get Session');
+      return data.session;
+    },
+    // Helper to get current user
+    getUser: async () => {
+      const { data, error } = await supabase.auth.getUser();
+      if (error) handleSupabaseError(error, 'Get User');
+      return data.user;
+    }
   },
 
-  // Consultation related endpoints (NEW)
+  // Consultation related endpoints - Using Supabase
   consultations: {
     getAll: async (params) => {
-      const response = await apiClient.get('/api/v1/admin/consultations', {
-        params,
-      });
-      return response.data;
+      // Basic Supabase query, add filtering/pagination based on params later
+      const { data, error, count } = await supabase
+        .from('consultations')
+        .select('*', { count: 'exact' }); // Adjust columns as needed
+      if (error) handleSupabaseError(error, 'Get All Consultations');
+      return { data, meta: { total_count: count } }; // Adapt response structure
     },
     getById: async (id) => {
-      const response = await apiClient.get(`/api/v1/admin/consultations/${id}`);
-      return response.data;
+      const { data, error } = await supabase
+        .from('consultations')
+        .select('*') // Adjust columns as needed
+        .eq('id', id)
+        .single();
+      if (error) handleSupabaseError(error, `Get Consultation ${id}`);
+      return data;
     },
     updateStatus: async (id, status) => {
-      const response = await apiClient.patch(
-        `/api/v1/admin/consultations/${id}/status`,
-        { status }
-      ); // Assuming PATCH for status update
-      return response.data;
+      const { data, error } = await supabase
+        .from('consultations')
+        .update({ status: status, updated_at: new Date().toISOString() })
+        .eq('id', id)
+        .select() // Return updated record
+        .single();
+      if (error) handleSupabaseError(error, `Update Consultation Status ${id}`);
+      return data;
     },
-    // Add create, update, delete if needed
+    // Add create, update, delete if needed using supabase.from('consultations').insert/update/delete
   },
 
-  // User related endpoints
+  // User related endpoints - Profile data might be in a separate 'profiles' table linked to auth.users
   users: {
+    // Assumes a 'profiles' table linked via user_id (matching auth.users.id)
     getProfile: async () => {
-      const response = await apiClient.get('/users/profile');
-      return response.data;
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('User not authenticated');
+      const { data, error } = await supabase
+        .from('profiles') // Assuming 'profiles' table name
+        .select('*')
+        .eq('id', user.id) // Match profile id with auth user id
+        .single();
+      if (error && error.code !== 'PGRST116') { // Ignore 'No rows found' error if profile doesn't exist yet
+        handleSupabaseError(error, 'Get Profile');
+      }
+      return data; // Might be null if profile doesn't exist
     },
     updateProfile: async (userData) => {
-      const response = await apiClient.put('/users/profile', userData);
-      return response.data;
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('User not authenticated');
+      const { data, error } = await supabase
+        .from('profiles')
+        .update({ ...userData, updated_at: new Date().toISOString() })
+        .eq('id', user.id)
+        .select()
+        .single();
+      if (error) handleSupabaseError(error, 'Update Profile');
+      return data;
     },
-    changePassword: async (currentPassword, newPassword) => {
-      const response = await apiClient.post('/users/change-password', {
-        currentPassword,
-        newPassword,
+    changePassword: async (newPassword) => {
+      // Supabase requires only the new password when user is logged in
+      const { data, error } = await supabase.auth.updateUser({
+        password: newPassword
       });
-      return response.data;
+      if (error) handleSupabaseError(error, 'Change Password');
+      return data;
     },
-    // Added method for user referral info
+    // Referral info might be part of the profile or a separate table
     getReferralInfo: async () => {
-      const response = await apiClient.get('/api/v1/me/referral-info'); // Assumed endpoint
-      return response.data;
+      // Example: Assuming referral code is on the profile
+      const profile = await apiService.users.getProfile();
+      return { referral_code: profile?.referral_code || null }; // Adapt based on actual schema
     },
   },
 
   patients: {
     getAll: async (params) => {
-      const response = await apiClient.get('/api/v1/admin/patients', {
-        params,
-      });
-      return response.data;
+      // Basic query, add filtering/pagination/sorting based on params
+      let query = supabase.from('patients').select('*', { count: 'exact' });
+      // Example pagination (adapt based on params structure)
+      // if (params?.page && params?.limit) {
+      //   const offset = (params.page - 1) * params.limit;
+      //   query = query.range(offset, offset + params.limit - 1);
+      // }
+      const { data, error, count } = await query;
+      if (error) handleSupabaseError(error, 'Get All Patients');
+      return { data, meta: { total_count: count } }; // Adapt response structure
     },
     getById: async (id) => {
-      const response = await apiClient.get(`/api/v1/admin/patients/${id}`);
-      return response.data;
+      const { data, error } = await supabase
+        .from('patients')
+        .select('*')
+        .eq('id', id)
+        .single();
+      if (error) handleSupabaseError(error, `Get Patient ${id}`);
+      return data;
     },
     create: async (patientData) => {
-      const response = await apiClient.post(
-        '/api/v1/admin/patients',
-        patientData
-      );
-      return response.data;
+      const { data, error } = await supabase
+        .from('patients')
+        .insert([patientData]) // Supabase expects an array for insert
+        .select()
+        .single();
+      if (error) handleSupabaseError(error, 'Create Patient');
+      return data;
     },
     update: async (id, patientData) => {
-      const response = await apiClient.put(
-        `/api/v1/admin/patients/${id}`,
-        patientData
-      );
-      return response.data;
+      const { data, error } = await supabase
+        .from('patients')
+        .update({ ...patientData, updated_at: new Date().toISOString() })
+        .eq('id', id)
+        .select()
+        .single();
+      if (error) handleSupabaseError(error, `Update Patient ${id}`);
+      return data;
     },
     delete: async (id) => {
-      const response = await apiClient.delete(`/api/v1/admin/patients/${id}`);
-      return response.data;
+      const { error } = await supabase.from('patients').delete().eq('id', id);
+      if (error) handleSupabaseError(error, `Delete Patient ${id}`);
+      return { success: !error };
     },
   },
 
-  // Note related endpoints (NEW - Assuming nested under patients)
+  // Note related endpoints - Using Supabase
   notes: {
     getPatientNotes: async (patientId, params) => {
       if (!patientId) throw new Error('Patient ID is required to fetch notes.');
-      const response = await apiClient.get(
-        `/api/v1/admin/patients/${patientId}/notes`,
-        { params }
-      );
-      return response.data;
+      // Basic query, add filtering/pagination based on params
+      const { data, error } = await supabase
+        .from('notes')
+        .select('*') // Adjust columns as needed
+        .eq('patient_id', patientId);
+      if (error) handleSupabaseError(error, `Get Notes for Patient ${patientId}`);
+      return { data }; // Adapt response structure
     },
-    getNoteById: async (noteId, patientId) => {
-      // patientId might be optional depending on API
+    getNoteById: async (noteId) => {
       if (!noteId) throw new Error('Note ID is required.');
-      const url = patientId
-        ? `/api/v1/admin/patients/${patientId}/notes/${noteId}`
-        : `/api/v1/admin/notes/${noteId}`;
-      const response = await apiClient.get(url);
-      return response.data;
+      const { data, error } = await supabase
+        .from('notes')
+        .select('*')
+        .eq('id', noteId)
+        .single();
+      if (error) handleSupabaseError(error, `Get Note ${noteId}`);
+      return data;
     },
     createPatientNote: async (patientId, noteData) => {
-      if (!patientId)
-        throw new Error('Patient ID is required to create a note.');
-      const response = await apiClient.post(
-        `/api/v1/admin/patients/${patientId}/notes`,
-        noteData
-      );
-      return response.data;
+      if (!patientId) throw new Error('Patient ID is required to create a note.');
+      const { data: { user } } = await supabase.auth.getUser(); // Get current user for user_id
+      const { data, error } = await supabase
+        .from('notes')
+        .insert([{ ...noteData, patient_id: patientId, user_id: user?.id }])
+        .select()
+        .single();
+      if (error) handleSupabaseError(error, 'Create Note');
+      return data;
     },
-    updatePatientNote: async (noteId, noteData, patientId) => {
+    updatePatientNote: async (noteId, noteData) => {
       if (!noteId) throw new Error('Note ID is required for update.');
-      const url = patientId
-        ? `/api/v1/admin/patients/${patientId}/notes/${noteId}`
-        : `/api/v1/admin/notes/${noteId}`;
-      const response = await apiClient.put(url, noteData); // Assuming PUT for update
-      return response.data;
+      const { data, error } = await supabase
+        .from('notes')
+        .update({ ...noteData, updated_at: new Date().toISOString() })
+        .eq('id', noteId)
+        .select()
+        .single();
+      if (error) handleSupabaseError(error, `Update Note ${noteId}`);
+      return data;
     },
-    deletePatientNote: async (noteId, patientId) => {
+    deletePatientNote: async (noteId) => {
       if (!noteId) throw new Error('Note ID is required for deletion.');
-      const url = patientId
-        ? `/api/v1/admin/patients/${patientId}/notes/${noteId}`
-        : `/api/v1/admin/notes/${noteId}`;
-      const response = await apiClient.delete(url);
-      return response.data;
+      const { error } = await supabase.from('notes').delete().eq('id', noteId);
+      if (error) handleSupabaseError(error, `Delete Note ${noteId}`);
+      return { success: !error };
     },
   },
 
-  // Task related endpoints
+  // Task related endpoints - Using Supabase (table: pb_tasks)
   tasks: {
     getAll: async (params) => {
-      const response = await apiClient.get('/api/v1/admin/tasks', { params });
-      return response.data;
+      // Basic query, add filtering/pagination/sorting based on params
+      const { data, error, count } = await supabase
+        .from('pb_tasks')
+        .select('*', { count: 'exact' });
+      if (error) handleSupabaseError(error, 'Get All Tasks');
+      return { data, meta: { total_count: count } }; // Adapt response structure
     },
     getById: async (id) => {
-      const response = await apiClient.get(`/api/v1/admin/tasks/${id}`);
-      return response.data;
+      const { data, error } = await supabase
+        .from('pb_tasks')
+        .select('*')
+        .eq('id', id)
+        .single();
+      if (error) handleSupabaseError(error, `Get Task ${id}`);
+      return data;
     },
     create: async (taskData) => {
-      const response = await apiClient.post('/api/v1/admin/tasks', {
-        task: taskData,
-      });
-      return response.data;
+      const { data: { user } } = await supabase.auth.getUser(); // Get current user for user_id
+      const { data, error } = await supabase
+        .from('pb_tasks')
+        .insert([{ ...taskData, user_id: user?.id }])
+        .select()
+        .single();
+      if (error) handleSupabaseError(error, 'Create Task');
+      return data;
     },
     update: async (id, taskData) => {
-      const response = await apiClient.put(`/api/v1/admin/tasks/${id}`, {
-        task: taskData,
-      });
-      return response.data;
+      const { data, error } = await supabase
+        .from('pb_tasks')
+        .update({ ...taskData, updated_at: new Date().toISOString() })
+        .eq('id', id)
+        .select()
+        .single();
+      if (error) handleSupabaseError(error, `Update Task ${id}`);
+      return data;
     },
     delete: async (id) => {
-      const response = await apiClient.delete(`/api/v1/admin/tasks/${id}`);
-      return response.data;
+      const { error } = await supabase.from('pb_tasks').delete().eq('id', id);
+      if (error) handleSupabaseError(error, `Delete Task ${id}`);
+      return { success: !error };
     },
     markCompleted: async (id) => {
-      const response = await apiClient.put(
-        `/api/v1/admin/tasks/${id}/mark_completed`
-      );
-      return response.data;
+      const { data, error } = await supabase
+        .from('pb_tasks')
+        .update({ completed: true, updated_at: new Date().toISOString() })
+        .eq('id', id)
+        .select()
+        .single();
+      if (error) handleSupabaseError(error, `Mark Task ${id} Completed`);
+      return data;
     },
-    // Get all assignable users for a task
+    // Get assignable users (assuming profiles table)
     getAssignees: async () => {
-      const response = await apiClient.get('/api/v1/admin/users');
-      return response.data;
+      const { data, error } = await supabase
+        .from('profiles') // Assuming profiles table holds user names/roles
+        .select('id, first_name, last_name'); // Select relevant fields
+      if (error) handleSupabaseError(error, 'Get Assignees');
+      return data;
     },
-    // Get all patients that can be associated with a task
+    // Get patients (already covered by patients.getAll)
     getTaskablePatients: async () => {
-      const response = await apiClient.get('/api/v1/admin/patients');
-      return response.data;
+      // Use the existing patients.getAll method
+      return await apiService.patients.getAll();
     },
   },
 
-  // Tags related endpoints
+  // Tags related endpoints - Using Supabase (table: tag)
   tags: {
     getAll: async (params) => {
-      const response = await apiClient.get('/api/v1/admin/tags', { params });
-      return response.data;
+      const { data, error } = await supabase.from('tag').select('*'); // Basic query
+      if (error) handleSupabaseError(error, 'Get All Tags');
+      return { data }; // Adapt response structure
     },
     getById: async (id) => {
-      const response = await apiClient.get(`/api/v1/admin/tags/${id}`);
-      return response.data;
+      const { data, error } = await supabase
+        .from('tag')
+        .select('*')
+        .eq('id', id)
+        .single();
+      if (error) handleSupabaseError(error, `Get Tag ${id}`);
+      return data;
     },
     create: async (tagData) => {
-      const response = await apiClient.post('/api/v1/admin/tags', {
-        tag: tagData,
-      });
-      return response.data;
+      const { data, error } = await supabase
+        .from('tag')
+        .insert([tagData])
+        .select()
+        .single();
+      if (error) handleSupabaseError(error, 'Create Tag');
+      return data;
     },
     update: async (id, tagData) => {
-      const response = await apiClient.put(`/api/v1/admin/tags/${id}`, {
-        tag: tagData,
-      });
-      return response.data;
+      const { data, error } = await supabase
+        .from('tag')
+        .update(tagData)
+        .eq('id', id)
+        .select()
+        .single();
+      if (error) handleSupabaseError(error, `Update Tag ${id}`);
+      return data;
     },
     delete: async (id) => {
-      const response = await apiClient.delete(`/api/v1/admin/tags/${id}`);
-      return response.data;
+      const { error } = await supabase.from('tag').delete().eq('id', id);
+      if (error) handleSupabaseError(error, `Delete Tag ${id}`);
+      return { success: !error };
     },
     getUsage: async (id) => {
-      const response = await apiClient.get(`/api/v1/admin/tags/${id}/usage`);
-      return response.data;
+      // This requires more complex queries involving joins or multiple queries
+      // Placeholder implementation
+      console.warn('getUsage for tags needs specific Supabase implementation');
+      return { usage: { patients: 0, orders: 0, sessions: 0 } };
     },
   },
 
-  // Service related endpoints
+  // Service related endpoints - Using Supabase
   services: {
     getAll: async (params) => {
-      const response = await apiClient.get('/api/v1/admin/services', {
-        params,
-      });
-      return response.data;
+      const { data, error } = await supabase.from('services').select('*'); // Basic query
+      if (error) handleSupabaseError(error, 'Get All Services');
+      return { data }; // Adapt response structure
     },
     getById: async (id) => {
-      const response = await apiClient.get(`/api/v1/admin/services/${id}`);
-      return response.data;
+      const { data, error } = await supabase
+        .from('services')
+        .select('*')
+        .eq('id', id)
+        .single();
+      if (error) handleSupabaseError(error, `Get Service ${id}`);
+      return data;
     },
     create: async (serviceData) => {
-      const response = await apiClient.post('/api/v1/admin/services', {
-        service: serviceData,
-      });
-      return response.data;
+      const { data, error } = await supabase
+        .from('services')
+        .insert([serviceData])
+        .select()
+        .single();
+      if (error) handleSupabaseError(error, 'Create Service');
+      return data;
     },
     update: async (id, serviceData) => {
-      const response = await apiClient.put(`/api/v1/admin/services/${id}`, {
-        service: serviceData,
-      });
-      return response.data;
+      const { data, error } = await supabase
+        .from('services')
+        .update({ ...serviceData, updated_at: new Date().toISOString() })
+        .eq('id', id)
+        .select()
+        .single();
+      if (error) handleSupabaseError(error, `Update Service ${id}`);
+      return data;
     },
     delete: async (id) => {
-      const response = await apiClient.delete(`/api/v1/admin/services/${id}`);
-      return response.data;
+      const { error } = await supabase.from('services').delete().eq('id', id);
+      if (error) handleSupabaseError(error, `Delete Service ${id}`);
+      return { success: !error };
     },
     toggleActive: async (id, active) => {
-      const response = await apiClient.put(
-        `/api/v1/admin/services/${id}/toggle_active`,
-        { active }
-      );
-      return response.data;
+      // Assuming 'is_active' column name based on other tables
+      const { data, error } = await supabase
+        .from('services')
+        .update({ is_active: active, updated_at: new Date().toISOString() })
+        .eq('id', id)
+        .select()
+        .single();
+      if (error) handleSupabaseError(error, `Toggle Service Active ${id}`);
+      return data;
     },
   },
 
-  // Order related endpoints
+  // Order related endpoints - Using Supabase
   orders: {
     getAll: async (params) => {
-      const response = await apiClient.get('/api/v1/admin/orders', { params });
-      return response.data;
+      // Basic query, add filtering/pagination/sorting based on params
+      const { data, error, count } = await supabase
+        .from('orders')
+        .select('*', { count: 'exact' });
+      if (error) handleSupabaseError(error, 'Get All Orders');
+      return { data, meta: { total_count: count } }; // Adapt response structure
     },
     getById: async (id) => {
-      const response = await apiClient.get(`/api/v1/admin/orders/${id}`);
-      return response.data;
+      const { data, error } = await supabase
+        .from('orders')
+        .select('*') // Consider joining order_items
+        .eq('id', id)
+        .single();
+      if (error) handleSupabaseError(error, `Get Order ${id}`);
+      // Fetch order items separately if needed
+      return data;
     },
     create: async (orderData) => {
-      const response = await apiClient.post('/api/v1/admin/orders', orderData);
-      return response.data;
+      // This might involve creating order items as well, potentially in a transaction
+      const { data, error } = await supabase
+        .from('orders')
+        .insert([orderData])
+        .select()
+        .single();
+      if (error) handleSupabaseError(error, 'Create Order');
+      // Handle order_items creation here or in a separate function/trigger
+      return data;
     },
     update: async (id, orderData) => {
-      const response = await apiClient.put(
-        `/api/v1/admin/orders/${id}`,
-        orderData
-      );
-      return response.data;
+      const { data, error } = await supabase
+        .from('orders')
+        .update({ ...orderData, updated_at: new Date().toISOString() })
+        .eq('id', id)
+        .select()
+        .single();
+      if (error) handleSupabaseError(error, `Update Order ${id}`);
+      return data;
     },
     updateStatus: async (id, status) => {
-      const response = await apiClient.put(
-        `/api/v1/admin/orders/${id}/status`,
-        { status }
-      );
-      return response.data;
+      const { data, error } = await supabase
+        .from('orders')
+        .update({ status: status, updated_at: new Date().toISOString() })
+        .eq('id', id)
+        .select()
+        .single();
+      if (error) handleSupabaseError(error, `Update Order Status ${id}`);
+      return data;
     },
     delete: async (id) => {
-      const response = await apiClient.delete(`/api/v1/admin/orders/${id}`);
-      return response.data;
+      // Consider cascade delete for order_items or handle separately
+      const { error } = await supabase.from('orders').delete().eq('id', id);
+      if (error) handleSupabaseError(error, `Delete Order ${id}`);
+      return { success: !error };
     },
   },
 
-  // Product related endpoints
+  // Product related endpoints - Using Supabase
   products: {
     getAll: async (params) => {
-      const response = await apiClient.get('/api/v1/admin/products', {
-        params,
-      });
-      return response.data;
+      // Basic query, add filtering/pagination/sorting based on params
+      const { data, error } = await supabase
+        .from('products')
+        .select('*'); // Consider joining product_doses
+      if (error) handleSupabaseError(error, 'Get All Products');
+      // Fetch doses separately or adjust query if needed
+      return { data }; // Adapt response structure
     },
     getById: async (id) => {
-      const response = await apiClient.get(`/api/v1/admin/products/${id}`);
-      return response.data;
+      const { data, error } = await supabase
+        .from('products')
+        .select('*, product_doses(*)') // Example join
+        .eq('id', id)
+        .single();
+      if (error) handleSupabaseError(error, `Get Product ${id}`);
+      return data;
     },
     create: async (productData) => {
-      const response = await apiClient.post(
-        '/api/v1/admin/products',
-        productData
-      );
-      return response.data;
+      // Handle product_doses creation separately or via nested insert if supported
+      const { doses, ...restProductData } = productData;
+      const { data, error } = await supabase
+        .from('products')
+        .insert([restProductData])
+        .select()
+        .single();
+      if (error) handleSupabaseError(error, 'Create Product');
+      // If successful and doses exist, create them
+      // if (data && doses && doses.length > 0) {
+      //   const doseInserts = doses.map(d => ({ ...d, product_id: data.id }));
+      //   const { error: doseError } = await supabase.from('product_doses').insert(doseInserts);
+      //   if (doseError) console.error("Error creating product doses:", doseError); // Handle dose creation error
+      // }
+      return data;
     },
     update: async (id, productData) => {
-      const response = await apiClient.put(
-        `/api/v1/admin/products/${id}`,
-        productData
-      );
-      return response.data;
+      // Handle product_doses update separately
+      const { doses, ...restProductData } = productData;
+      const { data, error } = await supabase
+        .from('products')
+        .update({ ...restProductData, updated_at: new Date().toISOString() })
+        .eq('id', id)
+        .select()
+        .single();
+      if (error) handleSupabaseError(error, `Update Product ${id}`);
+      // Handle dose updates/creations/deletions here
+      return data;
     },
     delete: async (id) => {
-      const response = await apiClient.delete(`/api/v1/admin/products/${id}`);
-      return response.data;
+      // Supabase cascade delete should handle product_doses if set up correctly
+      const { error } = await supabase.from('products').delete().eq('id', id);
+      if (error) handleSupabaseError(error, `Delete Product ${id}`);
+      return { success: !error };
     },
   },
 
-  // Session related endpoints (NEW)
+  // Session related endpoints - Using Supabase
   sessions: {
     getAll: async (params) => {
-      const response = await apiClient.get('/api/v1/admin/sessions', {
-        params,
-      });
-      return response.data;
+      // Basic query, add filtering/pagination/sorting based on params
+      const { data, error } = await supabase.from('sessions').select('*');
+      if (error) handleSupabaseError(error, 'Get All Sessions');
+      return { data }; // Adapt response structure
     },
     getById: async (id) => {
-      const response = await apiClient.get(`/api/v1/admin/sessions/${id}`);
-      return response.data;
+      const { data, error } = await supabase
+        .from('sessions')
+        .select('*')
+        .eq('id', id)
+        .single();
+      if (error) handleSupabaseError(error, `Get Session ${id}`);
+      return data;
     },
     create: async (sessionData) => {
-      const response = await apiClient.post(
-        '/api/v1/admin/sessions',
-        sessionData
-      );
-      return response.data;
+      const { data, error } = await supabase
+        .from('sessions')
+        .insert([sessionData])
+        .select()
+        .single();
+      if (error) handleSupabaseError(error, 'Create Session');
+      return data;
     },
     update: async (id, sessionData) => {
-      const response = await apiClient.put(
-        `/api/v1/admin/sessions/${id}`,
-        sessionData
-      );
-      return response.data;
+      const { data, error } = await supabase
+        .from('sessions')
+        .update({ ...sessionData, updated_at: new Date().toISOString() })
+        .eq('id', id)
+        .select()
+        .single();
+      if (error) handleSupabaseError(error, `Update Session ${id}`);
+      return data;
     },
     updateStatus: async (id, status) => {
-      const response = await apiClient.patch(
-        `/api/v1/admin/sessions/${id}/status`,
-        { status }
-      ); // Assuming PATCH for status update
-      return response.data;
+      const { data, error } = await supabase
+        .from('sessions')
+        .update({ status: status, updated_at: new Date().toISOString() })
+        .eq('id', id)
+        .select()
+        .single();
+      if (error) handleSupabaseError(error, `Update Session Status ${id}`);
+      return data;
     },
     delete: async (id) => {
-      const response = await apiClient.delete(`/api/v1/admin/sessions/${id}`);
-      return response.data;
+      const { error } = await supabase.from('sessions').delete().eq('id', id);
+      if (error) handleSupabaseError(error, `Delete Session ${id}`);
+      return { success: !error };
     },
-    // Add tag/untag functions if API exists
+    // Add tag/untag functions using join table (e.g., session_tags) if needed
     // addTag: async (sessionId, tagId) => { ... }
     // removeTag: async (sessionId, tagId) => { ... }
   },
 
-  // Product-Service Links endpoints
+  // Product-Service Links endpoints - Requires join table logic
   productServiceLinks: {
+    // This requires specific implementation based on how links are stored (e.g., a join table)
     getAll: async (params) => {
-      const response = await apiClient.get(
-        '/api/v1/admin/product_service_links',
-        { params }
-      );
-      return response.data;
+      console.warn('productServiceLinks.getAll needs Supabase implementation');
+      return { data: [] };
     },
     getByProductId: async (productId) => {
-      const response = await apiClient.get(
-        `/api/v1/admin/product_service_links`,
-        { params: { product_id: productId } }
-      );
-      return response.data;
+      console.warn('productServiceLinks.getByProductId needs Supabase implementation');
+      return { data: [] };
     },
     create: async (linkData) => {
-      const response = await apiClient.post(
-        '/api/v1/admin/product_service_links',
-        linkData
-      );
-      return response.data;
+      console.warn('productServiceLinks.create needs Supabase implementation');
+      return { data: linkData };
     },
     delete: async (id) => {
-      const response = await apiClient.delete(
-        `/api/v1/admin/product_service_links/${id}`
-      );
-      return response.data;
+      console.warn('productServiceLinks.delete needs Supabase implementation');
+      return { success: true };
     },
-    // Create or update multiple links for a product
+    // Create or update multiple links for a product - needs careful implementation
     createBulk: async (productId, serviceIds) => {
-      const response = await apiClient.post(
-        '/api/v1/admin/product_service_links',
-        {
-          product_id: productId,
-          service_ids: serviceIds,
-        }
-      );
-      return response.data;
+      console.warn('productServiceLinks.createBulk needs Supabase implementation');
+      // This would involve deleting existing links for the product and inserting new ones.
+      // Consider using Supabase Edge Functions for transactional safety.
+      return { success: true };
     },
   },
 
-  // Subscription Plan related endpoints (Renamed from subscriptions)
+  // Subscription Plan related endpoints - Using Supabase
   subscriptionPlans: {
     getAll: async (params) => {
-      const response = await apiClient.get('/api/v1/admin/subscription_plans', {
-        params,
-      });
-      return response.data;
+      const { data, error } = await supabase.from('subscription_plans').select('*'); // Basic query
+      if (error) handleSupabaseError(error, 'Get All Subscription Plans');
+      return { data }; // Adapt response structure
     },
     getById: async (id) => {
-      const response = await apiClient.get(
-        `/api/v1/admin/subscription_plans/${id}`
-      );
-      return response.data;
+      const { data, error } = await supabase
+        .from('subscription_plans')
+        .select('*') // Consider joining plan_doses/plan_features
+        .eq('id', id)
+        .single();
+      if (error) handleSupabaseError(error, `Get Subscription Plan ${id}`);
+      return data;
     },
     create: async (planData) => {
-      // Renamed parameter
-      const response = await apiClient.post(
-        '/api/v1/admin/subscription_plans',
-        { subscription_plan: planData }
-      ); // Assuming nested structure
-      return response.data;
+      // Handle join tables (plan_doses, plan_features) separately after creation
+      const { allowedProductDoses, features, ...restPlanData } = planData;
+      const { data, error } = await supabase
+        .from('subscription_plans')
+        .insert([restPlanData])
+        .select()
+        .single();
+      if (error) handleSupabaseError(error, 'Create Subscription Plan');
+      // Handle inserting into join tables if creation was successful
+      return data;
     },
     update: async (id, planData) => {
-      // Renamed parameter
-      const response = await apiClient.put(
-        `/api/v1/admin/subscription_plans/${id}`,
-        { subscription_plan: planData }
-      ); // Assuming nested structure
-      return response.data;
+      // Handle join tables separately
+      const { allowedProductDoses, features, ...restPlanData } = planData;
+      const { data, error } = await supabase
+        .from('subscription_plans')
+        .update({ ...restPlanData, updated_at: new Date().toISOString() })
+        .eq('id', id)
+        .select()
+        .single();
+      if (error) handleSupabaseError(error, `Update Subscription Plan ${id}`);
+      // Handle updates to join tables (delete existing, insert new)
+      return data;
     },
     delete: async (id) => {
-      const response = await apiClient.delete(
-        `/api/v1/admin/subscription_plans/${id}`
-      );
-      return response.data;
+      // Cascade delete should handle join tables if set up
+      const { error } = await supabase.from('subscription_plans').delete().eq('id', id);
+      if (error) handleSupabaseError(error, `Delete Subscription Plan ${id}`);
+      return { success: !error };
     },
   },
 
-  // Pharmacy related endpoints
+  // Pharmacy related endpoints - Using Supabase
   pharmacies: {
     getAll: async (params) => {
-      const response = await apiClient.get('/api/v1/admin/pharmacies', {
-        params,
-      });
-      return response.data;
+      const { data, error } = await supabase.from('pharmacies').select('*'); // Basic query
+      if (error) handleSupabaseError(error, 'Get All Pharmacies');
+      return { data }; // Adapt response structure
     },
     getById: async (id) => {
-      const response = await apiClient.get(`/api/v1/admin/pharmacies/${id}`);
-      return response.data;
+      const { data, error } = await supabase
+        .from('pharmacies')
+        .select('*')
+        .eq('id', id)
+        .single();
+      if (error) handleSupabaseError(error, `Get Pharmacy ${id}`);
+      return data;
     },
     create: async (pharmacyData) => {
-      const response = await apiClient.post('/api/v1/admin/pharmacies', {
-        pharmacy: pharmacyData,
-      });
-      return response.data;
+      const { data, error } = await supabase
+        .from('pharmacies')
+        .insert([pharmacyData])
+        .select()
+        .single();
+      if (error) handleSupabaseError(error, 'Create Pharmacy');
+      return data;
     },
     update: async (id, pharmacyData) => {
-      const response = await apiClient.put(`/api/v1/admin/pharmacies/${id}`, {
-        pharmacy: pharmacyData,
-      });
-      return response.data;
+      const { data, error } = await supabase
+        .from('pharmacies')
+        .update({ ...pharmacyData, updated_at: new Date().toISOString() })
+        .eq('id', id)
+        .select()
+        .single();
+      if (error) handleSupabaseError(error, `Update Pharmacy ${id}`);
+      return data;
     },
     delete: async (id) => {
-      const response = await apiClient.delete(`/api/v1/admin/pharmacies/${id}`);
-      return response.data;
+      const { error } = await supabase.from('pharmacies').delete().eq('id', id);
+      if (error) handleSupabaseError(error, `Delete Pharmacy ${id}`);
+      return { success: !error };
     },
     toggleActive: async (id, active) => {
-      const response = await apiClient.put(
-        `/api/v1/admin/pharmacies/${id}/toggle_active`,
-        { active }
-      );
-      return response.data;
+      const { data, error } = await supabase
+        .from('pharmacies')
+        .update({ is_active: active, updated_at: new Date().toISOString() })
+        .eq('id', id)
+        .select()
+        .single();
+      if (error) handleSupabaseError(error, `Toggle Pharmacy Active ${id}`);
+      return data;
     },
   },
 
-  // Insurance related endpoints
+  // Insurance related endpoints - Using Supabase (tables: insurance_policy, insurance_document)
   insurances: {
-    getAllRecords: () => apiService.get('/api/v1/admin/insurance_records'),
-    getRecord: (id) => apiService.get(`/api/v1/admin/insurance_records/${id}`),
-    createRecord: (data) =>
-      apiService.post('/api/v1/admin/insurance_records', data),
-    updateRecord: (id, data) =>
-      apiService.put(`/api/v1/admin/insurance_records/${id}`, data),
-    uploadDocument: (id, formData) =>
-      apiService.post(
-        `/api/v1/admin/insurance_records/${id}/upload_document`,
-        formData,
-        {
-          headers: {
-            'Content-Type': 'multipart/form-data',
-          },
-        }
-      ),
-    deleteDocument: (id, documentId) =>
-      apiService.delete(
-        `/api/v1/admin/insurance_records/${id}/documents/${documentId}`
-      ),
+    // Renamed to match table name
+    getAllPolicies: async (params) => {
+      const { data, error } = await supabase.from('insurance_policy').select('*');
+      if (error) handleSupabaseError(error, 'Get All Insurance Policies');
+      return { data };
+    },
+    getPolicyById: async (id) => {
+      const { data, error } = await supabase
+        .from('insurance_policy')
+        .select('*, insurance_document(*)') // Example join
+        .eq('id', id)
+        .single();
+      if (error) handleSupabaseError(error, `Get Insurance Policy ${id}`);
+      return data;
+    },
+    createPolicy: async (policyData) => {
+      const { data, error } = await supabase
+        .from('insurance_policy')
+        .insert([policyData])
+        .select()
+        .single();
+      if (error) handleSupabaseError(error, 'Create Insurance Policy');
+      return data;
+    },
+    updatePolicy: async (id, policyData) => {
+      const { data, error } = await supabase
+        .from('insurance_policy')
+        .update({ ...policyData, updated_at: new Date().toISOString() })
+        .eq('id', id)
+        .select()
+        .single();
+      if (error) handleSupabaseError(error, `Update Insurance Policy ${id}`);
+      return data;
+    },
+    // Document handling needs Supabase Storage integration
+    uploadDocument: async (policyId, file) => {
+      if (!policyId || !file) throw new Error('Policy ID and file are required.');
+      const filePath = `insurance_docs/${policyId}/${Date.now()}_${file.name}`;
+      const { error: uploadError } = await supabase.storage
+        .from('insurance-documents') // Assuming a bucket named 'insurance-documents'
+        .upload(filePath, file);
+
+      if (uploadError) handleSupabaseError(uploadError, 'Upload Insurance Document');
+
+      // Get public URL after successful upload
+      const { data: urlData } = supabase.storage
+        .from('insurance-documents')
+        .getPublicUrl(filePath);
+
+      // Add record to insurance_document table
+      const docRecord = {
+        insurance_policy_id: policyId,
+        file_name: file.name,
+        storage_path: filePath,
+        url: urlData?.publicUrl || null,
+        document_type: file.type, // Or extract from file name/metadata
+        // uploaded_by: (await supabase.auth.getUser()).data.user?.id // Get current user ID
+      };
+      const { data: dbData, error: dbError } = await supabase
+        .from('insurance_document')
+        .insert([docRecord])
+        .select()
+        .single();
+
+      if (dbError) handleSupabaseError(dbError, 'Save Insurance Document Record');
+      return dbData;
+    },
+    deleteDocument: async (documentId) => {
+      // 1. Get storage path from DB
+      const { data: docData, error: fetchError } = await supabase
+        .from('insurance_document')
+        .select('storage_path')
+        .eq('id', documentId)
+        .single();
+
+      if (fetchError || !docData) {
+         handleSupabaseError(fetchError || new Error('Document not found'), `Fetch Insurance Document ${documentId}`);
+         return { success: false };
+      }
+
+      // 2. Delete from Storage
+      const { error: storageError } = await supabase.storage
+        .from('insurance-documents')
+        .remove([docData.storage_path]);
+      if (storageError) handleSupabaseError(storageError, `Delete Document from Storage ${documentId}`);
+
+      // 3. Delete from DB
+      const { error: dbError } = await supabase
+        .from('insurance_document')
+        .delete()
+        .eq('id', documentId);
+      if (dbError) handleSupabaseError(dbError, `Delete Document Record ${documentId}`);
+
+      return { success: !storageError && !dbError };
+    },
   },
 
-  // Discount related endpoints
+  // Discount related endpoints - Using Supabase
   discounts: {
     getAll: async (params) => {
-      const response = await apiClient.get('/api/v1/admin/discounts', {
-        params,
-      });
-      return response.data;
+      const { data, error } = await supabase.from('discounts').select('*'); // Basic query
+      if (error) handleSupabaseError(error, 'Get All Discounts');
+      return { data }; // Adapt response structure
     },
     getById: async (id) => {
-      const response = await apiClient.get(`/api/v1/admin/discounts/${id}`);
-      return response.data;
+      const { data, error } = await supabase
+        .from('discounts')
+        .select('*')
+        .eq('id', id)
+        .single();
+      if (error) handleSupabaseError(error, `Get Discount ${id}`);
+      return data;
     },
     create: async (discountData) => {
-      const response = await apiClient.post('/api/v1/admin/discounts', {
-        discount: discountData,
-      });
-      return response.data;
+      const { data, error } = await supabase
+        .from('discounts')
+        .insert([discountData])
+        .select()
+        .single();
+      if (error) handleSupabaseError(error, 'Create Discount');
+      return data;
     },
     update: async (id, discountData) => {
-      const response = await apiClient.put(`/api/v1/admin/discounts/${id}`, {
-        discount: discountData,
-      });
-      return response.data;
+      const { data, error } = await supabase
+        .from('discounts')
+        .update({ ...discountData, updated_at: new Date().toISOString() })
+        .eq('id', id)
+        .select()
+        .single();
+      if (error) handleSupabaseError(error, `Update Discount ${id}`);
+      return data;
     },
     delete: async (id) => {
-      const response = await apiClient.delete(`/api/v1/admin/discounts/${id}`);
-      return response.data;
+      const { error } = await supabase.from('discounts').delete().eq('id', id);
+      if (error) handleSupabaseError(error, `Delete Discount ${id}`);
+      return { success: !error };
     },
     toggleActive: async (id, active) => {
-      const response = await apiClient.put(
-        `/api/v1/admin/discounts/${id}/toggle_active`,
-        { active }
-      );
-      return response.data;
+      // Assuming 'status' column ('Active'/'Inactive')
+      const newStatus = active ? 'Active' : 'Inactive';
+      const { data, error } = await supabase
+        .from('discounts')
+        .update({ status: newStatus, updated_at: new Date().toISOString() })
+        .eq('id', id)
+        .select()
+        .single();
+      if (error) handleSupabaseError(error, `Toggle Discount Active ${id}`);
+      return data;
     },
   },
 
-  // Added Referrals section
+  // Referrals section - Needs specific table implementation
   referrals: {
+    // These require specific tables (e.g., 'referral_settings', 'referrals')
     getSettings: async () => {
-      // Fetches current reward amount and recipient - needs public or specific user access
-      const response = await apiClient.get('/api/v1/referral-settings'); // Assumed endpoint
-      return response.data;
+      console.warn('referrals.getSettings needs Supabase implementation');
+      return { reward_amount: 0, recipient_info: '' }; // Placeholder
     },
     updateSettings: async (settingsData) => {
-      // For Admin
-      // Updates reward amount and recipient
-      const response = await apiClient.put(
-        '/api/v1/admin/referral-settings',
-        settingsData
-      ); // Assumed admin endpoint
-      return response.data;
+      console.warn('referrals.updateSettings needs Supabase implementation');
+      return { success: true }; // Placeholder
     },
     getAllAdmin: async (params) => {
-      // For Admin
-      // Fetches the full referral history
-      const response = await apiClient.get('/api/v1/admin/referrals', {
-        params,
-      }); // Assumed admin endpoint
-      return response.data; // Assuming response structure { referrals: [...] } or similar
+      console.warn('referrals.getAllAdmin needs Supabase implementation');
+      return { data: [], meta: {} }; // Placeholder
     },
   },
 
-  // Generic request methods for custom endpoints
-  get: async (endpoint, params) => {
-    const response = await apiClient.get(endpoint, { params });
-    return response.data;
+  // Forms endpoints - Using Supabase (table: questionnaire)
+  forms: {
+    getAll: async (params) => {
+      const { data, error } = await supabase.from('questionnaire').select('*');
+      if (error) handleSupabaseError(error, 'Get All Forms');
+      return { data };
+    },
+    getById: async (id) => {
+      const { data, error } = await supabase
+        .from('questionnaire')
+        .select('*')
+        .eq('id', id)
+        .single();
+      if (error) handleSupabaseError(error, `Get Form ${id}`);
+      return data;
+    },
+    create: async (formData) => {
+      const { data, error } = await supabase
+        .from('questionnaire')
+        .insert([formData])
+        .select()
+        .single();
+      if (error) handleSupabaseError(error, 'Create Form');
+      return data;
+    },
+    update: async (id, formData) => {
+      const { data, error } = await supabase
+        .from('questionnaire')
+        .update({ ...formData, updated_at: new Date().toISOString() })
+        .eq('id', id)
+        .select()
+        .single();
+      if (error) handleSupabaseError(error, `Update Form ${id}`);
+      return data;
+    },
+    delete: async (id) => {
+      const { error } = await supabase.from('questionnaire').delete().eq('id', id);
+      if (error) handleSupabaseError(error, `Delete Form ${id}`);
+      return { success: !error };
+    },
   },
-  post: async (endpoint, data) => {
-    const response = await apiClient.post(endpoint, data);
-    return response.data;
-  },
-  put: async (endpoint, data) => {
-    const response = await apiClient.put(endpoint, data);
-    return response.data;
-  },
-  delete: async (endpoint) => {
-    const response = await apiClient.delete(endpoint);
-    return response.data;
-  },
-};
 
-// React Query hooks are now defined in their respective src/apis/*/hooks.js files
+   // Audit Log endpoints - Using Supabase (table: api_logs)
+   auditlog: {
+     getAll: async (params) => {
+       // Basic query, add filtering/pagination/sorting based on params
+       const { data, error, count } = await supabase
+         .from('api_logs') // Use actual table name
+         .select('*', { count: 'exact' })
+         .order('created_at', { ascending: false }); // Example sort
+       if (error) handleSupabaseError(error, 'Get All Audit Logs');
+       return { data, meta: { total_count: count } }; // Adapt response structure
+     },
+     create: async (logData) => {
+       // Note: user_id might be automatically handled by RLS policies if set up
+       const { data, error } = await supabase
+         .from('api_logs') // Use actual table name
+         .insert([logData])
+         .select()
+         .single();
+       if (error) handleSupabaseError(error, 'Create Audit Log');
+       return data;
+     },
+   },
+
+  // Generic request methods are less relevant with Supabase client,
+  // but can be kept for potential non-Supabase API calls if needed.
+  // get: async (endpoint, params) => { ... },
+  // post: async (endpoint, data) => { ... },
+  // put: async (endpoint, data) => { ... },
+  // delete: async (endpoint) => { ... },
+};
 
 export default apiService;

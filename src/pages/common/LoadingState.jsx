@@ -5,7 +5,7 @@ export const LoadingState = ({
   message = 'Loading...',
   fullScreen = false,
 }) => {
-  console.log('LoadingState rendering:', { message, fullScreen });
+  // console.log('LoadingState rendering:', { message, fullScreen }); // Removed log
   return (
     <div className={`loading-container ${fullScreen ? 'full-screen' : ''}`}>
       <div className="spinner"></div>
@@ -16,7 +16,7 @@ export const LoadingState = ({
 
 // TableSkeleton component for tables in loading state
 export const TableSkeleton = ({ rows = 5, columns = 4 }) => {
-  console.log('TableSkeleton rendering:', { rows, columns });
+  // console.log('TableSkeleton rendering:', { rows, columns }); // Removed log
   return (
     <div className="table-skeleton">
       <div className="skeleton-header">
@@ -48,7 +48,7 @@ export const TableSkeleton = ({ rows = 5, columns = 4 }) => {
 
 // CardSkeleton component for dashboard cards in loading state
 export const CardSkeleton = ({ count = 1 }) => {
-  console.log('CardSkeleton rendering:', { count });
+  // console.log('CardSkeleton rendering:', { count }); // Removed log
   return (
     <div className="card-skeleton-container">
       {Array(count)

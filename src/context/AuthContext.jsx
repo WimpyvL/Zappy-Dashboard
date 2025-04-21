@@ -22,7 +22,7 @@ export const AuthProvider = ({ children }) => {
   // Function to set user data (e.g., after login or profile fetch)
   // This should also handle storing the refreshToken if applicable
   const setUser = (userData, refreshToken) => {
-    console.log('AuthContext: Setting user data', userData);
+    // console.log('AuthContext: Setting user data', userData); // Removed log
     setCurrentUser(userData);
     // Store refreshToken securely (localStorage is used here based on existing interceptor)
     if (refreshToken) {
@@ -37,7 +37,7 @@ export const AuthProvider = ({ children }) => {
   // Logout function
   const logout = async () => {
     // Make async if calling API logout
-    console.log('AuthContext: Logging out');
+    // console.log('AuthContext: Logging out'); // Removed log
 
     // Optional: Call API logout endpoint
     try {
@@ -52,7 +52,7 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem('refreshToken');
     // Removed clearing token, user, isAuthenticated from localStorage
 
-    console.log('AuthContext: Logout completed');
+    // console.log('AuthContext: Logout completed'); // Removed log
     // Optionally redirect to login page
     // window.location.href = '/login';
   };

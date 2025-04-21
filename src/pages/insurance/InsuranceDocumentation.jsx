@@ -103,9 +103,9 @@ const InsuranceDocumentation = () => {
     error: recordError,
   } = useInsuranceRecordById(selectedRecordId, {
     enabled: !!selectedRecordId,
-    onSuccess: (data) => {
-      console.log('Successfully fetched record details:', data);
-    },
+    // onSuccess: (data) => {
+    //   console.log('Successfully fetched record details:', data); // Removed log
+    // },
     onError: (error) => {
       console.error('Error fetching record details:', error);
       toast.error('Failed to load record details');
@@ -115,15 +115,14 @@ const InsuranceDocumentation = () => {
   const selectedRecord = selectedRecordData ?? {};
 
   // Add debug useEffect for modal state
-  useEffect(() => {
-    if (showViewModal) {
-      console.log('Modal state:', {
-        showViewModal,
-        selectedRecordId,
-        hasSelectedRecordData: !!selectedRecordData?.data,
-      });
-    }
-  }, [showViewModal, selectedRecordId, selectedRecordData]);
+  // useEffect(() => {
+  //   if (showViewModal) {
+  //     console.log('Modal state:', { // Removed log
+  //       showViewModal,
+  //       selectedRecordId,
+  //     });
+  //   }
+  // }, [showViewModal, selectedRecordId, selectedRecordData]); // Commented out debug useEffect
 
   // Set up mutations
   const createRecordMutation = useCreateInsuranceRecord({
@@ -271,7 +270,7 @@ const InsuranceDocumentation = () => {
 
   // Handle viewing a record
   const handleViewRecord = (record) => {
-    console.log('Opening modal for record:', record);
+    // console.log('Opening modal for record:', record); // Removed log
 
     // First set the record ID to trigger the query
     setSelectedRecordId(record.id);
@@ -282,7 +281,7 @@ const InsuranceDocumentation = () => {
     // Add small delay to ensure states are updated
     setTimeout(() => {
       setShowViewModal(true);
-      console.log('Modal should be visible now');
+      // console.log('Modal should be visible now'); // Removed log
     }, 10);
   };
 
@@ -402,9 +401,9 @@ const InsuranceDocumentation = () => {
   if (selectedRecord) {
     try {
       formattedSelectedRecord = transformApiData(selectedRecord);
-      console.log('Successfully transformed record:', formattedSelectedRecord);
+      // console.log('Successfully transformed record:', formattedSelectedRecord); // Removed log
     } catch (error) {
-      console.error('Error transforming record:', error);
+      console.error('Error transforming record:', error); // Keep error log for actual errors
     }
   }
 

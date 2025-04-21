@@ -54,7 +54,7 @@ const queryKeys = {
 // Get notes for a specific patient
 // Get notes for a specific patient (Mocked)
 export const useNotes = (patientId, params = {}, options = {}) => {
-  console.log(`Using mock notes data for patient ID: ${patientId}`);
+  // console.log(`Using mock notes data for patient ID: ${patientId}`); // Removed log
   return useQuery({
     queryKey: queryKeys.patientNotes(patientId, params),
     // queryFn: () => apiService.notes.getPatientNotes(patientId, params), // Original API call
@@ -72,7 +72,7 @@ export const useNotes = (patientId, params = {}, options = {}) => {
 
 // Get a specific note by ID (Mocked)
 export const useNoteById = (noteId, patientId, options = {}) => {
-  console.log(`Using mock note data for note ID: ${noteId}`);
+  // console.log(`Using mock note data for note ID: ${noteId}`); // Removed log
   return useQuery({
     queryKey: queryKeys.details(noteId),
     // queryFn: () => apiService.notes.getNoteById(noteId, patientId), // Original API call
@@ -93,7 +93,7 @@ export const useAddNote = (options = {}) => {
   return useMutation({
     // mutationFn: ({ patientId, ...noteData }) => apiService.notes.createPatientNote(patientId, noteData), // Original API call
     mutationFn: async ({ patientId, ...noteData }) => {
-      console.log(`Mock Adding note for patient ${patientId}:`, noteData);
+      // console.log(`Mock Adding note for patient ${patientId}:`, noteData); // Removed log
       await new Promise((resolve) => setTimeout(resolve, 300)); // Simulate delay
       const newNote = {
         id: `n${Date.now()}`, // Generate mock ID
@@ -128,7 +128,7 @@ export const useUpdateNote = (options = {}) => {
   return useMutation({
     // mutationFn: ({ noteId, patientId, ...noteData }) => apiService.notes.updatePatientNote(noteId, noteData, patientId), // Original API call
     mutationFn: async ({ noteId, patientId, ...noteData }) => {
-      console.log(`Mock Updating note ${noteId}:`, noteData);
+      // console.log(`Mock Updating note ${noteId}:`, noteData); // Removed log
       await new Promise((resolve) => setTimeout(resolve, 300)); // Simulate delay
       return { data: { id: noteId, patientId, ...noteData } }; // Simulate API response
     },
@@ -161,7 +161,7 @@ export const useDeleteNote = (options = {}) => {
   return useMutation({
     // mutationFn: ({ noteId, patientId }) => apiService.notes.deletePatientNote(noteId, patientId), // Original API call
     mutationFn: async ({ noteId, patientId }) => {
-      console.log(`Mock Deleting note ${noteId} for patient ${patientId}`);
+      // console.log(`Mock Deleting note ${noteId} for patient ${patientId}`); // Removed log
       await new Promise((resolve) => setTimeout(resolve, 300)); // Simulate delay
       return { success: true }; // Simulate API response
     },

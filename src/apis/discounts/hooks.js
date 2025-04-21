@@ -80,7 +80,7 @@ const sampleDiscountsData = [
 
 // Hook to fetch all discounts (Mocked)
 export const useDiscounts = (params = {}) => {
-  console.log('Using mock discounts data in useDiscounts hook');
+  // console.log('Using mock discounts data in useDiscounts hook'); // Removed log
   return useQuery({
     queryKey: ['discounts', params],
     // queryFn: () => getDiscounts(params), // Original API call
@@ -95,7 +95,7 @@ export const useDiscounts = (params = {}) => {
 
 // Hook to fetch a specific discount by ID (Mocked)
 export const useDiscountById = (id, options = {}) => {
-  console.log(`Using mock discount data for ID: ${id} in useDiscountById hook`);
+  // console.log(`Using mock discount data for ID: ${id} in useDiscountById hook`); // Removed log
   return useQuery({
     queryKey: ['discount', id],
     // queryFn: () => getDiscountById(id), // Original API call
@@ -116,7 +116,7 @@ export const useCreateDiscount = (options = {}) => {
   return useMutation({
     // mutationFn: (discountData) => createDiscount(discountData), // Original API call
     mutationFn: async (discountData) => {
-      console.log('Mock Creating discount:', discountData);
+      // console.log('Mock Creating discount:', discountData); // Removed log
       await new Promise((resolve) => setTimeout(resolve, 300)); // Simulate delay
       const newDiscount = {
         id: Date.now(), // Generate mock ID
@@ -147,7 +147,7 @@ export const useUpdateDiscount = (options = {}) => {
   return useMutation({
     // mutationFn: ({ id, discountData }) => updateDiscount(id, discountData), // Original API call
     mutationFn: async ({ id, discountData }) => {
-      console.log(`Mock Updating discount ${id}:`, discountData);
+      // console.log(`Mock Updating discount ${id}:`, discountData); // Removed log
       await new Promise((resolve) => setTimeout(resolve, 300)); // Simulate delay
       return { data: { id, ...discountData } }; // Simulate API response
     },
@@ -173,7 +173,7 @@ export const useDeleteDiscount = (options = {}) => {
   return useMutation({
     // mutationFn: (id) => deleteDiscount(id), // Original API call
     mutationFn: async (id) => {
-      console.log(`Mock Deleting discount ${id}`);
+      // console.log(`Mock Deleting discount ${id}`); // Removed log
       await new Promise((resolve) => setTimeout(resolve, 300)); // Simulate delay
       return { success: true }; // Simulate API response
     },
@@ -200,7 +200,7 @@ export const useToggleDiscountActive = (options = {}) => {
   return useMutation({
     // mutationFn: ({ id, active }) => toggleDiscountActive(id, active), // Original API call
     mutationFn: async ({ id, active }) => {
-      console.log(`Mock Toggling discount ${id} active status to: ${active}`);
+      // console.log(`Mock Toggling discount ${id} active status to: ${active}`); // Removed log
       await new Promise((resolve) => setTimeout(resolve, 300)); // Simulate delay
       return { success: true, id, active }; // Simulate API response
     },

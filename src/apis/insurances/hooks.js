@@ -34,7 +34,7 @@ const sampleInsuranceRecords = [
 
 // Get insurance records hook (Mocked)
 export const useInsuranceRecords = (filters) => {
-  console.log('Using mock insurance records data');
+  // console.log('Using mock insurance records data'); // Removed log
   return useQuery({
     queryKey: ['insuranceRecords', filters],
     // queryFn: () => getInsuranceRecords(filters), // Original API call
@@ -46,9 +46,9 @@ export const useInsuranceRecords = (filters) => {
 // Get insurance record by ID hook (Mocked)
 // Get insurance record by ID hook (Mocked)
 export const useInsuranceRecordById = (id, options = {}) => {
-  console.log(
-    `Using mock insurance record data for ID: ${id} in useInsuranceRecordById hook`
-  );
+  // console.log(
+  //   `Using mock insurance record data for ID: ${id} in useInsuranceRecordById hook`
+  // ); // Removed log
   return useQuery({
     queryKey: ['insuranceRecord', id],
     // queryFn: () => getInsuranceRecordById(id), // Original API call - Function definition removed
@@ -70,7 +70,7 @@ export const useCreateInsuranceRecord = (options = {}) => {
   return useMutation({
     // mutationFn: (recordData) => createInsuranceRecord(recordData), // Original API call - Function definition removed
     mutationFn: async (recordData) => {
-      console.log('Mock Creating insurance record:', recordData);
+      // console.log('Mock Creating insurance record:', recordData); // Removed log
       await new Promise((resolve) => setTimeout(resolve, 300)); // Simulate delay
       const newRecord = {
         id: `ir${Date.now()}`, // Generate mock ID
@@ -95,7 +95,7 @@ export const useUpdateInsuranceRecord = (options = {}) => {
   return useMutation({
     // mutationFn: ({ id, recordData }) => updateInsuranceRecord(id, recordData), // Original API call - Function definition removed
     mutationFn: async ({ id, recordData }) => {
-      console.log(`Mock Updating insurance record ${id}:`, recordData);
+      // console.log(`Mock Updating insurance record ${id}:`, recordData); // Removed log
       await new Promise((resolve) => setTimeout(resolve, 300)); // Simulate delay
       return { data: { id, ...recordData } }; // Simulate API response
     },
@@ -118,7 +118,7 @@ export const useUploadInsuranceDocument = (id, options = {}) => {
     mutationFn: async (formData) => {
       // Simulate file upload
       const fileName = formData.get('file')?.name || 'mock_document.pdf';
-      console.log(`Mock Uploading document for record ${id}: ${fileName}`);
+      // console.log(`Mock Uploading document for record ${id}: ${fileName}`); // Removed log
       await new Promise((resolve) => setTimeout(resolve, 500)); // Simulate upload delay
       // Return a mock document object
       return {
@@ -144,7 +144,7 @@ export const useDeleteInsuranceDocument = (id, options = {}) => {
   return useMutation({
     // mutationFn: (documentId) => deleteInsuranceDocument(id, documentId), // Original API call - Function definition removed
     mutationFn: async (documentId) => {
-      console.log(`Mock Deleting document ${documentId} for record ${id}`);
+      // console.log(`Mock Deleting document ${documentId} for record ${id}`); // Removed log
       await new Promise((resolve) => setTimeout(resolve, 300)); // Simulate delay
       return { success: true }; // Simulate API response
     },

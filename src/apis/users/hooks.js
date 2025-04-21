@@ -16,7 +16,7 @@ const sampleUserProfileData = {
 // React Query hooks moved from apiService.js
 // Get user profile hook (Mocked)
 export const useGetProfile = () => {
-  console.log('Using mock user profile data');
+  // console.log('Using mock user profile data'); // Removed log
   // Assuming 'profile' is a stable key, adjust if user ID specific
   return useQuery({
     queryKey: ['profile'],
@@ -32,7 +32,7 @@ export const useUpdateProfile = () => {
   return useMutation({
     // mutationFn: (userData) => apiService.users.updateProfile(userData), // Original API call
     mutationFn: async (userData) => {
-      console.log('Mock Updating profile:', userData);
+      // console.log('Mock Updating profile:', userData); // Removed log
       await new Promise((resolve) => setTimeout(resolve, 300)); // Simulate delay
       // Update the mock data (in a real scenario, this might update a store)
       Object.assign(sampleUserProfileData, userData);
@@ -57,7 +57,7 @@ export const useChangePassword = () => {
   return useMutation({
     // mutationFn: ({ currentPassword, newPassword }) => apiService.users.changePassword(currentPassword, newPassword), // Original API call
     mutationFn: async ({ currentPassword, newPassword }) => {
-      console.log('Mock Changing password (validation skipped)');
+      // console.log('Mock Changing password (validation skipped)'); // Removed log
       await new Promise((resolve) => setTimeout(resolve, 300)); // Simulate delay
       // In a real mock, you might check currentPassword against a stored mock password
       return { success: true }; // Simulate API response

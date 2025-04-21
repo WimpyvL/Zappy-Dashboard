@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { toast } from 'react-toastify'; // Import toast
 // Removed useAppContext import
 import { useOrders, useUpdateOrderStatus } from '../../apis/orders/hooks'; // Assuming hooks exist
 import { useSessions } from '../../apis/sessions/hooks'; // Assuming hook exists
@@ -83,7 +84,8 @@ const Orders = () => {
   const updateOrderStatusMutation = useUpdateOrderStatus({
     // Optional: Add onSuccess/onError callbacks if needed, e.g., for notifications
     onSuccess: () => {
-      console.log('Order status updated successfully');
+      // console.log('Order status updated successfully'); // Removed log
+      toast.success('Order status updated.'); // Add toast feedback
       // queryClient.invalidateQueries(['orders']) is likely handled within the hook itself
     },
     onError: (error) => {

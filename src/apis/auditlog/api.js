@@ -1,6 +1,5 @@
-// TODO: Determine which api client setup to use (apiService.js or utils2/api.js)
-// Assuming utils2/api.js for now based on other features in src/apis/*
-// import { request } from '../../utils2/api'; // Adjust path if needed - Removed unused import
+// Assuming utils2/api.js based on other features in src/apis/*
+import { request } from '../../utils2/api'; // Adjust path if needed
 
 /**
  * Fetches audit logs from the backend.
@@ -8,7 +7,7 @@
  * @returns {Promise<object>} Promise resolving to the API response data (likely { logs: [], total: number })
  */
 export const getAuditLogs = async (params) => {
-  console.log('Fetching audit logs with params:', params); // Placeholder log
+  // console.log('Fetching audit logs with params:', params); // Placeholder log removed
   // Placeholder: Simulate API call
   // In a real scenario, this would make the actual API request:
   // const data = await request({
@@ -65,22 +64,11 @@ export const getAuditLogs = async (params) => {
  * @returns {Promise<object>} Promise resolving to the API response data
  */
 export const createAuditLog = async (logData) => {
-  console.log('Creating audit log:', logData); // Placeholder log
-  // Placeholder: Simulate API call
-  // const data = await request({
-  //   url: '/api/v1/admin/audit-logs', // Adjust endpoint as needed
-  //   method: 'POST',
-  //   data: logData,
-  // });
-  // return data;
-  await new Promise((resolve) => setTimeout(resolve, 200)); // Simulate network delay
-  return {
-    success: true,
-    log: {
-      id: Date.now(),
-      ...logData,
-      user: 'current_user@example.com',
-      timestamp: new Date().toISOString(),
-    },
-  };
+  // In a real scenario, this would make the actual API request:
+  const data = await request({
+    url: '/api/v1/admin/audit-logs', // Adjust endpoint as needed
+    method: 'POST',
+    data: logData,
+  });
+  return data; // Return the actual response from the API
 };

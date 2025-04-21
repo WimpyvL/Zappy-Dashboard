@@ -56,29 +56,29 @@ const PatientDetail = () => {
     setPatient(null); // Reset patient data on ID change
 
     if (patientId && contextPatients.length > 0) {
-      console.log(`Finding patient ${patientId} in context...`);
+      // console.log(`Finding patient ${patientId} in context...`); // Removed log
       const foundPatient = contextPatients.find(p => p.id === patientId);
 
       if (foundPatient) {
         // Simulate loading for context data as well for consistency
         setTimeout(() => {
-          console.log("Found patient in context:", foundPatient);
+          // console.log("Found patient in context:", foundPatient); // Removed log
           setPatient(foundPatient);
           setLoading((prev) => ({ ...prev, patient: false }));
           // TODO: Fetch related data (sessions, orders, etc.) for this patient if needed
           // fetchRelatedData(patientId);
         }, 150); // Short delay
       } else {
-        console.warn(`Patient with ID ${patientId} not found in context.`);
+        // console.warn(`Patient with ID ${patientId} not found in context.`); // Removed log
         setLoading((prev) => ({ ...prev, patient: false }));
         // Keep patient as null, the component will render PatientNotFound
       }
     } else if (!patientId) {
-       console.error("No patientId provided in URL.");
+       console.error("No patientId provided in URL."); // Keep error log
        setLoading((prev) => ({ ...prev, patient: false }));
     } else {
        // Context patients might not be loaded yet, wait for context update
-       console.log("Waiting for context patients to load...");
+       // console.log("Waiting for context patients to load..."); // Removed log
        // setLoading will remain true until contextPatients has data
     }
   }, [patientId, contextPatients]); // Depend on patientId and contextPatients
@@ -86,7 +86,7 @@ const PatientDetail = () => {
   // Placeholder for fetching related data (sessions, orders, etc.)
   // This would likely involve filtering the corresponding arrays from AppContext
   const fetchRelatedData = (id) => {
-    console.log(`Fetching related mock data for patient ${id}...`);
+    // console.log(`Fetching related mock data for patient ${id}...`); // Removed log
     // Example: Filter sessions from context
     // const sessions = contextSessions.filter(s => s.patientId === id);
     // setPatientSessions(sessions);
@@ -223,7 +223,7 @@ const PatientDetail = () => {
           loading={loading.invoices}
           // Adapt refreshPatient if needed for mock data, or disable/remove
           refreshPatient={async () => {
-             console.warn("Refresh patient called, but using mock data. No API call made.");
+             // console.warn("Refresh patient called, but using mock data. No API call made."); // Removed log
              // Optionally re-find from context if needed, though unlikely necessary
              // const refreshedPatient = contextPatients.find(p => p.id === patientId);
              // if (refreshedPatient) setPatient(refreshedPatient);

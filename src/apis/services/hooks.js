@@ -50,7 +50,7 @@ const queryKeys = {
 
 // Get services hook (Mocked)
 export const useServices = (params = {}) => {
-  console.log('Using mock services data in useServices hook');
+  // console.log('Using mock services data in useServices hook'); // Removed log
   return useQuery({
     queryKey: queryKeys.lists(params),
     // queryFn: () => apiService.services.getAll(params), // Original API call
@@ -66,7 +66,7 @@ export const useServices = (params = {}) => {
 
 // Get service by ID hook (Mocked)
 export const useServiceById = (id, options = {}) => {
-  console.log(`Using mock service data for ID: ${id} in useServiceById hook`);
+  // console.log(`Using mock service data for ID: ${id} in useServiceById hook`); // Removed log
   return useQuery({
     queryKey: queryKeys.details(id),
     // queryFn: () => apiService.services.getById(id), // Original API call
@@ -86,7 +86,7 @@ export const useAddService = (options = {}) => {
   return useMutation({
     // mutationFn: (serviceData) => apiService.services.create(serviceData), // Original API call
     mutationFn: async (serviceData) => {
-      console.log('Mock Creating service:', serviceData);
+      // console.log('Mock Creating service:', serviceData); // Removed log
       await new Promise((resolve) => setTimeout(resolve, 300)); // Simulate delay
       const newService = {
         id: `svc${Date.now()}`, // Generate mock ID
@@ -117,7 +117,7 @@ export const useUpdateService = (options = {}) => {
   return useMutation({
     // mutationFn: ({ id, ...serviceData }) => apiService.services.update(id, serviceData), // Original API call
     mutationFn: async ({ id, ...serviceData }) => {
-      console.log(`Mock Updating service ${id}:`, serviceData);
+      // console.log(`Mock Updating service ${id}:`, serviceData); // Removed log
       await new Promise((resolve) => setTimeout(resolve, 300)); // Simulate delay
       return { data: { id, ...serviceData } }; // Simulate API response
     },
@@ -145,7 +145,7 @@ export const useDeleteService = (options = {}) => {
   return useMutation({
     // mutationFn: (id) => apiService.services.delete(id), // Original API call
     mutationFn: async (id) => {
-      console.log(`Mock Deleting service ${id}`);
+      // console.log(`Mock Deleting service ${id}`); // Removed log
       await new Promise((resolve) => setTimeout(resolve, 300)); // Simulate delay
       return { success: true }; // Simulate API response
     },

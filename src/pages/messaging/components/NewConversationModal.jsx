@@ -68,12 +68,12 @@ const NewConversationModal = ({ visible, onClose, onSubmitSuccess }) => {
     try {
       // Prepare payload for API
       const payload = {
-        recipientIds: recipients, // The values are like "team_1", "patient_3"
-        message: messageBody,
-      };
-      console.log('Sending new message payload:', payload);
-      // Placeholder for API call
-      // await apiService.messaging.createConversation(payload);
+         recipientIds: recipients, // The values are like "team_1", "patient_3"
+         message: messageBody,
+       };
+      // console.log('Sending new message payload:', payload); // Removed log
+       // Placeholder for API call
+       // await apiService.messaging.createConversation(payload);
       await new Promise((res) => setTimeout(res, 1000)); // Simulate API delay
 
       message.success('Message sent successfully!');

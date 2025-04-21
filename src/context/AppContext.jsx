@@ -259,35 +259,35 @@ export const AppProvider = ({ children }) => {
   // --- Fetch Functions (Mocked) ---
 
   const fetchPatients = () => {
-    console.log('Using mock patient data');
+    // console.log('Using mock patient data'); // Removed log
     setPatients(samplePatients);
     setLoading((prev) => ({ ...prev, patients: false }));
     setErrors((prev) => ({ ...prev, patients: null }));
   };
 
   const fetchSessions = () => {
-    console.log('Using mock session data');
+    // console.log('Using mock session data'); // Removed log
     setSessions(sampleSessions);
     setLoading((prev) => ({ ...prev, sessions: false }));
     setErrors((prev) => ({ ...prev, sessions: null }));
   };
 
   const fetchOrders = () => {
-    console.log('Using mock order data');
+    // console.log('Using mock order data'); // Removed log
     setOrders(sampleOrders);
     setLoading((prev) => ({ ...prev, orders: false }));
     setErrors((prev) => ({ ...prev, orders: null }));
   };
 
   const fetchProducts = () => {
-    console.log('Using mock product data');
+    // console.log('Using mock product data'); // Removed log
     setProducts(sampleProducts);
     setLoading((prev) => ({ ...prev, products: false }));
     setErrors((prev) => ({ ...prev, products: null }));
   };
 
   const fetchServices = () => {
-    console.log('Using mock service data');
+    // console.log('Using mock service data'); // Removed log
     setServices(sampleServices);
     setLoading((prev) => ({ ...prev, services: false }));
     setErrors((prev) => ({ ...prev, services: null }));
@@ -295,7 +295,7 @@ export const AppProvider = ({ children }) => {
 
   // Keep fetchSubscriptionPlans with fallback for now, or mock it too
   const fetchSubscriptionPlans = () => {
-    console.log('Using mock subscription plan data');
+    // console.log('Using mock subscription plan data'); // Removed log
     setSubscriptionPlans(sampleSubscriptionPlans);
     setLoading((prev) => ({ ...prev, plans: false }));
     setErrors((prev) => ({ ...prev, plans: null }));
@@ -324,7 +324,7 @@ export const AppProvider = ({ children }) => {
   };
 
   const fetchTags = () => {
-    console.log('Using mock tag data');
+    // console.log('Using mock tag data'); // Removed log
     setTags(sampleTags);
     setLoading((prev) => ({ ...prev, tags: false }));
     setErrors((prev) => ({ ...prev, tags: null }));
@@ -334,7 +334,7 @@ export const AppProvider = ({ children }) => {
 
   const fetchInitialData = () => {
     // Removed async as fetch functions are now synchronous
-    console.log('Fetching initial mock data...');
+    // console.log('Fetching initial mock data...'); // Removed log
     setLoading((prev) => ({ ...prev, global: true }));
 
     // Call mocked fetch functions directly (no need for Promise.all)
@@ -348,7 +348,7 @@ export const AppProvider = ({ children }) => {
     // TODO: Call mock fetchDocuments(), fetchForms(), fetchInvoices() here
 
     setLoading((prev) => ({ ...prev, global: false }));
-    console.log('Finished fetching initial mock data.');
+    // console.log('Finished fetching initial mock data.'); // Removed log
   };
 
   // Initial data fetching

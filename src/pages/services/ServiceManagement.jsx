@@ -12,6 +12,7 @@ import {
   Loader2, // Added for loading state
   AlertTriangle, // Added for error state
 } from 'lucide-react';
+import { toast } from 'react-toastify'; // Import toast
 // Removed useAppContext import
 import {
   useServices,
@@ -47,11 +48,11 @@ const ServiceManagement = () => {
   });
   const updateServiceMutation = useUpdateService({
     onSuccess: () => setShowEditModal(false), // Close modal on success
-    onError: (error) => console.error('Error updating service:', error),
+    onError: (error) => console.error('Error updating service:', error), // Keep console.error for now
   });
   const deleteServiceMutation = useDeleteService({
-    onSuccess: () => console.log('Service deleted'), // Add confirmation/notification
-    onError: (error) => console.error('Error deleting service:', error),
+    onSuccess: () => toast.success('Service deleted successfully'), // Use toast for feedback
+    onError: (error) => console.error('Error deleting service:', error), // Keep console.error for now
   });
 
   // Local state for UI control and form data

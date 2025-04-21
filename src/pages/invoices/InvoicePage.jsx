@@ -278,7 +278,7 @@ const InvoicePage = () => {
       lineItems: newInvoice.lineItems.filter(item => item.description && item.unitPrice), // Filter out empty lines
       totalAmount: invoiceTotal,
     };
-    console.log('Creating invoice with line items:', submissionData);
+    // console.log('Creating invoice with line items:', submissionData); // Removed log
 
     // --- Mock adding to list (replace with API call) ---
     const newInvoiceObj = {

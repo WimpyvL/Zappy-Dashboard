@@ -66,7 +66,7 @@ const queryKeys = {
 
 // Get consultations hook (Mocked)
 export const useConsultations = (params = {}) => {
-  console.log('Using mock consultations data in useConsultations hook');
+  // console.log('Using mock consultations data in useConsultations hook'); // Removed log
   return useQuery({
     queryKey: queryKeys.lists(params),
     // queryFn: () => apiService.consultations.getAll(params), // Original API call
@@ -86,9 +86,9 @@ export const useConsultations = (params = {}) => {
 
 // Get consultation by ID hook (Mocked)
 export const useConsultationById = (id, options = {}) => {
-  console.log(
-    `Using mock consultation data for ID: ${id} in useConsultationById hook`
-  );
+  // console.log(
+  //   `Using mock consultation data for ID: ${id} in useConsultationById hook`
+  // ); // Removed log
   return useQuery({
     queryKey: queryKeys.details(id),
     // queryFn: () => apiService.consultations.getById(id), // Original API call
@@ -110,9 +110,9 @@ export const useUpdateConsultationStatus = (options = {}) => {
     // mutationFn: ({ consultationId, status }) => apiService.consultations.updateStatus(consultationId, status), // Original API call
     mutationFn: async ({ consultationId, status }) => {
       // Simulate API call for updating status
-      console.log(
-        `Mock Updating consultation ${consultationId} status to: ${status}`
-      );
+      // console.log(
+      //   `Mock Updating consultation ${consultationId} status to: ${status}`
+      // ); // Removed log
       await new Promise((resolve) => setTimeout(resolve, 300)); // Simulate delay
       // Return a success indicator or the updated status
       return { success: true, id: consultationId, status: status };

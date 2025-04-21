@@ -59,7 +59,7 @@ const sampleOrdersData = [
 
 // Get orders hook (Mocked)
 export const useOrders = (currentPage, filters) => {
-  console.log('Using mock orders data in useOrders hook');
+  // console.log('Using mock orders data in useOrders hook'); // Removed log
   const params = { page: currentPage, ...filters };
   return useQuery({
     queryKey: ['orders', params],
@@ -78,7 +78,7 @@ export const useOrders = (currentPage, filters) => {
 
 // Get order by ID hook (Mocked)
 export const useOrderById = (id, options = {}) => {
-  console.log(`Using mock order data for ID: ${id} in useOrderById hook`);
+  // console.log(`Using mock order data for ID: ${id} in useOrderById hook`); // Removed log
   return useQuery({
     queryKey: ['order', id],
     // queryFn: () => apiService.orders.getById(id), // Original API call
@@ -99,7 +99,7 @@ export const useCreateOrder = (options = {}) => {
   return useMutation({
     // mutationFn: (orderData) => apiService.orders.create(orderData), // Original API call
     mutationFn: async (orderData) => {
-      console.log('Mock Creating order:', orderData);
+      // console.log('Mock Creating order:', orderData); // Removed log
       await new Promise((resolve) => setTimeout(resolve, 300)); // Simulate delay
       const newOrder = {
         id: `o${Date.now()}`, // Generate mock ID
@@ -127,7 +127,7 @@ export const useUpdateOrder = (options = {}) => {
   return useMutation({
     // mutationFn: ({ id, orderData }) => apiService.orders.update(id, orderData), // Original API call
     mutationFn: async ({ id, orderData }) => {
-      console.log(`Mock Updating order ${id}:`, orderData);
+      // console.log(`Mock Updating order ${id}:`, orderData); // Removed log
       await new Promise((resolve) => setTimeout(resolve, 300)); // Simulate delay
       return { data: { id, ...orderData } }; // Simulate API response
     },
@@ -149,7 +149,7 @@ export const useUpdateOrderStatus = (options = {}) => {
   return useMutation({
     // mutationFn: ({ orderId, status }) => apiService.orders.updateStatus(orderId, status), // Original API call
     mutationFn: async ({ orderId, status }) => {
-      console.log(`Mock Updating order ${orderId} status to: ${status}`);
+      // console.log(`Mock Updating order ${orderId} status to: ${status}`); // Removed log
       await new Promise((resolve) => setTimeout(resolve, 300)); // Simulate delay
       return { success: true, id: orderId, status: status }; // Simulate API response
     },
@@ -171,7 +171,7 @@ export const useDeleteOrder = (options = {}) => {
   return useMutation({
     // mutationFn: (id) => apiService.orders.delete(id), // Original API call
     mutationFn: async (id) => {
-      console.log(`Mock Deleting order ${id}`);
+      // console.log(`Mock Deleting order ${id}`); // Removed log
       await new Promise((resolve) => setTimeout(resolve, 300)); // Simulate delay
       return { success: true }; // Simulate API response
     },
@@ -192,7 +192,7 @@ export const useAddOrderTag = (options = {}) => {
   return useMutation({
     // mutationFn: ({ entityId, tagId }) => apiService.orders.addTag(entityId, tagId), // Original API call
     mutationFn: async ({ entityId, tagId }) => {
-      console.log(`Mock Adding tag ${tagId} to order ${entityId}`);
+      // console.log(`Mock Adding tag ${tagId} to order ${entityId}`); // Removed log
       await new Promise((resolve) => setTimeout(resolve, 300)); // Simulate delay
       return { success: true }; // Simulate success
     },
@@ -213,7 +213,7 @@ export const useRemoveOrderTag = (options = {}) => {
   return useMutation({
     // mutationFn: ({ entityId, tagId }) => apiService.orders.removeTag(entityId, tagId), // Original API call
     mutationFn: async ({ entityId, tagId }) => {
-      console.log(`Mock Removing tag ${tagId} from order ${entityId}`);
+      // console.log(`Mock Removing tag ${tagId} from order ${entityId}`); // Removed log
       await new Promise((resolve) => setTimeout(resolve, 300)); // Simulate delay
       return { success: true }; // Simulate success
     },

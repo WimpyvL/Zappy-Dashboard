@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { toast } from 'react-toastify'; // Import toast
 // Removed useAppContext import
 import { useSessions, useUpdateSessionStatus } from '../../apis/sessions/hooks'; // Assuming hooks exist
 import {
@@ -90,8 +91,9 @@ const Sessions = () => {
   // Mutation hook for updating status
   const updateSessionStatusMutation = useUpdateSessionStatus({
     onSuccess: () => {
-      console.log('Session status updated successfully');
+      // console.log('Session status updated successfully'); // Removed log
       // Invalidation likely handled within the hook
+      toast.success('Session status updated.'); // Add toast feedback
     },
     onError: (error) => {
       console.error('Failed to update session status:', error);

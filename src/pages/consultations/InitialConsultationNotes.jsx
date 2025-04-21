@@ -17,7 +17,7 @@ const InitialConsultationNotes = ({
   // onSaveNote, // Example: function to call mutation hook
   // onSubmitConsultation, // Example: function to call mutation hook
 }) => {
-  console.log('Refining product/dose selection state');
+  // console.log('Refining product/dose selection state'); // Removed log
 
   // Fetch necessary data using React Query hooks
   const {
@@ -112,9 +112,9 @@ const InitialConsultationNotes = ({
   // const selectedService = getServiceById(selectedServiceId); // Removed unused variable
   const plansForSelectedService = getServicePlans(selectedServiceId);
   // --- DEBUG LOGS for Plan Dropdown ---
-  console.log("All Services Data:", allServices);
-  console.log("Selected Service ID:", selectedServiceId);
-  console.log("Derived Plans for Service:", plansForSelectedService);
+  // console.log("All Services Data:", allServices); // Removed log
+  // console.log("Selected Service ID:", selectedServiceId); // Removed log
+  // console.log("Derived Plans for Service:", plansForSelectedService); // Removed log
   // --- END DEBUG LOGS ---
 
   // Filter available medication products
@@ -271,7 +271,7 @@ const InitialConsultationNotes = ({
       // Include expanded text in save data
       communication: { messageToPatient, assessmentPlan, followUpPlan, expandedMessage, expandedAssessment },
     };
-    console.log('Saving note with data:', saveData);
+    // console.log('Saving note with data:', saveData); // Removed log
     // if (onSaveNote) {
     //   onSaveNote(saveData); // Call the mutation hook passed via props
     // } else {
@@ -294,10 +294,10 @@ const InitialConsultationNotes = ({
           selectedMedications: selectedMedications, // Array of { productId, doseId, planId }
         },
          // Include expanded text in submission payload
-        communication: { messageToPatient, assessmentPlan, followUpPlan, expandedMessage, expandedAssessment },
-      };
+         communication: { messageToPatient, assessmentPlan, followUpPlan, expandedMessage, expandedAssessment },
+       };
 
-     console.log("Submitting consultation for approval and invoicing:", submissionPayload);
+     // console.log("Submitting consultation for approval and invoicing:", submissionPayload); // Removed log
 
      if (!currentConsultationId) {
         // Try to get ID from prop if not in consultationData (for new notes)
@@ -646,7 +646,7 @@ const InitialConsultationNotes = ({
                                 <option value="">One-Time Purchase</option>
                                 {plansForSelectedService.map((planConfig) => {
                                   // --- DEBUG LOG ---
-                                  console.log(`Rendering plan option: ID=${planConfig.planId}, Name=${getPlanName(planConfig.planId)}, Selected=${selectedMed.planId}`);
+                                  // console.log(`Rendering plan option: ID=${planConfig.planId}, Name=${getPlanName(planConfig.planId)}, Selected=${selectedMed.planId}`); // Removed log
                                   // --- END DEBUG LOG ---
                                   return (
                                     <option

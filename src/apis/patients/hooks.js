@@ -40,7 +40,7 @@ const samplePatientsData = [
 
 // Get patients hook (Mocked)
 export const usePatients = (currentPage, filters) => {
-  console.log('Using mock patients data in usePatients hook');
+  // console.log('Using mock patients data in usePatients hook'); // Removed log
   return useQuery({
     queryKey: ['patients', currentPage, filters],
     // queryFn: () => getPatients(currentPage, filters), // Original API call
@@ -61,7 +61,7 @@ export const usePatients = (currentPage, filters) => {
 // Get patient by ID hook
 // Get patient by ID hook (Mocked)
 export const usePatientById = (id, options = {}) => {
-  console.log(`Using mock patient data for ID: ${id} in usePatientById hook`);
+  // console.log(`Using mock patient data for ID: ${id} in usePatientById hook`); // Removed log
   return useQuery({
     queryKey: ['patient', id],
     queryFn: () =>
@@ -82,7 +82,7 @@ export const useCreatePatient = (options = {}) => {
     // mutationFn: (patientData) => apiService.patients.create(patientData), // Original API call
     mutationFn: async (patientData) => {
       // Simulate API call for creating patient
-      console.log('Mock Creating patient:', patientData);
+      // console.log('Mock Creating patient:', patientData); // Removed log
       await new Promise((resolve) => setTimeout(resolve, 300)); // Simulate delay
       const newPatient = {
         id: `p${Date.now()}`, // Generate a mock ID
@@ -123,7 +123,7 @@ export const useUpdatePatient = (options = {}) => {
     // mutationFn: ({ id, patientData }) => apiService.patients.update(id, patientData), // Original API call
     mutationFn: async ({ id, patientData }) => {
       // Simulate API call for updating patient
-      console.log(`Mock Updating patient ${id}:`, patientData);
+      // console.log(`Mock Updating patient ${id}:`, patientData); // Removed log
       await new Promise((resolve) => setTimeout(resolve, 300)); // Simulate delay
       // Return the updated data structure expected by the component
       return { id, ...patientData };
@@ -145,7 +145,7 @@ export const useDeletePatient = (options = {}) => {
     // mutationFn: (id) => apiService.patients.delete(id), // Original API call
     mutationFn: async (id) => {
       // Simulate API call for deleting patient
-      console.log(`Mock Deleting patient ${id}`);
+      // console.log(`Mock Deleting patient ${id}`); // Removed log
       await new Promise((resolve) => setTimeout(resolve, 300)); // Simulate delay
       // Return a success indicator or empty object
       return { success: true };

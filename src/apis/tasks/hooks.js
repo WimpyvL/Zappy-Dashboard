@@ -57,7 +57,7 @@ const sampleTaskablePatients = [
 
 // Get tasks hook (Mocked)
 export const useTasks = (currentPage, tasksFilters, sortingDetails) => {
-  console.log('Using mock tasks data');
+  // console.log('Using mock tasks data'); // Removed log
   return useQuery({
     queryKey: ['tasks', currentPage, tasksFilters, sortingDetails],
     // queryFn: () => getTasks(currentPage, tasksFilters, undefined, sortingDetails), // Original API call
@@ -76,7 +76,7 @@ export const useTasks = (currentPage, tasksFilters, sortingDetails) => {
 
 // Get task by ID hook (Mocked)
 export const useTaskById = (id, options = {}) => {
-  console.log(`Using mock task data for ID: ${id} in useTaskById hook`);
+  // console.log(`Using mock task data for ID: ${id} in useTaskById hook`); // Removed log
   return useQuery({
     queryKey: ['task', id],
     // queryFn: () => getTaskById(id), // Original API call
@@ -97,7 +97,7 @@ export const useCreateTask = (options = {}) => {
   return useMutation({
     // mutationFn: (taskData) => createTask(taskData), // Original API call
     mutationFn: async (taskData) => {
-      console.log('Mock Creating task:', taskData);
+      // console.log('Mock Creating task:', taskData); // Removed log
       await new Promise((resolve) => setTimeout(resolve, 300)); // Simulate delay
       const newTask = {
         id: `t${Date.now()}`, // Generate mock ID
@@ -124,7 +124,7 @@ export const useUpdateTask = (options = {}) => {
   return useMutation({
     // mutationFn: ({ id, taskData }) => updateTask(id, taskData), // Original API call
     mutationFn: async ({ id, taskData }) => {
-      console.log(`Mock Updating task ${id}:`, taskData);
+      // console.log(`Mock Updating task ${id}:`, taskData); // Removed log
       await new Promise((resolve) => setTimeout(resolve, 300)); // Simulate delay
       return { data: { id, ...taskData } }; // Simulate API response
     },
@@ -144,7 +144,7 @@ export const useDeleteTask = (options = {}) => {
   return useMutation({
     // mutationFn: (id) => deleteTask(id), // Original API call
     mutationFn: async (id) => {
-      console.log(`Mock Deleting task ${id}`);
+      // console.log(`Mock Deleting task ${id}`); // Removed log
       await new Promise((resolve) => setTimeout(resolve, 300)); // Simulate delay
       return { success: true }; // Simulate API response
     },
@@ -164,7 +164,7 @@ export const useMarkTaskCompleted = (options = {}) => {
   return useMutation({
     // mutationFn: (id) => markTaskCompleted(id), // Original API call
     mutationFn: async (id) => {
-      console.log(`Mock Marking task ${id} as completed`);
+      // console.log(`Mock Marking task ${id} as completed`); // Removed log
       await new Promise((resolve) => setTimeout(resolve, 300)); // Simulate delay
       return { success: true, id, status: 'completed' }; // Simulate API response
     },
@@ -184,7 +184,7 @@ export const useCreateSession = (options = {}) => {
   return useMutation({
     // mutationFn: (id) => handleSessionCreation(id), // Original API call
     mutationFn: async (taskId) => {
-      console.log(`Mock Creating session from task ${taskId}`);
+      // console.log(`Mock Creating session from task ${taskId}`); // Removed log
       await new Promise((resolve) => setTimeout(resolve, 300)); // Simulate delay
       // Potentially update the task status as well
       return { success: true, taskId }; // Simulate API response
@@ -206,7 +206,7 @@ export const useCreateBulkSessions = (selectedRows, options = {}) => {
   return useMutation({
     // mutationFn: () => handleBulkSessionCreation(selectedRows), // Original API call
     mutationFn: async () => {
-      console.log('Mock Creating bulk sessions for tasks:', selectedRows);
+      // console.log('Mock Creating bulk sessions for tasks:', selectedRows); // Removed log
       await new Promise((resolve) => setTimeout(resolve, 300)); // Simulate delay
       return { success: true, count: selectedRows.length }; // Simulate API response
     },
@@ -230,7 +230,7 @@ export const useArchiveData = (selectedIds, options = {}) => {
   return useMutation({
     // mutationFn: () => handleUpdateStatus(selectedIds), // Original API call (assuming it updates status)
     mutationFn: async () => {
-      console.log('Mock Archiving tasks:', selectedIds);
+      // console.log('Mock Archiving tasks:', selectedIds); // Removed log
       await new Promise((resolve) => setTimeout(resolve, 300)); // Simulate delay
       // Simulate updating status to 'archived' or similar
       return { success: true, count: selectedIds.length }; // Simulate API response
@@ -250,7 +250,7 @@ export const useArchiveData = (selectedIds, options = {}) => {
 
 // Get assignees hook (Mocked)
 export const useAssignees = (options = {}) => {
-  console.log('Using mock assignees data');
+  // console.log('Using mock assignees data'); // Removed log
   return useQuery({
     queryKey: ['assignees'],
     // queryFn: getAssignees, // Original API call
@@ -262,7 +262,7 @@ export const useAssignees = (options = {}) => {
 
 // Get taskable patients hook (Mocked)
 export const useTaskablePatients = (options = {}) => {
-  console.log('Using mock taskable patients data');
+  // console.log('Using mock taskable patients data'); // Removed log
   return useQuery({
     queryKey: ['taskablePatients'],
     // queryFn: getTaskablePatients, // Original API call

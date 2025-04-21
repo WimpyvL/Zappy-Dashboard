@@ -2,10 +2,7 @@
 // If logging is purely backend-driven based on API requests, this service might not be needed
 // or could be simplified.
 
-// TODO: Decide whether to call the API directly or use the mutation hook.
-// Using the API directly might be simpler here if we don't need mutation state (isLoading, etc.)
-// in the place where the log is triggered.
-// import { createAuditLog } from '../apis/auditlog/api'; // Commented out direct API import
+import { createAuditLog } from '../apis/auditlog/api'; // Use the direct API call
 import errorHandling from './errorHandling'; // Assuming errorHandling utility exists
 
 // Get user info (example - adapt based on actual AuthContext structure)
@@ -18,9 +15,9 @@ const getCurrentUserEmail = () => {
       return user?.email || 'unknown@example.com'; // Adjust property name if needed
     }
   } catch (e) {
-    console.error('Failed to get user for audit log:', e);
+    // Avoid logging errors just for getting the user email for an audit log
   }
-  return 'unknown@system.com';
+  return 'unknown@system.com'; // Fallback user
 };
 
 /**
@@ -34,22 +31,22 @@ const logAuditEvent = async (action, details = {}, userId = null) => {
   // Avoid logging during development if noisy, or use a flag
   // if (process.env.NODE_ENV === 'development') {
   //   console.log(`[Audit Log (Dev)] Action: ${action}`, details);
-  //   return;
   // }
 
-  // const logData = { // Removed unused variable
-  //   action: action,
-  //   details: JSON.stringify(details), // Send details as a JSON string or structured object based on backend expectation
-  //   user: userId || getCurrentUserEmail(), // Get user identifier
-  //   timestamp: new Date().toISOString(), // Timestamp can also be set by backend
-  // };
+  const logData = {
+    action: action,
+    details: JSON.stringify(details), // Send details as a JSON string or structured object based on backend expectation
+    user_identifier: userId || getCurrentUserEmail(), // Get user identifier (adjust field name based on backend)
+    // timestamp: new Date().toISOString(), // Timestamp is likely set by the backend/database
+  };
 
   try {
     // Call the API function directly
-    // We might not need the full mutation hook state management here
-    // await createAuditLog(logData); // Commented out direct API call
-    console.log(`[Mock Audit Log] Action: ${action}`, details); // Simulate logging
-    console.log(`Audit event logged: ${action}`, details); // Log success locally for debugging
+    await createAuditLog(logData);
+    // Optional: Add a local log for successful logging in development?
+    // if (process.env.NODE_ENV === 'development') {
+    //   console.log(`Audit event logged via API: ${action}`, details);
+    // }
   } catch (error) {
     errorHandling.logError(error, `AuditLogService (${action})`);
     // Decide if the user needs to be notified about logging failure

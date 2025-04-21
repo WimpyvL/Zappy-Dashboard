@@ -80,7 +80,9 @@ const MessagingPage = () => {
 
   const handleMessageSent = () => {
     // TODO: Refresh conversation list after a new message/conversation is created
-    console.log('New conversation started/message sent - Refresh list');
+    // This typically involves invalidating the relevant query (e.g., ['conversations'])
+    // after the mutation for sending a message or creating a conversation succeeds.
+    // console.log('New conversation started/message sent - Refresh list'); // Removed log
   };
 
   return (

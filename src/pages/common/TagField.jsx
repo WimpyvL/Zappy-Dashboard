@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { X, Plus, Loader2 } from 'lucide-react';
+import { toast } from 'react-toastify'; // Import toast
 import Tag from './Tag';
 // Removed useAppContext import
 import { useTags, useCreateTag } from '../../apis/tags/hooks'; // Fetch all tags and create new ones
@@ -43,8 +44,9 @@ const TagField = ({
       setShowDropdown(false);
     },
     onError: (error) => {
-      console.error('Failed to create tag:', error);
-      // TODO: Show error notification
+      // console.error('Failed to create tag:', error); // Removed console.error
+      toast.error(`Failed to create tag: ${error.message || 'Unknown error'}`);
+      // TODO: Show error notification (toast is now used)
     },
   });
 

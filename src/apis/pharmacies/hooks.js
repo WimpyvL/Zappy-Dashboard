@@ -46,7 +46,7 @@ const samplePharmaciesData = [
 
 // Get pharmacies hook (Mocked)
 export const usePharmacies = (filters) => {
-  console.log('Using mock pharmacies data in usePharmacies hook');
+  // console.log('Using mock pharmacies data in usePharmacies hook'); // Removed log
   return useQuery({
     queryKey: ['pharmacies', filters],
     // queryFn: () => getPharmacies(filters), // Original API call
@@ -61,7 +61,7 @@ export const usePharmacies = (filters) => {
 
 // Get pharmacy by ID hook (Mocked)
 export const usePharmacyById = (id, options = {}) => {
-  console.log(`Using mock pharmacy data for ID: ${id} in usePharmacyById hook`);
+  // console.log(`Using mock pharmacy data for ID: ${id} in usePharmacyById hook`); // Removed log
   return useQuery({
     queryKey: ['pharmacy', id],
     // queryFn: () => getPharmacyById(id), // Original API call
@@ -82,7 +82,7 @@ export const useCreatePharmacy = (options = {}) => {
   return useMutation({
     // mutationFn: (pharmacyData) => createPharmacy(pharmacyData), // Original API call
     mutationFn: async (pharmacyData) => {
-      console.log('Mock Creating pharmacy:', pharmacyData);
+      // console.log('Mock Creating pharmacy:', pharmacyData); // Removed log
       await new Promise((resolve) => setTimeout(resolve, 300)); // Simulate delay
       const newPharmacy = {
         id: Date.now(), // Generate mock ID
@@ -107,7 +107,7 @@ export const useUpdatePharmacy = (options = {}) => {
   return useMutation({
     // mutationFn: ({ id, pharmacyData }) => updatePharmacy(id, pharmacyData), // Original API call
     mutationFn: async ({ id, pharmacyData }) => {
-      console.log(`Mock Updating pharmacy ${id}:`, pharmacyData);
+      // console.log(`Mock Updating pharmacy ${id}:`, pharmacyData); // Removed log
       await new Promise((resolve) => setTimeout(resolve, 300)); // Simulate delay
       return { data: { id, ...pharmacyData } }; // Simulate API response
     },
@@ -127,7 +127,7 @@ export const useDeletePharmacy = (options = {}) => {
   return useMutation({
     // mutationFn: (id) => deletePharmacy(id), // Original API call
     mutationFn: async (id) => {
-      console.log(`Mock Deleting pharmacy ${id}`);
+      // console.log(`Mock Deleting pharmacy ${id}`); // Removed log
       await new Promise((resolve) => setTimeout(resolve, 300)); // Simulate delay
       return { success: true }; // Simulate API response
     },
@@ -148,7 +148,7 @@ export const useTogglePharmacyActive = (options = {}) => {
   return useMutation({
     // mutationFn: ({ id, active }) => togglePharmacyActive(id, active), // Original API call
     mutationFn: async ({ id, active }) => {
-      console.log(`Mock Toggling pharmacy ${id} active status to: ${active}`);
+      // console.log(`Mock Toggling pharmacy ${id} active status to: ${active}`); // Removed log
       await new Promise((resolve) => setTimeout(resolve, 300)); // Simulate delay
       return { success: true, id, active }; // Simulate API response
     },

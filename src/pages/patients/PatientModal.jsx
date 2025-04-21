@@ -52,11 +52,11 @@ const PatientModal = ({ isOpen, onClose, editingPatientId, onSuccess }) => {
     const loadMockPatientData = () => {
       if (!editingPatientId) return;
 
-      console.log(`Finding mock data for patient ID: ${editingPatientId}`);
+      // console.log(`Finding mock data for patient ID: ${editingPatientId}`); // Removed log
       const patientToEdit = patients.find(p => p.id === editingPatientId);
 
       if (patientToEdit) {
-        console.log("Found Mock Patient Data:", patientToEdit);
+        // console.log("Found Mock Patient Data:", patientToEdit); // Removed log
         // Map mock data fields to formData state
         // Handle potential date formatting if mock data has full ISO strings
         let formattedDob = '';
@@ -131,7 +131,7 @@ const PatientModal = ({ isOpen, onClose, editingPatientId, onSuccess }) => {
 
       let result;
       if (isEditMode) {
-        console.log('Attempting to update mock patient:', editingPatientId, patientPayload);
+        // console.log('Attempting to update mock patient:', editingPatientId, patientPayload); // Removed log
         if (typeof updatePatient === 'function') {
           // Assuming updatePatient modifies the context state
           await updatePatient(editingPatientId, patientPayload); // Use await if it's async
@@ -143,7 +143,7 @@ const PatientModal = ({ isOpen, onClose, editingPatientId, onSuccess }) => {
           result = patientPayload; // Simulate success
         }
       } else {
-        console.log('Attempting to create mock patient:', patientPayload);
+        // console.log('Attempting to create mock patient:', patientPayload); // Removed log
         if (typeof createPatient === 'function') {
           // Assuming createPatient modifies the context state
           await createPatient(patientPayload); // Use await if it's async

@@ -46,7 +46,7 @@ const ConsultationStatusBadge = ({ status }) => {
 };
 
 const Dashboard = () => {
-  console.log('Dashboard component rendering!');
+  // console.log('Dashboard component rendering!'); // Removed log
   // Removed useAppContext
   // Fetch data using React Query hooks
   const {

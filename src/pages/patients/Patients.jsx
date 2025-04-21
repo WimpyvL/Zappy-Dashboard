@@ -17,8 +17,7 @@ import PatientModal from './PatientModal';
 // import apiService from '../../utils/apiService'; // Removed direct apiService import
 import { usePatients } from '../../apis/patients/hooks';
 import { useTags } from '../../apis/tags/hooks';
-import { useAppContext } from '../../context/AppContext'; // Import AppContext hook
-import { useAppContext } from '../../context/AppContext'; // Import AppContext hook
+import { useAppContext } from '../../context/AppContext'; // Import AppContext hook (Removed duplicate)
 
 const StatusBadge = ({ status }) => {
   // Ensure status is treated case-insensitively for comparison
@@ -37,7 +36,21 @@ const StatusBadge = ({ status }) => {
   }
   return null;
 };
-// Removed AffiliateTag component as it wasn't used in the table mapping
+
+// Helper function to get Tailwind classes based on tag color
+const getTagClasses = (color) => {
+  const colorMap = {
+    red: 'bg-red-100 text-red-800',
+    blue: 'bg-blue-100 text-blue-800',
+    green: 'bg-green-100 text-green-800',
+    yellow: 'bg-yellow-100 text-yellow-800',
+    purple: 'bg-purple-100 text-purple-800',
+    pink: 'bg-pink-100 text-pink-800',
+    gray: 'bg-gray-100 text-gray-800',
+    // Add more colors as needed
+  };
+  return colorMap[color?.toLowerCase()] || 'bg-blue-100 text-blue-800'; // Default to blue
+};
 
 const Patients = () => {
   // Get subscription plans from context for the filter dropdown
@@ -87,13 +100,7 @@ const Patients = () => {
   });
   // --- End Client-side filtering ---
 
-  // --- Client-side filtering for Subscription Plan ---
-  const patients = rawPatients.filter(patient => {
-    if (subscriptionPlanFilter === 'all') return true;
-    if (subscriptionPlanFilter === 'none') return !patient.subscriptionPlanName;
-    return patient.subscriptionPlanName === subscriptionPlanFilter;
-  });
-  // --- End Client-side filtering ---
+  // --- Removed duplicate 'patients' variable declaration ---
 
 
   // Selected patients and modals
@@ -540,8 +547,7 @@ const Patients = () => {
                              return tag ? (
                                <span
                                  key={tag.id}
-                                 className="px-2 py-0.5 text-xs font-medium rounded-full bg-blue-100 text-blue-800" // Default style
-                                 // TODO: Use tag.color for dynamic styling
+                                 className={`px-2 py-0.5 text-xs font-medium rounded-full ${getTagClasses(tag.color)}`} // Apply dynamic classes
                                >
                                  {tag.name}
                                </span>
@@ -666,3 +672,10 @@ const Patients = () => {
             handleCloseModal();
             fetchPatients(); // Use refetch from hook
           }}
+        /> // Added missing closing tag
+      )}
+    </div>
+  );
+};
+
+export default Patients;

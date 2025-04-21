@@ -2,32 +2,55 @@ import { createClient } from '@supabase/supabase-js';
 
 // Use environment variables for Supabase credentials
 // CRA requires prefixing env vars with REACT_APP_
-const supabaseUrl = process.env.REACT_APP_SUPABASE_URL;
-const supabaseAnonKey = process.env.REACT_APP_SUPABASE_ANON_KEY;
+const supabaseUrl = process.env.REACT_APP_SUPABASE_URL || '';
+const supabaseAnonKey = process.env.REACT_APP_SUPABASE_ANON_KEY || '';
 
-// Basic check to ensure variables are loaded
-if (!supabaseUrl || !supabaseAnonKey) {
+// Create a single supabase client for interacting with your database
+// Using null as a placeholder when credentials are missing
+let supabase = null;
+
+// Only initialize if we have valid credentials
+if (supabaseUrl && supabaseAnonKey) {
+  try {
+    supabase = createClient(supabaseUrl, supabaseAnonKey, {
+      auth: {
+        persistSession: true,
+        autoRefreshToken: true,
+        detectSessionInUrl: true,
+      },
+    });
+  } catch (error) {
+    console.error('Error initializing Supabase client:', error);
+  }
+} else {
+  // Basic check to ensure variables are loaded
   console.error(
     'Supabase URL or Anon Key is missing. Make sure REACT_APP_SUPABASE_URL and REACT_APP_SUPABASE_ANON_KEY environment variables are set.'
   );
-  // Optionally throw an error or handle appropriately
-  // throw new Error('Supabase environment variables are not set.');
+  // In development, provide fallback values to prevent app from crashing
+  if (process.env.NODE_ENV === 'development') {
+    console.warn(
+      'Using empty fallback values for Supabase in development mode.'
+    );
+  }
 }
 
-// Create a single supabase client for interacting with your database
-export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-  auth: {
-    persistSession: true,
-    autoRefreshToken: true,
-    detectSessionInUrl: true,
-  },
-});
+// Export the client
+export { supabase };
 
-// Helper functions for common database operations (Optional, but kept for consistency if used elsewhere)
+// Helper functions for common database operations
 export const supabaseHelper = {
+  // Check if supabase is initialized
+  isInitialized() {
+    return !!supabase;
+  },
   // Generic fetch function
   async fetch(table, options = {}) {
-    if (!supabase) return { data: null, error: new Error('Supabase client not initialized') };
+    if (!supabase)
+      return {
+        data: null,
+        error: new Error('Supabase client not initialized'),
+      };
     const {
       select = '*',
       filters = [],
@@ -63,7 +86,11 @@ export const supabaseHelper = {
 
   // Insert data
   async insert(table, data, options = {}) {
-    if (!supabase) return { data: null, error: new Error('Supabase client not initialized') };
+    if (!supabase)
+      return {
+        data: null,
+        error: new Error('Supabase client not initialized'),
+      };
     const { returning = 'minimal' } = options;
     const { data: result, error } = await supabase
       .from(table)
@@ -75,7 +102,11 @@ export const supabaseHelper = {
 
   // Update data
   async update(table, id, data) {
-    if (!supabase) return { data: null, error: new Error('Supabase client not initialized') };
+    if (!supabase)
+      return {
+        data: null,
+        error: new Error('Supabase client not initialized'),
+      };
     const { data: result, error } = await supabase
       .from(table)
       .update(data)
@@ -87,7 +118,11 @@ export const supabaseHelper = {
 
   // Delete data
   async delete(table, id) {
-    if (!supabase) return { data: null, error: new Error('Supabase client not initialized') };
+    if (!supabase)
+      return {
+        data: null,
+        error: new Error('Supabase client not initialized'),
+      };
     const { data, error } = await supabase.from(table).delete().eq('id', id);
 
     return { data, error };
@@ -96,8 +131,8 @@ export const supabaseHelper = {
   // Real-time subscription
   subscribe(table, callback, event = '*') {
     if (!supabase) {
-       console.error('Supabase client not initialized for subscription');
-       return null;
+      console.error('Supabase client not initialized for subscription');
+      return null;
     }
     return supabase
       .channel(`${table}-changes`)

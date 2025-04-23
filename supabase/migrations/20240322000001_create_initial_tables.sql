@@ -1,5 +1,5 @@
--- Create client_record table
-CREATE TABLE IF NOT EXISTS client_record (
+-- Create patients table
+CREATE TABLE IF NOT EXISTS patients (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   first_name TEXT NOT NULL,
   last_name TEXT NOT NULL,
@@ -16,10 +16,10 @@ CREATE TABLE IF NOT EXISTS client_record (
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- Create consultations table with reference to client_record
+-- Create consultations table with reference to patients
 CREATE TABLE IF NOT EXISTS consultations (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  client_id UUID REFERENCES client_record(id),
+  client_id UUID REFERENCES patients(id),
   consultation_type TEXT NOT NULL,
   status TEXT NOT NULL DEFAULT 'pending',
   dateSubmitted TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
@@ -88,7 +88,7 @@ CREATE TABLE IF NOT EXISTS pharmacies (
 );
 
 -- Enable realtime for all tables
-ALTER PUBLICATION supabase_realtime ADD TABLE client_record;
+ALTER PUBLICATION supabase_realtime ADD TABLE patients;
 ALTER PUBLICATION supabase_realtime ADD TABLE consultations;
 ALTER PUBLICATION supabase_realtime ADD TABLE products;
 ALTER PUBLICATION supabase_realtime ADD TABLE services;

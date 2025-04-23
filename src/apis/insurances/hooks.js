@@ -1,8 +1,87 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '../../lib/supabase'; // Use the correct Supabase client
+import { supabase } from '../../lib/supabase';
 import { toast } from 'react-toastify';
 
-// Removed Mock Data
+// Mock Data
+const mockInsuranceRecords = [
+  {
+    id: 'ins-001',
+    patient_id: '1',
+    provider_name: 'Blue Cross Blue Shield',
+    policy_number: 'BCBS123456',
+    group_number: 'GRP7890',
+    subscriber_name: 'John Doe',
+    subscriber_dob: '1985-05-15',
+    status: 'Active',
+    notes: 'Primary insurance',
+    created_at: '2025-01-10T08:30:00Z',
+    updated_at: '2025-01-10T08:30:00Z',
+    patients: {
+      id: '1',
+      first_name: 'John',
+      last_name: 'Doe'
+    },
+    insurance_documents: [
+      {
+        id: 'doc-001',
+        file_name: 'insurance_card.jpg',
+        storage_path: 'public/insurance/ins-001/insurance_card.jpg',
+        url: 'https://example.com/insurance/ins-001/insurance_card.jpg'
+      }
+    ]
+  },
+  {
+    id: 'ins-002',
+    patient_id: '2',
+    provider_name: 'Aetna',
+    policy_number: 'AET789012',
+    group_number: 'GRP4567',
+    subscriber_name: 'Jane Smith',
+    subscriber_dob: '1990-11-22',
+    status: 'Pending Verification',
+    notes: 'Secondary insurance',
+    created_at: '2025-01-15T09:45:00Z',
+    updated_at: '2025-01-15T09:45:00Z',
+    patients: {
+      id: '2',
+      first_name: 'Jane',
+      last_name: 'Smith'
+    },
+    insurance_documents: []
+  },
+  {
+    id: 'ins-003',
+    patient_id: '3',
+    provider_name: 'Medicare',
+    policy_number: 'MC456789',
+    group_number: '',
+    subscriber_name: 'Robert Johnson',
+    subscriber_dob: '1978-03-30',
+    status: 'Active',
+    notes: 'Primary insurance with Part D coverage',
+    created_at: '2025-02-01T10:15:00Z',
+    updated_at: '2025-02-01T10:15:00Z',
+    patients: {
+      id: '3',
+      first_name: 'Robert',
+      last_name: 'Johnson'
+    },
+    insurance_documents: [
+      {
+        id: 'doc-002',
+        file_name: 'medicare_card.pdf',
+        storage_path: 'public/insurance/ins-003/medicare_card.pdf',
+        url: 'https://example.com/insurance/ins-003/medicare_card.pdf'
+      },
+      {
+        id: 'doc-003',
+        file_name: 'part_d_coverage.pdf',
+        storage_path: 'public/insurance/ins-003/part_d_coverage.pdf',
+        url: 'https://example.com/insurance/ins-003/part_d_coverage.pdf'
+      }
+    ]
+  }
+];
 
 // Define query keys
 const queryKeys = {
@@ -16,11 +95,31 @@ export const useInsuranceRecords = (filters = {}) => { // Keep hook name for now
   return useQuery({
     queryKey: queryKeys.lists(filters),
     queryFn: async () => {
+      if (process.env.NODE_ENV === 'development') {
+        // Return mock data in development
+        let filteredRecords = [...mockInsuranceRecords];
+        
+        if (filters.patientId) {
+          filteredRecords = filteredRecords.filter(rec => rec.patient_id === filters.patientId);
+        }
+        if (filters.status) {
+          filteredRecords = filteredRecords.filter(rec => rec.status === filters.status);
+        }
+
+        return { 
+          data: filteredRecords.map(rec => ({
+            ...rec,
+            patientName: rec.patients ? `${rec.patients.first_name || ''} ${rec.patients.last_name || ''}`.trim() : 'N/A',
+            documents: rec.insurance_documents || []
+          }))
+        };
+      }
+
       let query = supabase
         .from('insurance_records') // Ensure correct table name
         .select(`
           *,
-          client_record ( id, first_name, last_name )
+          patients ( id, first_name, last_name )
         `) // Ensure correct join table name
         .order('created_at', { ascending: false });
 
@@ -42,7 +141,7 @@ export const useInsuranceRecords = (filters = {}) => { // Keep hook name for now
        // Map data if needed (patientName is now joined)
        const mappedData = data?.map(rec => ({
            ...rec,
-           patientName: rec.client_record ? `${rec.client_record.first_name || ''} ${rec.client_record.last_name || ''}`.trim() : 'N/A', // Corrected join table name
+           patientName: rec.patients ? `${rec.patients.first_name || ''} ${rec.patients.last_name || ''}`.trim() : 'N/A', // Corrected join table name
            // Documents might need separate fetching or a different join structure
            documents: rec.insurance_documents || [], // Corrected relation name
        })) || [];
@@ -59,14 +158,26 @@ export const useInsuranceRecordById = (id, options = {}) => {
     queryFn: async () => {
       if (!id) return null;
 
+      if (process.env.NODE_ENV === 'development') {
+        // Return mock record in development
+        const record = mockInsuranceRecords.find(rec => rec.id === id);
+        if (!record) return null;
+        
+        return {
+          ...record,
+          patientName: record.patients ? `${record.patients.first_name || ''} ${record.patients.last_name || ''}`.trim() : 'N/A',
+          documents: record.insurance_documents || []
+        };
+      }
+
       // Fetch main insurance record
       const { data: recordData, error: recordError } = await supabase
         .from('insurance_records') 
         .select(`
           *,
-          client_record ( id, first_name, last_name ),
+          patients ( id, first_name, last_name ),
           insurance_documents (*) 
-        `) // Join client_record and insurance_documents
+        `) // Join patients and insurance_documents
         .eq('id', id)
         .single();
 
@@ -81,7 +192,7 @@ export const useInsuranceRecordById = (id, options = {}) => {
        // Combine and map data
        const mappedData = recordData ? {
            ...recordData,
-           patientName: recordData.client_record ? `${recordData.client_record.first_name || ''} ${recordData.client_record.last_name || ''}`.trim() : 'N/A', // Corrected join table name
+           patientName: recordData.patients ? `${recordData.patients.first_name || ''} ${recordData.patients.last_name || ''}`.trim() : 'N/A', // Corrected join table name
            documents: recordData.insurance_documents || [], // Use joined documents
        } : null;
 

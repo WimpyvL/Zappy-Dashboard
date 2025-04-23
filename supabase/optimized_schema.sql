@@ -22,8 +22,8 @@ DROP TABLE IF EXISTS subscription_plans CASCADE;
 DROP TABLE IF EXISTS services CASCADE;
 DROP TABLE IF EXISTS products CASCADE;
 DROP TABLE IF EXISTS tag CASCADE;
-DROP TABLE IF EXISTS patients CASCADE; -- Formerly client_record
-DROP TABLE IF EXISTS client_record CASCADE; -- Drop old name just in case
+DROP TABLE IF EXISTS patients CASCADE; -- Formerly patients
+DROP TABLE IF EXISTS patients CASCADE; -- Drop old name just in case
 DROP TABLE IF EXISTS test CASCADE; -- Drop test table if it exists
 
 -- Ensure the uuid-ossp extension is enabled
@@ -31,7 +31,7 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 -- Create Optimized Tables --
 
--- Renamed from client_record
+-- Renamed from patients
 CREATE TABLE patients (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   first_name TEXT NOT NULL,
@@ -175,7 +175,7 @@ CREATE TABLE pb_tasks (
   due_date TIMESTAMP WITH TIME ZONE,
   completed BOOLEAN DEFAULT false NOT NULL,
   user_id UUID REFERENCES auth.users(id) ON DELETE SET NULL,
-  patient_id UUID REFERENCES patients(id) ON DELETE SET NULL, -- Renamed from client_record_id
+  patient_id UUID REFERENCES patients(id) ON DELETE SET NULL, -- Renamed from patients_id
   priority TEXT, -- Consider ENUM
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL, -- Removed date_created
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL -- Removed date_modified
@@ -247,7 +247,7 @@ CREATE INDEX idx_questionnaire_is_active ON questionnaire(is_active);
 
 CREATE TABLE pb_invoices (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  patient_id UUID REFERENCES patients(id) ON DELETE SET NULL, -- Renamed from client_record_id
+  patient_id UUID REFERENCES patients(id) ON DELETE SET NULL, -- Renamed from patients_id
   status TEXT DEFAULT 'pending' NOT NULL, -- e.g., pending, paid, partially_paid, refunded, cancelled
   pb_invoice_id TEXT, -- External ID if applicable
   pb_invoice_metadata JSONB,

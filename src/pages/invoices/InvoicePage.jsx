@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Select } from 'antd'; // Import Ant Design Select
-import { usePatients } from '../../apis/patients/hooks'; // Import usePatients hook
+import { Select } from 'antd';
+import { usePatients } from '../../apis/patients/hooks';
+import { useInvoices, useCreateInvoice } from '../../apis/invoices/hooks';
 import ChildishDrawingElement from '../../components/ui/ChildishDrawingElement'; // Import drawing element
 import { toast } from 'react-toastify'; // Import toast for potential errors
 
@@ -71,11 +72,9 @@ const SortIcon = () => (
 );
 
 const InvoicePage = () => {
-  const [invoices, setInvoices] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [sortConfig, setSortConfig] = useState({
-    key: 'createdAt',
+    key: 'created_at',
     direction: 'desc',
   });
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -92,54 +91,10 @@ const InvoicePage = () => {
   const { data: patientsData, isLoading: isLoadingPatients } = usePatients();
   const allPatients = patientsData?.data || [];
 
-  // Mock data - replace with actual API call for invoices
-  useEffect(() => {
-    const fetchInvoices = async () => {
-      try {
-        await new Promise((resolve) => setTimeout(resolve, 1000));
-        const mockInvoices = [
-          // ... (mock invoice data remains the same) ...
-           {
-            id: 'INV-001',
-            createdAt: '2025-02-15T10:30:00',
-            name: 'John Doe', // Keep name for display in table for now
-            email: 'john@example.com',
-            invoiceId: 'INV-001',
-            status: 'Paid',
-            invoiceAmount: 299.99,
-            amountPaid: 299.99,
-            dueAmount: 0,
-            refundedAmount: 0,
-            paymentDate: '2025-02-20T14:00:00',
-            refunded: false,
-            updatedAt: '2025-02-20T14:00:00',
-          },
-          {
-            id: 'INV-002',
-            createdAt: '2025-02-10T09:15:00',
-            name: 'Jane Smith',
-            email: 'jane@example.com',
-            invoiceId: 'INV-002',
-            status: 'Pending',
-            invoiceAmount: 199.99,
-            amountPaid: 0,
-            dueAmount: 199.99,
-            refundedAmount: 0,
-            paymentDate: null,
-            refunded: false,
-            updatedAt: '2025-02-10T09:15:00',
-          },
-           // ... other mock invoices ...
-        ];
-        setInvoices(mockInvoices);
-        setLoading(false);
-      } catch (error) {
-        console.error('Error fetching invoices:', error);
-        setLoading(false);
-      }
-    };
-    fetchInvoices();
-  }, []);
+  // Fetch invoices using hook
+  const { data: invoicesData, isLoading: isLoadingInvoices } = useInvoices();
+  const invoices = invoicesData?.data || [];
+  const loading = isLoadingInvoices;
 
   // Handle sorting
   const requestSort = (key) => {
@@ -156,9 +111,9 @@ const InvoicePage = () => {
     if (searchTerm) {
       sortableInvoices = sortableInvoices.filter(
         (invoice) =>
-          invoice.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          invoice.patientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
           invoice.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          invoice.invoiceId.toLowerCase().includes(searchTerm.toLowerCase())
+          invoice.id.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
     if (sortConfig.key) {
@@ -230,6 +185,19 @@ const InvoicePage = () => {
     }));
   };
 
+  // Create invoice mutation
+  const createInvoiceMutation = useCreateInvoice({
+    onSuccess: () => {
+      setNewInvoice({
+        patientId: null,
+        email: '',
+        dueDate: '',
+        lineItems: [{ description: '', quantity: 1, unitPrice: '' }],
+      });
+      setShowCreateModal(false);
+    }
+  });
+
   const handleCreateInvoice = (e) => {
     e.preventDefault();
     if (!newInvoice.patientId) {
@@ -237,40 +205,18 @@ const InvoicePage = () => {
       return;
     }
     const submissionData = {
-      ...newInvoice,
-      lineItems: newInvoice.lineItems.filter(item => item.description && item.unitPrice),
-      totalAmount: invoiceTotal,
+      patientId: newInvoice.patientId,
+      status: 'pending',
+      items: newInvoice.lineItems
+        .filter(item => item.description && item.unitPrice)
+        .map(item => ({
+          name: item.description,
+          quantity: item.quantity,
+          price: item.unitPrice
+        })),
+      amount: invoiceTotal
     };
-    console.log('Creating invoice with data:', submissionData);
-
-    // --- Mock adding to list (replace with API call using submissionData.patientId) ---
-    const selectedPatient = allPatients.find(p => p.id === submissionData.patientId);
-    const newInvoiceObj = {
-      id: `INV-00${invoices.length + 1}`,
-      createdAt: new Date().toISOString(),
-      patientId: submissionData.patientId, // Store patientId
-      name: selectedPatient ? `${selectedPatient.first_name || ''} ${selectedPatient.last_name || ''}`.trim() : 'Unknown Patient', // Get name for display
-      email: submissionData.email,
-      invoiceId: `INV-00${invoices.length + 1}`,
-      status: 'Pending',
-      invoiceAmount: submissionData.totalAmount,
-      amountPaid: 0,
-      dueAmount: submissionData.totalAmount,
-      refundedAmount: 0,
-      paymentDate: null,
-      refunded: false,
-      updatedAt: new Date().toISOString(),
-    };
-    setInvoices([newInvoiceObj, ...invoices]);
-    // --- End Mock ---
-
-    setNewInvoice({
-      patientId: null, // Reset patientId
-      email: '',
-      dueDate: '',
-      lineItems: [{ description: '', quantity: 1, unitPrice: '' }],
-    });
-    setShowCreateModal(false);
+    createInvoiceMutation.mutate(submissionData);
   };
 
   return (
@@ -357,43 +303,43 @@ const InvoicePage = () => {
                 </th>
                 <th
                   className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
-                  onClick={() => requestSort('invoiceAmount')}
+                  onClick={() => requestSort('amount')}
                 >
                   <div className="flex items-center">
-                    Invoice Amount ($)
+                    Amount ($)
                     <SortIcon className="ml-1" />
                   </div>
                 </th>
                 <th
                   className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
-                  onClick={() => requestSort('amountPaid')}
+                  onClick={() => requestSort('amount_paid')}
                 >
                   <div className="flex items-center">
-                    Amount Paid ($)
+                    Paid ($)
                     <SortIcon className="ml-1" />
                   </div>
                 </th>
                 <th
                   className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
-                  onClick={() => requestSort('dueAmount')}
+                  onClick={() => requestSort('amount')}
                 >
                   <div className="flex items-center">
-                    Due Amount ($)
+                    Due ($)
                     <SortIcon className="ml-1" />
                   </div>
                 </th>
                 <th
                   className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
-                  onClick={() => requestSort('refundedAmount')}
+                  onClick={() => requestSort('refunded_amount')}
                 >
                   <div className="flex items-center">
-                    Refunded Amount ($)
+                    Refunded ($)
                     <SortIcon className="ml-1" />
                   </div>
                 </th>
                 <th
                   className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
-                  onClick={() => requestSort('paymentDate')}
+                  onClick={() => requestSort('payment_date')}
                 >
                   <div className="flex items-center">
                     Payment Date
@@ -435,7 +381,7 @@ const InvoicePage = () => {
                 sortedInvoices.map((invoice) => (
                   <tr key={invoice.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {formatDate(invoice.createdAt)}
+                      {formatDate(invoice.created_at)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-medium text-gray-900">
@@ -454,42 +400,42 @@ const InvoicePage = () => {
                       <span
                         className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full
                           ${
-                            invoice.status === 'Paid'
+                          invoice.status === 'paid'
                               ? 'bg-accent2/10 text-accent2'
-                              : invoice.status === 'Pending'
+                              : invoice.status === 'pending'
                                 ? 'bg-accent4/10 text-accent4'
-                                : invoice.status === 'Refunded'
+                                : invoice.status === 'refunded'
                                   ? 'bg-accent3/10 text-accent3'
-                                  : invoice.status === 'Partially Paid'
+                                  : invoice.status === 'partially_paid'
                                     ? 'bg-primary/10 text-primary'
                                     : 'bg-accent1/10 text-accent1'
                           }`}
                       >
-                        {invoice.status}
+                        {invoice.status.charAt(0).toUpperCase() + invoice.status.slice(1).replace('_', ' ')}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      ${invoice.invoiceAmount.toFixed(2)}
+                    ${invoice.amount?.toFixed(2) || '0.00'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      ${invoice.amountPaid.toFixed(2)}
+                    ${invoice.amount_paid?.toFixed(2) || '0.00'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      ${invoice.dueAmount.toFixed(2)}
+                    ${(invoice.amount - (invoice.amount_paid || 0)).toFixed(2)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      ${invoice.refundedAmount.toFixed(2)}
+                    ${invoice.refunded_amount?.toFixed(2) || '0.00'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {invoice.paymentDate
-                        ? formatDate(invoice.paymentDate)
+                      {invoice.payment_date
+                        ? formatDate(invoice.payment_date)
                         : '-'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {invoice.refunded ? 'Yes' : 'No'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {formatDate(invoice.updatedAt)}
+                      {formatDate(invoice.updated_at)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <div className="flex justify-end space-x-2">
@@ -499,13 +445,13 @@ const InvoicePage = () => {
                         >
                           View
                         </Link>
-                        {invoice.status === 'Pending' && (
+                        {invoice.status === 'pending' && (
                           <button className="text-accent2 hover:text-accent2/80">
                             Pay
                           </button>
                         )}
-                        {(invoice.status === 'Paid' ||
-                          invoice.status === 'Partially Paid') &&
+                        {(invoice.status === 'paid' ||
+                          invoice.status === 'partially_paid') &&
                           !invoice.refunded && (
                             <button className="text-accent3 hover:text-accent3/80">
                               Refund

@@ -64,7 +64,7 @@ const formatDate = (dateString) => {
 
 const PatientOrders = ({ patientId }) => {
   // Fetch orders using the hook, filtering by patientId
-  const { data: ordersData, isLoading: loading, error } = useOrders({ client_record_id: patientId });
+  const { data: ordersData, isLoading: loading, error } = useOrders({ patients_id: patientId });
 
   // The hook returns the array directly or handles the data structure internally
   const orders = ordersData || [];

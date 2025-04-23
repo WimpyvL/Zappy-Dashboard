@@ -11,7 +11,7 @@ CREATE TABLE IF NOT EXISTS pb_tasks (
   due_date TIMESTAMP WITH TIME ZONE,
   completed BOOLEAN DEFAULT false,
   user_id UUID,
-  client_record_id UUID,
+  patients_id UUID,
   priority TEXT,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
@@ -21,15 +21,15 @@ CREATE TABLE IF NOT EXISTS pb_tasks (
 
 -- Drop existing foreign key constraints if they exist
 ALTER TABLE pb_tasks DROP CONSTRAINT IF EXISTS pb_tasks_user_id_fkey;
-ALTER TABLE pb_tasks DROP CONSTRAINT IF EXISTS pb_tasks_client_record_id_fkey;
+ALTER TABLE pb_tasks DROP CONSTRAINT IF EXISTS pb_tasks_patients_id_fkey;
 
 -- Add foreign key constraints
 -- Reference the auth.users table for user IDs
 ALTER TABLE pb_tasks ADD CONSTRAINT pb_tasks_user_id_fkey 
   FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE SET NULL;
 
-ALTER TABLE pb_tasks ADD CONSTRAINT pb_tasks_client_record_id_fkey 
-  FOREIGN KEY (client_record_id) REFERENCES client_record(id) ON DELETE SET NULL;
+ALTER TABLE pb_tasks ADD CONSTRAINT pb_tasks_patients_id_fkey 
+  FOREIGN KEY (patients_id) REFERENCES patients(id) ON DELETE SET NULL;
 
 -- Enable realtime for this table
 ALTER PUBLICATION supabase_realtime ADD TABLE pb_tasks;

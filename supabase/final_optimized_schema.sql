@@ -26,8 +26,8 @@ DROP TABLE IF EXISTS subscription_plans CASCADE;
 DROP TABLE IF EXISTS services CASCADE;
 DROP TABLE IF EXISTS products CASCADE;
 DROP TABLE IF EXISTS tag CASCADE;
-DROP TABLE IF EXISTS patients CASCADE; -- Formerly client_record
-DROP TABLE IF EXISTS client_record CASCADE; -- Drop old name just in case
+DROP TABLE IF EXISTS patients CASCADE; -- Formerly patients
+DROP TABLE IF EXISTS patients CASCADE; -- Drop old name just in case
 DROP TABLE IF EXISTS test CASCADE; -- Drop test table if it exists
 
 -- Drop ENUM types if they exist (in reverse order of potential dependency)

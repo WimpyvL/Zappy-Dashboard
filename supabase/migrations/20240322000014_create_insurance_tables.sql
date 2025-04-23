@@ -1,7 +1,7 @@
 -- Create insurance_records table
 CREATE TABLE IF NOT EXISTS insurance_records (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  client_record_id UUID REFERENCES client_record(id) ON DELETE SET NULL, -- Link to patient
+  patients_id UUID REFERENCES patients(id) ON DELETE SET NULL, -- Link to patient
   provider_name TEXT NOT NULL,
   policy_number TEXT,
   group_number TEXT,
@@ -32,6 +32,6 @@ ALTER PUBLICATION supabase_realtime ADD TABLE insurance_records;
 ALTER PUBLICATION supabase_realtime ADD TABLE insurance_documents;
 
 -- Add indexes
-CREATE INDEX IF NOT EXISTS idx_insurance_records_client_record_id ON insurance_records (client_record_id);
+CREATE INDEX IF NOT EXISTS idx_insurance_records_patients_id ON insurance_records (patients_id);
 CREATE INDEX IF NOT EXISTS idx_insurance_records_status ON insurance_records (status);
 CREATE INDEX IF NOT EXISTS idx_insurance_documents_insurance_record_id ON insurance_documents (insurance_record_id);

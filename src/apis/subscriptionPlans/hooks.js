@@ -340,7 +340,7 @@ export const useMyInvoices = (patientId, options = {}) => {
         const { data, error } = await supabase
           .from('pb_invoices')
           .select('*')
-          .eq('client_record_id', patientId) // Filter by patient
+          .eq('patients_id', patientId) // Filter by patient
           .order('created_at', { ascending: false });
 
         if (error) {

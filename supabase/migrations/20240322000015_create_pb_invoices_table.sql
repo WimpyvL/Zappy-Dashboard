@@ -1,7 +1,7 @@
 -- Create pb_invoices table
 CREATE TABLE IF NOT EXISTS pb_invoices (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  client_record_id UUID REFERENCES client_record(id) ON DELETE SET NULL, -- Link to patient
+  patients_id UUID REFERENCES patients(id) ON DELETE SET NULL, -- Link to patient
   status TEXT DEFAULT 'pending', -- e.g., pending, paid, failed, refunded
   pb_invoice_id TEXT, -- Optional: External invoice ID (e.g., from Stripe)
   pb_invoice_metadata JSONB, -- Store items, total, tax, discounts, etc.
@@ -20,6 +20,6 @@ CREATE TABLE IF NOT EXISTS pb_invoices (
 ALTER PUBLICATION supabase_realtime ADD TABLE pb_invoices;
 
 -- Add indexes
-CREATE INDEX IF NOT EXISTS idx_pb_invoices_client_record_id ON pb_invoices (client_record_id);
+CREATE INDEX IF NOT EXISTS idx_pb_invoices_patients_id ON pb_invoices (patients_id);
 CREATE INDEX IF NOT EXISTS idx_pb_invoices_status ON pb_invoices (status);
 CREATE INDEX IF NOT EXISTS idx_pb_invoices_pb_invoice_id ON pb_invoices (pb_invoice_id);

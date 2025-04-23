@@ -1,7 +1,49 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '../../lib/supabase'; // Use the correct Supabase client
-import { toast } from 'react-toastify'; // Keep for feedback
-// Removed auditLogService import as it wasn't used here previously
+import { supabase } from '../../lib/supabase';
+import { toast } from 'react-toastify';
+
+// Mock Data
+const mockSessions = [
+  {
+    id: 'sess-001',
+    patient_id: '1',
+    status: 'completed',
+    session_notes: 'Initial consultation and assessment',
+    created_at: '2025-04-10T09:30:00Z',
+    updated_at: '2025-04-10T09:30:00Z',
+    patients: {
+      id: '1',
+      first_name: 'John',
+      last_name: 'Doe'
+    }
+  },
+  {
+    id: 'sess-002',
+    patient_id: '2',
+    status: 'scheduled',
+    session_notes: 'Follow-up therapy session',
+    created_at: '2025-04-15T14:00:00Z',
+    updated_at: '2025-04-15T14:00:00Z',
+    patients: {
+      id: '2',
+      first_name: 'Jane',
+      last_name: 'Smith'
+    }
+  },
+  {
+    id: 'sess-003',
+    patient_id: '3',
+    status: 'cancelled',
+    session_notes: 'Patient cancelled due to illness',
+    created_at: '2025-04-05T11:15:00Z',
+    updated_at: '2025-04-05T11:15:00Z',
+    patients: {
+      id: '3',
+      first_name: 'Robert',
+      last_name: 'Johnson'
+    }
+  }
+];
 
 // Define query keys for sessions
 const queryKeys = {
@@ -21,12 +63,47 @@ export const useSessions = (params = {}, pageSize = 10) => {
   return useQuery({
     queryKey: queryKeys.lists(params),
     queryFn: async () => {
+      if (process.env.NODE_ENV === 'development') {
+        // Return mock data in development
+        let filteredSessions = [...mockSessions];
+        
+        if (patientId) {
+          filteredSessions = filteredSessions.filter(sess => sess.patient_id === patientId);
+        }
+        if (status) {
+          filteredSessions = filteredSessions.filter(sess => sess.status === status);
+        }
+        if (searchTerm) {
+          const searchLower = searchTerm.toLowerCase();
+          filteredSessions = filteredSessions.filter(sess => 
+            sess.patients?.first_name?.toLowerCase().includes(searchLower) ||
+            sess.patients?.last_name?.toLowerCase().includes(searchLower) ||
+            sess.session_notes?.toLowerCase().includes(searchLower)
+          );
+        }
+
+        const paginatedSessions = filteredSessions.slice(rangeFrom, rangeTo + 1);
+        
+        return {
+          data: paginatedSessions.map(sess => ({
+            ...sess,
+            patientName: sess.patients ? `${sess.patients.first_name || ''} ${sess.patients.last_name || ''}`.trim() : 'N/A'
+          })),
+          meta: {
+            total: filteredSessions.length,
+            per_page: pageSize,
+            current_page: currentPage,
+            last_page: Math.ceil(filteredSessions.length / pageSize),
+          },
+        };
+      }
+
       let query = supabase
         .from('sessions') // Assuming table name is 'sessions'
-        // Join with client_record table to get name
+        // Join with patients table to get name
         .select(`
           *,
-          client_record ( id, first_name, last_name )
+          patients!patient_id ( id, first_name, last_name )
         `, { count: 'exact' })
         .order('created_at', { ascending: false }) // Example order
         .range(rangeFrom, rangeTo);
@@ -43,7 +120,7 @@ export const useSessions = (params = {}, pageSize = 10) => {
       if (searchTerm) {
         // Adjust columns to search as needed (e.g., provider name if joined, notes)
         query = query.or(
-          `client_record.first_name.ilike.%${searchTerm}%,client_record.last_name.ilike.%${searchTerm}%` // Search joined client_record name
+          `patients.first_name.ilike.%${searchTerm}%,patients.last_name.ilike.%${searchTerm}%` // Search joined patients name
           // Add other searchable fields like session_notes if they exist
           // `,session_notes.ilike.%${searchTerm}%` 
         );
@@ -61,9 +138,9 @@ export const useSessions = (params = {}, pageSize = 10) => {
       const mappedData =
         data?.map((session) => ({
           ...session,
-          // Construct patientName from the joined 'client_record' data
-          patientName: session.client_record 
-            ? `${session.client_record.first_name || ''} ${session.client_record.last_name || ''}`.trim()
+          // Construct patientName from the joined 'patients' data
+          patientName: session.patients 
+            ? `${session.patients.first_name || ''} ${session.patients.last_name || ''}`.trim()
             : 'N/A',
           // Ensure patientId is correctly mapped (assuming FK is patient_id)
           patientId: session.patient_id 
@@ -89,6 +166,17 @@ export const useSessionById = (id, options = {}) => {
     queryKey: queryKeys.details(id),
     queryFn: async () => {
       if (!id) return null;
+
+      if (process.env.NODE_ENV === 'development') {
+        // Return mock session in development
+        const session = mockSessions.find(sess => sess.id === id);
+        if (!session) return null;
+        
+        return {
+          ...session,
+          patientName: session.patients ? `${session.patients.first_name || ''} ${session.patients.last_name || ''}`.trim() : 'N/A'
+        };
+      }
 
       const { data, error } = await supabase
         .from('sessions')

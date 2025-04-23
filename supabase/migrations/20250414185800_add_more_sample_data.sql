@@ -1,10 +1,10 @@
 -- Migration to add more comprehensive sample data
 
--- Assumes sample client_records, products, services, tags, pharmacies exist from previous migrations.
+-- Assumes sample patientss, products, services, tags, pharmacies exist from previous migrations.
 -- Assumes at least one user exists in auth.users and a corresponding profile in profiles.
 
 -- Sample Data for pb_tasks
-INSERT INTO public.pb_tasks (title, notes, due_date, completed, user_id, client_record_id, priority) -- Corrected column name
+INSERT INTO public.pb_tasks (title, notes, due_date, completed, user_id, patients_id, priority) -- Corrected column name
 SELECT 
   'Follow up with ' || cr.first_name, 
   'Discuss lab results from last visit.', 
@@ -13,7 +13,7 @@ SELECT
   (SELECT id FROM auth.users LIMIT 1), -- ASSUMES at least one user exists
   cr.id, 
   'High'
-FROM client_record cr LIMIT 1;
+FROM patients cr LIMIT 1;
 
 INSERT INTO public.pb_tasks (title, notes, completed, user_id, patient_id, priority)
 SELECT 
@@ -23,7 +23,7 @@ SELECT
   (SELECT id FROM auth.users LIMIT 1), -- ASSUMES at least one user exists
   cr.id, 
   'Medium'
-FROM client_record cr OFFSET 1 LIMIT 1;
+FROM patients cr OFFSET 1 LIMIT 1;
 
 -- Sample Data for questionnaire
 INSERT INTO public.questionnaire (name, description, structure, status, form_type, slug) VALUES
@@ -34,10 +34,10 @@ ON CONFLICT (slug) DO NOTHING; -- Ignore duplicate slugs
 -- Sample Data for insurance_records
 WITH patient_ids AS (
   SELECT id, row_number() OVER (ORDER BY id) as rn 
-  FROM client_record 
+  FROM patients 
   LIMIT 2
 )
-INSERT INTO public.insurance_records (client_record_id, provider_name, policy_number, group_number, status)
+INSERT INTO public.insurance_records (patients_id, provider_name, policy_number, group_number, status)
 SELECT id, 'Blue Cross Example', 'XYZ123456789', 'GRP987', 'Verified' 
 FROM patient_ids 
 WHERE rn = 1;
@@ -45,10 +45,10 @@ WHERE rn = 1;
 -- Repeat CTE or use separate logic for the second record
 WITH patient_ids AS (
   SELECT id, row_number() OVER (ORDER BY id) as rn 
-  FROM client_record 
+  FROM patients 
   LIMIT 2
 )
-INSERT INTO public.insurance_records (client_record_id, provider_name, policy_number, status)
+INSERT INTO public.insurance_records (patients_id, provider_name, policy_number, status)
 SELECT id, 'Aetna Sample', 'ABC987654321', 'Pending' 
 FROM patient_ids 
 WHERE rn = 2;
@@ -66,14 +66,14 @@ FROM insurance_records ir ORDER BY ir.created_at LIMIT 1
 ON CONFLICT (storage_path) DO NOTHING; -- Ignore duplicate storage paths
 
 -- Sample Data for pb_invoices
-INSERT INTO public.pb_invoices (client_record_id, status, pb_invoice_metadata, due_date, paid_date) -- Corrected column name
+INSERT INTO public.pb_invoices (patients_id, status, pb_invoice_metadata, due_date, paid_date) -- Corrected column name
 SELECT 
   cr.id, 
   'paid', 
   '{"items": [{"description": "Monthly Subscription", "amount": 99.99}], "total": 99.99}', 
   NOW() - INTERVAL '15 days',
   NOW() - INTERVAL '10 days'
-FROM client_record cr LIMIT 1;
+FROM patients cr LIMIT 1;
 
 INSERT INTO public.pb_invoices (patient_id, status, pb_invoice_metadata, due_date)
 SELECT 
@@ -81,17 +81,17 @@ SELECT
   'pending', 
   '{"items": [{"description": "Consultation Fee", "amount": 75.00}], "total": 75.00}', 
   NOW() + INTERVAL '10 days'
-FROM client_record cr OFFSET 1 LIMIT 1;
+FROM patients cr OFFSET 1 LIMIT 1;
 
 -- Sample Data for notes
-INSERT INTO public.notes (client_record_id, user_id, note_type, title, content) -- Corrected column name
+INSERT INTO public.notes (patients_id, user_id, note_type, title, content) -- Corrected column name
 SELECT 
   cr.id, 
   (SELECT id FROM auth.users LIMIT 1), -- ASSUMES user exists
   'Clinical', 
   'Initial Consult Summary', 
   'Patient presented with concerns about weight management. Discussed options.'
-FROM client_record cr LIMIT 1;
+FROM patients cr LIMIT 1;
 
 INSERT INTO public.notes (patient_id, user_id, note_type, content)
 SELECT 
@@ -99,13 +99,13 @@ SELECT
   (SELECT id FROM auth.users LIMIT 1), -- ASSUMES user exists
   'Administrative', 
   'Called patient to confirm appointment.'
-FROM client_record cr OFFSET 1 LIMIT 1;
+FROM patients cr OFFSET 1 LIMIT 1;
 
 -- Sample Data for notifications (Notify user 1 about a task)
 INSERT INTO public.notifications (user_id, message, link_url)
 SELECT 
   (SELECT id FROM auth.users LIMIT 1), -- ASSUMES user exists
-  'New task assigned: Follow up with ' || (SELECT first_name FROM client_record LIMIT 1),
+  'New task assigned: Follow up with ' || (SELECT first_name FROM patients LIMIT 1),
   '/tasks/' || (SELECT id::text FROM pb_tasks ORDER BY created_at DESC LIMIT 1) -- Link to the task created earlier
 ;
 
@@ -117,7 +117,7 @@ SELECT
   'completed',
   124.98,
   NOW() - INTERVAL '20 days'
-FROM client_record cr LIMIT 1;
+FROM patients cr LIMIT 1;
 
 -- Order 2: Pending, Single Product, Linked to Pending Invoice
 INSERT INTO public.orders (patient_id, status, total_amount, invoice_id, order_date) 
@@ -127,7 +127,7 @@ SELECT
   24.99,
   (SELECT id FROM pb_invoices WHERE status = 'pending' LIMIT 1), -- Link to pending invoice
   NOW() - INTERVAL '2 days'
-FROM client_record cr OFFSET 1 LIMIT 1;
+FROM patients cr OFFSET 1 LIMIT 1;
 
 -- Order 3: Shipped, Single Service
 INSERT INTO public.orders (patient_id, status, total_amount, order_date) 
@@ -136,7 +136,7 @@ SELECT
   'shipped',
   50.00,
   NOW() - INTERVAL '5 days'
-FROM client_record cr LIMIT 1;
+FROM patients cr LIMIT 1;
 
 -- Order 4: Processing, Product
 INSERT INTO public.orders (patient_id, status, total_amount, order_date) 
@@ -145,7 +145,7 @@ SELECT
   'processing',
   19.99,
   NOW() - INTERVAL '1 day'
-FROM client_record cr OFFSET 1 LIMIT 1;
+FROM patients cr OFFSET 1 LIMIT 1;
 
 
 -- Sample Data for order_items
@@ -204,7 +204,7 @@ SELECT
   NOW() - INTERVAL '1 day' + INTERVAL '30 minutes',
   'completed',
   'https://example.zoom.us/j/1234567890'
-FROM client_record cr LIMIT 1;
+FROM patients cr LIMIT 1;
 
 INSERT INTO public.sessions (patient_id, provider_id, service_id, start_time, status)
 SELECT 
@@ -213,7 +213,7 @@ SELECT
   (SELECT id FROM services WHERE name = 'Initial Consultation'),
   NOW() + INTERVAL '2 days',
   'scheduled'
-FROM client_record cr OFFSET 1 LIMIT 1;
+FROM patients cr OFFSET 1 LIMIT 1;
 
 -- Sample Data for referrals (Assumes profiles exist for users)
 -- Assumes user 1 referred user 2 (replace with actual profile IDs if known)

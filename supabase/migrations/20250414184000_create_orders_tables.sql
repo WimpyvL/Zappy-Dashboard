@@ -3,11 +3,11 @@
 -- Create orders table
 CREATE TABLE IF NOT EXISTS public.orders (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  patient_id UUID REFERENCES public.client_record(id) ON DELETE SET NULL, -- Corrected reference
+  patient_id UUID REFERENCES public.patients(id) ON DELETE SET NULL, -- Corrected reference
   order_date TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   status TEXT DEFAULT 'pending', -- e.g., pending, processing, shipped, completed, cancelled
   total_amount DECIMAL(10, 2) NOT NULL DEFAULT 0.00,
-  shipping_address JSONB, -- Could store address details or reference client_record
+  shipping_address JSONB, -- Could store address details or reference patients
   billing_address JSONB,
   invoice_id UUID REFERENCES public.pb_invoices(id) ON DELETE SET NULL, -- Optional link to invoice
   notes TEXT,
@@ -43,7 +43,7 @@ CREATE POLICY "Allow admin full access on orders" ON public.orders FOR ALL
   WITH CHECK (auth.uid() IN (SELECT id FROM public.profiles WHERE role = 'admin'));
 -- Patients can read their own orders
 CREATE POLICY "Allow related patient read access on orders" ON public.orders FOR SELECT
-  USING (EXISTS (SELECT 1 FROM client_record WHERE client_record.id = orders.patient_id AND client_record.id = auth.uid()));
+  USING (EXISTS (SELECT 1 FROM patients WHERE patients.id = orders.patient_id AND patients.id = auth.uid()));
 
 -- Enable RLS for order_items
 ALTER TABLE public.order_items ENABLE ROW LEVEL SECURITY;
@@ -57,7 +57,7 @@ CREATE POLICY "Allow admin full access on order_items" ON public.order_items FOR
 CREATE POLICY "Allow related patient read access via order on order_items" ON public.order_items FOR SELECT
   USING (EXISTS (
     SELECT 1 FROM orders o
-    JOIN client_record cr ON o.patient_id = cr.id
+    JOIN patients cr ON o.patient_id = cr.id
     WHERE o.id = order_items.order_id AND cr.id = auth.uid()
   ));
 

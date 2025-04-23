@@ -4,7 +4,7 @@ CREATE TYPE form_request_status AS ENUM ('pending', 'completed', 'expired', 'can
 
 CREATE TABLE IF NOT EXISTS public.form_requests (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  patient_id UUID NOT NULL REFERENCES public.client_record(id) ON DELETE CASCADE,
+  patient_id UUID NOT NULL REFERENCES public.patients(id) ON DELETE CASCADE,
   questionnaire_id UUID NOT NULL REFERENCES public.questionnaire(id) ON DELETE CASCADE,
   status form_request_status NOT NULL DEFAULT 'pending',
   sent_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
@@ -17,7 +17,7 @@ CREATE TABLE IF NOT EXISTS public.form_requests (
 );
 
 COMMENT ON TABLE public.form_requests IS 'Tracks forms assigned to patients and their completion status/responses.';
-COMMENT ON COLUMN public.form_requests.patient_id IS 'Links to the patient (client_record).';
+COMMENT ON COLUMN public.form_requests.patient_id IS 'Links to the patient (patients).';
 COMMENT ON COLUMN public.form_requests.questionnaire_id IS 'Links to the form template (questionnaire).';
 COMMENT ON COLUMN public.form_requests.status IS 'Current status of the form request.';
 COMMENT ON COLUMN public.form_requests.response_data IS 'Stores the patient submitted answers.';

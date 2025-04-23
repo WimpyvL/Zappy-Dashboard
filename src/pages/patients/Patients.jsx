@@ -43,11 +43,11 @@ const patientFormFields = [
     ],
     gridCols: 1,
   },
-  { name: 'street_address', label: 'Street Address', type: 'text', gridCols: 2 },
-  { name: 'city_name', label: 'City', type: 'text', gridCols: 1 },
+  { name: 'address', label: 'Street Address', type: 'text', gridCols: 2 },
+  { name: 'city', label: 'City', type: 'text', gridCols: 1 },
   { name: 'state', label: 'State', type: 'text', gridCols: 1 },
-  { name: 'zip_code', label: 'ZIP Code', type: 'text', gridCols: 1 },
-  // Add other fields as needed based on client_record schema and modal requirements
+  { name: 'zip', label: 'ZIP Code', type: 'text', gridCols: 1 },
+  // Add other fields as needed based on patients schema and modal requirements
 ];
 
 

@@ -1,6 +1,54 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '../../lib/supabase'; // Use the correct Supabase client
-// Removed unused auditLogService import
+import { supabase } from '../../lib/supabase';
+
+// Mock Data
+const mockOrders = [
+  {
+    id: 'order-001',
+    patient_id: '1',
+    status: 'completed',
+    medication: 'Amoxicillin 500mg',
+    pharmacy: 'CVS Pharmacy',
+    order_date: '2025-04-10T09:30:00Z',
+    created_at: '2025-04-10T09:30:00Z',
+    updated_at: '2025-04-10T09:30:00Z',
+    patients: {
+      id: '1',
+      first_name: 'John',
+      last_name: 'Doe'
+    }
+  },
+  {
+    id: 'order-002',
+    patient_id: '2',
+    status: 'pending',
+    medication: 'Lisinopril 10mg',
+    pharmacy: 'Walgreens',
+    order_date: '2025-04-15T14:00:00Z',
+    created_at: '2025-04-15T14:00:00Z',
+    updated_at: '2025-04-15T14:00:00Z',
+    patients: {
+      id: '2',
+      first_name: 'Jane',
+      last_name: 'Smith'
+    }
+  },
+  {
+    id: 'order-003',
+    patient_id: '3',
+    status: 'cancelled',
+    medication: 'Metformin 1000mg',
+    pharmacy: 'Rite Aid',
+    order_date: '2025-04-05T11:15:00Z',
+    created_at: '2025-04-05T11:15:00Z',
+    updated_at: '2025-04-05T11:15:00Z',
+    patients: {
+      id: '3',
+      first_name: 'Robert',
+      last_name: 'Johnson'
+    }
+  }
+];
 
 // Get orders hook using Supabase
 export const useOrders = (currentPage = 1, filters = {}, pageSize = 10) => {
@@ -10,12 +58,48 @@ export const useOrders = (currentPage = 1, filters = {}, pageSize = 10) => {
   return useQuery({
     queryKey: ['orders', currentPage, filters, pageSize],
     queryFn: async () => {
+      if (process.env.NODE_ENV === 'development') {
+        // Return mock data in development
+        let filteredOrders = [...mockOrders];
+        
+        if (filters.status) {
+          filteredOrders = filteredOrders.filter(order => order.status === filters.status);
+        }
+        if (filters.patientId) {
+          filteredOrders = filteredOrders.filter(order => order.patient_id === filters.patientId);
+        }
+        if (filters.search) {
+          const searchLower = filters.search.toLowerCase();
+          filteredOrders = filteredOrders.filter(order => 
+            order.medication?.toLowerCase().includes(searchLower) ||
+            order.pharmacy?.toLowerCase().includes(searchLower) ||
+            order.patients?.first_name?.toLowerCase().includes(searchLower) ||
+            order.patients?.last_name?.toLowerCase().includes(searchLower)
+          );
+        }
+
+        const paginatedOrders = filteredOrders.slice(rangeFrom, rangeTo + 1);
+        
+        return {
+          data: paginatedOrders.map(order => ({
+            ...order,
+            patientName: order.patients ? `${order.patients.first_name || ''} ${order.patients.last_name || ''}`.trim() : 'N/A'
+          })),
+          meta: {
+            total: filteredOrders.length,
+            per_page: pageSize,
+            current_page: currentPage,
+            last_page: Math.ceil(filteredOrders.length / pageSize),
+          },
+        };
+      }
+
       let query = supabase
         .from('orders') // Use quoted table name if needed, or adjust if different
-        // Join with client_record table (assuming FK is patient_id)
+        // Join with patients table (assuming FK is patient_id)
         .select(`
           *,
-          client_record!inner(id, first_name, last_name)
+          patients!inner(id, first_name, last_name)
         `, { count: 'exact' })
         .order('order_date', { ascending: false })
         .range(rangeFrom, rangeTo);
@@ -29,9 +113,9 @@ export const useOrders = (currentPage = 1, filters = {}, pageSize = 10) => {
       }
       // Add search filter if needed (adjust based on actual schema and join)
       if (filters.search) {
-        // Use the joined table alias 'client_record' for patient name fields
+        // Use the joined table alias 'patients' for patient name fields
         query = query.or(
-          `medication.ilike.%${filters.search}%,pharmacy.ilike.%${filters.search}%,client_record.first_name.ilike.%${filters.search}%,client_record.last_name.ilike.%${filters.search}%`
+          `medication.ilike.%${filters.search}%,pharmacy.ilike.%${filters.search}%,patients.first_name.ilike.%${filters.search}%,patients.last_name.ilike.%${filters.search}%`
         );
       }
 
@@ -46,9 +130,9 @@ export const useOrders = (currentPage = 1, filters = {}, pageSize = 10) => {
       const mappedData =
         data?.map((order) => ({
           ...order,
-          // Construct patientName from the joined 'client_record' data
-          patientName: order.client_record 
-            ? `${order.client_record.first_name || ''} ${order.client_record.last_name || ''}`.trim()
+          // Construct patientName from the joined 'patients' data
+          patientName: order.patients 
+            ? `${order.patients.first_name || ''} ${order.patients.last_name || ''}`.trim()
             : 'N/A',
           // Ensure patientId is correctly mapped (assuming FK is patient_id)
           patientId: order.patient_id 
@@ -74,6 +158,17 @@ export const useOrderById = (id, options = {}) => {
     queryKey: ['order', id],
     queryFn: async () => {
       if (!id) return null;
+
+      if (process.env.NODE_ENV === 'development') {
+        // Return mock order in development
+        const order = mockOrders.find(o => o.id === id);
+        if (!order) return null;
+        
+        return {
+          ...order,
+          patientName: order.patients ? `${order.patients.first_name || ''} ${order.patients.last_name || ''}`.trim() : 'N/A'
+        };
+      }
 
       const { data, error } = await supabase
         .from('orders')
@@ -106,7 +201,17 @@ export const useMyOrders = (patientId, options = {}) => {
   return useQuery({
     queryKey: ['orders', 'patient', patientId], // Specific query key for patient orders
     queryFn: async () => {
-      if (!patientId) return []; // Return empty if no patientId
+      if (!patientId) return [];
+
+      if (process.env.NODE_ENV === 'development') {
+        // Return mock orders in development
+        return mockOrders
+          .filter(order => order.patient_id === patientId)
+          .map(order => ({
+            ...order,
+            patientName: order.patients ? `${order.patients.first_name || ''} ${order.patients.last_name || ''}`.trim() : 'N/A'
+          }));
+      }
 
       const { data, error } = await supabase
         .from('orders') 

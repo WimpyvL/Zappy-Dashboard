@@ -4,7 +4,7 @@ CREATE TYPE subscription_status AS ENUM ('active', 'trialing', 'past_due', 'canc
 
 CREATE TABLE IF NOT EXISTS public.subscriptions (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  patient_id UUID NOT NULL REFERENCES public.client_record(id) ON DELETE CASCADE, -- Corrected reference to client_record
+  patient_id UUID NOT NULL REFERENCES public.patients(id) ON DELETE CASCADE, -- Corrected reference to patients
   subscription_plan_id UUID NOT NULL REFERENCES public.subscription_plans(id) ON DELETE RESTRICT, -- Prevent deleting plan if subscriptions exist
   status subscription_status NOT NULL DEFAULT 'active',
   -- Stripe specific IDs (nullable if using other providers or manual management)
@@ -34,12 +34,12 @@ COMMENT ON COLUMN public.subscriptions.stripe_subscription_id IS 'Unique subscri
 ALTER TABLE public.subscriptions ENABLE ROW LEVEL SECURITY;
 
 -- RLS Policies:
--- 1. Allow users to read their own active/trialing subscription (using client_record FK)
+-- 1. Allow users to read their own active/trialing subscription (using patients FK)
 CREATE POLICY "Allow users to read own active subscription"
 ON public.subscriptions
 FOR SELECT USING (
     auth.uid() = patient_id AND status IN ('active', 'trialing', 'past_due', 'paused') 
-    -- Assuming patient_id in subscriptions links to the user's ID in client_record/auth.users
+    -- Assuming patient_id in subscriptions links to the user's ID in patients/auth.users
     -- This might need adjustment if patient_id is not the same as auth.uid()
 );
 

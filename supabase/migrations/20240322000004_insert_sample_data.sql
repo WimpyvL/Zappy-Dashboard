@@ -1,5 +1,5 @@
 -- Insert sample client records
-INSERT INTO client_record (first_name, last_name, email, phone, date_of_birth, address, city, state, zip)
+INSERT INTO patients (first_name, last_name, email, phone, date_of_birth, address, city, state, zip)
 VALUES
   ('John', 'Doe', 'john.doe@example.com', '555-123-4567', '1980-01-15', '123 Main St', 'Anytown', 'CA', '90210'),
   ('Jane', 'Smith', 'jane.smith@example.com', '555-987-6543', '1992-05-22', '456 Oak Ave', 'Somewhere', 'NY', '10001'),
@@ -56,6 +56,6 @@ SELECT
   'Initial Consultation', 
   'pending', 
   NOW() + (RANDOM() * INTERVAL '10 days')
-FROM client_record
+FROM patients
 LIMIT 3
 ON CONFLICT DO NOTHING;

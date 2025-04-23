@@ -100,7 +100,7 @@ export type Database = {
         Row: {
           adjusted_dose: number | null
           adjusted_units: number | null
-          client_record_id: string
+          patient_id: string
           created_at: string
           date: string
           id: string
@@ -113,7 +113,7 @@ export type Database = {
         Insert: {
           adjusted_dose?: number | null
           adjusted_units?: number | null
-          client_record_id: string
+          patient_id: string
           created_at: string
           date: string
           id?: string
@@ -126,7 +126,7 @@ export type Database = {
         Update: {
           adjusted_dose?: number | null
           adjusted_units?: number | null
-          client_record_id?: string
+          patient_id?: string
           created_at?: string
           date?: string
           id?: string
@@ -138,7 +138,7 @@ export type Database = {
         }
         Relationships: []
       }
-      client_record: {
+      patients: {
         Row: {
           blacklisted: boolean | null
           date_created: string
@@ -276,7 +276,7 @@ export type Database = {
             foreignKeyName: "consultations_client_id_fkey"
             columns: ["client_id"]
             isOneToOne: false
-            referencedRelation: "client_record"
+            referencedRelation: "patients"
             referencedColumns: ["id"]
           },
         ]
@@ -284,7 +284,7 @@ export type Database = {
       crisp_session: {
         Row: {
           assigned_to_bot: boolean | null
-          client_record_id: string | null
+          patients_id: string | null
           conversation_messages: Json | null
           conversation_processed: boolean | null
           created_at: string
@@ -296,7 +296,7 @@ export type Database = {
         }
         Insert: {
           assigned_to_bot?: boolean | null
-          client_record_id?: string | null
+          patients_id?: string | null
           conversation_messages?: Json | null
           conversation_processed?: boolean | null
           created_at: string
@@ -308,7 +308,7 @@ export type Database = {
         }
         Update: {
           assigned_to_bot?: boolean | null
-          client_record_id?: string | null
+          patients_id?: string | null
           conversation_messages?: Json | null
           conversation_processed?: boolean | null
           created_at?: string
@@ -389,7 +389,7 @@ export type Database = {
       email_logs: {
         Row: {
           body: string
-          client_record_id: string
+          patients_id: string
           created_at: string | null
           id: string
           message_id: string | null
@@ -402,7 +402,7 @@ export type Database = {
         }
         Insert: {
           body: string
-          client_record_id: string
+          patients_id: string
           created_at?: string | null
           id?: string
           message_id?: string | null
@@ -415,7 +415,7 @@ export type Database = {
         }
         Update: {
           body?: string
-          client_record_id?: string
+          patients_id?: string
           created_at?: string | null
           id?: string
           message_id?: string | null
@@ -439,7 +439,7 @@ export type Database = {
       form_requests: {
         Row: {
           ai_processed: boolean | null
-          client_record_id: string
+          patients_id: string
           completed: boolean | null
           completed_at: string | null
           created_at: string
@@ -488,7 +488,7 @@ export type Database = {
         }
         Insert: {
           ai_processed?: boolean | null
-          client_record_id: string
+          patients_id: string
           completed?: boolean | null
           completed_at?: string | null
           created_at: string
@@ -537,7 +537,7 @@ export type Database = {
         }
         Update: {
           ai_processed?: boolean | null
-          client_record_id?: string
+          patients_id?: string
           completed?: boolean | null
           completed_at?: string | null
           created_at?: string
@@ -777,7 +777,7 @@ export type Database = {
       order: {
         Row: {
           added_to_sheet: boolean | null
-          client_record_id: string | null
+          patients_id: string | null
           created_at: string
           created_by_user_id: string | null
           deleted_at: string | null
@@ -817,7 +817,7 @@ export type Database = {
         }
         Insert: {
           added_to_sheet?: boolean | null
-          client_record_id?: string | null
+          patients_id?: string | null
           created_at: string
           created_by_user_id?: string | null
           deleted_at?: string | null
@@ -857,7 +857,7 @@ export type Database = {
         }
         Update: {
           added_to_sheet?: boolean | null
-          client_record_id?: string | null
+          patients_id?: string | null
           created_at?: string
           created_by_user_id?: string | null
           deleted_at?: string | null
@@ -1026,7 +1026,7 @@ export type Database = {
       pb_client_packages: {
         Row: {
           cancellable: boolean | null
-          client_record_id: string | null
+          patients_id: string | null
           confirmation_status: string | null
           confirmed: boolean | null
           created_at: string
@@ -1046,7 +1046,7 @@ export type Database = {
         }
         Insert: {
           cancellable?: boolean | null
-          client_record_id?: string | null
+          patients_id?: string | null
           confirmation_status?: string | null
           confirmed?: boolean | null
           created_at: string
@@ -1066,7 +1066,7 @@ export type Database = {
         }
         Update: {
           cancellable?: boolean | null
-          client_record_id?: string | null
+          patients_id?: string | null
           confirmation_status?: string | null
           confirmed?: boolean | null
           created_at?: string
@@ -1103,7 +1103,7 @@ export type Database = {
       }
       pb_invoices: {
         Row: {
-          client_record_id: string | null
+          patients_id: string | null
           created_at: string
           date_created: string
           date_modified: string
@@ -1120,7 +1120,7 @@ export type Database = {
           virtual_follow_up_id: string | null
         }
         Insert: {
-          client_record_id?: string | null
+          patients_id?: string | null
           created_at: string
           date_created: string
           date_modified: string
@@ -1137,7 +1137,7 @@ export type Database = {
           virtual_follow_up_id?: string | null
         }
         Update: {
-          client_record_id?: string | null
+          patients_id?: string | null
           created_at?: string
           date_created?: string
           date_modified?: string
@@ -1227,7 +1227,7 @@ export type Database = {
         Row: {
           cancelled: boolean | null
           client_confirmation_status: string | null
-          client_record_id: string
+          patients_id: string
           confirmation_status: string | null
           date_created: string
           duration: number | null
@@ -1250,7 +1250,7 @@ export type Database = {
         Insert: {
           cancelled?: boolean | null
           client_confirmation_status?: string | null
-          client_record_id: string
+          patients_id: string
           confirmation_status?: string | null
           date_created: string
           duration?: number | null
@@ -1273,7 +1273,7 @@ export type Database = {
         Update: {
           cancelled?: boolean | null
           client_confirmation_status?: string | null
-          client_record_id?: string
+          patients_id?: string
           confirmation_status?: string | null
           date_created?: string
           duration?: number | null
@@ -1328,7 +1328,7 @@ export type Database = {
         Row: {
           all_day: boolean | null
           archived: boolean | null
-          client_record_id: string
+          patients_id: string
           completed: boolean | null
           created_at: string
           date_created: string
@@ -1350,7 +1350,7 @@ export type Database = {
         Insert: {
           all_day?: boolean | null
           archived?: boolean | null
-          client_record_id: string
+          patients_id: string
           completed?: boolean | null
           created_at?: string
           date_created: string
@@ -1372,7 +1372,7 @@ export type Database = {
         Update: {
           all_day?: boolean | null
           archived?: boolean | null
-          client_record_id?: string
+          patients_id?: string
           completed?: boolean | null
           created_at?: string
           date_created?: string
@@ -1462,7 +1462,7 @@ export type Database = {
       }
       session: {
         Row: {
-          client_record_id: string
+          patients_id: string
           created_at: string
           id: string
           session_name: string | null
@@ -1470,7 +1470,7 @@ export type Database = {
           valid_till: string | null
         }
         Insert: {
-          client_record_id: string
+          patients_id: string
           created_at: string
           id?: string
           session_name?: string | null
@@ -1478,7 +1478,7 @@ export type Database = {
           valid_till?: string | null
         }
         Update: {
-          client_record_id?: string
+          patients_id?: string
           created_at?: string
           id?: string
           session_name?: string | null
@@ -1531,7 +1531,7 @@ export type Database = {
       }
       sms_logs: {
         Row: {
-          client_record_id: string
+          patients_id: string
           created_at: string
           from_number: string
           id: string
@@ -1543,7 +1543,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
-          client_record_id: string
+          patients_id: string
           created_at: string
           from_number: string
           id?: string
@@ -1555,7 +1555,7 @@ export type Database = {
           updated_at: string
         }
         Update: {
-          client_record_id?: string
+          patients_id?: string
           created_at?: string
           from_number?: string
           id?: string
@@ -1599,7 +1599,7 @@ export type Database = {
       }
       test_session: {
         Row: {
-          client_record_id: string | null
+          patients_id: string | null
           created_at: string
           id: string
           updated_at: string
@@ -1607,7 +1607,7 @@ export type Database = {
           verified: boolean | null
         }
         Insert: {
-          client_record_id?: string | null
+          patients_id?: string | null
           created_at: string
           id?: string
           updated_at: string
@@ -1615,7 +1615,7 @@ export type Database = {
           verified?: boolean | null
         }
         Update: {
-          client_record_id?: string | null
+          patients_id?: string | null
           created_at?: string
           id?: string
           updated_at?: string
@@ -1690,7 +1690,7 @@ export type Database = {
         Row: {
           ai_processed: boolean | null
           appetite_suppression: string | null
-          client_record_id: string
+          patients_id: string
           completed: boolean | null
           completed_at: string | null
           created_at: string
@@ -1736,7 +1736,7 @@ export type Database = {
         Insert: {
           ai_processed?: boolean | null
           appetite_suppression?: string | null
-          client_record_id: string
+          patients_id: string
           completed?: boolean | null
           completed_at?: string | null
           created_at: string
@@ -1782,7 +1782,7 @@ export type Database = {
         Update: {
           ai_processed?: boolean | null
           appetite_suppression?: string | null
-          client_record_id?: string
+          patients_id?: string
           completed?: boolean | null
           completed_at?: string | null
           created_at?: string

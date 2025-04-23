@@ -1,6 +1,58 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '../../lib/supabase'; // Use the correct Supabase client
+import { supabase } from '../../lib/supabase';
 import { toast } from 'react-toastify';
+
+// Mock Data
+const mockConsultations = [
+  {
+    id: 'cons-001',
+    client_id: '1',
+    status: 'completed',
+    provider_notes: 'Patient responded well to treatment',
+    client_notes: 'Feeling much better after session',
+    datesubmitted: '2025-04-10T09:30:00Z',
+    created_at: '2025-04-10T09:30:00Z',
+    updated_at: '2025-04-10T09:30:00Z',
+    patients: {
+      id: '1',
+      first_name: 'John',
+      last_name: 'Doe',
+      date_of_birth: '1985-05-15'
+    }
+  },
+  {
+    id: 'cons-002',
+    client_id: '2',
+    status: 'scheduled',
+    provider_notes: 'Follow-up appointment scheduled',
+    client_notes: 'Need to discuss medication side effects',
+    datesubmitted: '2025-04-15T14:00:00Z',
+    created_at: '2025-04-15T14:00:00Z',
+    updated_at: '2025-04-15T14:00:00Z',
+    patients: {
+      id: '2',
+      first_name: 'Jane',
+      last_name: 'Smith',
+      date_of_birth: '1990-11-22'
+    }
+  },
+  {
+    id: 'cons-003',
+    client_id: '3',
+    status: 'cancelled',
+    provider_notes: 'Patient cancelled due to illness',
+    client_notes: 'Will reschedule when feeling better',
+    datesubmitted: '2025-04-05T11:15:00Z',
+    created_at: '2025-04-05T11:15:00Z',
+    updated_at: '2025-04-05T11:15:00Z',
+    patients: {
+      id: '3',
+      first_name: 'Robert',
+      last_name: 'Johnson',
+      date_of_birth: '1978-03-30'
+    }
+  }
+];
 
 // Define query keys
 const queryKeys = {
@@ -20,13 +72,49 @@ export const useConsultations = (params = {}, pageSize = 10) => {
   return useQuery({
     queryKey: queryKeys.lists(params),
     queryFn: async () => {
+      if (process.env.NODE_ENV === 'development') {
+        // Return mock data in development
+        let filteredConsults = [...mockConsultations];
+        
+        if (status) {
+          filteredConsults = filteredConsults.filter(cons => cons.status === status);
+        }
+        if (patientId) {
+          filteredConsults = filteredConsults.filter(cons => cons.client_id === patientId);
+        }
+        if (searchTerm) {
+          const searchLower = searchTerm.toLowerCase();
+          filteredConsults = filteredConsults.filter(cons => 
+            cons.patients?.first_name?.toLowerCase().includes(searchLower) ||
+            cons.patients?.last_name?.toLowerCase().includes(searchLower) ||
+            cons.provider_notes?.toLowerCase().includes(searchLower) ||
+            cons.client_notes?.toLowerCase().includes(searchLower)
+          );
+        }
+
+        const paginatedConsults = filteredConsults.slice(rangeFrom, rangeTo + 1);
+        
+        return {
+          data: paginatedConsults.map(cons => ({
+            ...cons,
+            patientName: cons.patients ? `${cons.patients.first_name || ''} ${cons.patients.last_name || ''}`.trim() : 'N/A'
+          })),
+          meta: {
+            total: filteredConsults.length,
+            per_page: pageSize,
+            current_page: currentPage,
+            last_page: Math.ceil(filteredConsults.length / pageSize),
+          },
+        };
+      }
+
       let query = supabase
         .from('consultations')
         .select(
           `
           *,
-          client_record ( id, first_name, last_name, date_of_birth )
-        `, // Join with 'client_record' table
+          patients ( id, first_name, last_name, date_of_birth )
+        `, // Join with 'patients' table
           { count: 'exact' }
         )
         .order('datesubmitted', { ascending: false }) // Revert to lowercase based on DB hint
@@ -41,10 +129,10 @@ export const useConsultations = (params = {}, pageSize = 10) => {
       }
       // Add server-side search filter
       if (searchTerm) {
-        // Search on joined client_record fields and potentially consultation notes
+        // Search on joined patients fields and potentially consultation notes
         // Removed invalid 'provider' column search. Corrected 'email' to reference joined table.
         query = query.or(
-          `client_record.first_name.ilike.%${searchTerm}%,client_record.last_name.ilike.%${searchTerm}%,client_record.email.ilike.%${searchTerm}%,provider_notes.ilike.%${searchTerm}%,client_notes.ilike.%${searchTerm}%`
+          `patients.first_name.ilike.%${searchTerm}%,patients.last_name.ilike.%${searchTerm}%,patients.email.ilike.%${searchTerm}%,provider_notes.ilike.%${searchTerm}%,client_notes.ilike.%${searchTerm}%`
         );
       }
       // Add other filters as needed based on otherFilters
@@ -60,9 +148,9 @@ export const useConsultations = (params = {}, pageSize = 10) => {
       const mappedData =
         data?.map((consult) => ({
           ...consult,
-          // Use the correct joined table name 'client_record'
-          patientName: consult.client_record 
-            ? `${consult.client_record.first_name || ''} ${consult.client_record.last_name || ''}`.trim()
+          // Use the correct joined table name 'patients'
+          patientName: consult.patients 
+            ? `${consult.patients.first_name || ''} ${consult.patients.last_name || ''}`.trim()
             : 'N/A',
         })) || [];
 
@@ -87,13 +175,24 @@ export const useConsultationById = (id, options = {}) => {
     queryFn: async () => {
       if (!id) return null;
 
+      if (process.env.NODE_ENV === 'development') {
+        // Return mock consultation in development
+        const consult = mockConsultations.find(cons => cons.id === id);
+        if (!consult) return null;
+        
+        return {
+          ...consult,
+          patientName: consult.patients ? `${consult.patients.first_name || ''} ${consult.patients.last_name || ''}`.trim() : 'N/A'
+        };
+      }
+
       const { data, error } = await supabase
         .from('consultations')
         .select(
           `
           *,
-          client_record ( id, first_name, last_name )
-        ` // Join with 'client_record' table
+          patients ( id, first_name, last_name )
+        ` // Join with 'patients' table
         )
         .eq('id', id)
         .single();
@@ -107,9 +206,9 @@ export const useConsultationById = (id, options = {}) => {
        const mappedData = data
          ? {
             ...data,
-            // Use the correct joined table name 'client_record'
-            patientName: data.client_record 
-              ? `${data.client_record.first_name || ''} ${data.client_record.last_name || ''}`.trim()
+            // Use the correct joined table name 'patients'
+            patientName: data.patients 
+              ? `${data.patients.first_name || ''} ${data.patients.last_name || ''}`.trim()
               : 'N/A',
           }
         : null;

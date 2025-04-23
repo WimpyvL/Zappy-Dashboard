@@ -24,7 +24,7 @@ function App() {
         // First check if the test table exists
         // Removed unused 'data' variable from destructuring
         const { error } = await supabase
-          .from('client_record')
+          .from('patients')
           .select('*')
           .limit(1);
 

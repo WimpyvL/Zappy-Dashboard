@@ -1,10 +1,10 @@
 -- Migration to create the sessions table
 
--- Note: Assumes 'auth.users' table exists for provider_id and 'client_record' for patient_id
+-- Note: Assumes 'auth.users' table exists for provider_id and 'patients' for patient_id
 
 CREATE TABLE IF NOT EXISTS public.sessions (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  patient_id UUID REFERENCES public.client_record(id) ON DELETE SET NULL, -- Corrected reference
+  patient_id UUID REFERENCES public.patients(id) ON DELETE SET NULL, -- Corrected reference
   provider_id UUID REFERENCES auth.users(id) ON DELETE SET NULL, -- Link to the provider/user conducting the session
   service_id UUID REFERENCES public.services(id) ON DELETE SET NULL, -- Optional link to the specific service provided
   consultation_id UUID REFERENCES public.consultations(id) ON DELETE SET NULL, -- Optional link to a related consultation
@@ -33,7 +33,7 @@ CREATE POLICY "Allow admin full access on sessions" ON public.sessions FOR ALL
   WITH CHECK (auth.uid() IN (SELECT id FROM public.profiles WHERE role = 'admin'));
 -- Patients can read their own sessions
 CREATE POLICY "Allow related patient read access on sessions" ON public.sessions FOR SELECT
-  USING (EXISTS (SELECT 1 FROM client_record WHERE client_record.id = sessions.patient_id AND client_record.id = auth.uid()));
+  USING (EXISTS (SELECT 1 FROM patients WHERE patients.id = sessions.patient_id AND patients.id = auth.uid()));
 -- Providers can manage sessions assigned to them
 CREATE POLICY "Allow provider access on sessions" ON public.sessions FOR ALL
   USING (auth.uid() = provider_id)

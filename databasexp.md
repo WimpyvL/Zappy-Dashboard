@@ -29,10 +29,10 @@ Your database consists of multiple tables that serve various functionalities. Be
    - **Purpose**: Records check-in data for clients.
    - **Key Fields**: 
      - `id`: Unique identifier for each check-in.
-     - `client_record_id`: Reference to the client.
+     - `patients_id`: Reference to the client.
      - `date`: Date of the check-in.
 
-5. **client_record**
+5. **patients**
    - **Purpose**: Stores client information and records.
    - **Key Fields**: 
      - `id`: Unique identifier for each client record.
@@ -50,7 +50,7 @@ Your database consists of multiple tables that serve various functionalities. Be
    - **Purpose**: Manages sessions for client interactions.
    - **Key Fields**: 
      - `id`: Unique identifier for each session.
-     - `client_record_id`: Reference to the client.
+     - `patients_id`: Reference to the client.
 
 8. **discounts**
    - **Purpose**: Stores discount information.
@@ -70,14 +70,14 @@ Your database consists of multiple tables that serve various functionalities. Be
     - **Purpose**: Logs email communications.
     - **Key Fields**: 
       - `id`: Unique identifier for each email log.
-      - `client_record_id`: Reference to the client.
+      - `patients_id`: Reference to the client.
       - `body`: Content of the email.
 
 11. **form_requests**
     - **Purpose**: Stores form submission requests.
     - **Key Fields**: 
       - `id`: Unique identifier for each form request.
-      - `client_record_id`: Reference to the client.
+      - `patients_id`: Reference to the client.
 
 12. **intent**
     - **Purpose**: Manages intents for natural language processing.
@@ -120,7 +120,7 @@ Your database consists of multiple tables that serve various functionalities. Be
     - **Purpose**: Manages orders placed by clients.
     - **Key Fields**: 
       - `id`: Unique identifier for each order.
-      - `client_record_id`: Reference to the client.
+      - `patients_id`: Reference to the client.
 
 19. **packages**
     - **Purpose**: Stores package information for clients.
@@ -132,13 +132,13 @@ Your database consists of multiple tables that serve various functionalities. Be
     - **Purpose**: Manages client-specific packages.
     - **Key Fields**: 
       - `id`: Unique identifier for each client package.
-      - `client_record_id`: Reference to the client.
+      - `patients_id`: Reference to the client.
 
 21. **pb_invoices**
     - **Purpose**: Manages invoices for clients.
     - **Key Fields**: 
       - `id`: Unique identifier for each invoice.
-      - `client_record_id`: Reference to the client.
+      - `patients_id`: Reference to the client.
 
 22. **pb_packages**
     - **Purpose**: Stores information about packages.
@@ -150,13 +150,13 @@ Your database consists of multiple tables that serve various functionalities. Be
     - **Purpose**: Manages sessions for clients.
     - **Key Fields**: 
       - `id`: Unique identifier for each session.
-      - `client_record_id`: Reference to the client.
+      - `patients_id`: Reference to the client.
 
 24. **pb_tasks**
     - **Purpose**: Manages tasks associated with clients.
     - **Key Fields**: 
       - `id`: Unique identifier for each task.
-      - `client_record_id`: Reference to the client.
+      - `patients_id`: Reference to the client.
 
 25. **pharmacies**
     - **Purpose**: Stores pharmacy information.
@@ -192,7 +192,7 @@ Your database consists of multiple tables that serve various functionalities. Be
     - **Purpose**: Manages client sessions.
     - **Key Fields**: 
       - `id`: Unique identifier for each session.
-      - `client_record_id`: Reference to the client.
+      - `patients_id`: Reference to the client.
 
 31. **session_chat_history**
     - **Purpose**: Stores chat history for sessions.
@@ -204,7 +204,7 @@ Your database consists of multiple tables that serve various functionalities. Be
     - **Purpose**: Logs SMS communications.
     - **Key Fields**: 
       - `id`: Unique identifier for each SMS log.
-      - `client_record_id`: Reference to the client.
+      - `patients_id`: Reference to the client.
 
 33. **subscription_plans**
     - **Purpose**: Manages subscription plans for clients.
@@ -239,7 +239,7 @@ Your database consists of multiple tables that serve various functionalities. Be
     - **Purpose**: Manages virtual follow-up records.
     - **Key Fields**: 
       - `id`: Unique identifier for each follow-up.
-      - `client_record_id`: Reference to the client.
+      - `patients_id`: Reference to the client.
 
 ## Conclusion
 This overview provides a high-level understanding of the tables in your database and their purposes. Each table is designed to handle specific data related to your application's functionality, ensuring a structured and organized approach to data management. If you need further details on any specific table or additional information, feel free to ask!

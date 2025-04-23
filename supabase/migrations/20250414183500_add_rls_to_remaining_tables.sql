@@ -16,9 +16,9 @@ CREATE POLICY "Allow admin full access on pb_tasks" ON public.pb_tasks FOR ALL
 CREATE POLICY "Allow assigned user access on pb_tasks" ON public.pb_tasks FOR ALL
   USING (auth.uid() = user_id)
   WITH CHECK (auth.uid() = user_id);
--- Patients can read tasks linked to them (using client_record_id FK)
+-- Patients can read tasks linked to them (using patients_id FK)
 CREATE POLICY "Allow related patient read access on pb_tasks" ON public.pb_tasks FOR SELECT
-  USING (EXISTS (SELECT 1 FROM client_record WHERE client_record.id = pb_tasks.client_record_id AND client_record.id = auth.uid()));
+  USING (EXISTS (SELECT 1 FROM patients WHERE patients.id = pb_tasks.patients_id AND patients.id = auth.uid()));
 
 -- --- RLS for insurance_records ---
 ALTER TABLE public.insurance_records ENABLE ROW LEVEL SECURITY;
@@ -28,10 +28,10 @@ DROP POLICY IF EXISTS "Allow related patient access on insurance_records" ON pub
 CREATE POLICY "Allow admin full access on insurance_records" ON public.insurance_records FOR ALL
   USING (auth.uid() IN (SELECT id FROM public.profiles WHERE role = 'admin'))
   WITH CHECK (auth.uid() IN (SELECT id FROM public.profiles WHERE role = 'admin'));
--- Patients can CRUD their own insurance records (using client_record_id FK)
+-- Patients can CRUD their own insurance records (using patients_id FK)
 CREATE POLICY "Allow related patient access on insurance_records" ON public.insurance_records FOR ALL
-  USING (EXISTS (SELECT 1 FROM client_record WHERE client_record.id = insurance_records.client_record_id AND client_record.id = auth.uid())) 
-  WITH CHECK (EXISTS (SELECT 1 FROM client_record WHERE client_record.id = insurance_records.client_record_id AND client_record.id = auth.uid())); 
+  USING (EXISTS (SELECT 1 FROM patients WHERE patients.id = insurance_records.patients_id AND patients.id = auth.uid())) 
+  WITH CHECK (EXISTS (SELECT 1 FROM patients WHERE patients.id = insurance_records.patients_id AND patients.id = auth.uid())); 
 
 -- --- RLS for insurance_documents ---
 ALTER TABLE public.insurance_documents ENABLE ROW LEVEL SECURITY;
@@ -46,12 +46,12 @@ CREATE POLICY "Allow admin full access on insurance_documents" ON public.insuran
 CREATE POLICY "Allow related patient access via record on insurance_documents" ON public.insurance_documents FOR ALL
   USING (EXISTS (
     SELECT 1 FROM insurance_records ir
-    JOIN client_record cr ON ir.client_record_id = cr.id -- Corrected FK join condition
+    JOIN patients cr ON ir.patients_id = cr.id -- Corrected FK join condition
     WHERE ir.id = insurance_documents.insurance_record_id AND cr.id = auth.uid()
   ))
   WITH CHECK (EXISTS (
     SELECT 1 FROM insurance_records ir
-    JOIN client_record cr ON ir.client_record_id = cr.id -- Corrected FK join condition
+    JOIN patients cr ON ir.patients_id = cr.id -- Corrected FK join condition
     WHERE ir.id = insurance_documents.insurance_record_id AND cr.id = auth.uid()
   ));
 -- Allow the user who uploaded the document to manage it (optional)
@@ -68,9 +68,9 @@ DROP POLICY IF EXISTS "Allow related patient read access on pb_invoices" ON publ
 CREATE POLICY "Allow admin full access on pb_invoices" ON public.pb_invoices FOR ALL
   USING (auth.uid() IN (SELECT id FROM public.profiles WHERE role = 'admin'))
   WITH CHECK (auth.uid() IN (SELECT id FROM public.profiles WHERE role = 'admin'));
--- Patients can read their own invoices (using client_record_id FK)
+-- Patients can read their own invoices (using patients_id FK)
 CREATE POLICY "Allow related patient read access on pb_invoices" ON public.pb_invoices FOR SELECT
-  USING (EXISTS (SELECT 1 FROM client_record WHERE client_record.id = pb_invoices.client_record_id AND client_record.id = auth.uid())); 
+  USING (EXISTS (SELECT 1 FROM patients WHERE patients.id = pb_invoices.patients_id AND patients.id = auth.uid())); 
 
 -- --- RLS for notes ---
 ALTER TABLE public.notes ENABLE ROW LEVEL SECURITY;
@@ -85,9 +85,9 @@ CREATE POLICY "Allow admin full access on notes" ON public.notes FOR ALL
 CREATE POLICY "Allow author access on notes" ON public.notes FOR ALL
   USING (auth.uid() = user_id)
   WITH CHECK (auth.uid() = user_id);
--- Patients can read notes linked to them (using client_record_id FK)
+-- Patients can read notes linked to them (using patients_id FK)
 CREATE POLICY "Allow related patient read access on notes" ON public.notes FOR SELECT
-  USING (EXISTS (SELECT 1 FROM client_record WHERE client_record.id = notes.client_record_id AND client_record.id = auth.uid())); 
+  USING (EXISTS (SELECT 1 FROM patients WHERE patients.id = notes.patients_id AND patients.id = auth.uid())); 
 
 -- --- RLS for notifications ---
 -- Policies already created in migration 20240322000017, just ensure RLS is enabled

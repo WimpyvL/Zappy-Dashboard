@@ -53,7 +53,7 @@ export const useGetPatientForms = (patientId, params = {}, options = {}) => {
           *, 
           questionnaire ( id, name ) 
         `) // Join with questionnaire to get form name
-        .eq('client_record_id', patientId) // Filter by patient
+        .eq('patients_id', patientId) // Filter by patient
         .order('created_at', { ascending: false }); // Order by creation date
 
       // Add other filters from params if needed

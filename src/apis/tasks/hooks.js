@@ -321,13 +321,13 @@ export const useAssignees = (options = {}) => {
   });
 };
 
-// Get taskable patients hook using Supabase (queries the 'client_record' table)
+// Get taskable patients hook using Supabase (queries the 'patients' table)
 export const useTaskablePatients = (options = {}) => {
   return useQuery({
     queryKey: queryKeys.taskablePatients,
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('client_record') // Corrected table name
+        .from('patients') // Corrected table name
         .select('id, first_name, last_name') // Select relevant fields
         .order('last_name', { ascending: true });
 

@@ -1,8 +1,84 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '../../lib/supabase'; // Use the correct Supabase client
+import { supabase } from '../../lib/supabase';
 import { toast } from 'react-toastify';
 
-// Removed Mock Data
+// Mock Data
+const mockInvoices = [
+  {
+    id: 'inv-001',
+    patient_id: '1',
+    status: 'paid',
+    pb_invoice_metadata: {
+      items: [
+        { name: 'Consultation', quantity: 1, price: 150 },
+        { name: 'Lab Test', quantity: 1, price: 85 }
+      ],
+      total: 235,
+      tax: 23.5,
+      discount: 0
+    },
+    date_created: '2025-04-01T09:30:00Z',
+    date_modified: '2025-04-01T09:30:00Z',
+    created_at: '2025-04-01T09:30:00Z',
+    updated_at: '2025-04-01T09:30:00Z',
+    refunded: false,
+    refunded_amount: 0,
+    patients: {
+      id: '1',
+      first_name: 'John',
+      last_name: 'Doe'
+    }
+  },
+  {
+    id: 'inv-002',
+    patient_id: '2',
+    status: 'pending',
+    pb_invoice_metadata: {
+      items: [
+        { name: 'Medication', quantity: 2, price: 45 },
+        { name: 'Follow-up', quantity: 1, price: 75 }
+      ],
+      total: 165,
+      tax: 16.5,
+      discount: 10
+    },
+    date_created: '2025-04-05T14:15:00Z',
+    date_modified: '2025-04-05T14:15:00Z',
+    created_at: '2025-04-05T14:15:00Z',
+    updated_at: '2025-04-05T14:15:00Z',
+    refunded: false,
+    refunded_amount: 0,
+    patients: {
+      id: '2',
+      first_name: 'Jane',
+      last_name: 'Smith'
+    }
+  },
+  {
+    id: 'inv-003',
+    patient_id: '3',
+    status: 'overdue',
+    pb_invoice_metadata: {
+      items: [
+        { name: 'Annual Checkup', quantity: 1, price: 200 }
+      ],
+      total: 200,
+      tax: 20,
+      discount: 0
+    },
+    date_created: '2025-03-20T11:00:00Z',
+    date_modified: '2025-03-20T11:00:00Z',
+    created_at: '2025-03-20T11:00:00Z',
+    updated_at: '2025-03-20T11:00:00Z',
+    refunded: false,
+    refunded_amount: 0,
+    patients: {
+      id: '3',
+      first_name: 'Robert',
+      last_name: 'Johnson'
+    }
+  }
+];
 
 // Define query keys
 const queryKeys = {
@@ -20,11 +96,40 @@ export const useInvoices = (params = {}, pageSize = 10) => {
   return useQuery({
     queryKey: queryKeys.lists(params),
     queryFn: async () => {
+      if (process.env.NODE_ENV === 'development') {
+        // Return mock data in development
+        let filteredInvoices = [...mockInvoices];
+        
+        if (params.status) {
+          filteredInvoices = filteredInvoices.filter(inv => inv.status === params.status);
+        }
+        if (params.patientId) {
+          filteredInvoices = filteredInvoices.filter(inv => inv.patient_id === params.patientId);
+        }
+
+        const paginatedInvoices = filteredInvoices.slice(rangeFrom, rangeTo + 1);
+        
+        return {
+          data: paginatedInvoices.map(inv => ({
+            ...inv,
+            patientName: inv.patients ? `${inv.patients.first_name || ''} ${inv.patients.last_name || ''}`.trim() : 'N/A',
+            amount: inv.pb_invoice_metadata?.total || 0,
+            items: inv.pb_invoice_metadata?.items || []
+          })),
+          meta: {
+            total: filteredInvoices.length,
+            per_page: pageSize,
+            current_page: currentPage,
+            last_page: Math.ceil(filteredInvoices.length / pageSize),
+          },
+        };
+      }
+
       let query = supabase
         .from('pb_invoices') // Target the pb_invoices table
         .select(`
           *,
-          client_record ( id, first_name, last_name )
+          patients ( id, first_name, last_name )
         `, { count: 'exact' }) 
         .order('created_at', { ascending: false }) 
         .range(rangeFrom, rangeTo);
@@ -50,7 +155,7 @@ export const useInvoices = (params = {}, pageSize = 10) => {
       // Map data if needed
       const mappedData = data?.map(inv => ({
           ...inv,
-          patientName: inv.client_record ? `${inv.client_record.first_name || ''} ${inv.client_record.last_name || ''}`.trim() : 'N/A',
+          patientName: inv.patients ? `${inv.patients.first_name || ''} ${inv.patients.last_name || ''}`.trim() : 'N/A',
           amount: inv.pb_invoice_metadata?.total || 0, 
           items: inv.pb_invoice_metadata?.items || [], 
       })) || [];
@@ -76,11 +181,24 @@ export const useInvoiceById = (id, options = {}) => {
     queryFn: async () => {
       if (!id) return null;
 
+      if (process.env.NODE_ENV === 'development') {
+        // Return mock invoice in development
+        const invoice = mockInvoices.find(inv => inv.id === id);
+        if (!invoice) return null;
+        
+        return {
+          ...invoice,
+          patientName: invoice.patients ? `${invoice.patients.first_name || ''} ${invoice.patients.last_name || ''}`.trim() : 'N/A',
+          amount: invoice.pb_invoice_metadata?.total || 0,
+          items: invoice.pb_invoice_metadata?.items || []
+        };
+      }
+
       const { data, error } = await supabase
         .from('pb_invoices')
         .select(`
           *,
-          client_record ( id, first_name, last_name )
+          patients ( id, first_name, last_name )
         `) 
         .eq('id', id)
         .single();
@@ -93,7 +211,7 @@ export const useInvoiceById = (id, options = {}) => {
        // Map data if needed
        const mappedData = data ? {
            ...data,
-           patientName: data.client_record ? `${data.client_record.first_name || ''} ${data.client_record.last_name || ''}`.trim() : 'N/A',
+           patientName: data.patients ? `${data.patients.first_name || ''} ${data.patients.last_name || ''}`.trim() : 'N/A',
            amount: data.pb_invoice_metadata?.total || 0,
            items: data.pb_invoice_metadata?.items || [],
        } : null;

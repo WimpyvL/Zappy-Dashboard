@@ -3,13 +3,11 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Eye, EyeOff, AlertCircle, CheckCircle } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { useAuth } from '../../context/AuthContext';
-import { useMutation } from '@tanstack/react-query';
-import apiService from '../../utils/apiService';
 
 const Login = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { setUser, error: authError, isAuthenticated, clearError } = useAuth();
+  const { login, error: authError, isAuthenticated, clearError } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   const [successMessage, setSuccessMessage] = useState(
     location.state?.message || ''
@@ -38,40 +36,14 @@ const Login = () => {
 
   const togglePasswordVisibility = () => setShowPassword((prev) => !prev);
 
-  const mutation = useMutation({
-    mutationFn: ({ email, password }) => apiService.auth.login(email, password),
-    onSuccess: (response) => {
-      const authHeader =
-        response.headers?.authorization || response.headers?.Authorization;
-      const token = authHeader?.startsWith('Bearer ')
-        ? authHeader.split(' ')[1]
-        : null;
-
-      if (token) localStorage.setItem('token', token);
-
-      const userData = {
-        email: response.data?.attributes?.email,
-        role: response.data?.attributes?.role,
-        id: response.data?.id,
-      };
-
-      localStorage.setItem('isAuthenticated', 'true');
-      localStorage.setItem('user', JSON.stringify(userData));
-      setUser(userData);
-      reset();
-    },
-    onError: (error) => {
-      setApiError(
-        error?.response?.data ||
-          'An unexpected error occurred. Please try again.'
-      );
-    },
-  });
-
-  const onSubmit = (data) => {
+  const onSubmit = async (data) => {
     setSuccessMessage('');
     setApiError('');
-    mutation.mutate(data);
+    const { email, password } = data;
+    const result = await login(email, password);
+    if (result.success) {
+      reset();
+    }
   };
 
   return (
@@ -169,14 +141,9 @@ const Login = () => {
 
           <button
             type="submit"
-            disabled={mutation.isLoading}
-            className={`w-full py-2 px-4 text-sm font-medium text-white rounded-md shadow-sm ${
-              mutation.isLoading
-                ? 'bg-indigo-400'
-                : 'bg-indigo-600 hover:bg-indigo-700'
-            } focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500`}
+            className="w-full py-2 px-4 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-md shadow-sm focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
           >
-            {mutation.isPending ? 'Signing in...' : 'Sign in'}
+            Sign in
           </button>
 
           <p className="mt-6 text-center text-sm text-gray-600">

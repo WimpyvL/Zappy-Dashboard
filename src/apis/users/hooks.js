@@ -1,78 +1,116 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import apiService from '../../utils/apiService'; // Import the central apiService
+import { supabase } from '../../utils/supabaseClient';
 import { toast } from 'react-toastify';
 
-// --- Mock Data ---
-const sampleUserProfileData = {
-  id: 'user_admin',
-  firstName: 'Admin',
-  lastName: 'User',
-  email: 'admin@example.com',
-  role: 'admin', // Example role
-  // Add other profile fields as needed
-};
-// --- End Mock Data ---
-
-// React Query hooks moved from apiService.js
-// Get user profile hook (Mocked)
-export const useGetProfile = () => {
-  console.log('Using mock user profile data');
-  // Assuming 'profile' is a stable key, adjust if user ID specific
+export const useGetProfile = (userId) => {
   return useQuery({
-    queryKey: ['profile'],
-    // queryFn: () => apiService.users.getProfile(), // Original API call
-    queryFn: () => Promise.resolve(sampleUserProfileData), // Return mock data
-    staleTime: Infinity,
+    queryKey: ['profile', userId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', userId)
+        .single();
+      
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!userId,
+    staleTime: 1000 * 60 * 5, // 5 minutes
   });
 };
 
-// Update user profile hook (Mocked)
 export const useUpdateProfile = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    // mutationFn: (userData) => apiService.users.updateProfile(userData), // Original API call
     mutationFn: async (userData) => {
-      console.log('Mock Updating profile:', userData);
-      await new Promise((resolve) => setTimeout(resolve, 300)); // Simulate delay
-      // Update the mock data (in a real scenario, this might update a store)
-      Object.assign(sampleUserProfileData, userData);
-      return { data: { ...sampleUserProfileData } }; // Simulate API response
+      const { data, error } = await supabase
+        .from('users')
+        .update(userData)
+        .eq('id', userData.id);
+      
+      if (error) throw error;
+      return data;
     },
-    onSuccess: (data, variables, context) => {
-      queryClient.invalidateQueries({ queryKey: ['profile'] });
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['profile', data[0]?.id] });
       toast.success('Profile updated successfully');
-      // options.onSuccess?.(data, variables, context); // Pass options if needed
     },
-    onError: (error, variables, context) => {
-      toast.error(
-        error.message || 'An error occurred while updating the profile.'
-      );
-      // options.onError?.(error, variables, context); // Pass options if needed
-    },
+    onError: (error) => {
+      toast.error(error.message || 'Failed to update profile');
+    }
   });
 };
 
-// Change password hook (Mocked)
 export const useChangePassword = () => {
   return useMutation({
-    // mutationFn: ({ currentPassword, newPassword }) => apiService.users.changePassword(currentPassword, newPassword), // Original API call
-    mutationFn: async ({ currentPassword, newPassword }) => {
-      console.log('Mock Changing password (validation skipped)');
-      await new Promise((resolve) => setTimeout(resolve, 300)); // Simulate delay
-      // In a real mock, you might check currentPassword against a stored mock password
-      return { success: true }; // Simulate API response
+    mutationFn: async ({ newPassword }) => {
+      const { error } = await supabase.auth.updateUser({ password: newPassword });
+      if (error) throw error;
+      return { success: true };
     },
-    onSuccess: (data, variables, context) => {
+    onSuccess: () => {
       toast.success('Password changed successfully');
-      // options.onSuccess?.(data, variables, context); // Pass options if needed
     },
-    onError: (error, variables, context) => {
-      toast.error(
-        error.message || 'An error occurred while changing the password.'
-      );
-      // options.onError?.(error, variables, context); // Pass options if needed
-    },
+    onError: (error) => {
+      toast.error(error.message || 'Failed to change password');
+    }
   });
 };
 
-// Add other user-related hooks if needed (e.g., useGetUsers for admin lists)
+export const useUsers = () => {
+  return useQuery({
+    queryKey: ['users'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('users')
+        .select('*');
+      
+      if (error) throw error;
+      return data;
+    }
+  });
+};
+
+export const useCreateUser = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (userData) => {
+      const { data, error } = await supabase
+        .from('users')
+        .insert([userData]);
+      
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['users'] });
+      toast.success('User created successfully');
+    },
+    onError: (error) => {
+      toast.error(error.message || 'Failed to create user');
+    }
+  });
+};
+
+export const useDeleteUser = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (userId) => {
+      const { error } = await supabase
+        .from('users')
+        .delete()
+        .eq('id', userId);
+      
+      if (error) throw error;
+      return { success: true };
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['users'] });
+      toast.success('User deleted successfully');
+    },
+    onError: (error) => {
+      toast.error(error.message || 'Failed to delete user');
+    }
+  });
+};

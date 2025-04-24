@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "supabase": {
+      "command": "cmd /c npx -y @supabase/mcp-server-supabase@latest --access-token sbp_5ea1b357a62618615560db5a05eb91f0b9787559",
+      "autoStart": true
+    }
+  }
+}

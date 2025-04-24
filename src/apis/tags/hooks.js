@@ -1,69 +1,51 @@
-// hooks.js - React Query Hooks for Tags
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-// Commented out direct API imports as we use apiService or mock data
-// import {
-//   getTags,
-//   getTagById,
-//   createTag,
-//   updateTag,
-//   deleteTag,
-//   getTagUsage
-// } from './api';
-// import apiService from '../../utils/apiService'; // Removed unused import
 import { toast } from 'react-toastify';
+import { supabase } from '../../utils/supabaseClient';
 
-// --- Mock Data ---
-const sampleTagsData = [
-  { id: 'vip', name: 'VIP', color: 'gold' },
-  { id: 'follow-up', name: 'Needs Follow Up', color: 'blue' },
-  { id: 'high-risk', name: 'High Risk', color: 'red' },
-  { id: 'new-patient', name: 'New Patient', color: 'green' },
-];
-// --- End Mock Data ---
-
-// Hook to fetch all tags (Mocked)
 export const useTags = (params = {}) => {
-  console.log('Using mock tags data in useTags hook');
   return useQuery({
     queryKey: ['tags', params],
-    // queryFn: () => getTags(params), // Original direct API call
-    // queryFn: () => apiService.tags.getAll(params), // Original apiService call
-    queryFn: () => Promise.resolve({ data: sampleTagsData }), // Return mock data
-    staleTime: Infinity, // Prevent refetching for mock data
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('tags')
+        .select('*');
+      
+      if (error) throw error;
+      return { data };
+    }
   });
 };
 
-// Hook to fetch a specific tag by ID (Mocked)
 export const useTagById = (id, options = {}) => {
-  console.log(`Using mock tag data for ID: ${id} in useTagById hook`);
   return useQuery({
     queryKey: ['tag', id],
-    // queryFn: () => apiService.tags.getById(id), // Original API call
-    queryFn: () =>
-      Promise.resolve(
-        sampleTagsData.find((t) => t.id === id) || sampleTagsData[0]
-      ), // Find mock tag or return first
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('tags')
+        .select('*')
+        .eq('id', id)
+        .single();
+      
+      if (error) throw error;
+      return data;
+    },
     enabled: !!id,
-    staleTime: Infinity,
     ...options,
   });
 };
 
-// Hook to create a new tag
 export const useCreateTag = (options = {}) => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    // mutationFn: (tagData) => apiService.tags.create(tagData), // Original API call
     mutationFn: async (tagData) => {
-      console.log('Mock Creating tag:', tagData);
-      await new Promise((resolve) => setTimeout(resolve, 300)); // Simulate delay
-      const newTag = {
-        id: tagData.name.toLowerCase().replace(/\s+/g, '-'), // Generate mock ID from name
-        ...tagData,
-      };
-      // Note: Doesn't actually add to sampleTagsData
-      return { data: newTag }; // Simulate API response
+      const { data, error } = await supabase
+        .from('tags')
+        .insert([tagData])
+        .select();
+      
+      if (error) throw error;
+      return { data: data[0] };
     },
     onSuccess: (data, variables, context) => {
       // Added params
@@ -76,20 +58,23 @@ export const useCreateTag = (options = {}) => {
       toast.error(error.message || 'An error occurred while creating the tag.');
       options.onError?.(error, variables, context); // Pass params
     },
-    onSettled: options.onSettled, // Pass through onSettled
+    onSettled: options.onSettled // Pass through onSettled
   });
 };
 
-// Hook to update an existing tag
 export const useUpdateTag = (options = {}) => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    // mutationFn: ({ id, tagData }) => apiService.tags.update(id, tagData), // Original API call
     mutationFn: async ({ id, tagData }) => {
-      console.log(`Mock Updating tag ${id}:`, tagData);
-      await new Promise((resolve) => setTimeout(resolve, 300)); // Simulate delay
-      return { data: { id, ...tagData } }; // Simulate API response
+      const { data, error } = await supabase
+        .from('tags')
+        .update(tagData)
+        .eq('id', id)
+        .select();
+      
+      if (error) throw error;
+      return { data: data[0] };
     },
     onSuccess: (data, variables, context) => {
       // Added params
@@ -103,20 +88,22 @@ export const useUpdateTag = (options = {}) => {
       toast.error(error.message || 'An error occurred while updating the tag.');
       options.onError?.(error, variables, context); // Pass params
     },
-    onSettled: options.onSettled, // Pass through onSettled
+    onSettled: options.onSettled // Pass through onSettled
   });
 };
 
-// Hook to delete a tag
 export const useDeleteTag = (options = {}) => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    // mutationFn: (id) => apiService.tags.delete(id), // Original API call
     mutationFn: async (id) => {
-      console.log(`Mock Deleting tag ${id}`);
-      await new Promise((resolve) => setTimeout(resolve, 300)); // Simulate delay
-      return { success: true }; // Simulate API response
+      const { error } = await supabase
+        .from('tags')
+        .delete()
+        .eq('id', id);
+      
+      if (error) throw error;
+      return { success: true };
     },
     onSuccess: (data, variables, context) => {
       // Added params
@@ -131,27 +118,23 @@ export const useDeleteTag = (options = {}) => {
       toast.error(error.message || 'An error occurred while deleting the tag.');
       options.onError?.(error, variables, context); // Pass params
     },
-    onSettled: options.onSettled, // Pass through onSettled
+    onSettled: options.onSettled // Pass through onSettled
   });
 };
 
-// Hook to get tag usage information (Mocked)
 export const useTagUsage = (id, options = {}) => {
-  console.log(`Using mock tag usage data for ID: ${id}`);
   return useQuery({
     queryKey: ['tagUsage', id],
-    // queryFn: () => apiService.tags.getUsage(id), // Original API call
-    queryFn: () => {
-      // Simulate usage based on sample data (very basic example)
-      const usage = {
-        patients: sampleTagsData.find((t) => t.id === id) ? 1 : 0, // Example: Check if tag exists
-        orders: id === 'vip' ? 1 : 0, // Example: VIP tag used in 1 order
-        sessions: id === 'follow-up' ? 1 : 0, // Example: follow-up used in 1 session
-      };
-      return Promise.resolve({ usage });
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('tag_usage')
+        .select('*')
+        .eq('tag_id', id);
+      
+      if (error) throw error;
+      return { usage: data };
     },
     enabled: !!id,
-    staleTime: Infinity,
     ...options,
   });
 };

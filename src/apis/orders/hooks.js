@@ -1,229 +1,177 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-// import apiService from '../../utils/apiService'; // Removed unused import
-// import { toast } from 'react-toastify'; // Removed unused import
+import { supabase } from '../../utils/supabaseClient'; // Import Supabase client
+import { toast } from 'react-toastify'; // Keep toast for feedback
 
-// --- Mock Data ---
-const sampleOrdersData = [
-  {
-    id: 'o001',
-    patientId: 'p001',
-    patientName: 'John Smith',
-    orderDate: new Date().toISOString(),
-    status: 'pending',
-    medication: 'Ozempic',
-    tags: [],
-    linkedSessionId: 's001',
-    pharmacy: 'Compounding Pharmacy A',
-    holdReason: null,
-  },
-  {
-    id: 'o002',
-    patientId: 'p002',
-    patientName: 'Emily Davis',
-    orderDate: new Date(Date.now() - 86400000).toISOString(),
-    status: 'shipped',
-    medication: 'Wegovy',
-    tags: [],
-    linkedSessionId: 's002',
-    pharmacy: 'Retail Pharmacy B',
-    trackingNumber: 'TRK123456',
-    estimatedDelivery: '2025-04-05',
-    holdReason: null,
-  },
-  {
-    id: 'o003',
-    patientId: 'p001',
-    patientName: 'John Smith',
-    orderDate: new Date(Date.now() - 172800000).toISOString(),
-    status: 'delivered', // Assuming delivered is a status
-    medication: 'Ozempic',
-    tags: [],
-    linkedSessionId: null,
-    pharmacy: 'Compounding Pharmacy A',
-    holdReason: null,
-  },
-  {
-    id: 'o004',
-    patientId: 'p003',
-    patientName: 'Robert Wilson',
-    orderDate: new Date(Date.now() - 5 * 86400000).toISOString(),
-    status: 'pending',
-    medication: 'Mounjaro',
-    tags: [],
-    linkedSessionId: 's003',
-    pharmacy: 'Compounding Pharmacy C',
-    holdReason: 'Awaiting follow-up appointment',
-  },
-];
-// --- End Mock Data ---
+// --- Mock Data Removed ---
 
-// Get orders hook (Mocked)
-export const useOrders = (currentPage, filters) => {
-  console.log('Using mock orders data in useOrders hook');
-  const params = { page: currentPage, ...filters };
+const queryKeys = {
+  all: ['orders'],
+  lists: (params) => [...queryKeys.all, 'list', params],
+  details: (id) => [...queryKeys.all, 'detail', id],
+};
+
+// Get orders hook (Using Supabase)
+export const useOrders = (params = {}) => {
+  // console.log('Using Supabase orders data in useOrders hook');
   return useQuery({
-    queryKey: ['orders', params],
-    // queryFn: () => apiService.orders.getAll(params), // Original API call
-    queryFn: () =>
-      Promise.resolve({
-        data: sampleOrdersData, // Return mock data
-        meta: {
-          total_count: sampleOrdersData.length,
-          // Add other meta fields if needed
-        },
-      }),
-    staleTime: Infinity,
+    queryKey: queryKeys.lists(params),
+    queryFn: async () => {
+      let query = supabase.from('orders').select('*'); // Assuming table name is 'orders'
+      // Add filtering/pagination based on params if needed
+      // Example: if (params.status) query = query.eq('status', params.status);
+      // Example: if (params.page && params.limit) {
+      //   const offset = (params.page - 1) * params.limit;
+      //   query = query.range(offset, offset + params.limit - 1);
+      // }
+      const { data, error, count } = await query.order('orderDate', { ascending: false }); // Example ordering
+
+      if (error) throw error;
+      // Returning data and count for potential pagination
+      return { data, meta: { total_count: count } };
+    },
+    // keepPreviousData: true, // Consider if needed for pagination
+    staleTime: 5 * 60 * 1000, // Example: 5 minutes stale time
   });
 };
 
-// Get order by ID hook (Mocked)
+// Get order by ID hook (Using Supabase)
 export const useOrderById = (id, options = {}) => {
-  console.log(`Using mock order data for ID: ${id} in useOrderById hook`);
+  // console.log(`Using Supabase order data for ID: ${id} in useOrderById hook`);
   return useQuery({
-    queryKey: ['order', id],
-    // queryFn: () => apiService.orders.getById(id), // Original API call
-    queryFn: () =>
-      Promise.resolve(
-        sampleOrdersData.find((o) => o.id === id) || sampleOrdersData[0]
-      ), // Find mock order or return first
+    queryKey: queryKeys.details(id),
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('orders') // Assuming table name is 'orders'
+        .select('*')
+        .eq('id', id)
+        .single();
+      if (error) throw error;
+      return data;
+    },
     enabled: !!id,
     staleTime: Infinity,
     ...options,
   });
 };
 
-// Create order hook (Mocked)
+// Create order hook (Using Supabase)
 export const useCreateOrder = (options = {}) => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    // mutationFn: (orderData) => apiService.orders.create(orderData), // Original API call
     mutationFn: async (orderData) => {
-      console.log('Mock Creating order:', orderData);
-      await new Promise((resolve) => setTimeout(resolve, 300)); // Simulate delay
-      const newOrder = {
-        id: `o${Date.now()}`, // Generate mock ID
-        ...orderData,
-        status: 'pending', // Default status
-        orderDate: new Date().toISOString(),
-      };
-      // Note: Doesn't actually add to sampleOrdersData
-      return { data: newOrder }; // Simulate API response
+      // console.log('Supabase Creating order:', orderData);
+      // Ensure required fields like patientId, etc., are present in orderData
+      const { data, error } = await supabase
+        .from('orders') // Assuming table name is 'orders'
+        .insert([{ ...orderData, status: 'pending', orderDate: new Date().toISOString() }]) // Set defaults
+        .select();
+      if (error) throw error;
+      return data?.[0];
     },
     onSuccess: (data, variables, context) => {
-      // Added params
-      queryClient.invalidateQueries({ queryKey: ['orders'] });
-      options.onSuccess?.(data, variables, context); // Pass params
+      queryClient.invalidateQueries({ queryKey: queryKeys.lists() });
+      toast.success('Order created successfully');
+      options.onSuccess?.(data, variables, context);
     },
-    onError: options.onError, // Pass through onError
-    onSettled: options.onSettled, // Pass through onSettled
+    onError: (error, variables, context) => {
+      toast.error(`Error creating order: ${error.message || 'Unknown error'}`);
+      options.onError?.(error, variables, context);
+    },
+    onSettled: options.onSettled,
   });
 };
 
-// Update order hook (Mocked)
+// Update order hook (Using Supabase)
 export const useUpdateOrder = (options = {}) => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    // mutationFn: ({ id, orderData }) => apiService.orders.update(id, orderData), // Original API call
-    mutationFn: async ({ id, orderData }) => {
-      console.log(`Mock Updating order ${id}:`, orderData);
-      await new Promise((resolve) => setTimeout(resolve, 300)); // Simulate delay
-      return { data: { id, ...orderData } }; // Simulate API response
+    mutationFn: async ({ id, ...orderData }) => {
+      // console.log(`Supabase Updating order ${id}:`, orderData);
+      const { data, error } = await supabase
+        .from('orders') // Assuming table name is 'orders'
+        .update(orderData)
+        .eq('id', id)
+        .select();
+      if (error) throw error;
+      return data?.[0];
     },
     onSuccess: (data, variables, context) => {
-      // Added params
-      queryClient.invalidateQueries({ queryKey: ['orders'] });
-      queryClient.invalidateQueries({ queryKey: ['order', variables.id] }); // Use variables.id
-      options.onSuccess?.(data, variables, context); // Pass params
+      queryClient.invalidateQueries({ queryKey: queryKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.details(variables.id) });
+      toast.success('Order updated successfully');
+      options.onSuccess?.(data, variables, context);
     },
-    onError: options.onError, // Pass through onError
-    onSettled: options.onSettled, // Pass through onSettled
+    onError: (error, variables, context) => {
+      toast.error(`Error updating order: ${error.message || 'Unknown error'}`);
+      options.onError?.(error, variables, context);
+    },
+    onSettled: options.onSettled,
   });
 };
 
-// Update order status hook
+// Update order status hook (Using Supabase - simplified, might need dedicated function/policy)
 export const useUpdateOrderStatus = (options = {}) => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    // mutationFn: ({ orderId, status }) => apiService.orders.updateStatus(orderId, status), // Original API call
     mutationFn: async ({ orderId, status }) => {
-      console.log(`Mock Updating order ${orderId} status to: ${status}`);
-      await new Promise((resolve) => setTimeout(resolve, 300)); // Simulate delay
-      return { success: true, id: orderId, status: status }; // Simulate API response
+      // console.log(`Supabase Updating order ${orderId} status to: ${status}`);
+      // This uses a standard update. Consider if a specific function or RLS policy is better.
+      const { data, error } = await supabase
+        .from('orders') // Assuming table name is 'orders'
+        .update({ status: status })
+        .eq('id', orderId)
+        .select(); // Select to confirm update
+      if (error) throw error;
+      return data?.[0]; // Return updated order
     },
     onSuccess: (data, variables, context) => {
-      // Added params
-      queryClient.invalidateQueries({ queryKey: ['orders'] });
-      queryClient.invalidateQueries({ queryKey: ['order', variables.orderId] }); // Use variables.orderId
-      options.onSuccess?.(data, variables, context); // Pass params
+      queryClient.invalidateQueries({ queryKey: queryKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.details(variables.orderId) });
+      toast.success(`Order status updated to ${variables.status}`);
+      options.onSuccess?.(data, variables, context);
     },
-    onError: options.onError, // Pass through onError
-    onSettled: options.onSettled, // Pass through onSettled
+    onError: (error, variables, context) => {
+      toast.error(`Error updating order status: ${error.message || 'Unknown error'}`);
+      options.onError?.(error, variables, context);
+    },
+    onSettled: options.onSettled,
   });
 };
 
-// Delete order hook (Mocked)
+// Delete order hook (Using Supabase)
 export const useDeleteOrder = (options = {}) => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    // mutationFn: (id) => apiService.orders.delete(id), // Original API call
     mutationFn: async (id) => {
-      console.log(`Mock Deleting order ${id}`);
-      await new Promise((resolve) => setTimeout(resolve, 300)); // Simulate delay
-      return { success: true }; // Simulate API response
+      // console.log(`Supabase Deleting order ${id}`);
+      const { error } = await supabase
+        .from('orders') // Assuming table name is 'orders'
+        .delete()
+        .eq('id', id);
+      if (error) throw error;
+      return { success: true };
     },
     onSuccess: (data, variables, context) => {
-      // Added params
-      queryClient.invalidateQueries({ queryKey: ['orders'] });
-      // Optionally remove detail query: queryClient.removeQueries({ queryKey: ['order', variables] });
-      options.onSuccess?.(data, variables, context); // Pass params
+      queryClient.invalidateQueries({ queryKey: queryKeys.lists() });
+      queryClient.removeQueries({ queryKey: queryKeys.details(variables) });
+      toast.success('Order deleted successfully');
+      options.onSuccess?.(data, variables, context);
     },
-    onError: options.onError, // Pass through onError
-    onSettled: options.onSettled, // Pass through onSettled
+    onError: (error, variables, context) => {
+      toast.error(`Error deleting order: ${error.message || 'Unknown error'}`);
+      options.onError?.(error, variables, context);
+    },
+    onSettled: options.onSettled,
   });
 };
 
-// Hook for adding a tag to an order (Example - adjust based on actual API)
-export const useAddOrderTag = (options = {}) => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    // mutationFn: ({ entityId, tagId }) => apiService.orders.addTag(entityId, tagId), // Original API call
-    mutationFn: async ({ entityId, tagId }) => {
-      console.log(`Mock Adding tag ${tagId} to order ${entityId}`);
-      await new Promise((resolve) => setTimeout(resolve, 300)); // Simulate delay
-      return { success: true }; // Simulate success
-    },
-    onSuccess: (data, variables, context) => {
-      queryClient.invalidateQueries({
-        queryKey: ['order', variables.entityId],
-      });
-      queryClient.invalidateQueries({ queryKey: ['orders'] });
-      options.onSuccess?.(data, variables, context);
-    },
-    onError: options.onError,
-  });
-};
+// Hook for adding/removing tags might require specific Supabase functions or complex updates
+// depending on how tags are stored (e.g., JSONB array, separate join table).
+// The mock implementation is removed as it's highly dependent on the DB schema.
 
-// Hook for removing a tag from an order (Example - adjust based on actual API)
-export const useRemoveOrderTag = (options = {}) => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    // mutationFn: ({ entityId, tagId }) => apiService.orders.removeTag(entityId, tagId), // Original API call
-    mutationFn: async ({ entityId, tagId }) => {
-      console.log(`Mock Removing tag ${tagId} from order ${entityId}`);
-      await new Promise((resolve) => setTimeout(resolve, 300)); // Simulate delay
-      return { success: true }; // Simulate success
-    },
-    onSuccess: (data, variables, context) => {
-      queryClient.invalidateQueries({
-        queryKey: ['order', variables.entityId],
-      });
-      queryClient.invalidateQueries({ queryKey: ['orders'] });
-      options.onSuccess?.(data, variables, context);
-    },
-    onError: options.onError,
-  });
-};
+// export const useAddOrderTag = ... (Removed - Implement based on DB schema)
+// export const useRemoveOrderTag = ... (Removed - Implement based on DB schema)

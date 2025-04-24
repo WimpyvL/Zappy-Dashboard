@@ -1,18 +1,19 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Eye, EyeOff, Check, X } from 'lucide-react';
-import apiService from '../../utils/apiService'; // Import apiService
+import { useAuth } from '../../context/AuthContext';
 
 const Signup = () => {
   const navigate = useNavigate();
+  const { register: authRegister } = useAuth();
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
     email: '',
     password: '',
     confirmPassword: '',
-    role: 'patient', // Default role
-    referralCode: '', // Added referral code state
+    role: 'patient',
+    referralCode: '',
   });
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState({});
@@ -25,14 +26,12 @@ const Signup = () => {
       [name]: value,
     });
 
-    // Clear error when user types
     if (errors[name]) {
       setErrors({
         ...errors,
         [name]: '',
       });
     }
-    // Clear form-level error on any input change
     if (errors.form) {
       setErrors((prev) => ({ ...prev, form: null }));
     }
@@ -42,7 +41,6 @@ const Signup = () => {
     setShowPassword(!showPassword);
   };
 
-  // Password strength indicators
   const passwordRequirements = [
     {
       id: 'length',
@@ -98,43 +96,31 @@ const Signup = () => {
     if (!validateForm()) return;
 
     setIsLoading(true);
-    setErrors({}); // Clear previous form errors
+    setErrors({});
 
-    // Prepare payload, excluding confirmPassword
     const { confirmPassword, referralCode, ...basePayload } = formData;
-    const payload = { ...basePayload };
-
-    // Only include referralCode if it's not empty
-    if (referralCode && referralCode.trim() !== '') {
-      payload.referralCode = referralCode.trim();
-    }
+    const payload = { 
+      ...basePayload,
+      ...(referralCode && referralCode.trim() !== '' && { referralCode: referralCode.trim() })
+    };
 
     try {
-      // Use the actual API service call
-      await apiService.auth.register(payload); // Assuming register handles the payload structure
-
-      // Reset form (optional, as we navigate away)
-      // setFormData({ ...initial state... });
-
-      // Navigate to login page with success message
-      navigate('/login', {
-        state: { message: 'Account created successfully! Please log in.' },
-      });
+      const result = await authRegister(payload);
+      if (result.success) {
+        navigate('/login', {
+          state: { message: 'Account created successfully! Please log in.' },
+        });
+      }
     } catch (error) {
       console.error('Registration error:', error);
-      // Display specific error from API if available, otherwise generic message
-      const apiErrorMessage = error.response?.data?.error || error.message;
       setErrors({
-        form:
-          apiErrorMessage ||
-          'Registration failed. Please check your details or try again later.',
+        form: error.message || 'Registration failed. Please try again later.',
       });
     } finally {
       setIsLoading(false);
     }
   };
 
-  // --- Render ---
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100 p-4">
       <div className="max-w-md w-full bg-white rounded-lg shadow-md overflow-hidden">
@@ -151,9 +137,7 @@ const Signup = () => {
               </div>
             )}
 
-            {/* Form Fields */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-              {/* First Name */}
               <div>
                 <label
                   htmlFor="firstName"
@@ -178,7 +162,6 @@ const Signup = () => {
                   </p>
                 )}
               </div>
-              {/* Last Name */}
               <div>
                 <label
                   htmlFor="lastName"
@@ -202,7 +185,7 @@ const Signup = () => {
                 )}
               </div>
             </div>
-            {/* Email */}
+
             <div className="mb-6">
               <label
                 htmlFor="email"
@@ -225,7 +208,7 @@ const Signup = () => {
                 <p className="mt-1 text-sm text-red-600">{errors.email}</p>
               )}
             </div>
-            {/* Password */}
+
             <div className="mb-6">
               <label
                 htmlFor="password"
@@ -260,7 +243,6 @@ const Signup = () => {
               {errors.password && (
                 <p className="mt-1 text-sm text-red-600">{errors.password}</p>
               )}
-              {/* Password strength indicators */}
               <div className="mt-2 space-y-2">
                 {passwordRequirements.map((req) => (
                   <div key={req.id} className="flex items-center text-sm">
@@ -282,7 +264,7 @@ const Signup = () => {
                 ))}
               </div>
             </div>
-            {/* Confirm Password */}
+
             <div className="mb-6">
               <label
                 htmlFor="confirmPassword"
@@ -309,7 +291,7 @@ const Signup = () => {
                 </p>
               )}
             </div>
-            {/* Role */}
+
             <div className="mb-6">
               <label
                 htmlFor="role"
@@ -329,7 +311,7 @@ const Signup = () => {
                 <option value="admin">Administrator</option>
               </select>
             </div>
-            {/* Referral Code */}
+
             <div className="mb-6">
               <label
                 htmlFor="referralCode"
@@ -348,7 +330,7 @@ const Signup = () => {
                 onChange={handleInputChange}
               />
             </div>
-            {/* Terms */}
+
             <div className="mb-6">
               <div className="flex items-center">
                 <input
@@ -366,7 +348,7 @@ const Signup = () => {
                   <button
                     type="button"
                     className="font-medium text-indigo-600 hover:text-indigo-500 underline bg-transparent border-none p-0 cursor-pointer"
-                    onClick={() => alert('Navigate to Terms of Service (Placeholder)')} // Placeholder action
+                    onClick={() => alert('Navigate to Terms of Service (Placeholder)')}
                   >
                     Terms of Service
                   </button>{' '}
@@ -374,14 +356,14 @@ const Signup = () => {
                   <button
                     type="button"
                     className="font-medium text-indigo-600 hover:text-indigo-500 underline bg-transparent border-none p-0 cursor-pointer"
-                    onClick={() => alert('Navigate to Privacy Policy (Placeholder)')} // Placeholder action
+                    onClick={() => alert('Navigate to Privacy Policy (Placeholder)')}
                   >
                     Privacy Policy
                   </button>
                 </label>
               </div>
             </div>
-            {/* Submit Button */}
+
             <button
               type="submit"
               disabled={isLoading}
@@ -389,7 +371,7 @@ const Signup = () => {
             >
               {isLoading ? 'Creating account...' : 'Create account'}
             </button>
-            {/* Sign In Link */}
+
             <p className="mt-6 text-center text-sm text-gray-600">
               Already have an account?{' '}
               <Link

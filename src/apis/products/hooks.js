@@ -1,165 +1,135 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-// import apiService from '../../utils/apiService'; // Removed unused import
-import { toast } from 'react-toastify'; // Added for mock feedback
+import { supabase } from '../../utils/supabaseClient'; // Import Supabase client
+import { toast } from 'react-toastify';
 
-// --- Mock Data (Using sample from AppContext for consistency) ---
-const sampleProductsData = [
-  {
-    id: 1,
-    name: 'Ozempic Pens',
-    description: 'Injectable medication',
-    category: 'Weight Loss',
-    active: true,
-    type: 'medication', // Added type
-    fulfillmentSource: 'compounding_pharmacy', // Added source
-    doses: [
-      { id: 101, value: '0.25mg', allowOneTimePurchase: false },
-      { id: 102, value: '0.5mg', allowOneTimePurchase: true },
-      { id: 103, value: '1.0mg', allowOneTimePurchase: true },
-    ],
-    oneTimePurchasePrice: 249.99, // Added example price
-    requiresPrescription: true,
-    associatedServiceIds: [1, 2], // Example service IDs
-    stockStatus: 'in-stock',
-    interactionWarnings: ['Thyroid C-cell tumors'],
-  },
-  {
-    id: 2,
-    name: 'Wegovy Pens',
-    description: 'Injectable medication',
-    category: 'Weight Loss',
-    active: true,
-    type: 'medication',
-    fulfillmentSource: 'retail_pharmacy',
-    doses: [
-      { id: 201, value: '1.7mg', allowOneTimePurchase: true },
-      { id: 202, value: '2.4mg', allowOneTimePurchase: true },
-    ],
-    oneTimePurchasePrice: 299.99,
-    requiresPrescription: true,
-    associatedServiceIds: [1, 2],
-    stockStatus: 'in-stock',
-    interactionWarnings: ['Thyroid C-cell tumors', 'Pancreatitis'],
-  },
-  {
-    id: 3,
-    name: 'Vitamin D3 Supplement',
-    description: 'High-potency Vitamin D3',
-    category: 'Supplements',
-    active: true,
-    type: 'supplement',
-    fulfillmentSource: 'internal_supplement',
-    price: 19.99, // Price for non-medication
-    requiresPrescription: false,
-    associatedServiceIds: [],
-    stockStatus: 'in-stock',
-    interactionWarnings: [],
-    allowOneTimePurchase: true,
-  },
-];
-// --- End Mock Data ---
+// --- Mock Data Removed ---
 
-// Get products hook (Mocked)
-export const useProducts = (filters) => {
-  console.log('Using mock products data in useProducts hook');
+const queryKeys = {
+  all: ['products'],
+  lists: (filters) => [...queryKeys.all, 'list', filters],
+  details: (id) => [...queryKeys.all, 'detail', id],
+};
+
+// Get products hook (Using Supabase)
+export const useProducts = (filters = {}) => {
+  // console.log('Using Supabase data in useProducts hook'); // Keep console log for debugging if needed
   return useQuery({
-    queryKey: ['products', filters],
-    // queryFn: () => apiService.products.getAll(filters), // Original API call
-    queryFn: () =>
-      Promise.resolve({
-        data: sampleProductsData, // Return mock data
-        // Add meta if needed
-      }),
-    staleTime: Infinity,
+    queryKey: queryKeys.lists(filters),
+    queryFn: async () => {
+      // Basic filtering example - adapt as needed for your filters object
+      let query = supabase.from('products').select('*');
+      // Example: if (filters.category) query = query.eq('category', filters.category);
+      // Example: if (filters.active) query = query.eq('active', filters.active);
+      const { data, error } = await query;
+      if (error) throw error;
+      return data;
+    },
+    // keepPreviousData: true, // Consider if needed
+    staleTime: 5 * 60 * 1000, // Example: 5 minutes stale time
   });
 };
 
-// Get product by ID hook (Mocked)
+// Get product by ID hook (Using Supabase)
 export const useProductById = (id, options = {}) => {
-  console.log(`Using mock product data for ID: ${id} in useProductById hook`);
+  // console.log(`Using Supabase data for ID: ${id} in useProductById hook`);
   return useQuery({
-    queryKey: ['product', id],
-    // queryFn: () => apiService.products.getById(id), // Original API call
-    queryFn: () =>
-      Promise.resolve(
-        sampleProductsData.find((p) => p.id === id) || sampleProductsData[0]
-      ), // Find mock product or return first
+    queryKey: queryKeys.details(id),
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('products')
+        .select('*')
+        .eq('id', id)
+        .single(); // Use .single() if you expect exactly one result
+      if (error) throw error;
+      return data;
+    },
     enabled: !!id,
-    staleTime: Infinity,
+    staleTime: Infinity, // Keep fetched product data fresh indefinitely unless invalidated
     ...options,
   });
 };
 
-// Create product hook (Mocked)
+// Create product hook (Using Supabase)
 export const useCreateProduct = (options = {}) => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    // mutationFn: (productData) => apiService.products.create(productData), // Original API call
     mutationFn: async (productData) => {
-      console.log('Mock Creating product:', productData);
-      await new Promise((resolve) => setTimeout(resolve, 300)); // Simulate delay
-      const newProduct = {
-        id: Date.now(), // Generate mock ID
-        ...productData,
-        active: productData.active !== undefined ? productData.active : true,
-      };
-      // Note: Doesn't actually add to sampleProductsData
-      return { data: newProduct }; // Simulate API response
+      // console.log('Supabase Creating product:', productData);
+      const { data, error } = await supabase
+        .from('products')
+        .insert([productData]) // Supabase expects an array for insert
+        .select(); // Optionally select the inserted data
+
+      if (error) throw error;
+      return data?.[0]; // Return the newly created product object if select() was used
     },
     onSuccess: (data, variables, context) => {
-      // Added params
       toast.success('Product created successfully');
-      queryClient.invalidateQueries({ queryKey: ['products'] });
-      options.onSuccess?.(data, variables, context); // Pass params
+      queryClient.invalidateQueries({ queryKey: queryKeys.lists() });
+      options.onSuccess?.(data, variables, context);
     },
-    onError: options.onError, // Pass through onError
-    onSettled: options.onSettled, // Pass through onSettled
+    onError: (error, variables, context) => {
+      toast.error(`Error creating product: ${error.message || 'Unknown error'}`);
+      options.onError?.(error, variables, context);
+    },
+    onSettled: options.onSettled,
   });
 };
 
-// Update product hook (Mocked)
+// Update product hook (Using Supabase)
 export const useUpdateProduct = (options = {}) => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    // mutationFn: ({ id, productData }) => apiService.products.update(id, productData), // Original API call
-    mutationFn: async ({ id, productData }) => {
-      console.log(`Mock Updating product ${id}:`, productData);
-      await new Promise((resolve) => setTimeout(resolve, 300)); // Simulate delay
-      return { data: { id, ...productData } }; // Simulate API response
+    mutationFn: async ({ id, ...productData }) => {
+      // console.log(`Supabase Updating product ${id}:`, productData);
+      const { data, error } = await supabase
+        .from('products')
+        .update(productData)
+        .eq('id', id)
+        .select(); // Optionally select the updated data
+
+      if (error) throw error;
+      return data?.[0]; // Return the updated product object if select() was used
     },
     onSuccess: (data, variables, context) => {
-      // Added params
       toast.success('Product updated successfully');
-      queryClient.invalidateQueries({ queryKey: ['products'] });
-      queryClient.invalidateQueries({ queryKey: ['product', variables.id] }); // Use variables.id
-      options.onSuccess?.(data, variables, context); // Pass params
+      queryClient.invalidateQueries({ queryKey: queryKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.details(variables.id) });
+      options.onSuccess?.(data, variables, context);
     },
-    onError: options.onError, // Pass through onError
-    onSettled: options.onSettled, // Pass through onSettled
+    onError: (error, variables, context) => {
+      toast.error(`Error updating product: ${error.message || 'Unknown error'}`);
+      options.onError?.(error, variables, context);
+    },
+    onSettled: options.onSettled,
   });
 };
 
-// Delete product hook (Mocked)
+// Delete product hook (Using Supabase)
 export const useDeleteProduct = (options = {}) => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    // mutationFn: (id) => apiService.products.delete(id), // Original API call
     mutationFn: async (id) => {
-      console.log(`Mock Deleting product ${id}`);
-      await new Promise((resolve) => setTimeout(resolve, 300)); // Simulate delay
-      return { success: true }; // Simulate API response
+      // console.log(`Supabase Deleting product ${id}`);
+      const { error } = await supabase.from('products').delete().eq('id', id);
+
+      if (error) throw error;
+      return { success: true }; // Indicate success
     },
     onSuccess: (data, variables, context) => {
-      // Added params
       toast.success('Product deleted successfully');
-      queryClient.invalidateQueries({ queryKey: ['products'] });
-      // Optionally remove detail query: queryClient.removeQueries({ queryKey: ['product', variables] });
-      options.onSuccess?.(data, variables, context); // Pass params
+      queryClient.invalidateQueries({ queryKey: queryKeys.lists() });
+      // Optionally remove detail query if it exists
+      queryClient.removeQueries({ queryKey: queryKeys.details(variables) });
+      options.onSuccess?.(data, variables, context);
     },
-    onError: options.onError, // Pass through onError
-    onSettled: options.onSettled, // Pass through onSettled
+    onError: (error, variables, context) => {
+      toast.error(`Error deleting product: ${error.message || 'Unknown error'}`);
+      options.onError?.(error, variables, context);
+    },
+    onSettled: options.onSettled,
   });
 };

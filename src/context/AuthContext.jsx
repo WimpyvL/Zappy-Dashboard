@@ -37,7 +37,9 @@ export const AuthProvider = ({ children }) => {
         const userRole = user?.app_metadata?.role; // Check role in app_metadata
         const determinedViewMode = userRole === 'admin' ? 'admin' : 'patient'; // Default to patient if logged in but not admin
         setViewMode(determinedViewMode);
-        console.log(`AuthContext: Session checked, user role: ${userRole}, viewMode set to ${determinedViewMode}`);
+        console.log(
+          `AuthContext: Session checked, user role: ${userRole}, viewMode set to ${determinedViewMode}`
+        );
       }
       setLoading(false);
     };
@@ -56,7 +58,9 @@ export const AuthProvider = ({ children }) => {
       const userRole = user?.app_metadata?.role; // Check role in app_metadata
       const determinedViewMode = userRole === 'admin' ? 'admin' : 'patient'; // Default to patient if logged in but not admin
       setViewMode(determinedViewMode);
-      console.log(`AuthContext: Auth state changed, user role: ${userRole}, viewMode set to ${determinedViewMode}`);
+      console.log(
+        `AuthContext: Auth state changed, user role: ${userRole}, viewMode set to ${determinedViewMode}`
+      );
       // No need to set loading here as getSession handles initial load
     });
 
@@ -225,7 +229,8 @@ export const AuthProvider = ({ children }) => {
     setError(null);
     try {
       // This assumes the user is already authenticated via the reset link session
-      const { error: updatePassError } = await supabase.auth.updateUser({ // Removed unused 'data' from destructuring
+      const { error: updatePassError } = await supabase.auth.updateUser({
+        // Removed unused 'data' from destructuring
         password: newPassword,
       });
       if (updatePassError) throw updatePassError;

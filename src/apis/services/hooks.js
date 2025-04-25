@@ -1,40 +1,55 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '../../lib/supabase'; // Use the correct Supabase client
+import { supabase } from '../../lib/supabase';
 import { toast } from 'react-toastify';
 
-// Removed Mock Data
-
-// Define query keys
+// Define query keys for services
 const queryKeys = {
   all: ['services'],
   lists: (params = {}) => [...queryKeys.all, 'list', { params }],
   details: (id) => [...queryKeys.all, 'detail', id],
 };
 
-// Get services hook using Supabase
-export const useServices = (params = {}) => {
+// Get services hook with pagination using Supabase
+export const useServices = (params = {}, pageSize = 10) => {
+  const { page, search, active } = params;
+  const currentPage = page || 1;
+  const rangeFrom = (currentPage - 1) * pageSize;
+  const rangeTo = rangeFrom + pageSize - 1;
+
   return useQuery({
     queryKey: queryKeys.lists(params),
     queryFn: async () => {
       let query = supabase
-        .from('services') // ASSUMING table name is 'services'
-        .select('*')
-        .order('name', { ascending: true }); // Example order
+        .from('services')
+        .select('*', { count: 'exact' })
+        .order('name', { ascending: true })
+        .range(rangeFrom, rangeTo);
 
-      // Apply filters if any
-      if (params.active !== undefined) {
-        query = query.eq('active', params.active);
+      if (active !== undefined) {
+        query = query.eq('is_active', active);
       }
-      // Add other filters as needed
+      if (search) {
+        query = query.or(`name.ilike.%${search}%,description.ilike.%${search}%`);
+      }
 
-      const { data, error } = await query;
+      const { data, error, count } = await query;
 
       if (error) {
         console.error('Error fetching services:', error);
         throw new Error(error.message);
       }
-      return data || []; // Return data array
+
+      return {
+        data: data || [],
+        meta: {
+          total: count || 0,
+          per_page: pageSize,
+          current_page: currentPage,
+          last_page: Math.ceil((count || 0) / pageSize),
+        },
+      };
     },
+    keepPreviousData: true,
   });
 };
 
@@ -46,14 +61,14 @@ export const useServiceById = (id, options = {}) => {
       if (!id) return null;
 
       const { data, error } = await supabase
-        .from('services') // ASSUMING table name is 'services'
+        .from('services')
         .select('*')
         .eq('id', id)
         .single();
 
       if (error) {
         console.error(`Error fetching service ${id}:`, error);
-        if (error.code === 'PGRST116') return null; // Not found
+        if (error.code === 'PGRST116') return null;
         throw new Error(error.message);
       }
       return data;
@@ -64,27 +79,24 @@ export const useServiceById = (id, options = {}) => {
 };
 
 // Create service hook using Supabase
-// Renamed from useAddService to useCreateService for consistency
 export const useCreateService = (options = {}) => {
   const queryClient = useQueryClient();
+
   return useMutation({
     mutationFn: async (serviceData) => {
-      // Add timestamps, default values etc. based on your actual 'services' table schema
-      // Map frontend fields to DB columns
       const dataToInsert = {
         name: serviceData.name,
         description: serviceData.description,
         price: serviceData.price,
         duration_minutes: serviceData.duration_minutes,
         category: serviceData.category,
-        is_active: serviceData.active ?? true, // Corrected column name
+        is_active: serviceData.active ?? true,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
-        // TODO: Handle associated_products and available_plans if they are separate tables/relations
       };
 
       const { data, error } = await supabase
-        .from('services') // ASSUMING table name is 'services'
+        .from('services')
         .insert(dataToInsert)
         .select()
         .single();
@@ -101,7 +113,8 @@ export const useCreateService = (options = {}) => {
       options.onSuccess?.(data, variables, context);
     },
     onError: (error, variables, context) => {
-      toast.error(`Error creating service: ${error.message || 'Unknown error'}`);
+      console.error('Create service mutation error:', error);
+      toast.error(`Error creating service: ${error.message}`);
       options.onError?.(error, variables, context);
     },
     onSettled: options.onSettled,
@@ -111,29 +124,23 @@ export const useCreateService = (options = {}) => {
 // Update service hook using Supabase
 export const useUpdateService = (options = {}) => {
   const queryClient = useQueryClient();
-  return useMutation({
-    // The argument received from mutate is the object { id: ..., name: ..., description: ... }
-    mutationFn: async (updatePayload) => {
-      const { id, ...serviceDataFromForm } = updatePayload; // Extract id, the rest is the form data
-      if (!id) throw new Error("Service ID is required for update.");
 
-      // Construct dataToUpdate using properties directly from the form data payload
+  return useMutation({
+    mutationFn: async ({ id, serviceData }) => {
+      if (!id) throw new Error('Service ID is required for update.');
+
       const dataToUpdate = {
-        name: serviceDataFromForm.name,
-        description: serviceDataFromForm.description,
-        price: serviceDataFromForm.price,
-        duration_minutes: serviceDataFromForm.duration_minutes,
-        category: serviceDataFromForm.category,
-        is_active: serviceDataFromForm.active, // Use the 'active' field from formData directly
+        name: serviceData.name,
+        description: serviceData.description,
+        price: serviceData.price,
+        duration_minutes: serviceData.duration_minutes,
+        category: serviceData.category,
+        is_active: serviceData.active,
         updated_at: new Date().toISOString(),
-        // TODO: Handle associated_products and available_plans if they are separate tables/relations
       };
-      // Remove fields that shouldn't be updated directly (like id, created_at if they exist in serviceDataFromForm)
-      delete dataToUpdate.id;
-      delete dataToUpdate.created_at;
 
       const { data, error } = await supabase
-        .from('services') // ASSUMING table name is 'services'
+        .from('services')
         .update(dataToUpdate)
         .eq('id', id)
         .select()
@@ -152,7 +159,8 @@ export const useUpdateService = (options = {}) => {
       options.onSuccess?.(data, variables, context);
     },
     onError: (error, variables, context) => {
-      toast.error(`Error updating service: ${error.message || 'Unknown error'}`);
+      console.error(`Update service ${variables.id} mutation error:`, error);
+      toast.error(`Error updating service: ${error.message}`);
       options.onError?.(error, variables, context);
     },
     onSettled: options.onSettled,
@@ -162,33 +170,34 @@ export const useUpdateService = (options = {}) => {
 // Delete service hook using Supabase
 export const useDeleteService = (options = {}) => {
   const queryClient = useQueryClient();
+
   return useMutation({
     mutationFn: async (id) => {
-      if (!id) throw new Error("Service ID is required for deletion.");
+      if (!id) throw new Error('Service ID is required for deletion.');
 
       const { error } = await supabase
-        .from('services') // ASSUMING table name is 'services'
+        .from('services')
         .delete()
         .eq('id', id);
 
       if (error) {
         console.error(`Error deleting service ${id}:`, error);
-        // Handle foreign key constraint errors if services are linked elsewhere
-        if (error.code === '23503') { // Foreign key violation
-           throw new Error(`Cannot delete service: It is still linked to other records.`);
+        if (error.code === '23503') {
+          throw new Error('Cannot delete service: It is still linked to other records');
         }
         throw new Error(error.message);
       }
       return { success: true, id };
     },
-    onSuccess: (data, variables, context) => { // variables is the id
+    onSuccess: (data, variables, context) => {
       toast.success('Service deleted successfully');
       queryClient.invalidateQueries({ queryKey: queryKeys.lists() });
       queryClient.removeQueries({ queryKey: queryKeys.details(variables) });
       options.onSuccess?.(data, variables, context);
     },
     onError: (error, variables, context) => {
-      toast.error(`Error deleting service: ${error.message || 'Unknown error'}`);
+      console.error(`Delete service ${variables} mutation error:`, error);
+      toast.error(`Error deleting service: ${error.message}`);
       options.onError?.(error, variables, context);
     },
     onSettled: options.onSettled,

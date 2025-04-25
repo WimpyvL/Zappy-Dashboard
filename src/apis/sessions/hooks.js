@@ -2,49 +2,6 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../../lib/supabase';
 import { toast } from 'react-toastify';
 
-// Mock Data
-const mockSessions = [
-  {
-    id: 'sess-001',
-    patient_id: '1',
-    status: 'completed',
-    session_notes: 'Initial consultation and assessment',
-    created_at: '2025-04-10T09:30:00Z',
-    updated_at: '2025-04-10T09:30:00Z',
-    patients: {
-      id: '1',
-      first_name: 'John',
-      last_name: 'Doe'
-    }
-  },
-  {
-    id: 'sess-002',
-    patient_id: '2',
-    status: 'scheduled',
-    session_notes: 'Follow-up therapy session',
-    created_at: '2025-04-15T14:00:00Z',
-    updated_at: '2025-04-15T14:00:00Z',
-    patients: {
-      id: '2',
-      first_name: 'Jane',
-      last_name: 'Smith'
-    }
-  },
-  {
-    id: 'sess-003',
-    patient_id: '3',
-    status: 'cancelled',
-    session_notes: 'Patient cancelled due to illness',
-    created_at: '2025-04-05T11:15:00Z',
-    updated_at: '2025-04-05T11:15:00Z',
-    patients: {
-      id: '3',
-      first_name: 'Robert',
-      last_name: 'Johnson'
-    }
-  }
-];
-
 // Define query keys for sessions
 const queryKeys = {
   all: ['sessions'],
@@ -54,8 +11,7 @@ const queryKeys = {
 
 // Get sessions hook using Supabase
 export const useSessions = (params = {}, pageSize = 10) => {
-  // Extract searchTerm and other filters from params
-  const { page, status, patientId, searchTerm } = params; // Removed unused _otherFilters
+  const { page, status, patientId, searchTerm } = params;
   const currentPage = page || 1;
   const rangeFrom = (currentPage - 1) * pageSize;
   const rangeTo = rangeFrom + pageSize - 1;
@@ -63,69 +19,26 @@ export const useSessions = (params = {}, pageSize = 10) => {
   return useQuery({
     queryKey: queryKeys.lists(params),
     queryFn: async () => {
-      if (process.env.NODE_ENV === 'development') {
-        // Return mock data in development
-        let filteredSessions = [...mockSessions];
-        
-        if (patientId) {
-          filteredSessions = filteredSessions.filter(sess => sess.patient_id === patientId);
-        }
-        if (status) {
-          filteredSessions = filteredSessions.filter(sess => sess.status === status);
-        }
-        if (searchTerm) {
-          const searchLower = searchTerm.toLowerCase();
-          filteredSessions = filteredSessions.filter(sess => 
-            sess.patients?.first_name?.toLowerCase().includes(searchLower) ||
-            sess.patients?.last_name?.toLowerCase().includes(searchLower) ||
-            sess.session_notes?.toLowerCase().includes(searchLower)
-          );
-        }
-
-        const paginatedSessions = filteredSessions.slice(rangeFrom, rangeTo + 1);
-        
-        return {
-          data: paginatedSessions.map(sess => ({
-            ...sess,
-            patientName: sess.patients ? `${sess.patients.first_name || ''} ${sess.patients.last_name || ''}`.trim() : 'N/A'
-          })),
-          meta: {
-            total: filteredSessions.length,
-            per_page: pageSize,
-            current_page: currentPage,
-            last_page: Math.ceil(filteredSessions.length / pageSize),
-          },
-        };
-      }
-
       let query = supabase
-        .from('sessions') // Assuming table name is 'sessions'
-        // Join with patients table to get name
+        .from('sessions')
         .select(`
           *,
           patients!patient_id ( id, first_name, last_name )
         `, { count: 'exact' })
-        .order('created_at', { ascending: false }) // Example order
+        .order('created_at', { ascending: false })
         .range(rangeFrom, rangeTo);
 
-      // Apply filters
       if (patientId) {
-        // Assuming the FK column is patient_id (as defined in other migrations)
-        query = query.eq('patient_id', patientId); 
+        query = query.eq('patient_id', patientId);
       }
       if (status) {
-        query = query.eq('status', status); // Assuming 'status' column exists
+        query = query.eq('status', status);
       }
-      // Add server-side search filter
       if (searchTerm) {
-        // Adjust columns to search as needed (e.g., provider name if joined, notes)
         query = query.or(
-          `patients.first_name.ilike.%${searchTerm}%,patients.last_name.ilike.%${searchTerm}%` // Search joined patients name
-          // Add other searchable fields like session_notes if they exist
-          // `,session_notes.ilike.%${searchTerm}%` 
+          `patients.first_name.ilike.%${searchTerm}%,patients.last_name.ilike.%${searchTerm}%`
         );
       }
-      // Add other filters as needed based on otherFilters
 
       const { data, error, count } = await query;
 
@@ -134,17 +47,13 @@ export const useSessions = (params = {}, pageSize = 10) => {
         throw new Error(error.message);
       }
 
-      // Map data to include patientName from joined table
-      const mappedData =
-        data?.map((session) => ({
-          ...session,
-          // Construct patientName from the joined 'patients' data
-          patientName: session.patients 
-            ? `${session.patients.first_name || ''} ${session.patients.last_name || ''}`.trim()
-            : 'N/A',
-          // Ensure patientId is correctly mapped (assuming FK is patient_id)
-          patientId: session.patient_id 
-        })) || [];
+      const mappedData = data?.map((session) => ({
+        ...session,
+        patientName: session.patients 
+          ? `${session.patients.first_name || ''} ${session.patients.last_name || ''}`.trim()
+          : 'N/A',
+        patientId: session.patient_id 
+      })) || [];
 
       return {
         data: mappedData,
@@ -167,37 +76,27 @@ export const useSessionById = (id, options = {}) => {
     queryFn: async () => {
       if (!id) return null;
 
-      if (process.env.NODE_ENV === 'development') {
-        // Return mock session in development
-        const session = mockSessions.find(sess => sess.id === id);
-        if (!session) return null;
-        
-        return {
-          ...session,
-          patientName: session.patients ? `${session.patients.first_name || ''} ${session.patients.last_name || ''}`.trim() : 'N/A'
-        };
-      }
-
       const { data, error } = await supabase
         .from('sessions')
-        .select('*')
+        .select(`
+          *,
+          patients!patient_id ( id, first_name, last_name )
+        `)
         .eq('id', id)
         .single();
 
       if (error) {
         console.error(`Error fetching session ${id}:`, error);
-        if (error.code === 'PGRST116') return null; // Not found
+        if (error.code === 'PGRST116') return null;
         throw new Error(error.message);
       }
 
-      const mappedData = data
-        ? {
-            ...data,
-            patientName: 'N/A', // We'll need to fetch patient name separately
-          }
-        : null;
-
-      return mappedData;
+      return data ? {
+        ...data,
+        patientName: data.patients 
+          ? `${data.patients.first_name || ''} ${data.patients.last_name || ''}`.trim()
+          : 'N/A'
+      } : null;
     },
     enabled: !!id,
     ...options,
@@ -231,7 +130,7 @@ export const useCreateSession = (options = {}) => {
       toast.success('Session created successfully');
       queryClient.invalidateQueries({ queryKey: queryKeys.lists() });
       options.onSuccess?.(data, variables, context);
-    }, // Ensure comma is present
+    },
     onError: (error, variables, context) => {
       console.error('Create session mutation error:', error);
       toast.error(`Error creating session: ${error.message}`);
@@ -272,7 +171,7 @@ export const useUpdateSession = (options = {}) => {
         queryKey: queryKeys.details(variables.id),
       });
       options.onSuccess?.(data, variables, context);
-    }, // Ensure comma is present
+    },
     onError: (error, variables, context) => {
       console.error(`Update session ${variables.id} mutation error:`, error);
       toast.error(`Error updating session: ${error.message}`);
@@ -287,10 +186,8 @@ export const useUpdateSessionStatus = (options = {}) => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ sessionId, status }) => {
-      if (!sessionId)
-        throw new Error('Session ID is required for status update.');
+      if (!sessionId) throw new Error('Session ID is required for status update.');
 
-      // Assuming 'status' is a column in the 'sessions' table
       const { data, error } = await supabase
         .from('sessions')
         .update({ status: status, updated_at: new Date().toISOString() })
@@ -311,12 +208,9 @@ export const useUpdateSessionStatus = (options = {}) => {
         queryKey: queryKeys.details(variables.sessionId),
       });
       options.onSuccess?.(data, variables, context);
-    }, // Ensure comma is present
+    },
     onError: (error, variables, context) => {
-      console.error(
-        `Update session status ${variables.sessionId} mutation error:`,
-        error
-      );
+      console.error(`Update session status ${variables.sessionId} mutation error:`, error);
       toast.error(`Error updating session status: ${error.message}`);
       options.onError?.(error, variables, context);
     },
@@ -340,12 +234,11 @@ export const useDeleteSession = (options = {}) => {
       return { success: true, id };
     },
     onSuccess: (data, variables, context) => {
-      // variables is the id
       toast.success('Session deleted successfully');
       queryClient.invalidateQueries({ queryKey: queryKeys.lists() });
       queryClient.removeQueries({ queryKey: queryKeys.details(variables) });
       options.onSuccess?.(data, variables, context);
-    }, // Ensure comma is present
+    },
     onError: (error, variables, context) => {
       console.error(`Delete session ${variables} mutation error:`, error);
       toast.error(`Error deleting session: ${error.message}`);
@@ -354,10 +247,3 @@ export const useDeleteSession = (options = {}) => {
     onSettled: options.onSettled,
   });
 };
-
-// --- Tag Hooks Removed ---
-// Tagging sessions likely requires a join table (e.g., session_tags)
-// which is not present in the provided schema.sql.
-// Implementing this would require schema changes and new hook logic.
-// export const useAddSessionTag = ...
-// export const useRemoveSessionTag = ...

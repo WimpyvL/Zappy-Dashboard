@@ -1,47 +1,32 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '../../lib/supabase'; // Use the correct Supabase client
-import { useAuth } from '../../context/AuthContext'; // Import useAuth to potentially get user ID
+import { supabase } from '../../lib/supabase';
+import { useAuth } from '../../context/AuthContext';
 import { toast } from 'react-toastify';
 
-// Removed Mock Data
-
-// Define query keys
+// Define query keys for users
 const queryKeys = {
-  profile: ['profile'], // Key for the current user's profile
-  // usersList: ['users', 'list'], // Example if you add a hook to list all users
+  profile: ['profile'],
+  users: (filters = {}) => ['users', 'list', { filters }],
+  userDetails: (id) => ['users', 'detail', id],
 };
 
-// Get current user profile hook using Supabase auth session
-// Note: This might be redundant if useAuth().currentUser is sufficient
+// Get current user profile hook using Supabase auth
 export const useGetProfile = (options = {}) => {
-  const { currentUser } = useAuth(); // Get user from auth context
+  const { currentUser } = useAuth();
 
   return useQuery({
     queryKey: queryKeys.profile,
     queryFn: async () => {
-      // Re-fetch user data to ensure it's up-to-date, including metadata
       const { data: { user }, error } = await supabase.auth.getUser();
 
       if (error) {
         console.error('Error fetching user profile:', error);
         throw new Error(error.message);
       }
-      // You might want to fetch additional profile data from a 'profiles' table
-      // linked to the auth user ID if you store more info there.
-      // Example:
-      // if (user) {
-      //   const { data: profileData, error: profileError } = await supabase
-      //     .from('profiles') // Assuming a 'profiles' table linked by user.id
-      //     .select('*')
-      //     .eq('id', user.id)
-      //     .single();
-      //   if (profileError) console.error("Error fetching profile table data:", profileError);
-      //   return { ...user, ...profileData }; // Merge auth user and profile table data
-      // }
-      return user; // Return Supabase auth user object
+      return user;
     },
-    enabled: !!currentUser, // Only fetch if there's potentially a logged-in user
-    staleTime: 5 * 60 * 1000, // Cache profile for 5 minutes
+    enabled: !!currentUser,
+    staleTime: 5 * 60 * 1000,
     ...options,
   });
 };
@@ -49,51 +34,43 @@ export const useGetProfile = (options = {}) => {
 // Update user profile hook using Supabase auth
 export const useUpdateProfile = (options = {}) => {
   const queryClient = useQueryClient();
-  const { setCurrentUser } = useAuth(); // Get setCurrentUser to update context state immediately
+  const { setCurrentUser } = useAuth();
 
   return useMutation({
     mutationFn: async (profileData) => {
-      // Supabase uses 'data' field for user_metadata
-      // Map frontend fields (like firstName) to Supabase metadata structure if needed
       const metadata = {
-          firstName: profileData.firstName,
-          lastName: profileData.lastName,
-          // Add other metadata fields here
+        firstName: profileData.firstName,
+        lastName: profileData.lastName,
       };
 
       const { data, error } = await supabase.auth.updateUser({
         data: metadata
-        // You can also update email/phone here if needed, but it might trigger verification flows
-        // email: profileData.email,
-        // phone: profileData.phone_number,
       });
 
       if (error) {
         console.error('Error updating profile:', error);
         throw new Error(error.message);
       }
-      return data.user; // Return the updated user object
+      return data.user;
     },
     onSuccess: (data, variables, context) => {
-      // Update the user in AuthContext immediately
       setCurrentUser(data);
-      // Invalidate the profile query to refetch potentially merged profile data
       queryClient.invalidateQueries({ queryKey: queryKeys.profile });
       toast.success('Profile updated successfully');
       options.onSuccess?.(data, variables, context);
     },
     onError: (error, variables, context) => {
-      toast.error(`Error updating profile: ${error.message || 'Unknown error'}`);
+      toast.error(`Error updating profile: ${error.message}`);
       options.onError?.(error, variables, context);
     },
     onSettled: options.onSettled,
   });
 };
 
-// Change password hook using Supabase auth (for logged-in user)
+// Change password hook using Supabase auth
 export const useChangePassword = (options = {}) => {
   return useMutation({
-    mutationFn: async ({ newPassword }) => { // Supabase doesn't need currentPassword here
+    mutationFn: async ({ newPassword }) => {
       const { data, error } = await supabase.auth.updateUser({
         password: newPassword
       });
@@ -102,53 +79,138 @@ export const useChangePassword = (options = {}) => {
         console.error('Error changing password:', error);
         throw new Error(error.message);
       }
-      return data; // Returns { user: User | null }
+      return data;
     },
     onSuccess: (data, variables, context) => {
       toast.success('Password changed successfully');
       options.onSuccess?.(data, variables, context);
     },
     onError: (error, variables, context) => {
-      toast.error(`Error changing password: ${error.message || 'Unknown error'}`);
+      toast.error(`Error changing password: ${error.message}`);
       options.onError?.(error, variables, context);
     },
     onSettled: options.onSettled,
   });
 };
 
-// Hook to get list of users, potentially filtered by role
-export const useGetUsers = (filters = {}, options = {}) => {
-   return useQuery({
-     queryKey: ['users', 'list', filters], // Include filters in query key
-     queryFn: async () => {
-       // Assuming a 'profiles' table linked to auth.users via 'id'
-       // and containing 'first_name', 'last_name', 'role' columns.
-       // Adjust table and column names based on your actual schema.
-       let query = supabase
-         .from('profiles') // Query the profiles table
-         .select('id, first_name, last_name, role'); // Select necessary fields
+// Get users with pagination and filtering
+export const useGetUsers = (filters = {}, pageSize = 10, options = {}) => {
+  const { page, role } = filters;
+  const currentPage = page || 1;
+  const rangeFrom = (currentPage - 1) * pageSize;
+  const rangeTo = rangeFrom + pageSize - 1;
 
-       // Apply role filter if provided
-       if (filters.role) {
-         query = query.eq('role', filters.role); // Filter by role column
-       }
+  return useQuery({
+    queryKey: queryKeys.users(filters),
+    queryFn: async () => {
+      let query = supabase
+        .from('auth.users')
+        .select('id, raw_user_meta_data->>firstName as first_name, raw_user_meta_data->>lastName as last_name, role, email', { count: 'exact' })
+        .order('last_name', { ascending: true })
+        .order('first_name', { ascending: true })
+        .range(rangeFrom, rangeTo);
 
-       // Add ordering
-       query = query.order('last_name', { ascending: true }).order('first_name', { ascending: true });
+      if (role) {
+        query = query.eq('role', role);
+      }
 
-       const { data, error } = await query;
+      const { data, error, count } = await query;
 
-       if (error) {
-         console.error('Error fetching users/profiles:', error);
-         // Avoid throwing error here to not break UI, return empty array instead
-         // throw new Error(error.message);
-         toast.error(`Error fetching users: ${error.message}`);
-         return [];
-       }
-       console.log(`Fetched users with role '${filters.role}':`, data); // Debug log
-       return data || [];
-     },
-     staleTime: 5 * 60 * 1000, // Cache for 5 minutes
-     ...options,
-   });
- };
+      if (error) {
+        console.error('Error fetching users:', error);
+        throw new Error(error.message);
+      }
+
+      return {
+        data: data || [],
+        meta: {
+          total: count || 0,
+          per_page: pageSize,
+          current_page: currentPage,
+          last_page: Math.ceil((count || 0) / pageSize),
+        },
+      };
+    },
+    staleTime: 5 * 60 * 1000,
+    ...options,
+  });
+};
+
+// Get user details by ID
+export const useUserById = (id, options = {}) => {
+  return useQuery({
+    queryKey: queryKeys.userDetails(id),
+    queryFn: async () => {
+      if (!id) return null;
+
+      const { data, error } = await supabase
+        .from('auth.users')
+        .select('id, email, raw_user_meta_data, role')
+        .eq('id', id)
+        .single();
+
+      if (error) {
+        console.error(`Error fetching user ${id}:`, error);
+        if (error.code === 'PGRST116') return null;
+        throw new Error(error.message);
+      }
+      return data;
+    },
+    enabled: !!id,
+    ...options,
+  });
+};
+
+// Update user role and details
+export const useUpdateUser = (options = {}) => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, userData }) => {
+      if (!id) throw new Error('User ID is required for update.');
+
+      // First get current user data
+      const { data: currentUser, error: fetchError } = await supabase
+        .from('auth.users')
+        .select('raw_user_meta_data')
+        .eq('id', id)
+        .single();
+
+      if (fetchError) {
+        throw new Error(fetchError.message);
+      }
+
+      const { data, error } = await supabase
+        .from('auth.users')
+        .update({
+          raw_user_meta_data: {
+            ...currentUser.raw_user_meta_data,
+            firstName: userData.first_name,
+            lastName: userData.last_name
+          },
+          role: userData.role
+        })
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) {
+        console.error(`Error updating user ${id}:`, error);
+        throw new Error(error.message);
+      }
+      return data;
+    },
+    onSuccess: (data, variables, context) => {
+      toast.success('User updated successfully');
+      queryClient.invalidateQueries({ queryKey: queryKeys.users() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.userDetails(variables.id) });
+      options.onSuccess?.(data, variables, context);
+    },
+    onError: (error, variables, context) => {
+      console.error(`Update user ${variables.id} mutation error:`, error);
+      toast.error(`Error updating user: ${error.message}`);
+      options.onError?.(error, variables, context);
+    },
+    onSettled: options.onSettled,
+  });
+};

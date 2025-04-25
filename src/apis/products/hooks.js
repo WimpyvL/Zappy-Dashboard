@@ -1,49 +1,58 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '../../lib/supabase'; // Use the correct Supabase client
+import { supabase } from '../../lib/supabase';
 import { toast } from 'react-toastify';
 
-// Removed Mock Data
-
-// Define query keys
+// Define query keys for products
 const queryKeys = {
   all: ['products'],
   lists: (filters = {}) => [...queryKeys.all, 'list', { filters }],
   details: (id) => [...queryKeys.all, 'detail', id],
 };
 
+// Get products hook with pagination using Supabase
+export const useProducts = (filters = {}, pageSize = 10) => {
+  const { page, search, category, active } = filters;
+  const currentPage = page || 1;
+  const rangeFrom = (currentPage - 1) * pageSize;
+  const rangeTo = rangeFrom + pageSize - 1;
 
-// Get products hook using Supabase
-export const useProducts = (filters = {}) => {
   return useQuery({
     queryKey: queryKeys.lists(filters),
     queryFn: async () => {
       let query = supabase
-        .from('products') // ASSUMING table name is 'products'
-        .select('*')
-        .order('name', { ascending: true }); // Example order
+        .from('products')
+        .select('*', { count: 'exact' })
+        .order('name', { ascending: true })
+        .range(rangeFrom, rangeTo);
 
-      // Apply filters if any
-      if (filters.category) {
-        query = query.eq('category', filters.category);
+      if (category) {
+        query = query.eq('category', category);
       }
-      // Corrected column name for active filter
-      if (filters.active !== undefined) {
-        query = query.eq('is_active', filters.active);
+      if (active !== undefined) {
+        query = query.eq('is_active', active);
       }
-      // Add search filter if needed
-      if (filters.search) {
-         query = query.or(`name.ilike.%${filters.search}%,description.ilike.%${filters.search}%`);
+      if (search) {
+        query = query.or(`name.ilike.%${search}%,description.ilike.%${search}%`);
       }
 
-      const { data, error } = await query;
+      const { data, error, count } = await query;
 
       if (error) {
         console.error('Error fetching products:', error);
         throw new Error(error.message);
       }
-      // Return data directly, or wrap if pagination/meta is needed later
-      return data || [];
+
+      return {
+        data: data || [],
+        meta: {
+          total: count || 0,
+          per_page: pageSize,
+          current_page: currentPage,
+          last_page: Math.ceil((count || 0) / pageSize),
+        },
+      };
     },
+    keepPreviousData: true,
   });
 };
 
@@ -55,14 +64,14 @@ export const useProductById = (id, options = {}) => {
       if (!id) return null;
 
       const { data, error } = await supabase
-        .from('products') // ASSUMING table name is 'products'
+        .from('products')
         .select('*')
         .eq('id', id)
         .single();
 
       if (error) {
         console.error(`Error fetching product ${id}:`, error);
-        if (error.code === 'PGRST116') return null; // Not found
+        if (error.code === 'PGRST116') return null;
         throw new Error(error.message);
       }
       return data;
@@ -78,8 +87,6 @@ export const useCreateProduct = (options = {}) => {
 
   return useMutation({
     mutationFn: async (productData) => {
-      // Add timestamps, default values etc. based on your actual 'products' table schema
-      // Map frontend fields to DB columns, ensuring correct names
       const dataToInsert = {
         name: productData.name,
         description: productData.description,
@@ -92,17 +99,16 @@ export const useCreateProduct = (options = {}) => {
         requires_prescription: productData.requiresPrescription,
         interaction_warnings: productData.interactionWarnings,
         stock_status: productData.stockStatus,
-        image_url: productData.imageUrl, // Assuming imageUrl maps to image_url
-        is_active: productData.active ?? true, // Corrected column name
+        image_url: productData.imageUrl,
+        is_active: productData.active ?? true,
         stripe_price_id: productData.stripePriceId,
         stripe_one_time_price_id: productData.stripeOneTimePriceId,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
-        // NOTE: 'doses' and 'associatedServiceIds' are likely handled via separate tables/logic, not direct insert here.
       };
 
       const { data, error } = await supabase
-        .from('products') // ASSUMING table name is 'products'
+        .from('products')
         .insert(dataToInsert)
         .select()
         .single();
@@ -119,7 +125,8 @@ export const useCreateProduct = (options = {}) => {
       options.onSuccess?.(data, variables, context);
     },
     onError: (error, variables, context) => {
-      toast.error(error.message || 'An error occurred while creating the product.');
+      console.error('Create product mutation error:', error);
+      toast.error(`Error creating product: ${error.message}`);
       options.onError?.(error, variables, context);
     },
     onSettled: options.onSettled,
@@ -132,8 +139,8 @@ export const useUpdateProduct = (options = {}) => {
 
   return useMutation({
     mutationFn: async ({ id, productData }) => {
-      if (!id) throw new Error("Product ID is required for update.");
-      // Map frontend fields to DB columns for update
+      if (!id) throw new Error('Product ID is required for update.');
+
       const dataToUpdate = {
         name: productData.name,
         description: productData.description,
@@ -147,18 +154,14 @@ export const useUpdateProduct = (options = {}) => {
         interaction_warnings: productData.interactionWarnings,
         stock_status: productData.stockStatus,
         image_url: productData.imageUrl,
-        is_active: productData.active, // Corrected column name
+        is_active: productData.active,
         stripe_price_id: productData.stripePriceId,
         stripe_one_time_price_id: productData.stripeOneTimePriceId,
         updated_at: new Date().toISOString(),
-        // NOTE: 'doses' and 'associatedServiceIds' updates likely need separate logic.
       };
-      // Remove fields that shouldn't be updated directly
-      delete dataToUpdate.id;
-      delete dataToUpdate.created_at;
 
       const { data, error } = await supabase
-        .from('products') // ASSUMING table name is 'products'
+        .from('products')
         .update(dataToUpdate)
         .eq('id', id)
         .select()
@@ -177,7 +180,8 @@ export const useUpdateProduct = (options = {}) => {
       options.onSuccess?.(data, variables, context);
     },
     onError: (error, variables, context) => {
-      toast.error(error.message || 'An error occurred while updating the product.');
+      console.error(`Update product ${variables.id} mutation error:`, error);
+      toast.error(`Error updating product: ${error.message}`);
       options.onError?.(error, variables, context);
     },
     onSettled: options.onSettled,
@@ -190,31 +194,31 @@ export const useDeleteProduct = (options = {}) => {
 
   return useMutation({
     mutationFn: async (id) => {
-      if (!id) throw new Error("Product ID is required for deletion.");
+      if (!id) throw new Error('Product ID is required for deletion.');
 
       const { error } = await supabase
-        .from('products') // ASSUMING table name is 'products'
+        .from('products')
         .delete()
         .eq('id', id);
 
       if (error) {
         console.error(`Error deleting product ${id}:`, error);
-         // Handle foreign key constraint errors if products are linked elsewhere
-         if (error.code === '23503') { // Foreign key violation
-           throw new Error(`Cannot delete product: It is still linked to other records (e.g., orders, packages).`);
-         }
+        if (error.code === '23503') {
+          throw new Error('Cannot delete product: It is still linked to other records');
+        }
         throw new Error(error.message);
       }
       return { success: true, id };
     },
-    onSuccess: (data, variables, context) => { // variables is the id
+    onSuccess: (data, variables, context) => {
       toast.success('Product deleted successfully');
       queryClient.invalidateQueries({ queryKey: queryKeys.lists() });
       queryClient.removeQueries({ queryKey: queryKeys.details(variables) });
       options.onSuccess?.(data, variables, context);
     },
     onError: (error, variables, context) => {
-      toast.error(error.message || 'An error occurred while deleting the product.');
+      console.error(`Delete product ${variables} mutation error:`, error);
+      toast.error(`Error deleting product: ${error.message}`);
       options.onError?.(error, variables, context);
     },
     onSettled: options.onSettled,

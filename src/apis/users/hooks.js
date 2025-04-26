@@ -104,8 +104,8 @@ export const useGetUsers = (filters = {}, pageSize = 10, options = {}) => {
     queryKey: queryKeys.users(filters),
     queryFn: async () => {
       let query = supabase
-        .from('auth.users')
-        .select('id, raw_user_meta_data->>firstName as first_name, raw_user_meta_data->>lastName as last_name, role, email', { count: 'exact' })
+        .from('profiles')
+        .select('id, first_name, last_name, role, email', { count: 'exact' })
         .order('last_name', { ascending: true })
         .order('first_name', { ascending: true })
         .range(rangeFrom, rangeTo);
@@ -144,8 +144,8 @@ export const useUserById = (id, options = {}) => {
       if (!id) return null;
 
       const { data, error } = await supabase
-        .from('auth.users')
-        .select('id, email, raw_user_meta_data, role')
+        .from('profiles')
+        .select('id, email, first_name, last_name, role')
         .eq('id', id)
         .single();
 
@@ -170,24 +170,11 @@ export const useUpdateUser = (options = {}) => {
       if (!id) throw new Error('User ID is required for update.');
 
       // First get current user data
-      const { data: currentUser, error: fetchError } = await supabase
-        .from('auth.users')
-        .select('raw_user_meta_data')
-        .eq('id', id)
-        .single();
-
-      if (fetchError) {
-        throw new Error(fetchError.message);
-      }
-
       const { data, error } = await supabase
-        .from('auth.users')
+        .from('profiles')
         .update({
-          raw_user_meta_data: {
-            ...currentUser.raw_user_meta_data,
-            firstName: userData.first_name,
-            lastName: userData.last_name
-          },
+          first_name: userData.first_name,
+          last_name: userData.last_name,
           role: userData.role
         })
         .eq('id', id)

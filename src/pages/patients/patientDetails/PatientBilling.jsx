@@ -6,13 +6,11 @@ import {
   CheckCircle,
   Clock,
   XCircle,
-  Loader2, // Added
-  FileText // Added
+  FileText
 } from 'lucide-react';
 import { toast } from 'react-toastify';
 import { redirectToCheckout } from '../../../utils/stripeCheckout';
-import { usePauseSubscription, useCancelSubscription } from '../../../apis/subscriptionPlans/hooks'; 
-import { useViewInvoice } from '../../../apis/invoices/hooks'; // Import the new hook
+import { usePauseSubscription, useCancelSubscription } from '../../../apis/subscriptionPlans/hooks';
 import LoadingSpinner from './common/LoadingSpinner';
 
 const PaymentMethodCard = ({
@@ -112,8 +110,7 @@ const PatientBilling = ({ patient, invoices, loading, refreshPatient }) => {
   const pauseSubscriptionMutation = usePauseSubscription();
   const cancelSubscriptionMutation = useCancelSubscription();
 
-  // Format date for display
-  const viewInvoiceMutation = useViewInvoice();
+  // TODO: Implement invoice viewing functionality
 
   // Format date for display
   const formatDate = (dateString) => {
@@ -240,11 +237,10 @@ const PatientBilling = ({ patient, invoices, loading, refreshPatient }) => {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <button
-                        onClick={() => viewInvoiceMutation.mutate(invoice.id)} // Use the hook
-                        disabled={viewInvoiceMutation.isLoading && viewInvoiceMutation.variables === invoice.id}
-                        className={`text-indigo-600 hover:text-indigo-900 mr-3 inline-flex items-center ${viewInvoiceMutation.isLoading && viewInvoiceMutation.variables === invoice.id ? 'opacity-50 cursor-not-allowed' : ''}`}
+                        onClick={() => {}}
+                        className="text-indigo-600 hover:text-indigo-900 mr-3 inline-flex items-center"
                       >
-                        {viewInvoiceMutation.isLoading && viewInvoiceMutation.variables === invoice.id ? <Loader2 className="h-3 w-3 mr-1 animate-spin"/> : <FileText className="h-3 w-3 mr-1" />}
+                        <FileText className="h-3 w-3 mr-1" />
                         View
                       </button>
                       {invoice.status === 'pending' && (

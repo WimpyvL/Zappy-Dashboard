@@ -58,8 +58,10 @@ CREATE POLICY "Allow authenticated read access on subscription_plans" ON public.
 ALTER TABLE public.pharmacies ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Allow admin full access on pharmacies" ON public.pharmacies;
 DROP POLICY IF EXISTS "Allow authenticated read access on pharmacies" ON public.pharmacies;
-CREATE POLICY "Allow admin full access on pharmacies" ON public.pharmacies FOR ALL USING (auth.uid() IN (SELECT id FROM public.profiles WHERE role = 'admin')) WITH CHECK (auth.uid() IN (SELECT id FROM public.profiles WHERE role = 'admin'));
-CREATE POLICY "Allow authenticated read access on pharmacies" ON public.pharmacies FOR SELECT TO authenticated USING (true);
+CREATE POLICY "Allow admin full access on pharmacies" ON public.pharmacies FOR ALL 
+USING (auth.role() = 'admin' OR auth.uid() IN (SELECT id FROM public.profiles WHERE role = 'admin')) 
+WITH CHECK (auth.role() = 'admin' OR auth.uid() IN (SELECT id FROM public.profiles WHERE role = 'admin'));
+CREATE POLICY "Allow public read access on pharmacies" ON public.pharmacies FOR SELECT USING (true);
 
 -- Enable RLS and add policies for tags
 ALTER TABLE public.tags ENABLE ROW LEVEL SECURITY;

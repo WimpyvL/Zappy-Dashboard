@@ -14,14 +14,14 @@ const LandingPage = () => {
       {/* Floating Buttons */}
       <div className="flex flex-col gap-8 z-10">
         <Link
-          to="/auth/patient-login"
+          to="/login"
           className="flex items-center gap-3 px-8 py-4 rounded-full shadow-lg bg-primary text-white text-xl font-semibold hover:bg-primary/90 transition-all duration-200"
         >
           <User className="w-6 h-6" />
           Patient Login
         </Link>
         <Link
-          to="/auth/staff-login"
+          to="/login"
           className="flex items-center gap-3 px-8 py-4 rounded-full shadow-lg bg-accent3 text-white text-xl font-semibold hover:bg-accent3/90 transition-all duration-200"
         >
           <Shield className="w-6 h-6" />

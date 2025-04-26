@@ -9,7 +9,7 @@ const Login = () => {
   const navigate = useNavigate();
   const location = useLocation();
   // Get login function, loading state, and error from useAuth
-  const { login, loading: authLoading, error: authError, isAuthenticated, clearError } = useAuth();
+  const { login, loading: authLoading, error: authError, isAuthenticated, clearError, userRole } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   const [successMessage, setSuccessMessage] = useState(
     location.state?.message || ''
@@ -36,10 +36,18 @@ const Login = () => {
 
   useEffect(() => {
     // Redirect if already authenticated
-    if (isAuthenticated && !authLoading) { // Check loading state
-      navigate(location.state?.from?.pathname || '/', { replace: true });
+    if (isAuthenticated && !authLoading) {
+      // Role-based redirect
+      if (userRole === 'admin') {
+        navigate('/dashboard', { replace: true });
+      } else if (userRole === 'doctor') {
+        navigate('/dashboard', { replace: true });
+      } else {
+        // Default to patient dashboard
+        navigate('/dashboard', { replace: true });
+      }
     }
-  }, [isAuthenticated, navigate, location.state, authLoading]); // Added authLoading
+  }, [isAuthenticated, navigate, location.state, authLoading, userRole]); // Added authLoading
 
   const togglePasswordVisibility = () => setShowPassword((prev) => !prev);
 

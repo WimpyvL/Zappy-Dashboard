@@ -549,9 +549,9 @@ const Orders = () => {
                   onSearch={handleProductSearchInputChange}
                   filterOption={false}
                   loading={isLoadingProducts}
-                  options={productOptions.map(p => ({ // Assuming useProducts returns similar structure
+                  options={productOptions.map(p => ({
                     value: p.id,
-                    label: p.name || `ID: ${p.id}`
+                    label: p.name || p.title || p.product_name || `ID: ${p.id}`
                   }))}
                   notFoundContent={isLoadingProducts ? <Spinner /> : null}
                   required
@@ -572,9 +572,9 @@ const Orders = () => {
                     (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
                   }
                   loading={isLoadingPharmacies}
-                  options={pharmacyOptions.map(ph => ({ // Assuming usePharmacies returns similar structure
+                  options={pharmacyOptions.map(ph => ({
                     value: ph.id,
-                    label: ph.name || `ID: ${ph.id}`
+                    label: ph.name || ph.pharmacy_name || `ID: ${ph.id}`
                   }))}
                   required
                 />

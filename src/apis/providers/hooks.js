@@ -11,7 +11,15 @@ export const useProviders = () => {
         .select('*')
         .order('name', { ascending: true });
       if (error) throw error;
-      return data || [];
+      // Normalize authorizedStates to always be an array
+      return (data || []).map(provider => ({
+        ...provider,
+        authorizedStates: Array.isArray(provider.authorizedStates)
+          ? provider.authorizedStates
+          : (typeof provider.authorizedStates === 'string' && provider.authorizedStates.length > 0
+              ? provider.authorizedStates.split(',').map(s => s.trim()).filter(Boolean)
+              : [])
+      }));
     }
   });
 };

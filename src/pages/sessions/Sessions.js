@@ -4,8 +4,9 @@ import { Select, DatePicker, Radio } from 'antd'; // Removed unused TimePicker, 
 import dayjs from 'dayjs'; // Import dayjs for Ant Design DatePicker v5+
 import { toast } from 'react-toastify'; // Import toast for notifications
 import { usePatients, usePatientById } from '../../apis/patients/hooks';
-import { useGetUsers } from '../../apis/users/hooks';
+import { useProviders } from '../../apis/providers/hooks';
 import { useSessions, useUpdateSessionStatus, useCreateSession } from '../../apis/sessions/hooks'; // Import create hook
+import { useGetUsers } from '../../apis/users/hooks';
 import {
   Search,
   Filter,
@@ -97,6 +98,8 @@ const Sessions = () => {
     dateTime: null,
     notes: '',
   });
+  const [showNoteModal, setShowNoteModal] = useState(false);
+  const [selectedSessionNote, setSelectedSessionNote] = useState(null);
 
   // Get location and query parameters
   const location = useLocation();
@@ -145,8 +148,8 @@ const Sessions = () => {
   const allPatients = patientsData?.data || [];
 
   // Fetch doctors/providers for the dropdown
-  const { data: providersData /*, isLoading: _isLoadingProviders */ } = useGetUsers({ role: 'practitioner' }); // Removed unused isLoadingProviders
-  const allProviders = providersData?.data || providersData || [];
+  const { data: providersData, isLoading: isLoadingProviders } = useProviders();
+  const allProviders = providersData || [];
 
   // Create session mutation
   const createSessionMutation = useCreateSession({
@@ -200,7 +203,7 @@ const Sessions = () => {
       let matchesDateRange = true;
       if (dateRange.start && dateRange.end) {
         try {
-          const sessionDate = new Date(session.scheduledDate);
+          const sessionDate = new Date(session.scheduled_date); // Use correct property name
           const startDate = new Date(dateRange.start);
           const endDate = new Date(dateRange.end);
           endDate.setHours(23, 59, 59, 999); // Inclusive end date
@@ -223,7 +226,7 @@ const Sessions = () => {
     .sort((a, b) => {
       // Sort by scheduled date (ascending)
       try {
-        return new Date(a.scheduledDate) - new Date(b.scheduledDate);
+        return new Date(a.scheduled_date) - new Date(b.scheduled_date); // Use correct property name
       } catch (e) {
         return 0; // Keep original order if dates are invalid
       }
@@ -466,7 +469,7 @@ const Sessions = () => {
                 filteredSessions.map((session) => {
                   let sessionDate;
                   try {
-                    sessionDate = new Date(session.scheduledDate);
+                    sessionDate = new Date(session.scheduled_date); // Use correct property name
                   } catch (e) {
                     sessionDate = null; // Handle invalid date
                   }
@@ -572,9 +575,14 @@ const Sessions = () => {
                             </button>
                           )}
                         {/* Keep Review Note gray */}
-                        <button className="text-gray-600 hover:text-gray-900">
-                          Review Note{' '}
-                          {/* TODO: Link to note or implement review logic */}
+                        <button
+                          className="text-gray-600 hover:text-gray-900"
+                          onClick={() => {
+                            setSelectedSessionNote(session.session_notes || 'No notes for this session.');
+                            setShowNoteModal(true);
+                          }}
+                        >
+                          Review Note
                         </button>
                       </td>
                     </tr>
@@ -600,9 +608,7 @@ const Sessions = () => {
         <div className="fixed inset-0 bg-[#00000066] bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-lg shadow-xl max-w-lg w-full">
             <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
-              <h3 className="text-lg font-medium text-gray-900">
-                Schedule New Session
-              </h3>
+              <h3 className="text-lg font-medium text-gray-900">Schedule New Session</h3>
               <button
                 className="text-gray-400 hover:text-gray-500"
                 onClick={() => setShowScheduleModal(false)}
@@ -610,181 +616,132 @@ const Sessions = () => {
                 <XCircle className="h-5 w-5" />
               </button>
             </div>
-
-            <div className="p-6 space-y-4">
-              {/* TODO: Replace with actual form using react-hook-form and fetch data */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Patient
-                </label>
-                <Select
-                  showSearch
-                  style={{ width: '100%' }}
-                  placeholder={preselectedPatientId ? (isLoadingPreselectedPatient ? "Loading..." : (preselectedPatientDetails?.name || `ID: ${preselectedPatientId}`)) : "Search or Select Patient"}
-                  optionFilterProp="children"
-                  value={preselectedPatientId || undefined} // Use undefined for placeholder to show
-                  onChange={(value) => {
-                     // Handle patient selection only if not pre-selected
-                     if (!preselectedPatientId) {
-                       setScheduleFormData(prev => ({ ...prev, patientId: value }));
-                     }
-                  }}
-                  filterOption={(input, option) =>
-                    (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
-                  }
-                  loading={isLoadingPatients || (preselectedPatientId && isLoadingPreselectedPatient)}
-                  disabled={!!preselectedPatientId} // Disable if pre-selected from URL
-                  options={
-                    preselectedPatientId && preselectedPatientDetails
-                      ? [{ value: preselectedPatientId, label: preselectedPatientDetails.name || `ID: ${preselectedPatientId}` }] // Show only preselected if available
-                      : allPatients.map(p => ({
-                          value: p.id,
-                          // Combine first and last name for label
-                          label: `${p.first_name || ''} ${p.last_name || ''}`.trim() || `ID: ${p.id}`
-                        }))
-                  }
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Session Type
-                </label>
-                {/* Use Ant Design Radio Group */}
-                <Radio.Group
-                  onChange={(e) => setScheduleFormData(prev => ({ ...prev, sessionType: e.target.value }))}
-                  value={scheduleFormData.sessionType}
-                >
-                  <Radio value="medical">Medical</Radio>
-                  <Radio value="psych">Psych</Radio>
-                </Radio.Group>
-                {/* <div className="flex space-x-4"> */}
-                  {/* <div className="flex items-center"> */}
-                    {/* <input
-                      id="medical"
-                      name="sessionType"
-                      type="radio"
-                      value="medical" // Add value
-                      checked={scheduleFormData.sessionType === 'medical'} // Connect to state
-                      onChange={(e) => setScheduleFormData(prev => ({ ...prev, sessionType: e.target.value }))} // Add onChange
-                      className="focus:ring-primary h-4 w-4 text-primary border-gray-300"
-                    /> */}
-                    {/* <label
-                      htmlFor="medical"
-                      className="ml-2 block text-sm text-gray-700"
-                    >
-                      Medical */}
-                    {/* </label> */}
-                  {/* </div> */}
-                  {/* <div className="flex items-center"> */}
-                    {/* <input
-                      id="psych"
-                      name="sessionType"
-                      type="radio"
-                      value="psych" // Add value
-                      checked={scheduleFormData.sessionType === 'psych'} // Connect to state
-                      onChange={(e) => setScheduleFormData(prev => ({ ...prev, sessionType: e.target.value }))} // Add onChange
-                      className="focus:ring-primary h-4 w-4 text-primary border-gray-300"
-                    /> */}
-                    {/* <label
-                      htmlFor="psych"
-                      className="ml-2 block text-sm text-gray-700"
-                    >
-                      Psych
-                    </label>
-                  </div>
+            <form
+              onSubmit={e => {
+                e.preventDefault();
+                const finalData = {
+                  patient_id: scheduleFormData.patientId, // Always use selected patient
+                  type: scheduleFormData.sessionType,
+                  provider_id: scheduleFormData.doctorId,
+                  scheduled_date: scheduleFormData.dateTime,
+                  session_notes: scheduleFormData.notes,
+                  status: 'scheduled',
+                };
+                if (!finalData.patient_id || !finalData.provider_id || !finalData.scheduled_date) {
+                  toast.error("Please select patient, doctor, and date/time.");
+                  return;
+                }
+                createSessionMutation.mutate(finalData);
+              }}
+            >
+              <div className="p-6 space-y-4">
+                {/* Patient Field */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Patient <span className="text-red-500">*</span></label>
+                  <Select
+                    showSearch
+                    style={{ width: '100%' }}
+                    placeholder="Search or Select Patient"
+                    optionFilterProp="children"
+                    value={scheduleFormData.patientId || undefined}
+                    onChange={value => setScheduleFormData(prev => ({ ...prev, patientId: value }))}
+                    filterOption={(input, option) => (option?.label ?? '').toLowerCase().includes(input.toLowerCase())}
+                    loading={isLoadingPatients}
+                    options={allPatients.map(p => ({
+                      value: p.id,
+                      label: `${p.first_name || ''} ${p.last_name || ''}`.trim() || `ID: ${p.id}`
+                    }))}
+                  />
+                </div>
+                {/* Session Type Field */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Session Type <span className="text-red-500">*</span></label>
+                  <Radio.Group
+                    onChange={e => setScheduleFormData(prev => ({ ...prev, sessionType: e.target.value }))}
+                    value={scheduleFormData.sessionType}
+                  >
+                    <Radio value="medical">Medical</Radio>
+                    <Radio value="psych">Psych</Radio>
+                  </Radio.Group>
+                </div>
+                {/* Doctor Field */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Doctor <span className="text-red-500">*</span></label>
+                  <Select
+                    showSearch
+                    style={{ width: '100%' }}
+                    placeholder="Select Doctor"
+                    optionFilterProp="children"
+                    value={scheduleFormData.doctorId || undefined}
+                    onChange={value => setScheduleFormData(prev => ({ ...prev, doctorId: value }))}
+                    filterOption={(input, option) => (option?.label ?? '').toLowerCase().includes(input.toLowerCase())}
+                    loading={isLoadingProviders}
+                    options={allProviders.map(p => ({
+                      value: p.id,
+                      label: `${p.name || p.full_name || p.email || ''}`.trim() || `ID: ${p.id}`
+                    }))}
+                  />
+                </div>
+                {/* Date & Time Field */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Date & Time <span className="text-red-500">*</span></label>
+                  <DatePicker
+                    showTime
+                    style={{ width: '100%' }}
+                    value={scheduleFormData.dateTime ? dayjs(scheduleFormData.dateTime) : null}
+                    onChange={date => setScheduleFormData(prev => ({ ...prev, dateTime: date ? date.toISOString() : null }))}
+                    format="YYYY-MM-DD HH:mm"
+                  />
+                </div>
+                {/* Notes Field */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Notes</label>
+                  <textarea
+                    rows="3"
+                    className="block w-full pl-3 pr-3 py-2 text-base border-gray-300 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm rounded-md"
+                    placeholder="Add any relevant notes about this session..."
+                    value={scheduleFormData.notes}
+                    onChange={e => setScheduleFormData(prev => ({ ...prev, notes: e.target.value }))}
+                  ></textarea>
                 </div>
               </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Doctor
-                </label>
-                <Select
-                  showSearch
-                  style={{ width: '100%' }}
-                  placeholder="Select Doctor"
-                  optionFilterProp="children"
-                  value={scheduleFormData.doctorId} // Connect to state
-                  onChange={(value) => setScheduleFormData(prev => ({ ...prev, doctorId: value }))} // Add onChange
-                  filterOption={(input, option) =>
-                    (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
-                  }
-                  loading={isLoadingProviders}
-                  options={allProviders.map(p => ({
-                    value: p.id,
-                    label: `${p.first_name || ''} ${p.last_name || ''}`.trim() || `ID: ${p.id}`
-                  }))}
-                />
+              <div className="px-6 py-4 border-t border-gray-200 flex justify-end space-x-3">
+                <button
+                  type="button"
+                  className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
+                  onClick={() => setShowScheduleModal(false)}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-primary rounded-md text-sm font-medium text-white hover:bg-primary/90 disabled:opacity-50"
+                  disabled={createSessionMutation.isLoading}
+                >
+                  {createSessionMutation.isLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2"/> : null}
+                  Schedule
+                </button>
               </div>
+            </form>
+          </div>
+        </div>
+      )}
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Date & Time
-                </label>
-                {/* Use Ant Design DatePicker */}
-                <DatePicker
-                  showTime // Enable time selection
-                  style={{ width: '100%' }}
-                  // Use dayjs object for value if available, otherwise null
-                  value={scheduleFormData.dateTime ? dayjs(scheduleFormData.dateTime) : null}
-                  onChange={(date) => {
-                    // Store the date as an ISO string for Supabase compatibility
-                    const isoString = date ? date.toISOString() : null;
-                    setScheduleFormData(prev => ({ ...prev, dateTime: isoString }));
-                  }}
-                  format="YYYY-MM-DD HH:mm" // Display format
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Notes
-                </label>
-                <textarea
-                  rows="3"
-                  className="block w-full pl-3 pr-3 py-2 text-base border-gray-300 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm rounded-md" // Adjusted padding
-                  placeholder="Add any relevant notes about this session..."
-                  value={scheduleFormData.notes} // Connect to state
-                  onChange={(e) => setScheduleFormData(prev => ({ ...prev, notes: e.target.value }))} // Add onChange
-                ></textarea>
-              </div>
+      {/* Session Note Modal */}
+      {showNoteModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-xl max-w-lg w-full p-6 relative">
+            <h2 className="text-lg font-semibold mb-4">Session Note</h2>
+            <div className="mb-6 whitespace-pre-line text-gray-800">
+              {selectedSessionNote}
             </div>
-
-            <div className="px-6 py-4 border-t border-gray-200 flex justify-end space-x-3">
-              <button
-                className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
-                onClick={() => setShowScheduleModal(false)}
-              >
-                Cancel
-              </button>
-              {/* Use primary color for Schedule button */}
-              <button
-                className="px-4 py-2 bg-primary rounded-md text-sm font-medium text-white hover:bg-primary/90 disabled:opacity-50"
-                onClick={() => {
-                  const finalData = {
-                    patient_id: preselectedPatientId || scheduleFormData.patientId, // Use patient_id based on schema
-                    type: scheduleFormData.sessionType,
-                    provider_id: scheduleFormData.doctorId, // Use provider_id based on schema
-                    scheduled_date: scheduleFormData.dateTime, // Use scheduled_date based on schema
-                    session_notes: scheduleFormData.notes, // Use session_notes based on schema
-                    status: 'scheduled', // Default status
-                  };
-                  // Basic validation
-                  if (!finalData.patient_id || !finalData.provider_id || !finalData.scheduled_date) {
-                      toast.error("Please select patient, doctor, and date/time.");
-                      return;
-                  }
-                  console.log("Scheduling session with data:", finalData);
-                  createSessionMutation.mutate(finalData);
-                  // Modal closing is handled by onSuccess in mutation hook
-                }}
-                disabled={createSessionMutation.isLoading} // Disable while creating
-              >
-                {createSessionMutation.isLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2"/> : null}
-                Schedule
-              </button>
-            </div>
+            <button
+              className="absolute top-3 right-3 text-gray-400 hover:text-gray-600"
+              onClick={() => setShowNoteModal(false)}
+              aria-label="Close"
+            >
+              <XCircle className="h-5 w-5" />
+            </button>
           </div>
         </div>
       )}

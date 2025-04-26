@@ -23,7 +23,7 @@ import ChildishDrawingElement from '../../components/ui/ChildishDrawingElement';
 const InitialConsultations = () => {
   // --- State ---
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('pending');
+  const [statusFilter, setStatusFilter] = useState('all');
   const [providerFilter, setProviderFilter] = useState('all');
   const [serviceFilter, setServiceFilter] = useState('all');
   const [dateRange, setDateRange] = useState(null);
@@ -82,8 +82,7 @@ const InitialConsultations = () => {
   // Client-side filtering (can be removed if hooks handle all filtering)
   const filteredConsultations = allConsultations.filter((consultation) => {
     const matchesStatus = statusFilter === 'all' || consultation.status === statusFilter;
-    const matchesService = serviceFilter === 'all' || consultation.service === serviceFilter; // Adjust if service is ID
-
+    const matchesService = serviceFilter === 'all' || consultation.service === serviceFilter;
     let matchesDate = true;
     if (dateRange && (dateRange[0] || dateRange[1])) {
       try {

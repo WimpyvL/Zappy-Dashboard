@@ -83,7 +83,7 @@ const AppRoutes = () => {
   return (
     <Routes future={future}>
       {/* Landing page as root */}
-      <Route path="/" element={<LandingPage />} />
+      <Route path="/" element={<Login />} />
       {/* Public routes */}
       <Route path={paths.login} element={<Login />} />
       <Route path={paths.signup} element={<Signup />} />
@@ -472,7 +472,7 @@ const AppRoutes = () => {
         }
       />
 
-      {/* Redirect any unknown routes to landing page */}
+      {/* Redirect any unknown routes to login page */}
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );

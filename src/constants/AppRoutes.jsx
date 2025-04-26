@@ -66,6 +66,7 @@ import EditProfilePage from '../pages/profile/EditProfilePage.jsx'; // Import Ed
 import FormsManagementV2 from '../pages/settings/pages/forms-v2/FormsManagementV2.jsx'; // Import Forms V2
 import PaymentMethodsPage from '../pages/payment/PaymentMethodsPage.jsx'; // Import Payment Methods Page
 import NotificationsPage from '../pages/notifications/NotificationsPage.jsx'; // Import Notifications Page
+import LandingPage from '../pages/LandingPage.jsx'; // Import Landing Page
 
 // Paths constants
 import { paths } from './paths.js';
@@ -81,15 +82,15 @@ const AppRoutes = () => {
 
   return (
     <Routes future={future}>
+      {/* Landing page as root */}
+      <Route path="/" element={<LandingPage />} />
       {/* Public routes */}
       <Route path={paths.login} element={<Login />} />
       <Route path={paths.signup} element={<Signup />} />
       <Route path={`${paths.forms}/:formId`} element={<FormViewer />} />
-
-      {/* Protected routes */}
-      {/* Temporarily unprotected routes */}
+      {/* Dashboard moved to /dashboard */}
       <Route
-        path={paths.dashboard}
+        path="/dashboard"
         element={
           <MainLayout>
             <Dashboard />
@@ -471,8 +472,8 @@ const AppRoutes = () => {
         }
       />
 
-      {/* Redirect any unknown routes to dashboard */}
-      <Route path="*" element={<Navigate to={paths.dashboard} replace />} />
+      {/* Redirect any unknown routes to landing page */}
+      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
 };

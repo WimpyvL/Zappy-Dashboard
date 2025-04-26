@@ -18,7 +18,7 @@ import CrudModal from '../../components/common/CrudModal'; // Import the new gen
 import { usePatients, useCreatePatient, useUpdatePatient } from '../../apis/patients/hooks'; // Import mutation hooks
 import patientsApi from '../../apis/patients/api'; // Import the api adapter for fetchById
 import { useTags } from '../../apis/tags/hooks';
-import { useAppContext } from '../../context/AppContext'; // Import AppContext hook
+import { useSubscriptionPlans } from '../../apis/subscriptionPlans/hooks'; // Import the correct hook
 
 // Removed unused StatusBadge component definition
 
@@ -56,7 +56,7 @@ const Patients = () => {
   // Assuming subscriptionPlans are fetched elsewhere or via another hook if needed globally
   // If only needed here, consider fetching within this component.
   // For now, using a placeholder or assuming it comes from a broader context setup.
-  const { subscriptionPlans: allSubscriptionPlans = [] } = useAppContext(); // Default to empty array
+  const { data: allSubscriptionPlans = [] } = useSubscriptionPlans(); // Remove useAppContext and use the hook instead
 
   // Filter and search state
   const [searchTerm, setSearchTerm] = useState('');

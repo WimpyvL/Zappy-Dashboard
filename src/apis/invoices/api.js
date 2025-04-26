@@ -4,7 +4,7 @@ export const fetchInvoices = async () => {
   const { data, error } = await supabase
     .from('invoices')
     .select('*')
-    .order('created_at', { ascending: false });
+    .order('issued_at', { ascending: false });
   
   if (error) throw error;
   return data;

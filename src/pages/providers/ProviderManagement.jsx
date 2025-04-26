@@ -1,56 +1,14 @@
 import React, { useState } from 'react';
 import {
   Search,
-  // Plus, // Removed unused import
   Edit,
   Trash2,
   Check,
   X,
-  // Save, // Removed unused import
-  // MapPin, // Removed unused import
   Filter,
   UserPlus,
 } from 'lucide-react';
-
-// Sample data - in a real application, this would come from an API
-const initialProviders = [
-  {
-    id: 1,
-    name: 'Dr. Sarah Johnson',
-    specialty: 'Internal Medicine',
-    email: 'sarah.johnson@example.com',
-    phone: '(555) 123-7890',
-    active: true,
-    authorizedStates: ['CA', 'NY', 'FL', 'TX', 'WA'],
-  },
-  {
-    id: 2,
-    name: 'Dr. Michael Chen',
-    specialty: 'Endocrinology',
-    email: 'michael.chen@example.com',
-    phone: '(555) 456-7890',
-    active: true,
-    authorizedStates: ['CA', 'OR', 'WA'],
-  },
-  {
-    id: 3,
-    name: 'Dr. Emily Parker',
-    specialty: 'Family Medicine',
-    email: 'emily.parker@example.com',
-    phone: '(555) 789-1234',
-    active: true,
-    authorizedStates: ['TX', 'AZ', 'NM', 'OK'],
-  },
-  {
-    id: 4,
-    name: 'Dr. Lisa Wong',
-    specialty: 'Psychiatry',
-    email: 'lisa.wong@example.com',
-    phone: '(555) 234-5678',
-    active: true,
-    authorizedStates: ['CA', 'NY', 'MA', 'IL'],
-  },
-];
+import { useProviders, useAddProvider, useUpdateProvider, useDeleteProvider } from '../../apis/providers/hooks';
 
 // List of US states
 const states = [
@@ -107,7 +65,6 @@ const states = [
 ];
 
 const ProviderManagement = () => {
-  const [providers, setProviders] = useState(initialProviders);
   const [searchTerm, setSearchTerm] = useState('');
   const [specialtyFilter, setSpecialtyFilter] = useState('all');
   const [showAddModal, setShowAddModal] = useState(false);
@@ -122,6 +79,11 @@ const ProviderManagement = () => {
     active: true,
     authorizedStates: [],
   });
+
+  const { data: providers = [], isLoading, error } = useProviders();
+  const addProvider = useAddProvider();
+  const updateProvider = useUpdateProvider();
+  const deleteProvider = useDeleteProvider();
 
   // Filter providers based on search and specialty
   const filteredProviders = providers.filter((provider) => {
@@ -203,30 +165,22 @@ const ProviderManagement = () => {
   const handleSubmit = () => {
     if (showAddModal) {
       // Add new provider
-      const newProvider = {
-        id: providers.length + 1,
-        ...formData,
-      };
-      setProviders([...providers, newProvider]);
+      addProvider.mutate(formData);
       setShowAddModal(false);
     } else if (showEditModal) {
       // Update existing provider
-      const updatedProviders = providers.map((provider) => {
-        if (provider.id === currentProvider.id) {
-          return { ...provider, ...formData };
-        }
-        return provider;
-      });
-      setProviders(updatedProviders);
+      updateProvider.mutate({ id: currentProvider.id, ...formData });
       setShowEditModal(false);
     }
   };
 
   // Handle deleting provider
   const handleDeleteProvider = (id) => {
-    const updatedProviders = providers.filter((provider) => provider.id !== id);
-    setProviders(updatedProviders);
+    deleteProvider.mutate(id);
   };
+
+  if (isLoading) return <div>Loading...</div>;
+  if (error) return <div>Error loading providers</div>;
 
   return (
     <div>

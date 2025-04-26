@@ -15,7 +15,7 @@ export const useInsuranceRecords = (filters = {}) => {
     queryKey: queryKeys.lists(filters),
     queryFn: async () => {
       let query = supabase
-        .from('insurance_records')
+        .from('insurance_policy')
         .select(`
           *,
           patients ( id, first_name, last_name )
@@ -56,7 +56,7 @@ export const useInsuranceRecordById = (id, options = {}) => {
       if (!id) return null;
 
       const { data: recordData, error: recordError } = await supabase
-        .from('insurance_records')
+        .from('insurance_policy')
         .select(`
           *,
           patients ( id, first_name, last_name ),
@@ -107,7 +107,7 @@ export const useCreateInsuranceRecord = (options = {}) => {
       delete dataToInsert.verification_status;
 
       const { data, error } = await supabase
-        .from('insurance_records')
+        .from('insurance_policy')
         .insert(dataToInsert)
         .select()
         .single();
@@ -157,7 +157,7 @@ export const useUpdateInsuranceRecord = (options = {}) => {
       delete dataToUpdate.verification_status;
 
       const { data, error } = await supabase
-        .from('insurance_records')
+        .from('insurance_policy')
         .update(dataToUpdate)
         .eq('id', id)
         .select()

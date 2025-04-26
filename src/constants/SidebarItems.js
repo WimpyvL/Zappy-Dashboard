@@ -126,12 +126,6 @@ export const sidebarItems = [
     icon: MessageSquare,
     color: 'accent4', // Added color
   },
-  {
-    title: 'System Map',
-    path: '/system-map',
-    icon: Map,
-    color: 'primary', // Added color
-  },
 ];
 
 // Define settings items separately
@@ -147,12 +141,6 @@ export const settingsItems = [
     path: paths.auditlog,
     icon: History,
     color: 'accent2', // Added color
-  },
-  {
-    title: 'Forms',
-    path: '/settings/forms-v2', // Path from AppRoutes.jsx
-    icon: ClipboardList,
-    color: 'accent3', // Assign a color
   },
 ];
 

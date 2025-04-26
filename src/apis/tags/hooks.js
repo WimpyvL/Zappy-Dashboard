@@ -8,9 +8,9 @@ export const useTags = (params = {}) => {
     queryKey: ['tags', params],
     queryFn: async () => {
       let query = supabase
-        .from('tags') // Corrected table name
+        .from('tag') // Changed from 'tags' to 'tag'
         .select('*')
-        .order('name', { ascending: true }); // Example order
+        .order('name', { ascending: true }); // 'name' column exists in 'tag'
 
       // Add any filters based on params if needed
       // if (params.someFilter) { query = query.eq('column', params.someFilter); }
@@ -36,7 +36,7 @@ export const useTagById = (id, options = {}) => {
       if (!id) return null;
 
       const { data, error } = await supabase
-        .from('tags') // Corrected table name
+        .from('tag') // Changed from 'tags' to 'tag'
         .select('*')
         .eq('id', id)
         .single();
@@ -75,7 +75,7 @@ export const useCreateTag = (options = {}) => {
       console.log('[useCreateTag] Inserting tag data:', dataToInsert); // Add logging
 
       const { data, error } = await supabase
-        .from('tags') // Corrected table name
+        .from('tag') // Changed from 'tags' to 'tag'
         .insert(dataToInsert)
         .select()
         .single();
@@ -119,7 +119,7 @@ export const useUpdateTag = (options = {}) => {
 
 
       const { data, error } = await supabase
-        .from('tags') // Corrected table name
+        .from('tag') // Changed from 'tags' to 'tag'
         .update(dataToUpdate)
         .eq('id', id)
         .select()
@@ -157,7 +157,7 @@ export const useDeleteTag = (options = {}) => {
       if (!id) throw new Error("Tag ID is required for deletion.");
 
       const { error } = await supabase
-        .from('tags') // Corrected table name
+        .from('tag') // Changed from 'tags' to 'tag'
         .delete()
         .eq('id', id);
 

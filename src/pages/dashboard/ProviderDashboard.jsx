@@ -2,6 +2,9 @@ import React from 'react';
 import { usePatients } from '../../apis/patients/hooks'; // Assuming this path is correct
 import { useSessions } from '../../apis/sessions/hooks'; // Assuming this hook exists and path is correct
 import { useOrders } from '../../apis/orders/hooks'; // Assuming this hook exists and path is correct
+import { useConsultations } from '../../apis/consultations/hooks'; // Add this import
+import { useTasks } from '../../apis/tasks/hooks';
+import { useForms } from '../../apis/forms/hooks';
 import { Link } from 'react-router-dom';
 import {
   Calendar,
@@ -65,44 +68,30 @@ const ProviderDashboard = () => {
     isLoading: isLoadingOrders,
     error: errorOrders,
   } = useOrders(); // Assuming useOrders fetches all needed orders
+  const {
+    data: consultationsData,
+    isLoading: isLoadingConsultations,
+    error: errorConsultations,
+  } = useConsultations({}, 10); // Fetch first 10 consultations
+  const {
+    data: tasksData,
+    isLoading: isLoadingTasks,
+    error: errorTasks,
+  } = useTasks(1, { status: 'Pending' }, {}, 10); // Fetch first 10 pending tasks
+  const {
+    data: formsData,
+    isLoading: isLoadingForms,
+    error: errorForms,
+  } = useForms(); // Fetch all forms (questionnaires) as a placeholder
+  const forms = formsData?.data || [];
 
   // Use fetched data or default empty arrays
   // Note: Adjust based on the actual structure returned by usePatients, useSessions, useOrders
   const patients = patientsData?.data || patientsData || []; // Adapt based on API response structure
   const sessions = sessionsData?.data || sessionsData || []; // Adapt based on API response structure
   const orders = ordersData?.data || ordersData || []; // Adapt based on API response structure
-
-  // Placeholder for consultations data - in real app, get from context or dedicated hook
-  // TODO: Replace placeholder consultations with data fetched via React Query hook (e.g., useConsultations)
-  const consultations = [
-    {
-      id: 'c1',
-      patientName: 'John Smith',
-      patientId: 'p001',
-      dateSubmitted: '2025-02-25',
-      status: 'pending',
-      provider: 'Dr. Sarah Johnson',
-      category: 'medication',
-    },
-    {
-      id: 'c2',
-      patientName: 'Emily Davis',
-      patientId: 'p002',
-      dateSubmitted: '2025-02-23',
-      status: 'approved',
-      provider: 'Dr. Michael Chen',
-      category: 'medication',
-    },
-    {
-      id: 'c3',
-      patientName: 'Robert Wilson',
-      patientId: 'p003',
-      dateSubmitted: '2025-02-21',
-      status: 'needs_more_info',
-      provider: 'Dr. Lisa Wong',
-      category: 'service',
-    },
-  ];
+  const consultations = consultationsData?.data || [];
+  const pendingTasks = tasksData?.data || [];
 
   // Get pending consultations
   const pendingConsultations = consultations.filter(
@@ -123,31 +112,8 @@ const ProviderDashboard = () => {
       s.status === 'scheduled'
   );
 
-  // Get pending tasks (this would come from a tasks collection in a real app)
-  // TODO: Replace placeholder tasks with data fetched via React Query hook (e.g., useTasks)
-  const pendingTasks = [
-    {
-      id: 1,
-      title: 'Review lab results for Jane Smith',
-      priority: 'high',
-      dueDate: '2025-03-11',
-    },
-    {
-      id: 2,
-      title: 'Complete prior authorization for Robert Johnson',
-      priority: 'medium',
-      dueDate: '2025-03-12',
-    },
-    {
-      id: 3,
-      title: 'Follow-up on prescription renewal',
-      priority: 'low',
-      dueDate: '2025-03-15',
-    },
-  ];
-
   // Handle loading state
-  if (isLoadingPatients || isLoadingSessions || isLoadingOrders) {
+  if (isLoadingPatients || isLoadingSessions || isLoadingOrders || isLoadingConsultations || isLoadingTasks || isLoadingForms) {
     return (
       <div className="flex justify-center items-center h-screen">
         {/* Use primary color for spinner */}
@@ -157,13 +123,11 @@ const ProviderDashboard = () => {
   }
 
   // Handle error state (basic example)
-  if (errorPatients || errorSessions || errorOrders) {
+  if (errorPatients || errorSessions || errorOrders || errorConsultations || errorTasks || errorForms) {
     return (
       <div className="text-center py-10 text-red-600">
         <AlertTriangle className="h-12 w-12 mx-auto mb-4" />
         <p>Error loading dashboard data.</p>
-        {/* Optionally display specific error messages */}
-        {/* <p>{errorPatients?.message || errorSessions?.message || errorOrders?.message}</p> */}
       </div>
     );
   }
@@ -435,7 +399,6 @@ const ProviderDashboard = () => {
         </div>
 
         {/* Pending Forms Section */}
-        {/* TODO: Replace placeholder forms with data fetched via React Query hook (e.g., useForms) */}
         <div className="bg-white shadow rounded-lg overflow-hidden">
           <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center bg-accent2/5">
             <h2 className="text-lg font-medium flex items-center">
@@ -448,44 +411,33 @@ const ProviderDashboard = () => {
             </button>
           </div>
           <div className="p-6">
-            <ul className="divide-y divide-gray-200">
-              <li className="py-4">
-                <div className="flex items-center">
-                  {/* Use accent2 color for avatar placeholder */}
-                  <div className="flex-shrink-0 h-10 w-10 rounded-full bg-accent2/10 flex items-center justify-center text-accent2">
-                    <FileText className="h-5 w-5" />
-                  </div>
-                  <div className="ml-4 flex-1">
-                    <p className="text-sm font-medium">Monthly Questionnaire</p>
-                    <p className="text-sm text-gray-500">
-                      Jane Smith - Due in 2 days
-                    </p>
-                  </div>
-                  {/* Use primary color for button */}
-                  <button className="text-primary hover:text-primary/80 text-sm">
-                    Remind
-                  </button>
-                </div>
-              </li>
-              <li className="py-4">
-                <div className="flex items-center">
-                  {/* Use primary color for avatar placeholder */}
-                  <div className="flex-shrink-0 h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
-                    <AlertTriangle className="h-5 w-5" />
-                  </div>
-                  <div className="ml-4 flex-1">
-                    <p className="text-sm font-medium">ID Verification</p>
-                    <p className="text-sm text-gray-500">
-                      Robert Johnson - Overdue
-                    </p>
-                  </div>
-                  {/* Use primary color for button */}
-                  <button className="text-primary hover:text-primary/80 text-sm">
-                    Remind
-                  </button>
-                </div>
-              </li>
-            </ul>
+            {forms.length > 0 ? (
+              <ul className="divide-y divide-gray-200">
+                {forms.map((form) => (
+                  <li key={form.id} className="py-4">
+                    <div className="flex items-center">
+                      <div className="flex-shrink-0 h-10 w-10 rounded-full bg-accent2/10 flex items-center justify-center text-accent2">
+                        <FileText className="h-5 w-5" />
+                      </div>
+                      <div className="ml-4 flex-1">
+                        <p className="text-sm font-medium">{form.title}</p>
+                        <p className="text-sm text-gray-500">
+                          {/* Placeholder: No patient info, just show form name */}
+                        </p>
+                      </div>
+                      <button className="text-primary hover:text-primary/80 text-sm">
+                        Remind
+                      </button>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <div className="text-center py-8">
+                <FileText className="h-12 w-12 mx-auto text-gray-400 mb-2" />
+                <p className="text-gray-500">No pending forms</p>
+              </div>
+            )}
           </div>
         </div>
       </div>

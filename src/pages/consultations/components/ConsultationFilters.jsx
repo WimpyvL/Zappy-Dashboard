@@ -8,14 +8,18 @@ const ConsultationFilters = ({
   providerFilter,
   serviceFilter,
   dateRange,
-  providers, // Expecting array of { id, first_name, last_name }
-  services, // Expecting array of { id, name }
+  providers,
+  services,
   onSearchTermChange,
   onStatusFilterChange,
   onProviderFilterChange,
   onServiceFilterChange,
   onDateRangeChange,
 }) => {
+  // Defensive: ensure providers and services are always arrays
+  const safeProviders = Array.isArray(providers) ? providers : [];
+  const safeServices = Array.isArray(services) ? services : [];
+
   return (
     <div className="bg-white p-4 rounded-lg shadow mb-6 flex flex-col md:flex-row md:items-center space-y-4 md:space-y-0 md:space-x-4 flex-wrap">
       {/* Search Input */}
@@ -57,7 +61,7 @@ const ConsultationFilters = ({
            onChange={(e) => onProviderFilterChange(e.target.value)}
          >
            <option value="all">All Providers</option>
-           {providers.map((provider) => (
+           {safeProviders.map((provider) => (
              <option key={provider.id} value={provider.id}>
                {`${provider.first_name || ''} ${provider.last_name || ''}`.trim()}
              </option>
@@ -74,7 +78,7 @@ const ConsultationFilters = ({
             onChange={(e) => onServiceFilterChange(e.target.value)}
           >
             <option value="all">All Services</option>
-            {services.map((service) => (
+            {safeServices.map((service) => (
               <option key={service.id} value={service.name}> {/* Assuming filter by name */}
                 {service.name}
               </option>

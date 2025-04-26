@@ -224,13 +224,22 @@ export const AuthProvider = ({ children }) => {
             password,
           });
 
-        if (loginError) throw loginError;
+        if (loginError) {
+          // If the error is about email not confirmed, provide a clearer message
+          if (loginError.message && loginError.message.toLowerCase().includes('email not confirmed')) {
+            setError('Email not confirmed. Please check your inbox or resend the verification email.');
+          } else {
+            setError(loginError.message || 'Failed to log in.');
+          }
+          return { success: false, error: loginError.message };
+        }
 
         // User state will be updated by onAuthStateChange listener
         console.log('Login successful:', data.user);
         return { success: true, user: data.user };
       } catch (loginError) {
-        throw loginError;
+        setError(loginError.message || 'Failed to log in.');
+        return { success: false, error: loginError.message };
       }
     } catch (err) {
       console.error('Login error:', err.message);
@@ -453,6 +462,26 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  // Resend verification email using Supabase magic link (for unconfirmed users)
+  const resendVerificationEmail = async (email) => {
+    setActionLoading(true);
+    setError(null);
+    try {
+      if (!supabase) {
+        throw new Error('Supabase client not initialized. Please check your environment variables.');
+      }
+      // This will send a new confirmation email if the user is unconfirmed
+      const { error } = await supabase.auth.signInWithOtp({ email });
+      if (error) throw error;
+      return { success: true };
+    } catch (err) {
+      setError(err.message || 'Failed to resend verification email.');
+      return { success: false, error: err.message };
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   // Clear error
   const clearError = useCallback(() => {
     setError(null);
@@ -477,6 +506,7 @@ export const AuthProvider = ({ children }) => {
     changePassword, // Use Supabase changePassword (for logged-in user)
     forgotPassword, // Use Supabase forgotPassword
     updatePassword, // Use Supabase updatePassword (after reset link)
+    resendVerificationEmail, // Add to context
     clearError,
   };
 

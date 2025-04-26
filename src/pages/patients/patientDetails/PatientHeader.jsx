@@ -1,6 +1,6 @@
 // components/patients/components/PatientHeader.jsx
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Edit, Calendar } from 'lucide-react';
 // import PatientModal from '../PatientModal'; // Removed import for deleted component
 
@@ -43,6 +43,7 @@ const PatientHeader = ({ patient, patientId }) => {
     }
   };
 
+  const navigate = useNavigate();
 
   return (
     <div className="flex justify-between items-center">
@@ -74,9 +75,7 @@ const PatientHeader = ({ patient, patientId }) => {
         </button>
         <button
           className="px-3 py-1 text-sm bg-indigo-600 text-white rounded-md hover:bg-indigo-700 flex items-center"
-          onClick={() =>
-            (window.location.href = `/sessions/new?patientId=${patientId}`)
-          }
+          onClick={() => navigate(`/sessions?patientId=${patientId}`)}
         >
           <Calendar className="h-4 w-4 mr-1" />
           Schedule Session

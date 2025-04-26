@@ -1,0 +1,139 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Patient {
+  id           String   @id @default(uuid())
+  first_name   String
+  last_name    String
+  email        String?  @unique
+  phone        String?
+  date_of_birth DateTime?
+  address      String?
+  city         String?
+  state        String?
+  zip          String?
+  created_at   DateTime @default(now())
+  updated_at   DateTime @updatedAt
+  insurancePolicies InsurancePolicy[]
+  sessions     Session[]
+  notes        Note[]
+  invoices     PbInvoice[]
+  tags         PatientTag[]
+}
+
+model InsurancePolicy {
+  id                String   @id @default(uuid())
+  patient_id        String
+  provider_name     String
+  policy_number     String?
+  group_number      String?
+  subscriber_name   String?
+  subscriber_dob    DateTime?
+  status            String   @default("Pending")
+  verification_date DateTime?
+  notes             String?
+  created_at        DateTime @default(now())
+  updated_at        DateTime @updatedAt
+  patient           Patient  @relation(fields: [patient_id], references: [id])
+  documents         InsuranceDocument[]
+}
+
+model InsuranceDocument {
+  id                  String   @id @default(uuid())
+  insurance_policy_id  String
+  file_name            String
+  storage_path         String  @unique
+  url                  String?
+  document_type        String?
+  uploaded_by          String?
+  created_at           DateTime @default(now())
+  insurancePolicy      InsurancePolicy @relation(fields: [insurance_policy_id], references: [id])
+}
+
+model Session {
+  id                String   @id @default(uuid())
+  patient_id        String
+  provider_id       String?
+  service_id        String?
+  consultation_id   String?
+  scheduled_date    DateTime
+  end_time          DateTime?
+  duration_minutes  Int?
+  status            String   @default("scheduled")
+  session_notes     String?
+  meeting_link      String?
+  follow_up_needed  Boolean  @default(false)
+  type              String?
+  created_at        DateTime @default(now())
+  updated_at        DateTime @updatedAt
+  patient           Patient  @relation(fields: [patient_id], references: [id])
+  provider          Provider? @relation(fields: [provider_id], references: [id])
+}
+
+model Provider {
+  id               String   @id @default(uuid())
+  name             String
+  specialty        String?
+  email            String? @unique
+  phone            String?
+  active           Boolean @default(true)
+  authorizedStates String[]
+  created_at       DateTime @default(now())
+  updated_at       DateTime @updatedAt
+  sessions         Session[]
+}
+
+model Note {
+  id         String   @id @default(uuid())
+  patient_id String
+  user_id    String?
+  note_type  String?
+  title      String?
+  content    String
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+  patient    Patient  @relation(fields: [patient_id], references: [id])
+}
+
+model PbInvoice {
+  id            String   @id @default(uuid())
+  patient_id    String?
+  status        String   @default("pending")
+  pb_invoice_id String?
+  pb_invoice_metadata Json?
+  notes         String?
+  due_date      DateTime?
+  paid_date     DateTime?
+  invoice_amount Float   @default(0.0)
+  amount_paid   Float   @default(0.0)
+  due_amount    Float   @default(0.0)
+  refunded      Boolean @default(false)
+  refunded_amount Float @default(0.0)
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt
+  patient       Patient? @relation(fields: [patient_id], references: [id])
+}
+
+model PatientTag {
+  patient_id String
+  tag_id     String
+  patient    Patient @relation(fields: [patient_id], references: [id])
+  tag        Tag     @relation(fields: [tag_id], references: [id])
+  @@id([patient_id, tag_id])
+}
+
+model Tag {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  description String?
+  color       String?
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+  patients    PatientTag[]
+}

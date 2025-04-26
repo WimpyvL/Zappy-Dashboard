@@ -5,7 +5,6 @@ import dayjs from 'dayjs'; // Import dayjs for Ant Design DatePicker v5+
 import { toast } from 'react-toastify'; // Import toast for notifications
 import { usePatients, usePatientById } from '../../apis/patients/hooks';
 import { useGetUsers } from '../../apis/users/hooks';
-// Removed useAppContext import
 import { useSessions, useUpdateSessionStatus, useCreateSession } from '../../apis/sessions/hooks'; // Import create hook
 import {
   Search,
@@ -147,7 +146,7 @@ const Sessions = () => {
 
   // Fetch doctors/providers for the dropdown
   const { data: providersData /*, isLoading: _isLoadingProviders */ } = useGetUsers({ role: 'practitioner' }); // Removed unused isLoadingProviders
-  // const allProviders = providersData || []; // Removed unused allProviders
+  const allProviders = providersData?.data || providersData || [];
 
   // Create session mutation
   const createSessionMutation = useCreateSession({

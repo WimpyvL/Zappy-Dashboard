@@ -164,8 +164,16 @@ const ProviderManagement = () => {
   // Handle form submission
   const handleSubmit = () => {
     if (showAddModal) {
-      // Add new provider
-      addProvider.mutate(formData);
+      // Only include valid fields for Supabase
+      const providerToAdd = {
+        name: formData.name,
+        specialty: formData.specialty,
+        email: formData.email,
+        phone: formData.phone,
+        active: formData.active,
+        authorizedStates: formData.authorizedStates,
+      };
+      addProvider.mutate(providerToAdd);
       setShowAddModal(false);
     } else if (showEditModal) {
       // Update existing provider

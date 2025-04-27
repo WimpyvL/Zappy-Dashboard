@@ -166,74 +166,81 @@ const Signup = () => {
 
   // --- Render ---
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100 p-4">
-      <div className="max-w-md w-full bg-white rounded-lg shadow-md overflow-hidden">
-        <div className="px-6 py-8">
-          <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold text-indigo-900">MedSub</h1>
-            <p className="text-gray-600 mt-1">Create your account</p>
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-accent1/10 via-white to-accent2/10 relative">
+      {/* Decorative floating elements */}
+      <div className="absolute top-0 left-0 w-40 h-40 bg-primary/20 rounded-full blur-2xl -z-10" />
+      <div className="absolute bottom-0 right-0 w-32 h-32 bg-accent3/20 rounded-full blur-2xl -z-10" />
+      <div className="max-w-3xl w-full bg-white/90 rounded-2xl shadow-2xl overflow-hidden px-8 py-6 border border-gray-100 backdrop-blur-md">
+        <div className="text-center mb-4">
+          <span className="mx-auto mb-2 flex items-center justify-center w-12 h-12 rounded-full shadow-lg border-4 border-primary/20 bg-primary/10">
+            {/* Health icon SVG */}
+            <svg xmlns="http://www.w3.org/2000/svg" className="w-8 h-8 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 21c-4.97 0-9-4.03-9-9 0-4.97 4.03-9 9-9s9 4.03 9 9c0 4.97-4.03 9-9 9zm0-4.5a4.5 4.5 0 100-9 4.5 4.5 0 000 9zm0-2.25a2.25 2.25 0 110-4.5 2.25 2.25 0 010 4.5z" />
+            </svg>
+          </span>
+          <h1 className="text-3xl font-extrabold text-primary mb-1 tracking-tight drop-shadow">Zappy Health</h1>
+          <p className="text-base text-gray-600 font-handwritten">Create your account</p>
+        </div>
+
+        {errors.form && (
+          <div className="mb-3 p-2 bg-red-50 text-red-700 text-sm rounded flex items-start">
+            <X className="h-4 w-4 mr-2 mt-0.5" /> <p>{errors.form}</p>
           </div>
+        )}
 
-          <form onSubmit={handleSubmit}>
-            {errors.form && (
-              <div className="mb-4 p-3 bg-red-50 text-red-700 text-sm rounded">
-                {errors.form}
-              </div>
-            )}
-
-            {/* Form Fields */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-              {/* First Name */}
-              <div>
-                <label
-                  htmlFor="firstName"
-                  className="block text-sm font-medium text-gray-700 mb-1"
-                >
-                  First Name
-                </label>
-                <input
-                  id="firstName"
-                  name="firstName"
-                  type="text"
-                  autoComplete="given-name"
-                  required
-                  className={`appearance-none block w-full px-3 py-2 border ${errors.firstName ? 'border-red-300' : 'border-gray-300'} rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm`}
-                  placeholder="John"
-                  value={formData.firstName}
-                  onChange={handleInputChange}
-                />
-                {errors.firstName && (
-                  <p className="mt-1 text-sm text-red-600">
-                    {errors.firstName}
-                  </p>
-                )}
-              </div>
-              {/* Last Name */}
-              <div>
-                <label
-                  htmlFor="lastName"
-                  className="block text-sm font-medium text-gray-700 mb-1"
-                >
-                  Last Name
-                </label>
-                <input
-                  id="lastName"
-                  name="lastName"
-                  type="text"
-                  autoComplete="family-name"
-                  required
-                  className={`appearance-none block w-full px-3 py-2 border ${errors.lastName ? 'border-red-300' : 'border-gray-300'} rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm`}
-                  placeholder="Doe"
-                  value={formData.lastName}
-                  onChange={handleInputChange}
-                />
-                {errors.lastName && (
-                  <p className="mt-1 text-sm text-red-600">{errors.lastName}</p>
-                )}
-              </div>
+        {/* Form Fields */}
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-3">
+            {/* First Name */}
+            <div>
+              <label
+                htmlFor="firstName"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
+                First Name
+              </label>
+              <input
+                id="firstName"
+                name="firstName"
+                type="text"
+                autoComplete="given-name"
+                required
+                className={`block w-full px-3 py-2 border ${errors.firstName ? 'border-red-300' : 'border-gray-300'} rounded-lg shadow-sm placeholder-gray-400 focus:ring-primary focus:border-primary sm:text-sm bg-gray-50`}
+                placeholder="John"
+                value={formData.firstName}
+                onChange={handleInputChange}
+              />
+              {errors.firstName && (
+                <p className="mt-0.5 text-xs text-red-600">
+                  {errors.firstName}
+                </p>
+              )}
+            </div>
+            {/* Last Name */}
+            <div>
+              <label
+                htmlFor="lastName"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
+                Last Name
+              </label>
+              <input
+                id="lastName"
+                name="lastName"
+                type="text"
+                autoComplete="family-name"
+                required
+                className={`block w-full px-3 py-2 border ${errors.lastName ? 'border-red-300' : 'border-gray-300'} rounded-lg shadow-sm placeholder-gray-400 focus:ring-primary focus:border-primary sm:text-sm bg-gray-50`}
+                placeholder="Doe"
+                value={formData.lastName}
+                onChange={handleInputChange}
+              />
+              {errors.lastName && (
+                <p className="mt-0.5 text-xs text-red-600">{errors.lastName}</p>
+              )}
             </div>
             {/* Email */}
-            <div className="mb-6">
+            <div>
               <label
                 htmlFor="email"
                 className="block text-sm font-medium text-gray-700 mb-1"
@@ -246,17 +253,37 @@ const Signup = () => {
                 type="email"
                 autoComplete="email"
                 required
-                className={`appearance-none block w-full px-3 py-2 border ${errors.email ? 'border-red-300' : 'border-gray-300'} rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm`}
+                className={`block w-full px-3 py-2 border ${errors.email ? 'border-red-300' : 'border-gray-300'} rounded-lg shadow-sm placeholder-gray-400 focus:ring-primary focus:border-primary sm:text-sm bg-gray-50`}
                 placeholder="your.email@example.com"
                 value={formData.email}
                 onChange={handleInputChange}
               />
               {errors.email && (
-                <p className="mt-1 text-sm text-red-600">{errors.email}</p>
+                <p className="mt-0.5 text-xs text-red-600">{errors.email}</p>
               )}
             </div>
+            {/* Role */}
+            <div>
+              <label
+                htmlFor="role"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
+                I am a
+              </label>
+              <select
+                id="role"
+                name="role"
+                className="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-primary focus:border-primary sm:text-sm bg-gray-50"
+                value={formData.role}
+                onChange={handleInputChange}
+              >
+                <option value="patient">Patient</option>
+                <option value="doctor">Doctor</option>
+                <option value="admin">Administrator</option>
+              </select>
+            </div>
             {/* Password */}
-            <div className="mb-6">
+            <div>
               <label
                 htmlFor="password"
                 className="block text-sm font-medium text-gray-700 mb-1"
@@ -270,50 +297,30 @@ const Signup = () => {
                   type={showPassword ? 'text' : 'password'}
                   autoComplete="new-password"
                   required
-                  className={`appearance-none block w-full px-3 py-2 border ${errors.password ? 'border-red-300' : 'border-gray-300'} rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm`}
+                  className={`block w-full px-3 py-2 border ${errors.password ? 'border-red-300' : 'border-gray-300'} rounded-lg shadow-sm placeholder-gray-400 focus:ring-primary focus:border-primary sm:text-sm bg-gray-50`}
                   placeholder="••••••••"
                   value={formData.password}
                   onChange={handleInputChange}
                 />
                 <button
                   type="button"
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-500"
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-primary"
                   onClick={togglePasswordVisibility}
+                  tabIndex={-1}
                 >
                   {showPassword ? (
-                    <EyeOff className="h-5 w-5" />
+                    <EyeOff className="h-4 w-4" />
                   ) : (
-                    <Eye className="h-5 w-5" />
+                    <Eye className="h-4 w-4" />
                   )}
                 </button>
               </div>
               {errors.password && (
-                <p className="mt-1 text-sm text-red-600">{errors.password}</p>
+                <p className="mt-0.5 text-xs text-red-600">{errors.password}</p>
               )}
-              {/* Password strength indicators */}
-              <div className="mt-2 space-y-2">
-                {passwordRequirements.map((req) => (
-                  <div key={req.id} className="flex items-center text-sm">
-                    {req.test(formData.password) ? (
-                      <Check className="h-4 w-4 text-green-500 mr-2" />
-                    ) : (
-                      <X className="h-4 w-4 text-gray-300 mr-2" />
-                    )}
-                    <span
-                      className={
-                        req.test(formData.password)
-                          ? 'text-green-700'
-                          : 'text-gray-500'
-                      }
-                    >
-                      {req.label}
-                    </span>
-                  </div>
-                ))}
-              </div>
             </div>
             {/* Confirm Password */}
-            <div className="mb-6">
+            <div>
               <label
                 htmlFor="confirmPassword"
                 className="block text-sm font-medium text-gray-700 mb-1"
@@ -327,40 +334,43 @@ const Signup = () => {
                   type={showPassword ? 'text' : 'password'}
                   autoComplete="new-password"
                   required
-                  className={`appearance-none block w-full px-3 py-2 border ${errors.confirmPassword ? 'border-red-300' : 'border-gray-300'} rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm`}
+                  className={`block w-full px-3 py-2 border ${errors.confirmPassword ? 'border-red-300' : 'border-gray-300'} rounded-lg shadow-sm placeholder-gray-400 focus:ring-primary focus:border-primary sm:text-sm bg-gray-50`}
                   placeholder="••••••••"
                   value={formData.confirmPassword}
                   onChange={handleInputChange}
                 />
               </div>
               {errors.confirmPassword && (
-                <p className="mt-1 text-sm text-red-600">
+                <p className="mt-0.5 text-xs text-red-600">
                   {errors.confirmPassword}
                 </p>
               )}
             </div>
-            {/* Role */}
-            <div className="mb-6">
-              <label
-                htmlFor="role"
-                className="block text-sm font-medium text-gray-700 mb-1"
-              >
-                I am a
-              </label>
-              <select
-                id="role"
-                name="role"
-                className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                value={formData.role}
-                onChange={handleInputChange}
-              >
-                <option value="patient">Patient</option>
-                <option value="doctor">Doctor</option>
-                <option value="admin">Administrator</option>
-              </select>
+            
+            {/* Password requirements - Moved to right column */}
+            <div className="mt-1 space-y-1">
+              {passwordRequirements.map((req) => (
+                <div key={req.id} className="flex items-center text-xs">
+                  {req.test(formData.password) ? (
+                    <Check className="h-3 w-3 text-green-500 mr-1" />
+                  ) : (
+                    <X className="h-3 w-3 text-gray-300 mr-1" />
+                  )}
+                  <span
+                    className={
+                      req.test(formData.password)
+                        ? 'text-green-700'
+                        : 'text-gray-500'
+                    }
+                  >
+                    {req.label}
+                  </span>
+                </div>
+              ))}
             </div>
+            
             {/* Referral Code */}
-            <div className="mb-6">
+            <div className="col-span-full md:col-span-1">
               <label
                 htmlFor="referralCode"
                 className="block text-sm font-medium text-gray-700 mb-1"
@@ -372,65 +382,70 @@ const Signup = () => {
                 name="referralCode"
                 type="text"
                 autoComplete="off"
-                className={`appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm`}
+                className="block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:ring-primary focus:border-primary sm:text-sm bg-gray-50"
                 placeholder="Enter code if you have one"
                 value={formData.referralCode}
                 onChange={handleInputChange}
               />
             </div>
-            {/* Terms */}
-            <div className="mb-6">
-              <div className="flex items-center">
+          </div>
+
+          {/* Terms & Privacy - Now inside the form */}
+          <div className="mt-3">
+            <div className="flex items-start">
+              <div className="flex items-center h-5">
                 <input
                   id="terms"
                   name="terms"
                   type="checkbox"
-                  className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                  className="h-4 w-4 text-primary border-gray-300 rounded"
                   required
                 />
-                <label
-                  htmlFor="terms"
-                  className="ml-2 block text-sm text-gray-700"
-                >
+              </div>
+              <div className="ml-2 text-xs">
+                <label htmlFor="terms" className="text-gray-700">
                   I agree to the{' '}
                   <button
                     type="button"
-                    className="font-medium text-indigo-600 hover:text-indigo-500 underline bg-transparent border-none p-0 cursor-pointer"
-                    onClick={() => alert('Navigate to Terms of Service (Placeholder)')} // Placeholder action
+                    className="font-medium text-primary hover:text-primary/80 underline bg-transparent border-none p-0 cursor-pointer"
+                    onClick={() => alert('Navigate to Terms of Service (Placeholder)')}
                   >
                     Terms of Service
                   </button>{' '}
                   and{' '}
                   <button
                     type="button"
-                    className="font-medium text-indigo-600 hover:text-indigo-500 underline bg-transparent border-none p-0 cursor-pointer"
-                    onClick={() => alert('Navigate to Privacy Policy (Placeholder)')} // Placeholder action
+                    className="font-medium text-primary hover:text-primary/80 underline bg-transparent border-none p-0 cursor-pointer"
+                    onClick={() => alert('Navigate to Privacy Policy (Placeholder)')}
                   >
                     Privacy Policy
                   </button>
                 </label>
               </div>
             </div>
-            {/* Submit Button */}
+          </div>
+          
+          {/* Submit Button - Inside form */}
+          <div className="mt-4">
             <button
               type="submit"
               disabled={isLoading}
-              className={`w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white ${isLoading ? 'bg-indigo-400' : 'bg-indigo-600 hover:bg-indigo-700'} focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500`}
+              className={`w-full py-2 px-4 text-base font-semibold text-white rounded-lg shadow-md transition-all ${isLoading ? 'bg-primary/60 cursor-not-allowed' : 'bg-primary hover:bg-primary/90'} focus:ring-2 focus:ring-offset-2 focus:ring-primary`}
             >
               {isLoading ? 'Creating account...' : 'Create account'}
             </button>
             {/* Sign In Link */}
-            <p className="mt-6 text-center text-sm text-gray-600">
+            <p className="mt-4 text-center text-sm text-gray-600">
               Already have an account?{' '}
               <Link
                 to="/login"
-                className="font-medium text-indigo-600 hover:text-indigo-500"
+                className="text-primary hover:text-primary/80 font-medium"
               >
                 Sign in
               </Link>
             </p>
-          </form>
-        </div>
+          </div>
+        </form>
       </div>
     </div>
   );

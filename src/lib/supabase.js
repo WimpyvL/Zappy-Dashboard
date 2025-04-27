@@ -150,6 +150,108 @@ export const supabaseHelper = {
   },
 };
 
+// Storage helper functions
+export const supabaseStorage = {
+  // Upload a file to storage
+  async uploadFile(bucket, filePath, file, options = {}) {
+    if (!supabase) {
+      return {
+        data: null,
+        error: new Error('Supabase client not initialized'),
+      };
+    }
+    
+    const { upsert = false, contentType = null } = options;
+    
+    // Prepare upload options
+    const uploadOptions = {
+      cacheControl: '3600',
+      upsert: upsert
+    };
+    
+    // Add contentType if provided
+    if (contentType) {
+      uploadOptions.contentType = contentType;
+    }
+    
+    const { data, error } = await supabase.storage
+      .from(bucket)
+      .upload(filePath, file, uploadOptions);
+      
+    return { data, error };
+  },
+  
+  // Get a public URL for a file
+  getPublicUrl(bucket, filePath) {
+    if (!supabase) {
+      return {
+        publicUrl: null,
+        error: new Error('Supabase client not initialized'),
+      };
+    }
+    
+    const { data } = supabase.storage
+      .from(bucket)
+      .getPublicUrl(filePath);
+      
+    return { publicUrl: data.publicUrl };
+  },
+  
+  // Delete a file
+  async deleteFile(bucket, filePath) {
+    if (!supabase) {
+      return {
+        data: null,
+        error: new Error('Supabase client not initialized'),
+      };
+    }
+    
+    const { data, error } = await supabase.storage
+      .from(bucket)
+      .remove([filePath]);
+      
+    return { data, error };
+  },
+  
+  // List files in a bucket with an optional path prefix
+  async listFiles(bucket, options = {}) {
+    if (!supabase) {
+      return {
+        data: null,
+        error: new Error('Supabase client not initialized'),
+      };
+    }
+    
+    const { path = '', limit = 100, offset = 0, sortBy = { column: 'name', order: 'asc' } } = options;
+    
+    const { data, error } = await supabase.storage
+      .from(bucket)
+      .list(path, {
+        limit,
+        offset,
+        sortBy
+      });
+      
+    return { data, error };
+  },
+  
+  // Create a signed URL (temporary access)
+  async createSignedUrl(bucket, filePath, expiresIn = 60) {
+    if (!supabase) {
+      return {
+        data: null,
+        error: new Error('Supabase client not initialized'),
+      };
+    }
+    
+    const { data, error } = await supabase.storage
+      .from(bucket)
+      .createSignedUrl(filePath, expiresIn);
+      
+    return { data, error };
+  }
+};
+
 // Export the URL and key (primarily for debugging or specific needs, use with caution)
 export const SUPABASE_URL = supabaseUrl;
 export const SUPABASE_ANON_KEY = supabaseAnonKey;

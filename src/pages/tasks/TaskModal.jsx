@@ -147,11 +147,15 @@ const TaskModal = ({
                 className="mt-1 block w-full bg-white border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
               >
                 <option value="">Select Patient</option>
-                {(Array.isArray(patients) ? patients : []).map((patient) => (
-                  <option key={patient.id} value={patient.id}>
-                    {patient.full_name || `Patient #${patient.id}`}
-                  </option>
-                ))}
+                {patients && patients.length > 0 ? (
+                  patients.map((patient) => (
+                    <option key={patient.id} value={patient.id}>
+                      {`${patient.first_name || ''} ${patient.last_name || ''}`}
+                    </option>
+                  ))
+                ) : (
+                  <option value="" disabled>Loading patients...</option>
+                )}
               </select>
             </div>
 

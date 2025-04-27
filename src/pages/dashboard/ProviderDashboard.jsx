@@ -226,7 +226,7 @@ const ProviderDashboard = () => {
       
       <div className="border-b border-gray-200 pb-4 mb-6">
         <h1 className="text-2xl font-bold text-gray-900">Provider Dashboard</h1>
-        <p className="text-sm font-handwritten text-accent3 mt-1">Supporting your patients' health journey</p>
+        <p className="text-sm font-handwritten text-accent3 mt-1"></p>
       </div>
 
       {/* Stats Cards */}

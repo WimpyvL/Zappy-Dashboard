@@ -9,7 +9,7 @@ export const paths = {
   signup: '/signup',
 
   // Main routes
-  dashboard: '/',
+  dashboard: '/dashboard',
   patients: '/patients',
   orders: '/orders',
   invoices: '/invoices',

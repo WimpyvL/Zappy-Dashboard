@@ -68,6 +68,25 @@ This file tracks the changes made during the codebase refactoring process based 
     - Refactored `MedicalNotes.jsx` to use `useNotes`, `useAddNote`, `useUpdateNote`, `useDeleteNote` hooks instead of local state for note management. Added loading/error handling.
     - Refactored `PatientFollowUpNotes.jsx` to use `useNotes`, `useAddNote`, `useUpdateNote` hooks instead of local state/context functions. Added loading/error handling.
 
+## Session 2 (2025-04-27)
+
+1. **Service Management Database Schema Enhancement:**
+   - Created junction tables (`service_products` and `service_plans`) to support relationships between services, products, and subscription plans.
+   - Added `requires_consultation` column to the services table.
+   - Implemented Row Level Security (RLS) policies for the new tables.
+   - Created migration script `20250426000000_create_service_junction_tables.sql`.
+
+2. **Service Management React Query Hooks Enhancement:**
+   - Updated `useServices`, `useServiceById`, `useCreateService`, `useUpdateService`, and `useDeleteService` hooks in `src/apis/services/hooks.js`.
+   - Added functionality to fetch and manage associated products and subscription plans.
+   - Improved error handling with specific error messages and toast notifications.
+
+3. **Documentation and Testing:**
+   - Created `SERVICE_IMPLEMENTATION.md` explaining the data model and implementation details.
+   - Created `SUPABASE_SERVICE_MIGRATION.md` with step-by-step migration instructions.
+   - Created `SERVICE_TESTING_GUIDE.md` with detailed test scenarios.
+   - Created sample data script `sample_service_data.sql` for testing.
+
 ---
 
 _(Will be updated as more changes are made)_

@@ -1,18 +1,20 @@
 import { supabase } from '../../lib/supabase';
 
 export const fetchInvoices = async () => {
+  // Update to use pb_invoices table
   const { data, error } = await supabase
-    .from('invoices')
+    .from('pb_invoices')
     .select('*')
-    .order('issued_at', { ascending: false });
+    .order('created_at', { ascending: false });
   
   if (error) throw error;
   return data;
 };
 
 export const fetchInvoiceById = async (id) => {
+  // Update to use pb_invoices table
   const { data, error } = await supabase
-    .from('invoices')
+    .from('pb_invoices')
     .select('*')
     .eq('id', id)
     .single();
@@ -22,9 +24,28 @@ export const fetchInvoiceById = async (id) => {
 };
 
 export const createInvoice = async (invoiceData) => {
+  // Format the data according to pb_invoices structure
+  const { patientId, items, amount, status, dueDate } = invoiceData;
+  
+  const formattedInvoice = {
+    patient_id: patientId,  // Using the correct column name (snake_case)
+    status: status || 'pending',
+    pb_invoice_metadata: {
+      items: items || [],
+      total: amount || 0
+    },
+    due_date: dueDate || null,
+    invoice_amount: amount || 0,
+    amount_paid: 0,
+    due_amount: amount || 0,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString()
+  };
+
+  // Insert into pb_invoices table
   const { data, error } = await supabase
-    .from('invoices')
-    .insert(invoiceData)
+    .from('pb_invoices')
+    .insert(formattedInvoice)
     .select();
   
   if (error) throw error;
@@ -32,8 +53,9 @@ export const createInvoice = async (invoiceData) => {
 };
 
 export const updateInvoice = async (id, updates) => {
+  // Update to use pb_invoices table
   const { data, error } = await supabase
-    .from('invoices')
+    .from('pb_invoices')
     .update(updates)
     .eq('id', id)
     .select();
@@ -43,8 +65,9 @@ export const updateInvoice = async (id, updates) => {
 };
 
 export const deleteInvoice = async (id) => {
+  // Update to use pb_invoices table
   const { error } = await supabase
-    .from('invoices')
+    .from('pb_invoices')
     .delete()
     .eq('id', id);
   

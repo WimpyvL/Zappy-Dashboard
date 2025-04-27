@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { 
   fetchInvoices, 
   fetchInvoiceById,
@@ -6,112 +6,113 @@ import {
   updateInvoice,
   deleteInvoice
 } from './api';
+import { toast } from 'react-toastify';
 
-export const useInvoices = () => {
-  const [invoices, setInvoices] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+// Define query keys
+const queryKeys = {
+  all: ['invoices'],
+  lists: (params = {}) => [...queryKeys.all, 'list', { params }],
+  details: (id) => [...queryKeys.all, 'detail', id],
+};
 
-  useEffect(() => {
-    const loadInvoices = async () => {
+export const useInvoices = (params = {}) => {
+  return useQuery({
+    queryKey: queryKeys.lists(params),
+    queryFn: async () => {
       try {
-        setLoading(true);
         const data = await fetchInvoices();
-        setInvoices(data);
-      } catch (err) {
-        setError(err.message);
-      } finally {
-        setLoading(false);
+        return { data };
+      } catch (error) {
+        throw new Error(error.message);
       }
-    };
-
-    loadInvoices();
-  }, []);
-
-  return { invoices, loading, error };
+    }
+  });
 };
 
 export const useInvoiceById = (id) => {
-  const [invoice, setInvoice] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-
-  useEffect(() => {
-    const loadInvoice = async () => {
+  return useQuery({
+    queryKey: queryKeys.details(id),
+    queryFn: async () => {
+      if (!id) return null;
       try {
-        setLoading(true);
-        const data = await fetchInvoiceById(id);
-        setInvoice(data);
-      } catch (err) {
-        setError(err.message);
-      } finally {
-        setLoading(false);
+        return await fetchInvoiceById(id);
+      } catch (error) {
+        throw new Error(error.message);
       }
-    };
-
-    if (id) {
-      loadInvoice();
-    }
-  }, [id]);
-
-  return { invoice, loading, error };
+    },
+    enabled: !!id,
+  });
 };
 
-export const useCreateInvoice = () => {
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-
-  const create = async (invoiceData) => {
-    try {
-      setLoading(true);
-      const data = await createInvoice(invoiceData);
-      return data;
-    } catch (err) {
-      setError(err.message);
-      throw err;
-    } finally {
-      setLoading(false);
+export const useCreateInvoice = (options = {}) => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async (invoiceData) => {
+      try {
+        return await createInvoice(invoiceData);
+      } catch (error) {
+        throw new Error(error.message);
+      }
+    },
+    onSuccess: (data, variables, context) => {
+      // Invalidate and refetch the invoice list
+      queryClient.invalidateQueries({ queryKey: queryKeys.lists() });
+      toast.success('Invoice created successfully!');
+      options.onSuccess?.(data, variables, context);
+    },
+    onError: (error, variables, context) => {
+      toast.error(`Failed to create invoice: ${error.message}`);
+      options.onError?.(error, variables, context);
     }
-  };
-
-  return { create, loading, error };
+  });
 };
 
-export const useUpdateInvoice = () => {
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
+export const useUpdateInvoice = (options = {}) => {
+  const queryClient = useQueryClient();
 
-  const update = async (id, updates) => {
-    try {
-      setLoading(true);
-      const data = await updateInvoice(id, updates);
-      return data;
-    } catch (err) {
-      setError(err.message);
-      throw err;
-    } finally {
-      setLoading(false);
+  return useMutation({
+    mutationFn: async ({ id, updates }) => {
+      try {
+        return await updateInvoice(id, updates);
+      } catch (error) {
+        throw new Error(error.message);
+      }
+    },
+    onSuccess: (data, variables, context) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.details(variables.id) });
+      toast.success('Invoice updated successfully');
+      options.onSuccess?.(data, variables, context);
+    },
+    onError: (error, variables, context) => {
+      toast.error(`Failed to update invoice: ${error.message}`);
+      options.onError?.(error, variables, context);
     }
-  };
-
-  return { update, loading, error };
+  });
 };
 
-export const useDeleteInvoice = () => {
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
+export const useDeleteInvoice = (options = {}) => {
+  const queryClient = useQueryClient();
 
-  const remove = async (id) => {
-    try {
-      setLoading(true);
-      await deleteInvoice(id);
-    } catch (err) {
-      setError(err.message);
-      throw err;
-    } finally {
-      setLoading(false);
+  return useMutation({
+    mutationFn: async (id) => {
+      try {
+        await deleteInvoice(id);
+        return { id };
+      } catch (error) {
+        throw new Error(error.message);
+      }
+    },
+    onSuccess: (data, variables, context) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.lists() });
+      queryClient.removeQueries({ queryKey: queryKeys.details(variables) });
+      toast.success('Invoice deleted successfully');
+      options.onSuccess?.(data, variables, context);
+    },
+    onError: (error, variables, context) => {
+      toast.error(`Failed to delete invoice: ${error.message}`);
+      options.onError?.(error, variables, context);
     }
-  };
-
-  return { remove, loading, error };
+  });
 };

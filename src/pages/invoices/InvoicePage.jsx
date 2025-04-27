@@ -204,6 +204,7 @@ const InvoicePage = () => {
       toast.error("Please select a patient.");
       return;
     }
+    
     const submissionData = {
       patientId: newInvoice.patientId,
       status: 'pending',
@@ -214,8 +215,10 @@ const InvoicePage = () => {
           quantity: item.quantity,
           price: item.unitPrice
         })),
-      amount: invoiceTotal
+      amount: invoiceTotal,
+      dueDate: newInvoice.dueDate || null
     };
+    
     createInvoiceMutation.mutate(submissionData);
   };
 

@@ -72,42 +72,6 @@ export const useConsultations = (params = {}, pageSize = 10) => {
   return useQuery({
     queryKey: queryKeys.lists(params),
     queryFn: async () => {
-      if (process.env.NODE_ENV === 'development') {
-        // Return mock data in development
-        let filteredConsults = [...mockConsultations];
-        
-        if (status) {
-          filteredConsults = filteredConsults.filter(cons => cons.status === status);
-        }
-        if (patientId) {
-          filteredConsults = filteredConsults.filter(cons => cons.client_id === patientId);
-        }
-        if (searchTerm) {
-          const searchLower = searchTerm.toLowerCase();
-          filteredConsults = filteredConsults.filter(cons => 
-            cons.patients?.first_name?.toLowerCase().includes(searchLower) ||
-            cons.patients?.last_name?.toLowerCase().includes(searchLower) ||
-            cons.provider_notes?.toLowerCase().includes(searchLower) ||
-            cons.client_notes?.toLowerCase().includes(searchLower)
-          );
-        }
-
-        const paginatedConsults = filteredConsults.slice(rangeFrom, rangeTo + 1);
-        
-        return {
-          data: paginatedConsults.map(cons => ({
-            ...cons,
-            patientName: cons.patients ? `${cons.patients.first_name || ''} ${cons.patients.last_name || ''}`.trim() : 'N/A'
-          })),
-          meta: {
-            total: filteredConsults.length,
-            per_page: pageSize,
-            current_page: currentPage,
-            last_page: Math.ceil(filteredConsults.length / pageSize),
-          },
-        };
-      }
-
       let query = supabase
         .from('consultations')
         .select(
@@ -117,7 +81,7 @@ export const useConsultations = (params = {}, pageSize = 10) => {
         `, // Join with 'patients' table
           { count: 'exact' }
         )
-        .order('datesubmitted', { ascending: false }) // Revert to lowercase based on DB hint
+        .order('created_at', { ascending: false }) // Using created_at for consistent sorting
         .range(rangeFrom, rangeTo);
 
       // Apply filters
@@ -125,17 +89,15 @@ export const useConsultations = (params = {}, pageSize = 10) => {
         query = query.eq('status', status);
       }
       if (patientId) {
-        query = query.eq('client_id', patientId); // Corrected FK column name
+        query = query.eq('patient_id', patientId); // Use the correct FK column name
       }
       // Add server-side search filter
       if (searchTerm) {
         // Search on joined patients fields and potentially consultation notes
-        // Removed invalid 'provider' column search. Corrected 'email' to reference joined table.
         query = query.or(
-          `patients.first_name.ilike.%${searchTerm}%,patients.last_name.ilike.%${searchTerm}%,patients.email.ilike.%${searchTerm}%,provider_notes.ilike.%${searchTerm}%,client_notes.ilike.%${searchTerm}%`
+          `patients.first_name.ilike.%${searchTerm}%,patients.last_name.ilike.%${searchTerm}%,provider_notes.ilike.%${searchTerm}%,client_notes.ilike.%${searchTerm}%`
         );
       }
-      // Add other filters as needed based on otherFilters
 
       const { data, error, count } = await query;
 
@@ -148,7 +110,6 @@ export const useConsultations = (params = {}, pageSize = 10) => {
       const mappedData =
         data?.map((consult) => ({
           ...consult,
-          // Use the correct joined table name 'patients'
           patientName: consult.patients 
             ? `${consult.patients.first_name || ''} ${consult.patients.last_name || ''}`.trim()
             : 'N/A',

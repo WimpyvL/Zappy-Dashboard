@@ -244,21 +244,31 @@ const PatientDocuments = ({
     }
   };
 
+  // Handle showing the upload form
+  const handleShowUploadForm = () => {
+    if (!insuranceData?.data || insuranceData.data.length === 0) {
+      toast.error("Please add an insurance record before uploading documents.");
+      return;
+    }
+    
+    // If only one record, pre-select it
+    if (insuranceData.data.length === 1) {
+      setSelectedInsuranceRecordId(insuranceData.data[0].id);
+    } else {
+      // Otherwise, just open the form and let the user select from the dropdown
+      setSelectedInsuranceRecordId('');
+    }
+    
+    setIsUploadingFormVisible(true);
+  };
+
   return (
     <div className="bg-white p-6 rounded-lg shadow">
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-lg font-medium text-gray-900">Patient Documents</h2>
         <button
           className="px-3 py-1 text-sm bg-indigo-600 text-white rounded-md hover:bg-indigo-700 flex items-center disabled:opacity-50"
-          onClick={() => {
-            if (!insuranceData?.data || insuranceData.data.length === 0) {
-              toast.error("Please add an insurance record before uploading documents.");
-            } else {
-              // If only one record, pre-select it, otherwise require selection via form
-              setSelectedInsuranceRecordId(insuranceData.data.length === 1 ? insuranceData.data[0].id : ''); 
-              setIsUploadingFormVisible(true);
-            }
-          }}
+          onClick={handleShowUploadForm}
           disabled={!patientId} // Disable if no patient context
         >
           <Upload className="h-4 w-4 mr-1" />
@@ -267,14 +277,40 @@ const PatientDocuments = ({
       </div>
 
       {isUploadingFormVisible && (
-        <DocumentUploadForm
-          // Pass the selected record ID (might be pre-filled or selected in the form)
-          insuranceRecordId={selectedInsuranceRecordId} 
-          onCancel={() => setIsUploadingFormVisible(false)} 
-          onSuccess={refreshInsuranceRecords} // Use refetch from useInsuranceRecords
-        />
-        // TODO: If multiple insurance records exist, the form should include a dropdown
-        // to select which record the document belongs to, updating selectedInsuranceRecordId
+        <div className="mb-6 p-4 border border-gray-200 rounded-lg">
+          <h3 className="text-md font-medium text-gray-900 mb-3">
+            Upload New Document
+          </h3>
+          
+          {/* Add insurance record selector if multiple records exist */}
+          {insuranceData?.data && insuranceData.data.length > 1 && (
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Insurance Record
+              </label>
+              <select
+                className="block w-full pl-3 pr-10 py-2 text-sm border border-gray-300 rounded-md"
+                value={selectedInsuranceRecordId}
+                onChange={(e) => setSelectedInsuranceRecordId(e.target.value)}
+                required
+              >
+                <option value="">Select an insurance record</option>
+                {insuranceData.data.map(record => (
+                  <option key={record.id} value={record.id}>
+                    {record.provider_name || 'Unknown Provider'} 
+                    {record.policy_number ? ` - Policy #${record.policy_number}` : ''}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+          
+          <DocumentUploadForm
+            insuranceRecordId={selectedInsuranceRecordId} 
+            onCancel={() => setIsUploadingFormVisible(false)} 
+            onSuccess={refreshInsuranceRecords}
+          />
+        </div>
       )}
 
       {isLoadingInsurance ? ( 

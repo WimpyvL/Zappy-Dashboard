@@ -1,6 +1,6 @@
 // components/patients/components/PatientOrders.jsx
 import React from 'react'; // Removed unused useState, useEffect
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom'; // Add useNavigate
 import { Plus, Clock, CheckCircle, XCircle, FileText, Hash, Loader2 } from 'lucide-react'; // Added FileText, Hash, Loader2
 // Removed unused LoadingSpinner import
 import { useOrders } from '../../../apis/orders/hooks'; // Import the useOrders hook
@@ -63,6 +63,7 @@ const formatDate = (dateString) => {
 
 
 const PatientOrders = ({ patientId }) => {
+  const navigate = useNavigate(); // Add navigate function
   // Fetch orders using the hook, filtering by patientId
   const { data: ordersData, isLoading: loading, error } = useOrders({ patients_id: patientId });
 
@@ -77,9 +78,7 @@ const PatientOrders = ({ patientId }) => {
         <h2 className="text-lg font-medium text-gray-900">Order History</h2>
         <button
           className="px-3 py-1 text-sm bg-indigo-600 text-white rounded-md hover:bg-indigo-700 flex items-center"
-          onClick={() =>
-            (window.location.href = `/orders/new?patientId=${patientId}`)
-          }
+          onClick={() => navigate(`/orders?patientId=${patientId}`)}
         >
           <Plus className="h-4 w-4 mr-1" />
           Create New Order

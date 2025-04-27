@@ -12,7 +12,8 @@ import {
   Loader2, // Added for loading state
   AlertTriangle, // Added for error state
 } from 'lucide-react';
-// Removed useAppContext import
+import { toast } from 'react-toastify'; // Import toast for notifications
+import ErrorBoundary from '../../components/common/ErrorBoundary';
 import {
   useServices,
   useCreateService, // Corrected hook name
@@ -22,7 +23,7 @@ import {
 import { useSubscriptionPlans } from '../../apis/subscriptionPlans/hooks'; // Assuming this exists
 import { useProducts } from '../../apis/products/hooks'; // Assuming this exists
 
-const ServiceManagement = () => {
+const ServiceManagementContent = () => {
   // Fetch data using React Query hooks
   const {
     data: servicesData,
@@ -42,16 +43,31 @@ const ServiceManagement = () => {
 
   // Mutation hooks
   const addServiceMutation = useCreateService({ // Corrected hook name
-    onSuccess: () => setShowAddModal(false), // Close modal on success
-    onError: (error) => console.error('Error adding service:', error), // Basic error logging
+    onSuccess: () => {
+      setShowAddModal(false); // Close modal on success
+      toast.success('Service created successfully');
+    },
+    onError: (error) => {
+      toast.error(`Error creating service: ${error.message || 'Unknown error'}`);
+      console.error('Error adding service:', error);
+    },
   });
   const updateServiceMutation = useUpdateService({
-    onSuccess: () => setShowEditModal(false), // Close modal on success
-    onError: (error) => console.error('Error updating service:', error),
+    onSuccess: () => {
+      setShowEditModal(false); // Close modal on success
+      toast.success('Service updated successfully');
+    },
+    onError: (error) => {
+      toast.error(`Error updating service: ${error.message || 'Unknown error'}`);
+      console.error('Error updating service:', error);
+    },
   });
   const deleteServiceMutation = useDeleteService({
-    onSuccess: () => console.log('Service deleted'), // Add confirmation/notification
-    onError: (error) => console.error('Error deleting service:', error),
+    onSuccess: () => toast.success('Service deleted successfully'),
+    onError: (error) => {
+      toast.error(`Error deleting service: ${error.message || 'Unknown error'}`);
+      console.error('Error deleting service:', error);
+    },
   });
 
   // Local state for UI control and form data
@@ -654,6 +670,19 @@ const ServiceManagement = () => {
         </div>
       )}
     </div>
+  );
+};
+
+// Wrap the component with an error boundary
+const ServiceManagement = () => {
+  return (
+    <ErrorBoundary 
+      title="Service Management Error"
+      message="An error occurred while displaying the Service Management page. Please try again or contact support if the issue persists."
+      showError={process.env.NODE_ENV !== 'production'}
+    >
+      <ServiceManagementContent />
+    </ErrorBoundary>
   );
 };
 

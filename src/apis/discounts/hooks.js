@@ -82,17 +82,20 @@ export const useCreateDiscount = (options = {}) => {
     mutationFn: async (discountData) => {
       // Map frontend fields to DB columns, explicitly setting null for unused type
       const dataToInsert = {
-        ...discountData, // Include name, code, description, start_date, end_date, usage_limit etc.
-        amount: discountData.discount_type === 'fixed' ? parseFloat(discountData.value) : null, // Set null if not fixed
-        percentage: discountData.discount_type === 'percentage' ? parseInt(discountData.value, 10) : null, // Set null if not percentage
-        status: discountData.status === 'Active', // Convert string to boolean
+        ...discountData, // Include name, code, description, etc.
+        value: parseFloat(discountData.value) || 0, // Use the unified value field from schema
+        discount_type: discountData.discount_type || 'percentage', // Use the discount_type field from schema
+        status: discountData.status || 'Active', // Keep as text: 'Active', 'Inactive', 'Scheduled', 'Expired'
+        // Handle date fields properly
+        valid_from: discountData.valid_from ? discountData.valid_from : null,
+        valid_until: discountData.valid_until ? discountData.valid_until : null,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       };
-      // Remove frontend-specific fields not in DB table
-      delete dataToInsert.discount_type; 
-      delete dataToInsert.value; 
-
+      
+      // Remove redundant fields if any
+      delete dataToInsert.amount; 
+      delete dataToInsert.percentage;
 
       const { data, error } = await supabase
         .from('discounts')
@@ -131,15 +134,20 @@ export const useUpdateDiscount = (options = {}) => {
 
       const dataToUpdate = {
         ...discountData,
-        amount: discountData.discount_type === 'fixed' ? parseFloat(discountData.value) : 0,
-        percentage: discountData.discount_type === 'percentage' ? parseInt(discountData.value, 10) : 0,
-        status: discountData.status === 'Active',
+        value: parseFloat(discountData.value) || 0, // Use the unified value field
+        discount_type: discountData.discount_type || 'percentage', // Use the discount_type field directly
+        status: discountData.status || 'Active', // Keep status as text: 'Active', 'Inactive', etc.
+        // Handle date fields properly
+        valid_from: discountData.valid_from ? discountData.valid_from : null,
+        valid_until: discountData.valid_until ? discountData.valid_until : null,
         updated_at: new Date().toISOString(),
       };
+      
+      // Remove redundant fields
       delete dataToUpdate.id;
       delete dataToUpdate.created_at;
-      delete dataToUpdate.discount_type;
-      delete dataToUpdate.value;
+      delete dataToUpdate.amount;
+      delete dataToUpdate.percentage;
       delete dataToUpdate.usage_count; // Assuming usage_count is managed by backend triggers/logic
 
       const { data, error } = await supabase
@@ -214,10 +222,13 @@ export const useToggleDiscountActive = (options = {}) => {
   return useMutation({
     mutationFn: async ({ id, active }) => {
        if (!id) throw new Error("Discount ID is required.");
+       
+       // Use 'Active' or 'Inactive' as text values instead of boolean
+       const status = active ? 'Active' : 'Inactive';
 
        const { data, error } = await supabase
          .from('discounts')
-         .update({ status: active, updated_at: new Date().toISOString() })
+         .update({ status: status, updated_at: new Date().toISOString() })
          .eq('id', id)
          .select()
          .single();

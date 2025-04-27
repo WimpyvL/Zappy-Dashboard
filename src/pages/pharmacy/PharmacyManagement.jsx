@@ -50,6 +50,7 @@ const StatusBadge = ({ active }) => (
 
 const TypeBadge = ({ type }) => {
   const getBgColor = (pharmacyType) => {
+    if (!pharmacyType) return 'bg-gray-100 text-gray-800';
     const lowerType = pharmacyType.toLowerCase();
     if (lowerType === 'compounding') return 'bg-purple-100 text-purple-800';
     if (lowerType === 'retail') return 'bg-blue-100 text-blue-800';
@@ -131,7 +132,7 @@ const PharmacyTable = ({
             </td>
             <td className="px-6 py-4">
               <div className="flex flex-wrap gap-1 max-w-xs">
-                {pharmacy.served_state_codes.map((state) => (
+                {(Array.isArray(pharmacy.served_state_codes) ? pharmacy.served_state_codes : (typeof pharmacy.served_state_codes === 'string' && pharmacy.served_state_codes.length > 0 ? pharmacy.served_state_codes.split(',').map(s => s.trim()).filter(Boolean) : [])).map((state) => (
                   <span
                     key={state}
                     className="px-2 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-800"
@@ -469,9 +470,7 @@ const PharmacyManagement = () => {
 
   // Use React Query hooks
   const { data: pharmaciesData, isLoading, error } = usePharmacies();
-  const pharmacies = useMemo(() => {
-    return pharmaciesData?.data ?? [];
-  }, [pharmaciesData?.data]);
+  const pharmacies = useMemo(() => pharmaciesData ?? [], [pharmaciesData]);
 
   const createPharmacy = useCreatePharmacy({
     onSuccess: () => {

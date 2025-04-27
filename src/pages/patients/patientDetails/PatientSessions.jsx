@@ -3,6 +3,7 @@ import React from 'react';
 import { Plus, Clock, CheckCircle, XCircle } from 'lucide-react'; // Removed unused Loader2
 import { useSessions } from '../../../apis/sessions/hooks'; // Import the hook
 import LoadingSpinner from './common/LoadingSpinner';
+import { useNavigate } from 'react-router-dom'; // Add React Router navigation
 
 const SessionTypeTag = ({ type }) => {
   return (
@@ -44,6 +45,7 @@ const SessionStatusBadge = ({ status }) => {
 };
 
 const PatientSessions = ({ patientId, onOpenFollowupNotes }) => { // Removed sessions and loading props
+  const navigate = useNavigate(); // Add navigate function
   // Fetch sessions using the hook, filtering by patientId
   const { data: sessionsData, isLoading: loading /*, error: _error */ } = useSessions({ patientId: patientId }); // Removed unused error
   const sessions = sessionsData?.data || []; // Use fetched data or default to empty array
@@ -53,9 +55,7 @@ const PatientSessions = ({ patientId, onOpenFollowupNotes }) => { // Removed ses
         <h2 className="text-lg font-medium text-gray-900">Session History</h2>
         <button
           className="px-3 py-1 text-sm bg-indigo-600 text-white rounded-md hover:bg-indigo-700 flex items-center"
-          onClick={() =>
-            (window.location.href = `/sessions/new?patientId=${patientId}`)
-          }
+          onClick={() => navigate(`/sessions?patientId=${patientId}`)}
         >
           <Plus className="h-4 w-4 mr-1" />
           Schedule New Session

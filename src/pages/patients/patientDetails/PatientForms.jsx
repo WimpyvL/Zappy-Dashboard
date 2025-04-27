@@ -4,6 +4,7 @@ import { Plus, CheckCircle, Clock, XCircle, Send, RefreshCw } from 'lucide-react
 // import { toast } from 'react-toastify'; // Removed unused toast
 import { useSendFormReminder, useResendForm } from '../../../apis/forms/hooks'; // Import new hooks
 import LoadingSpinner from './common/LoadingSpinner';
+import { useNavigate } from 'react-router-dom'; // Add React Router navigation
 
 const FormStatusBadge = ({ status }) => {
   return (
@@ -31,6 +32,7 @@ const FormStatusBadge = ({ status }) => {
 };
 
 const PatientForms = ({ patientId, forms, loading }) => {
+  const navigate = useNavigate(); // Add navigate function
   const [formFilter, setFormFilter] = useState('all');
 
   // Format date for display
@@ -80,9 +82,7 @@ const PatientForms = ({ patientId, forms, loading }) => {
           </select>
           <button
             className="px-3 py-1 text-sm bg-indigo-600 text-white rounded-md hover:bg-indigo-700 flex items-center"
-            onClick={() =>
-              (window.location.href = `/patients/${patientId}/forms/new`)
-            }
+            onClick={() => navigate(`/forms?patientId=${patientId}`)}
           >
             <Plus className="h-4 w-4 mr-1" />
             Send Form

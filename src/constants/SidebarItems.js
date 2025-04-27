@@ -37,7 +37,7 @@ import { paths } from './paths'; // Ensure paths are imported
 export const sidebarItems = [
   {
     title: 'Dashboard',
-    path: '/',
+    path: '/dashboard', // Changed from '/' to '/dashboard'
     icon: Home,
     color: 'primary', // Added color
   },
@@ -153,7 +153,7 @@ export const logoutItem = {
 
 // Define patient sidebar items (Further Simplified View)
 export const patientSidebarItems = [
-  { title: 'Home', path: '/', icon: PatientDashboardIcon, color: 'accent3' }, // Changed color from primary (Red) to accent3 (Blue)
+  { title: 'Home', path: '/dashboard', icon: PatientDashboardIcon, color: 'accent3' }, // Changed path from '/' to '/dashboard'
   { title: 'Records', path: '/records', icon: PatientRecordsIcon, color: 'accent3' },
   { title: 'Programs', path: '/program', icon: PatientProgramIcon, color: 'accent4' },
   { title: 'Shop', path: '/shop', icon: ShopIcon, color: 'accent2' },

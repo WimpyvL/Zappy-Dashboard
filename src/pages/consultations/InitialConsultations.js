@@ -23,7 +23,7 @@ import ChildishDrawingElement from '../../components/ui/ChildishDrawingElement';
 const InitialConsultations = () => {
   // --- State ---
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('pending');
+  const [statusFilter, setStatusFilter] = useState('all');
   const [providerFilter, setProviderFilter] = useState('all');
   const [serviceFilter, setServiceFilter] = useState('all');
   const [dateRange, setDateRange] = useState(null);
@@ -79,22 +79,44 @@ const InitialConsultations = () => {
   const allServices = servicesData?.data || [];
   const allProviders = providersData || [];
 
-  // Client-side filtering (can be removed if hooks handle all filtering)
+  // Client-side filtering (improved to handle date and field name consistency)
   const filteredConsultations = allConsultations.filter((consultation) => {
+    // Only filter by status if it's not already filtered by the API
     const matchesStatus = statusFilter === 'all' || consultation.status === statusFilter;
-    const matchesService = serviceFilter === 'all' || consultation.service === serviceFilter; // Adjust if service is ID
-
+    
+    // Filter by service if field exists
+    const matchesService = serviceFilter === 'all' || 
+                          consultation.service_id === serviceFilter || 
+                          consultation.service === serviceFilter;
+    
+    // Handle date range checking with proper field names (support multiple field names)
     let matchesDate = true;
     if (dateRange && (dateRange[0] || dateRange[1])) {
       try {
-        const submittedDate = new Date(consultation.submitted_at);
+        // Try to find a valid date field (handle different field names)
+        const consultDate = new Date(
+          consultation.submitted_at || 
+          consultation.datesubmitted || 
+          consultation.date_submitted || 
+          consultation.created_at
+        );
+        
         const start = dateRange[0]?.startOf('day').toDate();
         const end = dateRange[1]?.endOf('day').toDate();
-        if (start && end) matchesDate = submittedDate >= start && submittedDate <= end;
-        else if (start) matchesDate = submittedDate >= start;
-        else if (end) matchesDate = submittedDate <= end;
-      } catch (e) { matchesDate = false; }
+        
+        if (start && end) {
+          matchesDate = consultDate >= start && consultDate <= end;
+        } else if (start) {
+          matchesDate = consultDate >= start;
+        } else if (end) {
+          matchesDate = consultDate <= end;
+        }
+      } catch (e) { 
+        console.warn('Date filtering error:', e);
+        matchesDate = true; // If date parsing fails, include the consultation
+      }
     }
+    
     return matchesStatus && matchesService && matchesDate;
   });
 

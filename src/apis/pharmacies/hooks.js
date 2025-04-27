@@ -22,7 +22,7 @@ export const usePharmacies = (filters = {}) => {
         .order('name', { ascending: true });
 
       // Apply filters if any
-      if (filters.active !== undefined) {
+      if (typeof filters.active === 'boolean') {
         query = query.eq('is_active', filters.active); // Use correct column name 'is_active'
       }
       if (filters.type) {

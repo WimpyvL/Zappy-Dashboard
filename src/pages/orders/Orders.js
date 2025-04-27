@@ -7,6 +7,7 @@ import {
   useOrders,
   useUpdateOrderStatus,
   useCreateOrder, // Import create hook
+  useCreateOrderItem, // Import order item hook
 } from '../../apis/orders/hooks';
 import { useSessions } from '../../apis/sessions/hooks';
 import { usePatients } from '../../apis/patients/hooks'; // Import patient hook
@@ -118,8 +119,11 @@ const Orders = () => {
     data: ordersData,
     isLoading: isLoadingOrders,
     error: errorOrders,
-    refetch: refetchOrders, // Added refetch
-  } = useOrders({ search: searchTerm, status: statusFilter !== 'all' ? statusFilter : undefined }); // Pass filters
+    refetch: refetchOrders,
+  } = useOrders(1, {   // Added page number as first parameter
+    search: searchTerm,
+    status: statusFilter !== 'all' ? statusFilter : undefined
+  }, 100);  // Added pageSize parameter to fetch more results
 
   const {
     data: sessionsData,
@@ -134,7 +138,8 @@ const Orders = () => {
 
   const patientOptions = patientsData?.data || [];
   const productOptions = productsData?.data || []; // Adapt based on useProducts response
-  const pharmacyOptions = pharmaciesData?.data || []; // Adapt based on usePharmacies response
+  // Fix: pharmaciesData is already an array, no need to access .data property
+  const pharmacyOptions = pharmaciesData || []; // Changed from pharmaciesData?.data || []
   const sessionOptions = sessionsData?.data || []; // Adapt based on useSessions response
 
 
@@ -149,8 +154,35 @@ const Orders = () => {
     },
   });
 
+  const createOrderItemMutation = useCreateOrderItem({
+    onSuccess: () => {
+      // Order item created successfully
+      refetchOrders(); // Refetch orders list to show updated data
+    },
+    onError: (error) => {
+      toast.error(`Failed to create order details: ${error.message}`);
+    }
+  });
+
   const createOrderMutation = useCreateOrder({
-     onSuccess: () => {
+     onSuccess: (createdOrder) => {
+       // After successfully creating the order, create the order item
+       const selectedProduct = productOptions.find(p => p.id === newOrderData.productId);
+       
+       if (selectedProduct && createdOrder) {
+         // Create an order item to associate the product with the order
+         const orderItemPayload = {
+           order_id: createdOrder.id,
+           product_id: newOrderData.productId,
+           description: selectedProduct ? (selectedProduct.name || selectedProduct.title || selectedProduct.product_name) : 'Unknown Medication',
+           quantity: 1,
+           price_at_order: selectedProduct.price || 0.00
+         };
+         
+         // Create the order item
+         createOrderItemMutation.mutate(orderItemPayload);
+       }
+       
        toast.success('Order created successfully');
        setShowCreateModal(false);
        setNewOrderData({ patientId: null, productId: null, pharmacyId: null, linkedSessionId: null, notes: '' }); // Reset form
@@ -220,18 +252,23 @@ const Orders = () => {
        toast.error("Please select Patient, Medication, and Pharmacy.");
        return;
      }
+     
+     // Get the selected product and pharmacy for their names
+     const selectedProduct = productOptions.find(p => p.id === newOrderData.productId);
+     const selectedPharmacy = pharmacyOptions.find(p => p.id === newOrderData.pharmacyId);
+     
      // Map state to the structure expected by useCreateOrder hook
      const orderPayload = {
        patient_id: newOrderData.patientId,
        pharmacy_id: newOrderData.pharmacyId,
        linked_session_id: newOrderData.linkedSessionId,
        notes: newOrderData.notes,
-       // Assuming order items are handled separately or derived based on productId
-       // You might need to add logic here to create order_items based on newOrderData.productId
-       // For simplicity, sending basic order info for now.
+       // Remove medication field as it doesn't exist in the orders table
+       // pharmacy name is also removed as it's not in the schema
        status: 'pending', // Default status
-       // total_amount might be calculated backend or require line items here
+       total_amount: selectedProduct?.price || 0.00, // Use product price as total amount if available
      };
+     
      console.log("Creating order with payload:", orderPayload);
      createOrderMutation.mutate(orderPayload);
   };
@@ -363,9 +400,9 @@ const Orders = () => {
             <tbody className="bg-white divide-y divide-gray-200">
               {pendingOrders.length > 0 ? (
                 pendingOrders
-                  .sort((a, b) => new Date(a.order_date) - new Date(b.order_date)) // Use order_date
+                  .sort((a, b) => new Date(a.order_date) - new Date(b.order_date))
                   .map((order) => {
-                    const linkedSession = getLinkedSession(order.linked_session_id); // Use linked_session_id
+                    const linkedSession = getLinkedSession(order.linked_session_id);
                     const isProcessing = updateOrderStatusMutation.isLoading && updateOrderStatusMutation.variables?.orderId === order.id && updateOrderStatusMutation.variables?.status === 'processing';
                     const isCancelling = updateOrderStatusMutation.isLoading && updateOrderStatusMutation.variables?.orderId === order.id && updateOrderStatusMutation.variables?.status === 'cancelled';
                     const isMutating = updateOrderStatusMutation.isLoading && updateOrderStatusMutation.variables?.orderId === order.id;
@@ -378,7 +415,7 @@ const Orders = () => {
                             <Link to={`/patients/${order.patient_id}`} className="hover:text-primary">{order.patientName || 'N/A'}</Link>
                           </div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{order.medication || 'N/A'}</td> {/* Need to fetch medication name */}
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{order.medication || 'N/A'}</td>
                         <td className="px-6 py-4 whitespace-nowrap"><StatusBadge status={order.status} holdReason={order.hold_reason} /></td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           {linkedSession ? (
@@ -390,7 +427,7 @@ const Orders = () => {
                             </div>
                           ) : (<span className="text-xs text-gray-500">No session linked</span>)}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{order.pharmacy || 'N/A'}</td> {/* Need to fetch pharmacy name */}
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{order.pharmacy || 'N/A'}</td>
                         <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                           <button onClick={() => handleStatusUpdate(order.id, 'processing')} className={`text-accent3 hover:text-accent3/80 mr-3 ${isProcessing ? 'opacity-50 cursor-not-allowed' : ''}`} disabled={order.hold_reason === 'Awaiting follow-up appointment' || isMutating}>
                             {isProcessing ? <Loader2 className="h-4 w-4 animate-spin inline mr-1" /> : null} Process
@@ -549,9 +586,9 @@ const Orders = () => {
                   onSearch={handleProductSearchInputChange}
                   filterOption={false}
                   loading={isLoadingProducts}
-                  options={productOptions.map(p => ({ // Assuming useProducts returns similar structure
+                  options={productOptions.map(p => ({
                     value: p.id,
-                    label: p.name || `ID: ${p.id}`
+                    label: p.name || p.title || p.product_name || `ID: ${p.id}`
                   }))}
                   notFoundContent={isLoadingProducts ? <Spinner /> : null}
                   required
@@ -572,9 +609,9 @@ const Orders = () => {
                     (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
                   }
                   loading={isLoadingPharmacies}
-                  options={pharmacyOptions.map(ph => ({ // Assuming usePharmacies returns similar structure
+                  options={pharmacyOptions.map(ph => ({
                     value: ph.id,
-                    label: ph.name || `ID: ${ph.id}`
+                    label: ph.name || ph.pharmacy_name || `ID: ${ph.id}`
                   }))}
                   required
                 />

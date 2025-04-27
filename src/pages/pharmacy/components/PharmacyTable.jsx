@@ -60,7 +60,7 @@ const PharmacyTable = ({ pharmacies, onEdit, onDelete }) => {
             </td>
             <td className="px-6 py-4">
               <div className="flex flex-wrap gap-1 max-w-xs">
-                {pharmacy.served_state_codes.map((state) => (
+                {(Array.isArray(pharmacy.served_state_codes) ? pharmacy.served_state_codes : (typeof pharmacy.served_state_codes === 'string' && pharmacy.served_state_codes.length > 0 ? pharmacy.served_state_codes.split(',').map(s => s.trim()).filter(Boolean) : [])).map((state) => (
                   <span
                     key={state}
                     className="px-2 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-800"

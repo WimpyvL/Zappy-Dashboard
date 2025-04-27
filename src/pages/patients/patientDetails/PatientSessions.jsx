@@ -44,6 +44,18 @@ const SessionStatusBadge = ({ status }) => {
   );
 };
 
+// Helper function to format dates safely
+const formatDate = (dateString) => {
+  if (!dateString) return 'N/A';
+  try {
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return 'Invalid Date';
+    return date.toLocaleDateString();
+  } catch (e) {
+    return 'Invalid Date';
+  }
+};
+
 const PatientSessions = ({ patientId, onOpenFollowupNotes }) => { // Removed sessions and loading props
   const navigate = useNavigate(); // Add navigate function
   // Fetch sessions using the hook, filtering by patientId
@@ -93,8 +105,8 @@ const PatientSessions = ({ patientId, onOpenFollowupNotes }) => { // Removed ses
               {sessions.map((session) => (
                 <tr key={session.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {/* Use start_time from DB */}
-                    {new Date(session.start_time).toLocaleDateString()} 
+                    {/* Try scheduled_date if start_time is not available */}
+                    {formatDate(session.scheduled_date || session.start_time)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                      {/* Use service_id or consultation_type if available, fallback */}

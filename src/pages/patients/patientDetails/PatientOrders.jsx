@@ -64,13 +64,11 @@ const formatDate = (dateString) => {
 
 const PatientOrders = ({ patientId }) => {
   const navigate = useNavigate(); // Add navigate function
-  // Fetch orders using the hook, filtering by patientId
-  const { data: ordersData, isLoading: loading, error } = useOrders({ patients_id: patientId });
+  // Fix the parameter name from patients_id to patientId to match what the hook expects
+  const { data: ordersData, isLoading: loading, error } = useOrders(1, { patientId: patientId }, 100);
 
-  // The hook returns the array directly or handles the data structure internally
-  const orders = ordersData || [];
-
-  // Removed local state and useEffect for mock data fetching
+  // The hook returns the data wrapped in an object with data property
+  const orders = ordersData?.data || [];
 
   return (
     <div className="bg-white p-6 rounded-lg shadow">
@@ -129,7 +127,7 @@ const PatientOrders = ({ patientId }) => {
               {orders.map((order) => (
                 <tr key={order.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {formatDate(order.orderDate)}
+                    {formatDate(order.order_date)}
                   </td>
                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 font-mono">
                      {order.id}

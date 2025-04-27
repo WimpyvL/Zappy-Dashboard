@@ -26,7 +26,6 @@ const AddInsuranceRecordModal = ({ isOpen, onClose, onSuccess }) => {
     notes: '',
   });
   const [selectedPatientName, setSelectedPatientName] = useState('');
-  // const [_patientSearchInput, setPatientSearchInput] = useState(''); // Removed unused var
   const [debouncedPatientSearchTerm, setDebouncedPatientSearchTerm] = useState('');
 
   // Debounce handler for patient search
@@ -39,18 +38,21 @@ const AddInsuranceRecordModal = ({ isOpen, onClose, onSuccess }) => {
 
   // Handle raw search input change
   const handlePatientSearchInputChange = (value) => {
-    // setPatientSearchInput(value); // Removed call to setter for unused state
+    console.log('Search input changed to:', value);
+    // Include empty string case to reset search
     debouncePatientSearch(value);
   };
 
   // Fetch Patients for dropdown using debounced search term
   const { data: patientsData, isLoading: isLoadingPatients } = usePatients(1, { search: debouncedPatientSearchTerm }, 100);
   const patientOptions = useMemo(() => patientsData?.data || [], [patientsData]); // Memoize patientOptions
+  
   // Add console log to check fetched options based on search term
   useEffect(() => {
     // This log now only runs when the memoized patientOptions or the search term changes
     console.log('Patient Options (search term:', debouncedPatientSearchTerm, '):', patientOptions);
-  }, [patientOptions, debouncedPatientSearchTerm]);
+    console.log('Patients data structure:', patientsData);
+  }, [patientOptions, debouncedPatientSearchTerm, patientsData]);
 
   // Create mutation
   const createRecordMutation = useCreateInsuranceRecord({
@@ -80,7 +82,6 @@ const AddInsuranceRecordModal = ({ isOpen, onClose, onSuccess }) => {
         notes: '',
       });
       setSelectedPatientName('');
-      // setPatientSearchInput(''); // Removed call to setter for unused state
       setDebouncedPatientSearchTerm('');
     }
   }, [isOpen]);
@@ -100,10 +101,12 @@ const AddInsuranceRecordModal = ({ isOpen, onClose, onSuccess }) => {
     setFormData(prev => ({
       ...prev,
       patientId: value,
+      // Store full patient object for reference
+      selectedPatient: selectedPatient || null,
     }));
     setSelectedPatientName(selectedPatient ? `${selectedPatient.first_name || ''} ${selectedPatient.last_name || ''}`.trim() : '');
-    // setPatientSearchInput(''); // Removed call to setter for unused state
-    setDebouncedPatientSearchTerm(''); // Clear debounced term
+    // Clear debounced term
+    setDebouncedPatientSearchTerm('');
   };
 
   // Handle form submission
@@ -164,15 +167,17 @@ const AddInsuranceRecordModal = ({ isOpen, onClose, onSuccess }) => {
                 placeholder="Search or Select Patient"
                 value={formData.patientId}
                 onChange={handlePatientSelect}
-                onSearch={handlePatientSearchInputChange} // Use debounced search handler
-                filterOption={false} // Disable client-side filtering
+                onSearch={handlePatientSearchInputChange}
+                filterOption={false} // Keep server-side filtering
                 loading={isLoadingPatients}
                 options={patientOptions.map(p => ({
                   value: p.id,
                   label: `${p.first_name || ''} ${p.last_name || ''}`.trim() || `ID: ${p.id}`
                 }))}
-                required
-                notFoundContent={isLoadingPatients ? <Spinner /> : null} // Show spinner while loading search results
+                notFoundContent={isLoadingPatients ? <Spinner /> : "No patients found"}
+                defaultActiveFirstOption={false}
+                showArrow={true}
+                allowClear={true}
               />
             </div>
 
@@ -187,6 +192,39 @@ const AddInsuranceRecordModal = ({ isOpen, onClose, onSuccess }) => {
                 readOnly
               />
             </div>
+
+            {/* Patient Information Card - Show when patient is selected */}
+            {formData.selectedPatient && (
+              <div className="mb-4 bg-blue-50 border border-blue-100 rounded-md p-3">
+                <h4 className="text-sm font-medium text-blue-900 mb-2">Patient Information</h4>
+                <div className="space-y-1 text-sm">
+                  <p className="flex justify-between">
+                    <span className="text-gray-600">Email:</span>
+                    <span className="font-medium">{formData.selectedPatient.email || 'N/A'}</span>
+                  </p>
+                  <p className="flex justify-between">
+                    <span className="text-gray-600">Phone:</span>
+                    <span className="font-medium">{formData.selectedPatient.phone || formData.selectedPatient.mobile_phone || 'N/A'}</span>
+                  </p>
+                  <p className="flex justify-between">
+                    <span className="text-gray-600">Date of Birth:</span>
+                    <span className="font-medium">
+                      {formData.selectedPatient.date_of_birth 
+                        ? new Date(formData.selectedPatient.date_of_birth).toLocaleDateString()
+                        : 'N/A'}
+                    </span>
+                  </p>
+                  <p className="flex justify-between">
+                    <span className="text-gray-600">Address:</span>
+                    <span className="font-medium text-right">
+                      {formData.selectedPatient.address || formData.selectedPatient.city || formData.selectedPatient.state
+                        ? `${formData.selectedPatient.address || ''} ${formData.selectedPatient.city || ''}, ${formData.selectedPatient.state || ''} ${formData.selectedPatient.zip || ''}`.trim().replace(/,\s*$/, '')
+                        : 'No address on file'}
+                    </span>
+                  </p>
+                </div>
+              </div>
+            )}
 
             <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700 mb-1">

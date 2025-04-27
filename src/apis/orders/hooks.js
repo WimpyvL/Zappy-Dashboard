@@ -319,9 +319,9 @@ export const useCreateOrderItem = (options = {}) => {
 
   return useMutation({
     mutationFn: async (orderItemData) => {
+      // Remove created_at field since it doesn't exist in the schema
       const dataToInsert = {
-        ...orderItemData,
-        created_at: new Date().toISOString(),
+        ...orderItemData
       };
 
       const { data, error } = await supabase

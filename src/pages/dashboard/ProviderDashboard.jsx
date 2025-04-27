@@ -1,11 +1,11 @@
-import React from 'react';
-import { usePatients } from '../../apis/patients/hooks'; // Assuming this path is correct
-import { useSessions } from '../../apis/sessions/hooks'; // Assuming this hook exists and path is correct
-import { useOrders } from '../../apis/orders/hooks'; // Assuming this hook exists and path is correct
-import { useConsultations } from '../../apis/consultations/hooks'; // Add this import
+import React, { useState, useEffect, useCallback } from 'react';
+import { usePatients } from '../../apis/patients/hooks'; 
+import { useSessions } from '../../apis/sessions/hooks';
+import { useOrders } from '../../apis/orders/hooks'; 
+import { useConsultations, useUpdateConsultationStatus } from '../../apis/consultations/hooks';
 import { useTasks } from '../../apis/tasks/hooks';
 import { useForms } from '../../apis/forms/hooks';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import {
   Calendar,
   Clock,
@@ -14,12 +14,13 @@ import {
   UserPlus,
   Check,
   AlertTriangle,
-  Loader2, // Added for loading state
+  Loader2,
   Users,
   Package,
   MessageSquare,
 } from 'lucide-react';
-import ChildishDrawingElement from '../../components/ui/ChildishDrawingElement'; // Import drawing element
+import ChildishDrawingElement from '../../components/ui/ChildishDrawingElement';
+import InitialConsultationNotes from '../consultations/InitialConsultationNotes';
 
 // Simple status badge for consultations
 const ConsultationStatusBadge = ({ status }) => {
@@ -52,38 +53,106 @@ const ConsultationStatusBadge = ({ status }) => {
 };
 
 const ProviderDashboard = () => {
-  // Fetch data using React Query hooks
+  const navigate = useNavigate();
+  
+  // Add state for review modal
+  const [showConsultationModal, setShowConsultationModal] = useState(false);
+  const [selectedConsultation, setSelectedConsultation] = useState(null);
+  
+  // Add state for session refreshing
+  const [refreshing, setRefreshing] = useState(false);
+  const [lastRefresh, setLastRefresh] = useState(new Date());
+  
+  // Fetch data using React Query hooks - Moved these up to fix the initialization issue
   const {
     data: patientsData,
     isLoading: isLoadingPatients,
     error: errorPatients,
-  } = usePatients(); // Assuming usePatients fetches all needed patients for the count
+  } = usePatients();
+  
   const {
     data: sessionsData,
     isLoading: isLoadingSessions,
     error: errorSessions,
-  } = useSessions(); // Assuming useSessions fetches all needed sessions
+    refetch: refetchSessions,
+  } = useSessions();
+  
   const {
     data: ordersData,
     isLoading: isLoadingOrders,
     error: errorOrders,
-  } = useOrders(); // Assuming useOrders fetches all needed orders
+  } = useOrders();
+  
   const {
     data: consultationsData,
     isLoading: isLoadingConsultations,
     error: errorConsultations,
-  } = useConsultations({}, 10); // Fetch first 10 consultations
+  } = useConsultations({}, 10);
+  
   const {
     data: tasksData,
     isLoading: isLoadingTasks,
     error: errorTasks,
-  } = useTasks(1, { status: 'Pending' }, {}, 10); // Fetch first 10 pending tasks
+  } = useTasks(1, { status: 'Pending' }, {}, 10);
+  
   const {
     data: formsData,
     isLoading: isLoadingForms,
     error: errorForms,
-  } = useForms(); // Fetch all forms (questionnaires) as a placeholder
-  const forms = formsData?.data || [];
+  } = useForms();
+  
+  // Consultation status update mutation
+  const updateStatusMutation = useUpdateConsultationStatus({
+    onSuccess: () => {
+      // Refresh consultation data would go here if needed
+    }
+  });
+  
+  // Now that refetchSessions is defined, we can use it in our callback
+  const handleRefreshSessions = useCallback(async () => {
+    setRefreshing(true);
+    try {
+      await refetchSessions();
+      setLastRefresh(new Date());
+    } catch (error) {
+      console.error('Error refreshing sessions:', error);
+    } finally {
+      setRefreshing(false);
+    }
+  }, [refetchSessions]);
+
+  // Set up automatic refresh on component mount and at regular intervals
+  useEffect(() => {
+    // Refresh on component mount
+    handleRefreshSessions();
+    
+    // Set up interval for automatic refresh (every 2 minutes)
+    const refreshInterval = setInterval(handleRefreshSessions, 120000);
+    
+    // Clean up interval on unmount
+    return () => clearInterval(refreshInterval);
+  }, [handleRefreshSessions]);
+  
+  // Handle opening the consultation review modal
+  const handleReviewConsultation = (consultation) => {
+    const patientData = {
+      id: consultation.patient_id,
+      name: consultation.patientName || 'Patient',
+      email: consultation.email,
+      dob: consultation.patients?.date_of_birth
+    };
+    setSelectedConsultation({
+      ...consultation,
+      patient: patientData
+    });
+    setShowConsultationModal(true);
+  };
+
+  // Handle closing the consultation modal
+  const handleCloseConsultationModal = () => {
+    setShowConsultationModal(false);
+    setSelectedConsultation(null);
+  };
 
   // Use fetched data or default empty arrays
   // Note: Adjust based on the actual structure returned by usePatients, useSessions, useOrders
@@ -92,6 +161,8 @@ const ProviderDashboard = () => {
   const orders = ordersData?.data || ordersData || []; // Adapt based on API response structure
   const consultations = consultationsData?.data || [];
   const pendingTasks = tasksData?.data || [];
+  // Define forms properly from formsData
+  const forms = formsData?.data || [];
 
   // Get pending consultations
   const pendingConsultations = consultations.filter(
@@ -104,23 +175,38 @@ const ProviderDashboard = () => {
   ).length;
   const pendingOrders = orders.filter((o) => o.status === 'pending').length;
 
-  // Get today's sessions
-  const today = new Date().toDateString();
-  const todaySessions = sessions.filter(
-    (s) =>
-      new Date(s.scheduledDate).toDateString() === today &&
-      s.status === 'scheduled'
-  );
-
-  // Handle loading state
-  if (isLoadingPatients || isLoadingSessions || isLoadingOrders || isLoadingConsultations || isLoadingTasks || isLoadingForms) {
-    return (
-      <div className="flex justify-center items-center h-screen">
-        {/* Use primary color for spinner */}
-        <Loader2 className="h-16 w-16 animate-spin text-primary" />
-      </div>
-    );
-  }
+  // Get today's sessions - Using improved date comparison that handles future dates
+  const getFormattedDate = (date) => {
+    const d = new Date(date);
+    return `${d.getFullYear()}-${(d.getMonth() + 1).toString().padStart(2, '0')}-${d.getDate().toString().padStart(2, '0')}`;
+  };
+  
+  // Get the current date - for debugging and comparison
+  const currentDate = new Date();
+  console.log('Current date:', currentDate.toISOString(), getFormattedDate(currentDate));
+  
+  const todayFormatted = getFormattedDate(new Date());
+  const todaySessions = sessions.filter(s => {
+    // Check for valid scheduledDate
+    if (!s.scheduledDate) return false;
+    
+    // Convert and format the session date
+    const sessionDate = new Date(s.scheduledDate);
+    const sessionFormatted = getFormattedDate(sessionDate);
+    
+    // Debug info to see what's being compared
+    console.log('Session date comparison:', 
+      s.patientName,
+      sessionDate.toISOString(), 
+      sessionFormatted, 
+      'matches today?', sessionFormatted === todayFormatted,
+      'status:', s.status);
+    
+    // Consider status and date - ignore time portion for more reliable comparison
+    return s.status === 'scheduled' && sessionFormatted === todayFormatted;
+  });
+  
+  console.log('Today sessions found:', todaySessions.length, todayFormatted);
 
   // Handle error state (basic example)
   if (errorPatients || errorSessions || errorOrders || errorConsultations || errorTasks || errorForms) {
@@ -225,15 +311,36 @@ const ProviderDashboard = () => {
               <Calendar className="h-5 w-5 text-accent3 mr-2" />
               Today's Sessions
             </h2>
-            {/* Use accent3 color for link */}
-            <Link
-              to="/sessions"
-              className="text-sm text-accent3 hover:text-accent3/80"
-            >
-              View All
-            </Link>
+            <div className="flex items-center space-x-2">
+              <button 
+                onClick={handleRefreshSessions}
+                disabled={refreshing}
+                className="flex items-center text-accent3 hover:text-accent3/80 disabled:opacity-50"
+                title="Refresh sessions"
+              >
+                <span className="text-xs mr-1">{refreshing ? "Refreshing..." : "Refresh"}</span>
+                <Clock className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+              </button>
+              <Link
+                to="/sessions"
+                className="text-sm text-accent3 hover:text-accent3/80"
+              >
+                View All
+              </Link>
+            </div>
           </div>
           <div className="p-6">
+            <div className="flex justify-between items-center mb-2">
+              <span className="text-xs text-gray-500">
+                Last updated: {lastRefresh.toLocaleTimeString()}
+              </span>
+              {refreshing && (
+                <span className="text-xs text-accent3 flex items-center">
+                  <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                  Refreshing...
+                </span>
+              )}
+            </div>
             {todaySessions.length > 0 ? (
               <ul className="divide-y divide-gray-200">
                 {todaySessions.map((session) => (
@@ -378,13 +485,13 @@ const ProviderDashboard = () => {
                           ).toLocaleDateString()}
                         </p>
                       </div>
-                      {/* Use primary color for button */}
-                      <Link
-                        to={`/consultations/${consultation.id}`}
+                      {/* Replace Link with a button that uses our handler */}
+                      <button
+                        onClick={() => handleReviewConsultation(consultation)}
                         className="ml-4 px-3 py-1 border border-primary text-primary text-sm rounded hover:bg-primary/5"
                       >
                         Review
-                      </Link>
+                      </button>
                     </div>
                   </li>
                 ))}
@@ -441,6 +548,22 @@ const ProviderDashboard = () => {
           </div>
         </div>
       </div>
+      
+      {/* Consultation Review Modal */}
+      {showConsultationModal && selectedConsultation && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-75 flex justify-center z-50">
+          <div className="w-full h-full bg-white flex flex-col overflow-hidden">
+            <InitialConsultationNotes
+              patient={selectedConsultation.patient}
+              consultationData={selectedConsultation}
+              consultationId={selectedConsultation.id}
+              readOnly={selectedConsultation.status === 'reviewed' || selectedConsultation.status === 'archived'}
+              onClose={handleCloseConsultationModal}
+              updateStatusMutation={updateStatusMutation}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 };

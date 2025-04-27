@@ -7,6 +7,7 @@ import { usePatients, usePatientById } from '../../apis/patients/hooks';
 import { useProviders } from '../../apis/providers/hooks';
 import { useSessions, useUpdateSessionStatus, useCreateSession } from '../../apis/sessions/hooks'; // Import create hook
 import { useGetUsers } from '../../apis/users/hooks';
+import PatientFollowUpNotes from '../patients/PatientFollowUpNotes'; // Import PatientFollowUpNotes component
 import {
   Search,
   Filter,
@@ -100,6 +101,10 @@ const Sessions = () => {
   });
   const [showNoteModal, setShowNoteModal] = useState(false);
   const [selectedSessionNote, setSelectedSessionNote] = useState(null);
+  // State for follow-up notes modal
+  const [showFollowupNotes, setShowFollowupNotes] = useState(false);
+  const [selectedSession, setSelectedSession] = useState(null);
+  const [selectedPatient, setSelectedPatient] = useState(null);
 
   // Get location and query parameters
   const location = useLocation();
@@ -574,6 +579,25 @@ const Sessions = () => {
                               {/* TODO: Implement Follow-up Logic */}
                             </button>
                           )}
+                        {/* View Follow-up Notes button */}
+                        {session.status === 'completed' && (
+                          <button 
+                            className="text-indigo-600 hover:text-indigo-800" 
+                            onClick={() => {
+                              // Get patient data from session and set as selectedPatient
+                              const patient = {
+                                id: session.patientId,
+                                name: session.patientName,
+                                // Add other patient data if available
+                              };
+                              setSelectedPatient(patient);
+                              setSelectedSession(session);
+                              setShowFollowupNotes(true);
+                            }}
+                          >
+                            View Details
+                          </button>
+                        )}
                         {/* Keep Review Note gray */}
                         <button
                           className="text-gray-600 hover:text-gray-900"
@@ -723,6 +747,23 @@ const Sessions = () => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Follow-up Notes Modal */}
+      {showFollowupNotes && selectedPatient && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-75 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg shadow max-w-5xl w-full max-h-[90vh] overflow-y-auto">
+            <PatientFollowUpNotes
+              patient={selectedPatient}
+              selectedSession={selectedSession}
+              onClose={() => {
+                setShowFollowupNotes(false);
+                setSelectedSession(null);
+                setSelectedPatient(null);
+              }}
+            />
           </div>
         </div>
       )}

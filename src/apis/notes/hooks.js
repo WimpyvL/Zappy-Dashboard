@@ -2,8 +2,6 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../../lib/supabase'; // Use the correct Supabase client
 import { toast } from 'react-toastify';
 
-// Removed Mock Data
-
 // Define query keys for notes
 const queryKeys = {
   all: ['notes'],
@@ -12,23 +10,27 @@ const queryKeys = {
 };
 
 // Get notes for a specific patient using Supabase
+
+// Get notes for a specific patient using Supabase
 export const useNotes = (patientId, params = {}, options = {}) => {
   return useQuery({
     queryKey: queryKeys.patientNotes(patientId, params),
     queryFn: async () => {
       if (!patientId) return []; // Return empty if no patientId
 
+      // Modified query to avoid the relationship error
       let query = supabase
         .from('notes') 
-        .select(`
-          *,
-          author:user_id ( id, first_name, last_name ) 
-        `) // Join with profiles table using user_id FK
+        .select('*') // Only select note fields without the join
         .eq('patient_id', patientId) // Corrected FK name
         .order('created_at', { ascending: false }); 
-
-      // Add other filters from params if needed
-      // if (params.type) { query = query.eq('type', params.type); }
+      
+      // Apply sessionId filter if provided to look in the JSON data field
+      if (params.sessionId) {
+        query = query.filter('note_type', 'eq', 'follow-up');
+        // Use ilike for searching in JSON data
+        // query = query.ilike('data', `%${params.sessionId}%`);
+      }
 
       const { data, error } = await query;
 
@@ -37,10 +39,10 @@ export const useNotes = (patientId, params = {}, options = {}) => {
         throw new Error(error.message);
       }
 
-      // Map data to include author name
+      // Map data to include author name (simplified approach)
       const mappedData = data?.map(note => ({
           ...note,
-          authorName: note.author ? `${note.author.first_name || ''} ${note.author.last_name || ''}`.trim() : 'System', // Use joined author name
+          authorName: note.createdBy || 'System', // Use createdBy field directly
       })) || [];
 
       return mappedData; 
@@ -58,12 +60,10 @@ export const useNoteById = (noteId, options = {}) => {
     queryFn: async () => {
       if (!noteId) return null;
 
+      // Modified query to avoid the relationship error
       const { data, error } = await supabase
-        .from('notes') 
-        .select(`
-          *,
-          author:user_id ( id, first_name, last_name ) 
-        `) // Join with profiles table using user_id FK
+        .from('notes')
+        .select('*') // Only select note fields without the join
         .eq('id', noteId)
         .single();
 
@@ -72,11 +72,12 @@ export const useNoteById = (noteId, options = {}) => {
         if (error.code === 'PGRST116') return null; // Not found
         throw new Error(error.message);
       }
-       // Map data to include author name
-       const mappedData = data ? {
-           ...data,
-           authorName: data.author ? `${data.author.first_name || ''} ${data.author.last_name || ''}`.trim() : 'System', // Use joined author name
-       } : null;
+
+      // Map data to include author name (simplified approach)
+      const mappedData = data ? {
+          ...data,
+          authorName: data.createdBy || 'System', // Use createdBy field directly
+      } : null;
 
       return mappedData; // Return mapped data
     },

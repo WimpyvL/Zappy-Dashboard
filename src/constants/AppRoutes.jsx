@@ -18,6 +18,7 @@ import PatientDetail from '../pages/patients/PatientDetail';
 
 // Order components
 import Orders from '../pages/orders/Orders';
+import OrderDetail from '../pages/orders/OrderDetail.jsx'; // Import OrderDetail component
 
 // Invoices components
 import Invoices from '../pages/invoices/InvoicePage';
@@ -121,6 +122,16 @@ const AppRoutes = () => {
         element={
           <MainLayout>
             <Orders />
+          </MainLayout>
+        }
+      />
+
+      {/* Add Order Detail Route */}
+      <Route
+        path={`${paths.orders}/:orderId`}
+        element={
+          <MainLayout>
+            <OrderDetail />
           </MainLayout>
         }
       />

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
-  useNotes, // Assuming you might want to fetch existing notes
-  useAddNote,
+  useNotes, 
+  useCreateNote, // Changed from useAddNote to useCreateNote
   useUpdateNote,
 } from '../../apis/notes/hooks'; // Import note hooks
 import { useAuth } from '../../context/AuthContext'; // To get current user
@@ -35,13 +35,13 @@ const PatientFollowUpNotes = ({ patient, selectedSession, onClose }) => {
     error: errorNotes,
   } = useNotes(
     patient?.id,
-    { category: 'follow-up', sessionId: selectedSession?.id }, // Example filter
+    { sessionId: selectedSession?.id }, // Use sessionId filter only, removed category
     { enabled: !!patient?.id && !!selectedSession?.id } // Only fetch if patient and session are present
   );
-  const existingNote = notesData?.data?.[0] || notesData?.[0]; // Assuming API returns array, take first match
+  const existingNote = notesData?.[0]; // Assuming API returns array, take first match
 
   // Mutation hooks
-  const addNoteMutation = useAddNote({
+  const addNoteMutation = useCreateNote({
     onSuccess: () => {
       toast.success('Follow-up note saved.');
       if (onClose) onClose();
@@ -152,7 +152,7 @@ const PatientFollowUpNotes = ({ patient, selectedSession, onClose }) => {
     const noteData = {
       title: `Follow-up Visit - ${new Date().toLocaleDateString()}`,
       content: `Follow-up visit for ${patient?.name}.`, // Basic content
-      category: 'follow-up',
+      note_type: 'follow-up', // Changed from category to note_type
       createdBy: createdByName,
       data: {
         // Store structured data

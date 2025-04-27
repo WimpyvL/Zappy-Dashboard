@@ -14,7 +14,7 @@ import PatientOrders from './patientDetails/PatientOrders';
 import PatientNotes from './patientDetails/PatientNotes';
 import PatientForms from './patientDetails/PatientForms';
 import PatientBilling from './patientDetails/PatientBilling';
-import PatientFollowUpNotes from './patientDetails/PatientFollowUpNotes';
+import PatientFollowUpNotes from './PatientFollowUpNotes';  // Corrected import path
 import PatientDocuments from './patientDetails/PatientDocuments';
 // Removed useAppContext import
 import { usePatientById } from '../../apis/patients/hooks'; // Import the correct hook

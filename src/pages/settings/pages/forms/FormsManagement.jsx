@@ -28,6 +28,7 @@ import {
   // EyeOutlined, // Removed unused import
   // MoreOutlined, // Removed unused import
   SearchOutlined,
+  ImportOutlined
 } from '@ant-design/icons';
 import { useForm } from 'react-hook-form'; // Removed Controller as it's in FormBasicsModal
 
@@ -38,6 +39,7 @@ import FormPages from './FormPages';
 import FormConditionals from './FormConditionals';
 import FormTable from './FormTable'; // Import the new table component
 import FormBasicsModal from './FormBasicsModal'; // Import the new modal component
+import FormImportModal from './FormImportModal'; // Import the form import modal
 import {
   useForms,
   // useFormById, // Removed unused import
@@ -94,6 +96,7 @@ const FormsManagement = () => {
   const [activeService, setActiveService] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [formModalVisible, setFormModalVisible] = useState(false);
+  const [formImportModalVisible, setFormImportModalVisible] = useState(false);
   const [formActionType, setFormActionType] = useState('create'); // 'create' or 'edit'
   const [currentForm, setCurrentForm] = useState(null);
   const [formBuilderVisible, setFormBuilderVisible] = useState(false);
@@ -207,6 +210,25 @@ const FormsManagement = () => {
     setFormActionType(action);
     setCurrentForm(form); // Set the form being edited, or null for create
     setFormModalVisible(true);
+  };
+
+  // Handle opening the import modal
+  const openFormImportModal = () => {
+    setFormImportModalVisible(true);
+  };
+
+  // Handle form import submission
+  const handleFormImport = (formData) => {
+    // Use the createFormMutation to save the imported form
+    createFormMutation.mutate(formData, {
+      onSuccess: () => {
+        setFormImportModalVisible(false);
+        message.success('Form imported successfully');
+      },
+      onError: (error) => {
+        message.error(`Failed to import form: ${error.message || 'Unknown error'}`);
+      }
+    });
   };
 
   // Handle form basics submission (from modal)
@@ -414,6 +436,12 @@ const FormsManagement = () => {
           >
             Create New Form
           </Button>
+          <Button
+            icon={<ImportOutlined />}
+            onClick={openFormImportModal}
+          >
+            Import Form
+          </Button>
         </Space>
       </div>
 
@@ -437,6 +465,14 @@ const FormsManagement = () => {
         initialData={currentForm}
         services={services}
         actionType={formActionType}
+      />
+
+      {/* Form Import Modal */}
+      <FormImportModal
+        visible={formImportModalVisible}
+        onCancel={() => setFormImportModalVisible(false)}
+        onImport={handleFormImport}
+        services={services}
       />
 
       {/* Form Builder Drawer */}
@@ -533,7 +569,7 @@ const FormsManagement = () => {
       {/* Share Modal */}
       <Modal
         title="Share Form"
-        visible={shareModalVisible}
+        open={shareModalVisible}
         onCancel={() => setShareModalVisible(false)}
         footer={[
           <Button key="back" onClick={() => setShareModalVisible(false)}>

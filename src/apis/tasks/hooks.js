@@ -2,8 +2,6 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../../lib/supabase'; // Use the correct Supabase client
 import { toast } from 'react-toastify';
 
-// Removed Mock Data
-
 // Define query keys
 const queryKeys = {
   all: ['tasks'],
@@ -33,7 +31,11 @@ export const useTasks = (
     queryFn: async () => {
       let query = supabase
         .from('pb_tasks') // Using pb_tasks table
-        .select('*', { count: 'exact' })
+        .select(`
+          *,
+          assignee:user_id(id, first_name, last_name, email),
+          patient:patient_id(id, first_name, last_name)
+        `, { count: 'exact' })
         .range(rangeFrom, rangeTo);
 
       // Apply sorting (example)
@@ -54,7 +56,7 @@ export const useTasks = (
         query = query.eq('user_id', filters.assigneeId);
       }
       if (filters.patientId) {
-        query = query.eq('patient_id', filters.patientId); // Corrected FK name
+        query = query.eq('patient_id', filters.patientId);
       }
       // Add search filter if needed
       if (filters.search) {
@@ -70,14 +72,15 @@ export const useTasks = (
         throw new Error(error.message);
       }
 
-      // Map data without relying on joins
-      const mappedData =
-        data?.map((task) => ({
-          ...task,
-          assigneeName: 'N/A', // We'll need to fetch user names separately
-          patientName: 'N/A', // We'll need to fetch patient names separately
-          status: task.completed ? 'Completed' : 'Pending', // Map boolean to status string
-        })) || [];
+      // Map data with proper patient and assignee info
+      const mappedData = data?.map((task) => ({
+        ...task,
+        assignee: task.assignee || null,
+        patient: task.patient || null,
+        assigneeName: task.assignee ? `${task.assignee.first_name || ''} ${task.assignee.last_name || ''}`.trim() : 'Unassigned',
+        patientName: task.patient ? `${task.patient.first_name || ''} ${task.patient.last_name || ''}`.trim() : 'N/A',
+        status: task.status || (task.completed ? 'completed' : 'pending'),
+      })) || [];
 
       return {
         data: mappedData,
@@ -102,7 +105,11 @@ export const useTaskById = (id, options = {}) => {
 
       const { data, error } = await supabase
         .from('pb_tasks')
-        .select('*')
+        .select(`
+          *,
+          assignee:user_id(id, first_name, last_name, email),
+          patient:patient_id(id, first_name, last_name)
+        `)
         .eq('id', id)
         .single();
 
@@ -111,13 +118,16 @@ export const useTaskById = (id, options = {}) => {
         if (error.code === 'PGRST116') return null; // Not found
         throw new Error(error.message);
       }
-      // Map data without relying on joins
+      
+      // Map data with proper assignee and patient info
       const mappedData = data
         ? {
             ...data,
-            assigneeName: 'N/A', // We'll need to fetch user name separately
-            patientName: 'N/A', // We'll need to fetch patient name separately
-            status: data.completed ? 'Completed' : 'Pending',
+            assignee: data.assignee || null,
+            patient: data.patient || null,
+            assigneeName: data.assignee ? `${data.assignee.first_name || ''} ${data.assignee.last_name || ''}`.trim() : 'Unassigned',
+            patientName: data.patient ? `${data.patient.first_name || ''} ${data.patient.last_name || ''}`.trim() : 'N/A',
+            status: data.status || (data.completed ? 'completed' : 'pending'),
           }
         : null;
       return mappedData;
@@ -134,21 +144,21 @@ export const useCreateTask = (options = {}) => {
   return useMutation({
     mutationFn: async (taskData) => {
       const dataToInsert = {
-        ...taskData,
-        // Map frontend fields to DB columns if names differ
-        user_id: taskData.assigneeId,
-        patient_id: taskData.patientId, // Corrected FK name
-        completed: taskData.status === 'Completed',
+        title: taskData.title,
+        status: taskData.status || 'pending',
+        priority: taskData.priority || 'medium',
+        due_date: taskData.due_date || null,
+        reminder_date: taskData.reminder_date || null,
+        message: taskData.message || '',
+        duration: taskData.duration || 30,
+        notify_assignee: taskData.notify_assignee || false,
+        user_id: taskData.assignable_id || null, // Use user_id instead of assignable_id
+        patient_id: taskData.taskable_id || null, // Use patient_id instead of taskable_id
+        completed: taskData.status === 'completed',
         // Ensure timestamps are set
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
-        date_created: new Date().toISOString(), // Assuming this should be set on creation
-        date_modified: new Date().toISOString(),
       };
-      // Remove frontend-specific fields not in DB table
-      delete dataToInsert.assigneeId;
-      delete dataToInsert.patientId;
-      delete dataToInsert.status;
 
       const { data, error } = await supabase
         .from('pb_tasks')
@@ -184,19 +194,19 @@ export const useUpdateTask = (options = {}) => {
       if (!id) throw new Error('Task ID is required for update.');
 
       const dataToUpdate = {
-        ...taskData,
-        user_id: taskData.assigneeId,
-        patient_id: taskData.patientId, // Corrected FK name
-        completed: taskData.status === 'Completed',
+        title: taskData.title,
+        status: taskData.status || 'pending',
+        priority: taskData.priority || 'medium',
+        due_date: taskData.due_date || null,
+        reminder_date: taskData.reminder_date || null,
+        message: taskData.message || '',
+        duration: taskData.duration || 30,
+        notify_assignee: taskData.notify_assignee || false,
+        user_id: taskData.assignable_id || null, // Use user_id instead of assignable_id
+        patient_id: taskData.taskable_id || null, // Use patient_id instead of taskable_id
+        completed: taskData.status === 'completed',
         updated_at: new Date().toISOString(),
-        date_modified: new Date().toISOString(),
       };
-      delete dataToUpdate.assigneeId;
-      delete dataToUpdate.patientId;
-      delete dataToUpdate.status;
-      delete dataToUpdate.id; // Don't update the ID itself
-      delete dataToUpdate.created_at;
-      delete dataToUpdate.date_created;
 
       const { data, error } = await supabase
         .from('pb_tasks')
@@ -270,8 +280,8 @@ export const useMarkTaskCompleted = (options = {}) => {
         .from('pb_tasks')
         .update({
           completed: true,
+          status: 'completed',
           updated_at: new Date().toISOString(),
-          date_modified: new Date().toISOString(),
         })
         .eq('id', id)
         .select()
@@ -300,7 +310,7 @@ export const useMarkTaskCompleted = (options = {}) => {
   });
 };
 
-// Get assignees hook using Supabase (queries the 'user' table)
+// Get assignees hook using Supabase (queries the 'profiles' table)
 export const useAssignees = (options = {}) => {
   return useQuery({
     queryKey: queryKeys.assignees,
@@ -308,13 +318,21 @@ export const useAssignees = (options = {}) => {
       // Fetch users who can be assignees from the profiles table
       const { data, error } = await supabase
         .from('profiles') // Query the profiles table
-        .select('id, first_name, last_name'); // Select ID and names
+        .select('id, first_name, last_name, email')
+        .order('last_name', { ascending: true });
 
       if (error) {
         console.error('Error fetching assignees:', error);
         throw new Error(error.message);
       }
-      return data || [];
+      
+      // Format the data to include full_name
+      const formattedData = (data || []).map(user => ({
+        ...user,
+        full_name: `${user.first_name || ''} ${user.last_name || ''}`.trim() || user.email || `User #${user.id}`,
+      }));
+      
+      return formattedData;
     },
     staleTime: 5 * 60 * 1000, // Cache for 5 minutes
     ...options,
@@ -327,19 +345,24 @@ export const useTaskablePatients = (options = {}) => {
     queryKey: queryKeys.taskablePatients,
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('patients') // Corrected table name
-        .select('id, first_name, last_name') // Select relevant fields
+        .from('patients')
+        .select('id, first_name, last_name')
         .order('last_name', { ascending: true });
 
       if (error) {
         console.error('Error fetching taskable patients:', error);
         throw new Error(error.message);
       }
-      return data || [];
+      
+      // Format the data to include full_name
+      const formattedData = (data || []).map(patient => ({
+        ...patient,
+        full_name: `${patient.first_name || ''} ${patient.last_name || ''}`.trim() || `Patient #${patient.id}`,
+      }));
+      
+      return formattedData;
     },
     staleTime: 5 * 60 * 1000, // Cache for 5 minutes
     ...options,
   });
 };
-
-// Removed session/bulk/archive hooks as they require more specific backend logic

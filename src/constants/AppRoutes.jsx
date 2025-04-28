@@ -69,6 +69,9 @@ import PaymentMethodsPage from '../pages/payment/PaymentMethodsPage.jsx'; // Imp
 import NotificationsPage from '../pages/notifications/NotificationsPage.jsx'; // Import Notifications Page
 import LandingPage from '../pages/LandingPage.jsx'; // Import Landing Page
 
+// Import ChangePasswordPage component
+import ChangePasswordPage from '../pages/profile/ChangePasswordPage.jsx'; // Import Change Password Page
+
 // Paths constants
 import { paths } from './paths.js';
 
@@ -337,10 +340,7 @@ const AppRoutes = () => {
          path="/profile/change-password" 
          element={
            <MainLayout>
-             <div className="p-6">
-               <h2 className="text-xl font-semibold">Change Password</h2>
-               <p className="mt-4 text-gray-600">(Password change form coming soon...)</p>
-             </div>
+             <ChangePasswordPage />
            </MainLayout>
          }
        />

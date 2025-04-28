@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Calendar, Bell, Clock } from 'lucide-react';
+import { X, Calendar, Bell, Clock, Search } from 'lucide-react';
 
 const TaskModal = ({
   isOpen,
@@ -10,6 +10,7 @@ const TaskModal = ({
   patients,
   statusOptions,
   priorityOptions,
+  isSubmitting,
 }) => {
   const [taskData, setTaskData] = useState({
     title: '',
@@ -20,11 +21,13 @@ const TaskModal = ({
     message: '',
     duration: 30,
     notify_assignee: false,
-    assignable_type: 'User',
     assignable_id: '',
-    taskable_type: 'Patient',
     taskable_id: '',
   });
+
+  // Search states for patient and assignee dropdowns
+  const [patientSearch, setPatientSearch] = useState('');
+  const [assigneeSearch, setAssigneeSearch] = useState('');
 
   // Reset form when task changes
   useEffect(() => {
@@ -42,20 +45,18 @@ const TaskModal = ({
         formattedTask.reminder_date = reminderDate.toISOString().slice(0, 16);
       }
 
-      // Extract assignable info
-      if (task.assignable) {
-        formattedTask.assignable_type =
-          task.assignable.type.charAt(0).toUpperCase() +
-          task.assignable.type.slice(1);
-        formattedTask.assignable_id = task.assignable.user?.id || '';
+      // Extract assignee info
+      if (task.user_id) {
+        formattedTask.assignable_id = task.user_id;
+      } else if (task.assignee) {
+        formattedTask.assignable_id = task.assignee.id;
       }
 
-      // Extract taskable info
-      if (task.taskable) {
-        formattedTask.taskable_type =
-          task.taskable.type.charAt(0).toUpperCase() +
-          task.taskable.type.slice(1);
-        formattedTask.taskable_id = task.taskable.patient?.id || '';
+      // Extract patient info
+      if (task.patient_id) {
+        formattedTask.taskable_id = task.patient_id;
+      } else if (task.patient) {
+        formattedTask.taskable_id = task.patient.id;
       }
 
       setTaskData(formattedTask);
@@ -67,13 +68,10 @@ const TaskModal = ({
         priority: 'medium',
         due_date: '',
         reminder_date: '',
-        email: '',
         message: '',
         duration: 30,
         notify_assignee: false,
-        assignable_type: 'User',
         assignable_id: '',
-        taskable_type: 'Patient',
         taskable_id: '',
       });
     }
@@ -92,6 +90,24 @@ const TaskModal = ({
     onSave(taskData);
   };
 
+  // Filter patients based on search
+  const filteredPatients = patients && patientSearch
+    ? patients.filter(patient => 
+        `${patient.first_name} ${patient.last_name}`
+          .toLowerCase()
+          .includes(patientSearch.toLowerCase())
+      )
+    : patients || [];
+
+  // Filter assignees based on search
+  const filteredAssignees = assignees && assigneeSearch
+    ? assignees.filter(assignee => 
+        `${assignee.first_name} ${assignee.last_name} ${assignee.email || ''}`
+          .toLowerCase()
+          .includes(assigneeSearch.toLowerCase())
+      )
+    : assignees || [];
+
   if (!isOpen) return null;
 
   return (
@@ -104,6 +120,7 @@ const TaskModal = ({
           <button
             onClick={onClose}
             className="text-gray-400 hover:text-gray-500"
+            type="button"
           >
             <X className="h-5 w-5" />
           </button>
@@ -132,31 +149,44 @@ const TaskModal = ({
             </div>
 
             {/* Patient */}
-            <div>
+            <div className="col-span-2">
               <label
                 htmlFor="taskable_id"
                 className="block text-sm font-medium text-gray-700"
               >
                 Patient
               </label>
-              <select
-                id="taskable_id"
-                name="taskable_id"
-                value={taskData.taskable_id}
-                onChange={handleChange}
-                className="mt-1 block w-full bg-white border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-              >
-                <option value="">Select Patient</option>
-                {patients && patients.length > 0 ? (
-                  patients.map((patient) => (
-                    <option key={patient.id} value={patient.id}>
-                      {`${patient.first_name || ''} ${patient.last_name || ''}`}
-                    </option>
+              <div className="mt-1 relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Search className="h-4 w-4 text-gray-400" />
+                </div>
+                <input
+                  type="text"
+                  placeholder="Search patients..."
+                  className="pl-10 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 mb-2"
+                  value={patientSearch}
+                  onChange={(e) => setPatientSearch(e.target.value)}
+                />
+              </div>
+              <div className="max-h-40 overflow-y-auto border border-gray-300 rounded-md shadow-sm">
+                {filteredPatients.length > 0 ? (
+                  filteredPatients.map((patient) => (
+                    <div 
+                      key={patient.id} 
+                      className={`p-2 cursor-pointer hover:bg-gray-50 ${taskData.taskable_id === patient.id ? 'bg-indigo-50' : ''}`}
+                      onClick={() => setTaskData({...taskData, taskable_id: patient.id})}
+                    >
+                      <span className="block text-sm">
+                        {patient.first_name} {patient.last_name}
+                      </span>
+                    </div>
                   ))
                 ) : (
-                  <option value="" disabled>Loading patients...</option>
+                  <div className="p-2 text-gray-500 text-sm">
+                    {patientSearch ? "No patients found matching your search" : "Loading patients..."}
+                  </div>
                 )}
-              </select>
+              </div>
             </div>
 
             {/* Status */}
@@ -302,20 +332,37 @@ const TaskModal = ({
               >
                 Assign To
               </label>
-              <select
-                id="assignable_id"
-                name="assignable_id"
-                value={taskData.assignable_id}
-                onChange={handleChange}
-                className="mt-1 block w-full bg-white border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-              >
-                <option value="">Select Assignee</option>
-                {assignees.map((assignee) => (
-                  <option key={assignee.id} value={assignee.id}>
-                    {assignee.full_name || assignee.email}
-                  </option>
-                ))}
-              </select>
+              <div className="mt-1 relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Search className="h-4 w-4 text-gray-400" />
+                </div>
+                <input
+                  type="text"
+                  placeholder="Search assignees..."
+                  className="pl-10 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 mb-2"
+                  value={assigneeSearch}
+                  onChange={(e) => setAssigneeSearch(e.target.value)}
+                />
+              </div>
+              <div className="max-h-40 overflow-y-auto border border-gray-300 rounded-md shadow-sm">
+                {filteredAssignees.length > 0 ? (
+                  filteredAssignees.map((assignee) => (
+                    <div 
+                      key={assignee.id} 
+                      className={`p-2 cursor-pointer hover:bg-gray-50 ${taskData.assignable_id === assignee.id ? 'bg-indigo-50' : ''}`}
+                      onClick={() => setTaskData({...taskData, assignable_id: assignee.id})}
+                    >
+                      <span className="block text-sm">
+                        {assignee.first_name} {assignee.last_name} {assignee.email ? `(${assignee.email})` : ''}
+                      </span>
+                    </div>
+                  ))
+                ) : (
+                  <div className="p-2 text-gray-500 text-sm">
+                    {assigneeSearch ? "No assignees found matching your search" : "Loading assignees..."}
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* Message/Notes */}
@@ -336,23 +383,6 @@ const TaskModal = ({
                 placeholder="Add notes or a message about this task..."
               />
             </div>
-
-            {/* Patient ID (hidden for simplicity) */}
-            <input
-              type="hidden"
-              name="taskable_type"
-              value={taskData.taskable_type}
-            />
-            <input
-              type="hidden"
-              name="taskable_id"
-              value={taskData.taskable_id}
-            />
-            <input
-              type="hidden"
-              name="assignable_type"
-              value={taskData.assignable_type}
-            />
           </div>
 
           <div className="mt-5 flex justify-end space-x-3">
@@ -365,9 +395,10 @@ const TaskModal = ({
             </button>
             <button
               type="submit"
-              className="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+              disabled={isSubmitting}
+              className="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
             >
-              {task ? 'Update Task' : 'Create Task'}
+              {isSubmitting ? 'Saving...' : (task ? 'Update Task' : 'Create Task')}
             </button>
           </div>
         </form>

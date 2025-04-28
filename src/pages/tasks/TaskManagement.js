@@ -6,8 +6,6 @@ import {
   CheckCircle,
   Clock,
   X,
-  // FileText, // Removed unused import
-  // Calendar, // Removed unused import
   ChevronDown,
   ChevronUp,
   AlertTriangle,
@@ -58,18 +56,17 @@ const TaskManagement = () => {
 
   // Combined filters and sorting for React Query
   const filtersAndSorting = {
-    name: nameFilter || undefined,
-    taskable_id: taskableFilter || undefined,
+    search: nameFilter || undefined,
+    patientId: taskableFilter || undefined,
     status: statusFilter || undefined,
-    assignee_id: assigneeFilter || undefined,
+    assigneeId: assigneeFilter || undefined,
     due_date: dueDateFilter || undefined,
     priority: priorityFilter || undefined,
-    per_page: itemsPerPage,
   };
 
   const sortingDetails = {
-    sort_by: sortField,
-    sort_direction: sortDirection,
+    column: sortField,
+    ascending: sortDirection === 'asc',
   };
 
   // Use the tasks query hook
@@ -78,36 +75,23 @@ const TaskManagement = () => {
     isLoading: loading,
     error: queryError,
     refetch: refetchTasks,
-  } = useTasks(currentPage, filtersAndSorting, sortingDetails);
+  } = useTasks(currentPage, filtersAndSorting, sortingDetails, itemsPerPage);
 
   // Extract tasks and total count from the response
   const tasks = tasksData?.data || [];
-  const totalTasks = tasksData?.meta?.total_count || 0;
+  const totalTasks = tasksData?.meta?.total || 0;
 
   // Use the assignees query hook
-  const { data: assigneesData } = useAssignees(); // Removed unused assigneesLoading
+  const { 
+    data: assignees = [], 
+    isLoading: assigneesLoading 
+  } = useAssignees();
 
   // Use the patients query hook
-  const { data: patientsData } = useTaskablePatients(); // Removed unused patientsLoading
-
-  // Format assignees and patients data
-  const assignees = assigneesData?.data
-    ? assigneesData.data.map((user) => ({
-        id: user.id,
-        full_name: user.full_name || user.name,
-        email: user.email,
-        type: 'user',
-      }))
-    : [];
-
-  const patients = patientsData?.data
-    ? patientsData.data.map((patient) => ({
-        id: patient.id,
-        full_name: patient.full_name,
-        email: patient.email,
-        type: 'patient',
-      }))
-    : [];
+  const { 
+    data: patients = [], 
+    isLoading: patientsLoading 
+  } = useTaskablePatients();
 
   // Use mutation hooks
   const markTaskCompleted = useMarkTaskCompleted({
@@ -379,7 +363,7 @@ const TaskManagement = () => {
               <option value="">All Patients</option>
               {patients.map((patient) => (
                 <option key={patient.id} value={patient.id}>
-                  {patient.full_name || `Patient #${patient.id}`}
+                  {patient.first_name} {patient.last_name}
                 </option>
               ))}
             </select>
@@ -421,9 +405,7 @@ const TaskManagement = () => {
                 <option value="">All Assignees</option>
                 {assignees.map((assignee) => (
                   <option key={assignee.id} value={assignee.id}>
-                    {assignee.full_name ||
-                      assignee.email ||
-                      `User #${assignee.id}`}
+                    {assignee.first_name} {assignee.last_name}
                   </option>
                 ))}
               </select>
@@ -590,19 +572,10 @@ const TaskManagement = () => {
                       </div>
                     </td>
                     <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {task.taskable
-                        ? task.taskable.patient?.full_name ||
-                          (task.taskable.type === 'patient' &&
-                            `Patient #${task.taskable.id}`) ||
-                          `${task.taskable.type} #${task.taskable.id}`
-                        : 'None'}
+                      {task.patientName || 'None'}
                     </td>
                     <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {task.assignee
-                        ? task.assignee.full_name ||
-                          task.assignee.email ||
-                          `User #${task.assignee.id}`
-                        : 'Unassigned'}
+                      {task.assigneeName || 'Unassigned'}
                     </td>
                     <td className="px-4 py-4 whitespace-nowrap">
                       <span

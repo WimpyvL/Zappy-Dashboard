@@ -40,17 +40,11 @@ const Login = () => {
   useEffect(() => {
     // Redirect if already authenticated
     if (isAuthenticated && !authLoading) {
-      // Role-based redirect
-      if (userRole === 'admin') {
-        navigate('/dashboard', { replace: true });
-      } else if (userRole === 'doctor') {
-        navigate('/dashboard', { replace: true });
-      } else {
-        // Default to patient dashboard
-        navigate('/dashboard', { replace: true });
-      }
+      // Get the intended destination from location state, or use dashboard as fallback
+      const destination = location.state?.from || '/dashboard';
+      navigate(destination, { replace: true });
     }
-  }, [isAuthenticated, navigate, location.state, authLoading, userRole]); // Added authLoading
+  }, [isAuthenticated, navigate, location.state, authLoading, userRole]);
 
   const togglePasswordVisibility = () => setShowPassword((prev) => !prev);
 
@@ -66,8 +60,9 @@ const Login = () => {
     const result = await login(email, password);
 
     if (result.success) {
-      // Navigation is handled by the useEffect watching isAuthenticated
-      console.log('Login successful, navigating...');
+      // Get the intended destination path or default to dashboard
+      const destination = location.state?.from || '/dashboard';
+      navigate(destination, { replace: true });
       reset(); // Reset form on successful login
     } else {
       // Error state is set within the login function in AuthContext

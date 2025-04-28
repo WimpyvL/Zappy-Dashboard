@@ -144,7 +144,7 @@ export const useCreateForm = (options = {}) => {
         updated_at: new Date().toISOString(),
         // Add other fields like description, status, form_type if they exist in your table
         description: formData.description,
-        status: formData.status ?? true,
+        is_active: formData.status ?? true, // Updated from status to is_active to match database schema
         form_type: formData.form_type,
         slug: formData.slug || formData.title?.toLowerCase().replace(/\s+/g, '-'),
       };

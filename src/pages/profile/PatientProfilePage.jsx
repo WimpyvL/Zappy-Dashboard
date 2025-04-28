@@ -1,47 +1,30 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { useNavigate, Link } from 'react-router-dom'; // Import Link
+import { useNavigate, Link } from 'react-router-dom';
 import { 
   Loader2, AlertTriangle, User, Bell, Lock, Edit, 
-  CreditCard, FileText, ChevronRight, ShieldCheck, Building // Added ShieldCheck, Building
+  CreditCard, FileText, ChevronRight, ShieldCheck, Building
 } from 'lucide-react'; 
-import ChildishDrawingElement from '../../components/ui/ChildishDrawingElement'; // Import drawing element
-
-// Placeholder hook for fetching profile data (replace with actual hook)
-const usePatientProfile = (patientId) => {
-    // Simulate fetching existing data
-    const { currentUser } = useAuth(); // Get currentUser inside the hook
-    const mockData = {
-        firstName: currentUser?.user_metadata?.firstName || 'Anthony',
-        lastName: currentUser?.user_metadata?.lastName || 'Stark',
-        email: currentUser?.email || 'anthony.stark@example.com',
-        phone: currentUser?.phone || '555-123-4567',
-        dob: '1970-05-29', // Example
-        address: '10880 Malibu Point', // Example
-        city: 'Malibu', // Example
-        state: 'CA', // Example
-        zip: '90265', // Example
-        // Add mock insurance and pharmacy data
-        preferredPharmacy: 'CVS Pharmacy - 123 Main St, Malibu, CA 90265',
-        insuranceProvider: 'Blue Cross Blue Shield',
-        insurancePolicyId: 'XG123456789',
-        insuranceGroupId: 'BCBSGRP1',
-    };
-    // Simulate loaded state for mock data
-    return { data: mockData, isLoading: false, error: null }; 
-};
-
+import ChildishDrawingElement from '../../components/ui/ChildishDrawingElement';
+import { useGetProfile } from '../../apis/users/hooks';
+import { toast } from 'react-toastify';
+import { formatPhoneNumber } from '../../utils/formatters';
 
 const PatientProfilePage = () => {
-  const { currentUser, loading: authLoading } = useAuth();
-  const navigate = useNavigate(); // Initialize navigate
-  // Use default for testing if currentUser is null
-  const patientId = currentUser?.id || 'dev-patient-id'; 
-
-  // Fetch profile data using placeholder hook
-  const { data: profileData, isLoading: profileLoading, error: profileError } = usePatientProfile(patientId);
-
-  const isLoading = authLoading || profileLoading; // Combine auth loading and profile loading
+  const { currentUser, authLoading } = useAuth();
+  const navigate = useNavigate();
+  
+  // Get detailed profile information using the react-query hook
+  const { 
+    data: profileData, 
+    isLoading: profileLoading, 
+    error: profileError 
+  } = useGetProfile();
+  
+  // State for modal visibility (for future password change modal)
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  
+  const isLoading = authLoading || profileLoading;
 
   if (isLoading) {
     return (
@@ -61,19 +44,31 @@ const PatientProfilePage = () => {
     );
   }
   
-  // Use mock data if real data isn't loaded (for dev purposes)
-  const displayData = profileData || {
-      firstName: currentUser?.user_metadata?.firstName || 'Anthony',
-      lastName: currentUser?.user_metadata?.lastName || 'Stark',
-      email: currentUser?.email || 'anthony.stark@example.com',
-      phone: currentUser?.phone || '555-123-4567',
-      dob: '1970-05-29', // Example
-      address: '10880 Malibu Point', // Example
-      city: 'Malibu', // Example
-      state: 'CA', // Example
-      zip: '90265', // Example
+  // Extract user metadata and other profile information
+  const metadata = profileData?.user_metadata || {};
+  const displayData = {
+      firstName: metadata.firstName || metadata.first_name || '',
+      lastName: metadata.lastName || metadata.last_name || '',
+      email: profileData?.email || '',
+      phone: formatPhoneNumber(metadata.phone || ''),
+      dob: metadata.dob || '',
+      address: metadata.address || '',
+      city: metadata.city || '',
+      state: metadata.state || '',
+      zip: metadata.zip || '',
+      // Insurance info
+      insuranceProvider: metadata.insuranceProvider || '',
+      insurancePolicyId: metadata.insurancePolicyId || '',
+      insuranceGroupId: metadata.insuranceGroupId || '',
+      // Pharmacy info
+      preferredPharmacy: metadata.preferredPharmacy || '',
   };
 
+  const handleChangePassword = () => {
+    // For now, navigate to the change password page
+    // In future PR we could implement a modal for this
+    navigate('/profile/change-password');
+  };
 
   return (
     <div className="container mx-auto px-4 py-6 space-y-6 relative overflow-hidden pb-10">
@@ -94,8 +89,8 @@ const PatientProfilePage = () => {
             <User className="h-5 w-5 mr-2 text-blue-600" /> Personal Information
           </h2>
           <button 
-            onClick={() => navigate('/profile/edit')} // Navigate to edit route
-            className="px-3 py-1 border border-gray-300 text-gray-700 text-xs font-medium rounded-md hover:bg-gray-50 transition-colors flex items-center" // Use secondary style
+            onClick={() => navigate('/profile/edit')}
+            className="px-3 py-1 border border-gray-300 text-gray-700 text-xs font-medium rounded-md hover:bg-gray-50 transition-colors flex items-center"
           >
             <Edit className="h-3 w-3 mr-1" /> Edit Profile
           </button>
@@ -116,16 +111,18 @@ const PatientProfilePage = () => {
             </div>
             <div className="sm:col-span-1">
               <dt className="font-medium text-gray-500">Phone Number</dt>
-              <dd className="mt-1 text-gray-900">{displayData.phone}</dd>
+              <dd className="mt-1 text-gray-900">{displayData.phone || 'Not provided'}</dd>
             </div>
             <div className="sm:col-span-1">
               <dt className="font-medium text-gray-500">Date of Birth</dt>
-              <dd className="mt-1 text-gray-900">{displayData.dob}</dd>
+              <dd className="mt-1 text-gray-900">{displayData.dob || 'Not provided'}</dd>
             </div>
             <div className="sm:col-span-2">
               <dt className="font-medium text-gray-500">Address</dt>
               <dd className="mt-1 text-gray-900">
-                {displayData.address ? `${displayData.address}, ${displayData.city}, ${displayData.state} ${displayData.zip}` : 'N/A'}
+                {displayData.address ? 
+                  `${displayData.address}, ${displayData.city}, ${displayData.state} ${displayData.zip}` : 
+                  'Not provided'}
               </dd>
             </div>
           </dl>
@@ -156,9 +153,8 @@ const PatientProfilePage = () => {
            </h2>
          </div>
          <div className="p-6">
-           {/* TODO: Implement Change Password page/modal */}
            <button 
-             onClick={() => navigate('/profile/change-password')} // Navigate to placeholder route
+             onClick={handleChangePassword}
              className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
            >
              Change Password
@@ -195,7 +191,6 @@ const PatientProfilePage = () => {
              className="flex justify-between items-center p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors group"
            >
              <div className="flex items-center">
-               {/* Changed icon color from primary (Red) to accent2 (Green) */}
                <CreditCard className="h-5 w-5 mr-3 text-accent2" /> 
                <div>
                  <h3 className="text-sm font-medium text-gray-900 group-hover:text-accent3">Payment Methods</h3>
@@ -213,9 +208,8 @@ const PatientProfilePage = () => {
            <h2 className="text-lg font-medium flex items-center">
              <ShieldCheck className="h-5 w-5 mr-2 text-accent2" /> Insurance Information
            </h2>
-           {/* TODO: Link to actual edit page/modal */}
            <button 
-             onClick={() => alert('Edit Insurance functionality not yet implemented.')} 
+             onClick={() => navigate('/profile/insurance')}
              className="px-3 py-1 border border-gray-300 text-gray-700 text-xs font-medium rounded-md hover:bg-gray-50 transition-colors flex items-center"
            >
              <Edit className="h-3 w-3 mr-1" /> Edit Insurance
@@ -247,12 +241,10 @@ const PatientProfilePage = () => {
       <div className="bg-white rounded-lg shadow overflow-hidden">
          <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
            <h2 className="text-lg font-medium flex items-center">
-             {/* Changed icon color from primary (Red) to accent2 (Green) */}
              <Building className="h-5 w-5 mr-2 text-accent2" /> Preferred Pharmacy 
            </h2>
-           {/* TODO: Link to actual edit page/modal */}
            <button 
-             onClick={() => alert('Edit Pharmacy functionality not yet implemented.')} 
+             onClick={() => navigate('/profile/pharmacy')}
              className="px-3 py-1 border border-gray-300 text-gray-700 text-xs font-medium rounded-md hover:bg-gray-50 transition-colors flex items-center"
            >
              <Edit className="h-3 w-3 mr-1" /> Edit Pharmacy

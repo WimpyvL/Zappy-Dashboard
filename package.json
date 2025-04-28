@@ -33,6 +33,7 @@
     "build": "cross-env NODE_OPTIONS=--no-deprecation react-scripts build",
     "build:staging": "cross-env REACT_APP_ENV=staging npm run build",
     "test": "react-scripts test",
+    "test:all": "node run-all-tests.js",
     "eject": "react-scripts eject",
     "format": "prettier --write \"src/**/*.{js,jsx,ts,tsx,css,md}\" \"*.{js,json,md}\"",
     "check-format": "prettier --check \"src/**/*.{js,jsx,ts,tsx,css,md}\" \"*.{js,json,md}\"",
@@ -65,6 +66,7 @@
   "proxy": "http://localhost:3000",
   "devDependencies": {
     "@babel/eslint-parser": "^7.27.0",
+    "@playwright/test": "^1.52.0",
     "@vitejs/plugin-react": "^4.3.4",
     "autoprefixer": "^10.4.21",
     "cross-env": "^7.0.3",

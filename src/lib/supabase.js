@@ -4,6 +4,10 @@ import { createClient } from '@supabase/supabase-js';
 const supabaseUrl = process.env.REACT_APP_SUPABASE_URL || '';
 const supabaseAnonKey = process.env.REACT_APP_SUPABASE_ANON_KEY || '';
 
+// S3 credentials for file storage
+const s3AccessId = '8d9e3082cd81e07fb305992dbc575d7a';
+const s3AccessKey = '3cbae3e6536f2e2a68feb0ff93f1336f12c10f44c5ae16adcd4a4f712ef4a95f';
+
 // Create a single supabase client for interacting with your database
 // Using null as a placeholder when credentials are missing
 let supabase = null;
@@ -16,6 +20,18 @@ if (supabaseUrl && supabaseAnonKey) {
         persistSession: true,
         autoRefreshToken: true,
         detectSessionInUrl: true,
+      },
+      storage: {
+        // Configure custom S3 storage
+        customStorage: {
+          url: 'https://s3.amazonaws.com', // Replace with your actual S3 endpoint if different
+          credentials: {
+            accessKeyId: s3AccessId,
+            secretAccessKey: s3AccessKey,
+          },
+          // Default bucket used when no bucket is specified in storage operations
+          defaultBucketName: 'patient-documents',
+        }
       },
     });
   } catch (error) {

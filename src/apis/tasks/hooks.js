@@ -29,36 +29,37 @@ export const useTasks = (
       pageSize,
     }),
     queryFn: async () => {
+      // Simplify the query to avoid join issues
       let query = supabase
-        .from('pb_tasks') // Using pb_tasks table
-        .select(`
-          *,
-          assignee:user_id(id, first_name, last_name, email),
-          patient:patient_id(id, first_name, last_name)
-        `, { count: 'exact' })
+        .from('pb_tasks')
+        .select('*', { count: 'exact' })
         .range(rangeFrom, rangeTo);
 
-      // Apply sorting (example)
+      // Apply sorting
       const sortColumn = sortingDetails?.column || 'created_at';
       const sortAsc = sortingDetails?.ascending ?? false;
       query = query.order(sortColumn, { ascending: sortAsc });
 
       // Apply filters
       if (filters.status) {
-        // Adjust based on actual status values (e.g., completed boolean?)
         if (filters.status === 'Completed') {
           query = query.eq('completed', true);
         } else if (filters.status === 'Pending') {
-          query = query.eq('completed', false); // Or is.('completed', null) ?
+          query = query.eq('completed', false);
+        }
+      } else {
+        if (filters.completed !== undefined) {
+          query = query.eq('completed', filters.completed);
         }
       }
+      
       if (filters.assigneeId) {
         query = query.eq('user_id', filters.assigneeId);
       }
       if (filters.patientId) {
         query = query.eq('patient_id', filters.patientId);
       }
-      // Add search filter if needed
+      
       if (filters.search) {
         query = query.or(
           `title.ilike.%${filters.search}%,notes.ilike.%${filters.search}%`
@@ -72,15 +73,46 @@ export const useTasks = (
         throw new Error(error.message);
       }
 
-      // Map data with proper patient and assignee info
-      const mappedData = data?.map((task) => ({
-        ...task,
-        assignee: task.assignee || null,
-        patient: task.patient || null,
-        assigneeName: task.assignee ? `${task.assignee.first_name || ''} ${task.assignee.last_name || ''}`.trim() : 'Unassigned',
-        patientName: task.patient ? `${task.patient.first_name || ''} ${task.patient.last_name || ''}`.trim() : 'N/A',
-        status: task.status || (task.completed ? 'completed' : 'pending'),
-      })) || [];
+      // Get related user and patient data in separate queries if needed
+      const uniqueUserIds = [...new Set(data?.map(task => task.user_id).filter(Boolean))];
+      const uniquePatientIds = [...new Set(data?.map(task => task.patient_id).filter(Boolean))];
+      
+      // Additional data fetching (optional)
+      let users = [];
+      let patients = [];
+      
+      // Only fetch if we have IDs
+      if (uniqueUserIds.length > 0) {
+        const { data: userData } = await supabase
+          .from('profiles') // Assuming profiles table exists
+          .select('id, first_name, last_name, email')
+          .in('id', uniqueUserIds);
+        users = userData || [];
+      }
+      
+      if (uniquePatientIds.length > 0) {
+        const { data: patientData } = await supabase
+          .from('patients')
+          .select('id, first_name, last_name')
+          .in('id', uniquePatientIds);
+        patients = patientData || [];
+      }
+
+      // Map tasks with related data
+      const mappedData = data?.map((task) => {
+        // Find related user and patient
+        const user = users.find(u => u.id === task.user_id);
+        const patient = patients.find(p => p.id === task.patient_id);
+        
+        return {
+          ...task,
+          assignee: user || null,
+          patient: patient || null,
+          assigneeName: user ? `${user.first_name || ''} ${user.last_name || ''}`.trim() || user.email : 'Unassigned',
+          patientName: patient ? `${patient.first_name || ''} ${patient.last_name || ''}`.trim() : 'N/A',
+          status: task.completed ? 'completed' : 'pending',
+        };
+      }) || [];
 
       return {
         data: mappedData,
@@ -103,13 +135,10 @@ export const useTaskById = (id, options = {}) => {
     queryFn: async () => {
       if (!id) return null;
 
+      // Get the task data without joins
       const { data, error } = await supabase
         .from('pb_tasks')
-        .select(`
-          *,
-          assignee:user_id(id, first_name, last_name, email),
-          patient:patient_id(id, first_name, last_name)
-        `)
+        .select('*')
         .eq('id', id)
         .single();
 
@@ -118,18 +147,39 @@ export const useTaskById = (id, options = {}) => {
         if (error.code === 'PGRST116') return null; // Not found
         throw new Error(error.message);
       }
+
+      // If we have user_id and patient_id, get related data
+      let user = null;
+      let patient = null;
+
+      if (data.user_id) {
+        const { data: userData } = await supabase
+          .from('profiles')
+          .select('id, first_name, last_name, email')
+          .eq('id', data.user_id)
+          .single();
+        user = userData || null;
+      }
+
+      if (data.patient_id) {
+        const { data: patientData } = await supabase
+          .from('patients')
+          .select('id, first_name, last_name')
+          .eq('id', data.patient_id)
+          .single();
+        patient = patientData || null;
+      }
       
       // Map data with proper assignee and patient info
-      const mappedData = data
-        ? {
-            ...data,
-            assignee: data.assignee || null,
-            patient: data.patient || null,
-            assigneeName: data.assignee ? `${data.assignee.first_name || ''} ${data.assignee.last_name || ''}`.trim() : 'Unassigned',
-            patientName: data.patient ? `${data.patient.first_name || ''} ${data.patient.last_name || ''}`.trim() : 'N/A',
-            status: data.status || (data.completed ? 'completed' : 'pending'),
-          }
-        : null;
+      const mappedData = {
+        ...data,
+        assignee: user,
+        patient: patient,
+        assigneeName: user ? `${user.first_name || ''} ${user.last_name || ''}`.trim() || user.email : 'Unassigned',
+        patientName: patient ? `${patient.first_name || ''} ${patient.last_name || ''}`.trim() : 'N/A',
+        status: data.completed ? 'completed' : 'pending',
+      };
+      
       return mappedData;
     },
     enabled: !!id,

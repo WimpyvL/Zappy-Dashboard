@@ -11,6 +11,24 @@ import { useAppContext } from './AppContext'; // Import AppContext hook
 
 const AuthContext = createContext();
 
+// Add a function to validate token with the server
+const validateSession = async () => {
+  try {
+    // This uses Supabase's built-in session validation
+    const { data, error } = await supabase.auth.getUser();
+    
+    if (error) {
+      console.error('Session validation error:', error.message);
+      return { isValid: false, user: null };
+    }
+    
+    return { isValid: !!data.user, user: data.user };
+  } catch (error) {
+    console.error('Session validation exception:', error.message);
+    return { isValid: false, user: null };
+  }
+};
+
 export const AuthProvider = ({ children }) => {
   const { setViewMode } = useAppContext(); // Get setViewMode from AppContext
   const [currentUser, setCurrentUser] = useState(null);
@@ -18,6 +36,7 @@ export const AuthProvider = ({ children }) => {
   const [authLoading, setAuthLoading] = useState(true); // Renamed loading state for initial auth check
   const [actionLoading, setActionLoading] = useState(false); // Separate loading state for actions like login/logout
   const [error, setError] = useState(null);
+  const [sessionValid, setSessionValid] = useState(false); // Add state to track session validity
 
   // Check current user session on initial load
   useEffect(() => {
@@ -31,10 +50,23 @@ export const AuthProvider = ({ children }) => {
         setCurrentUser(null);
         setUserRole(undefined);
         setAuthLoading(false);
+        setSessionValid(false);
         return;
       }
 
       try {
+        // First validate the session with the server
+        const { isValid, user } = await validateSession();
+        setSessionValid(isValid);
+
+        if (!isValid) {
+          console.log('AuthContext: Session validation failed');
+          setCurrentUser(null);
+          setUserRole(undefined);
+          setAuthLoading(false);
+          return;
+        }
+
         const {
           data: { session },
           error: sessionError,
@@ -48,10 +80,12 @@ export const AuthProvider = ({ children }) => {
           setError(sessionError.message);
           setCurrentUser(null);
           setUserRole(undefined);
-          // setViewMode('admin'); // Avoid setting viewMode until auth is resolved
+          setSessionValid(false);
         } else {
           const user = session?.user ?? null;
           setCurrentUser(user);
+          setSessionValid(!!user);
+          
           // Fetch role separately if user exists
           if (user) {
             try {
@@ -94,6 +128,7 @@ export const AuthProvider = ({ children }) => {
         setError('Error checking session: ' + error.message);
         setCurrentUser(null);
         setUserRole(undefined);
+        setSessionValid(false);
       }
       setAuthLoading(false); // Indicate auth check is complete
     };
@@ -118,6 +153,7 @@ export const AuthProvider = ({ children }) => {
           const user = session?.user ?? null;
           setCurrentUser(user);
           setError(null); // Clear errors on auth change
+          setSessionValid(!!user);
 
           // Fetch role when user logs in, session is restored, or token refreshed
           if (
@@ -180,10 +216,24 @@ export const AuthProvider = ({ children }) => {
       setAuthLoading(false); // Ensure loading is set to false on error
     }
 
-    // Cleanup subscription on unmount
+    // Set up periodic session validation (every 5 minutes)
+    const validationInterval = setInterval(async () => {
+      if (currentUser) {
+        console.log('Performing periodic session validation');
+        const { isValid } = await validateSession();
+        setSessionValid(isValid);
+        if (!isValid) {
+          console.warn('Session has expired or is invalid, logging out');
+          logout();
+        }
+      }
+    }, 5 * 60 * 1000); // 5 minutes
+
+    // Cleanup subscription and interval on unmount
     return () => {
       try {
         subscription?.unsubscribe();
+        clearInterval(validationInterval);
       } catch (error) {
         console.error(
           'AuthContext: Error unsubscribing from auth state:',
@@ -234,6 +284,15 @@ export const AuthProvider = ({ children }) => {
           return { success: false, error: loginError.message };
         }
 
+        // Validate session immediately after login
+        const { isValid } = await validateSession();
+        setSessionValid(isValid);
+        
+        if (!isValid) {
+          setError('Session validation failed after login.');
+          return { success: false, error: 'Session validation failed' };
+        }
+
         // User state will be updated by onAuthStateChange listener
         console.log('Login successful:', data.user);
         return { success: true, user: data.user };
@@ -265,6 +324,7 @@ export const AuthProvider = ({ children }) => {
         const { error: signOutError } = await supabase.auth.signOut();
         if (signOutError) throw signOutError;
         // User state will be set to null by onAuthStateChange listener
+        setSessionValid(false);
         console.log('Logout successful');
       } catch (signOutError) {
         throw signOutError;
@@ -487,11 +547,11 @@ export const AuthProvider = ({ children }) => {
     setError(null);
   }, []);
 
-  // Derive isAuthenticated directly from currentUser state
+  // Derive isAuthenticated from currentUser state and session validity
   const value = {
     currentUser,
     userRole, // Provide userRole
-    isAuthenticated: !!currentUser, // Derived state
+    isAuthenticated: !!currentUser && sessionValid, // Now requires both user and valid session
     authLoading, // Provide authLoading state
     actionLoading, // Provide actionLoading state
     error: error

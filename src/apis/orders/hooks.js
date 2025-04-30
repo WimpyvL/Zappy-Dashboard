@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../../lib/supabase';
 import { toast } from 'react-toastify';
+import { executeBatchedQueries } from '../../utils/supabase/batchedQueries';
 
 // Get orders hook using Supabase
 export const useOrders = (currentPage = 1, filters = {}, pageSize = 10) => {
@@ -10,8 +11,8 @@ export const useOrders = (currentPage = 1, filters = {}, pageSize = 10) => {
   return useQuery({
     queryKey: ['orders', currentPage, filters, pageSize],
     queryFn: async () => {
-      // First, get the orders with basic information
-      let query = supabase
+      // Create query for orders
+      let ordersQuery = supabase
         .from('orders')
         .select(`
           *,
@@ -21,43 +22,50 @@ export const useOrders = (currentPage = 1, filters = {}, pageSize = 10) => {
         .order('order_date', { ascending: false })
         .range(rangeFrom, rangeTo);
 
+      // Apply filters
       if (filters.status) {
-        query = query.eq('status', filters.status);
+        ordersQuery = ordersQuery.eq('status', filters.status);
       }
       if (filters.patientId) {
-        query = query.eq('patient_id', filters.patientId);
+        ordersQuery = ordersQuery.eq('patient_id', filters.patientId);
       }
       if (filters.search) {
-        query = query.or(
+        ordersQuery = ordersQuery.or(
           `patients.first_name.ilike.%${filters.search}%,patients.last_name.ilike.%${filters.search}%`
         );
       }
 
-      const { data: ordersData, error: ordersError, count } = await query;
+      // Get orders data
+      const { data: ordersData, error: ordersError, count } = await ordersQuery;
 
       if (ordersError) {
         console.error('Error fetching orders:', ordersError);
         throw new Error(ordersError.message);
       }
 
-      // If we have orders, get their order items
+      // If we have orders, get their order items using batched queries
       if (ordersData && ordersData.length > 0) {
         const orderIds = ordersData.map(order => order.id);
         
-        // Get all order items for these orders
-        const { data: orderItemsData, error: itemsError } = await supabase
-          .from('order_items')
-          .select(`
-            *,
-            products:product_id(id, name, description)
-          `)
-          .in('order_id', orderIds);
+        // Use batched queries to get order items in a single network request
+        const { orderItems } = await executeBatchedQueries([
+          {
+            key: 'orderItems',
+            query: () => supabase
+              .from('order_items')
+              .select(`
+                *,
+                products:product_id(id, name, description)
+              `)
+              .in('order_id', orderIds)
+          }
+        ]);
 
-        if (itemsError) {
-          console.error('Error fetching order items:', itemsError);
+        if (orderItems.error) {
+          console.error('Error fetching order items:', orderItems.error);
         } else {
           // Group order items by order_id
-          const orderItemsByOrder = orderItemsData.reduce((acc, item) => {
+          const orderItemsByOrder = (orderItems.data || []).reduce((acc, item) => {
             acc[item.order_id] = acc[item.order_id] || [];
             acc[item.order_id].push(item);
             return acc;
@@ -104,34 +112,58 @@ export const useOrders = (currentPage = 1, filters = {}, pageSize = 10) => {
   });
 };
 
-// Get order by ID hook using Supabase
+// Get order by ID hook using Supabase with enhanced batched queries
 export const useOrderById = (id, options = {}) => {
   return useQuery({
     queryKey: ['order', id],
     queryFn: async () => {
       if (!id) return null;
 
-      const { data, error } = await supabase
-        .from('orders')
-        .select(`
-          *,
-          patients!patient_id(id, first_name, last_name)
-        `)
-        .eq('id', id)
-        .single();
+      // Use batched queries to fetch order and order items in parallel
+      const results = await executeBatchedQueries([
+        {
+          key: 'order',
+          query: () => supabase
+            .from('orders')
+            .select(`
+              *,
+              patients!patient_id(id, first_name, last_name)
+            `)
+            .eq('id', id)
+            .single()
+        },
+        {
+          key: 'orderItems',
+          query: () => supabase
+            .from('order_items')
+            .select(`
+              *,
+              products:product_id(id, name, description)
+            `)
+            .eq('order_id', id)
+        }
+      ]);
 
-      if (error) {
-        console.error(`Error fetching order ${id}:`, error);
-        if (error.code === 'PGRST116') return null;
-        throw new Error(error.message);
+      // Handle errors
+      if (results.order.error) {
+        console.error(`Error fetching order ${id}:`, results.order.error);
+        if (results.order.error.code === 'PGRST116') return null;
+        throw new Error(results.order.error.message);
       }
 
-      return data ? {
-        ...data,
-        patientName: data.patients 
-          ? `${data.patients.first_name || ''} ${data.patients.last_name || ''}`.trim()
+      // Combine the results
+      const order = results.order.data;
+      const orderItems = results.orderItems.data || [];
+
+      if (!order) return null;
+
+      return {
+        ...order,
+        orderItems,
+        patientName: order.patients 
+          ? `${order.patients.first_name || ''} ${order.patients.last_name || ''}`.trim()
           : 'N/A'
-      } : null;
+      };
     },
     enabled: !!id,
     ...options,

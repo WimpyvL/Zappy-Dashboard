@@ -52,6 +52,61 @@ const ConsultationStatusBadge = ({ status }) => {
   return null;
 };
 
+// Custom hook to load all dashboard data efficiently in parallel
+const useDashboardData = () => {
+  // Use individual hooks at the top level, not inside queryFn functions
+  const patientsQuery = usePatients();
+  const sessionsQuery = useSessions();
+  const ordersQuery = useOrders();
+  const consultationsQuery = useConsultations({}, 10);
+  const tasksQuery = useTasks(1, { status: 'Pending' }, {}, 10);
+  const formsQuery = useForms();
+
+  // Extract data from query results
+  const patients = patientsQuery.data?.data || patientsQuery.data || [];
+  const sessions = sessionsQuery.data?.data || sessionsQuery.data || [];
+  const orders = ordersQuery.data?.data || ordersQuery.data || [];
+  const consultations = consultationsQuery.data?.data || [];
+  const pendingTasks = tasksQuery.data?.data || [];
+  const forms = formsQuery.data?.data || formsQuery.data || [];
+
+  // Check if any query is still loading
+  const isLoading = [
+    patientsQuery.isLoading,
+    sessionsQuery.isLoading,
+    ordersQuery.isLoading,
+    consultationsQuery.isLoading,
+    tasksQuery.isLoading,
+    formsQuery.isLoading,
+  ].some(Boolean);
+
+  // Collect all errors
+  const errors = [
+    patientsQuery.error,
+    sessionsQuery.error,
+    ordersQuery.error,
+    consultationsQuery.error,
+    tasksQuery.error,
+    formsQuery.error,
+  ].filter(Boolean);
+  
+  const hasError = errors.length > 0;
+
+  // Return organized data with loading/error states
+  return {
+    patients,
+    sessions,
+    orders,
+    consultations,
+    pendingTasks,
+    forms,
+    isLoading,
+    hasError,
+    errors,
+    refetchSessions: sessionsQuery.refetch
+  };
+};
+
 const ProviderDashboard = () => {
   const navigate = useNavigate();
   
@@ -63,43 +118,19 @@ const ProviderDashboard = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [lastRefresh, setLastRefresh] = useState(new Date());
   
-  // Fetch data using React Query hooks - Moved these up to fix the initialization issue
+  // Use our optimized custom hook to fetch all data in parallel
   const {
-    data: patientsData,
-    isLoading: isLoadingPatients,
-    error: errorPatients,
-  } = usePatients();
-  
-  const {
-    data: sessionsData,
-    isLoading: isLoadingSessions,
-    error: errorSessions,
-    refetch: refetchSessions,
-  } = useSessions();
-  
-  const {
-    data: ordersData,
-    isLoading: isLoadingOrders,
-    error: errorOrders,
-  } = useOrders();
-  
-  const {
-    data: consultationsData,
-    isLoading: isLoadingConsultations,
-    error: errorConsultations,
-  } = useConsultations({}, 10);
-  
-  const {
-    data: tasksData,
-    isLoading: isLoadingTasks,
-    error: errorTasks,
-  } = useTasks(1, { status: 'Pending' }, {}, 10);
-  
-  const {
-    data: formsData,
-    isLoading: isLoadingForms,
-    error: errorForms,
-  } = useForms();
+    patients,
+    sessions,
+    orders,
+    consultations,
+    pendingTasks,
+    forms,
+    isLoading,
+    hasError,
+    errors,
+    refetchSessions
+  } = useDashboardData();
   
   // Consultation status update mutation
   const updateStatusMutation = useUpdateConsultationStatus({
@@ -154,16 +185,6 @@ const ProviderDashboard = () => {
     setSelectedConsultation(null);
   };
 
-  // Use fetched data or default empty arrays
-  // Note: Adjust based on the actual structure returned by usePatients, useSessions, useOrders
-  const patients = patientsData?.data || patientsData || []; // Adapt based on API response structure
-  const sessions = sessionsData?.data || sessionsData || []; // Adapt based on API response structure
-  const orders = ordersData?.data || ordersData || []; // Adapt based on API response structure
-  const consultations = consultationsData?.data || [];
-  const pendingTasks = tasksData?.data || [];
-  // Define forms properly from formsData
-  const forms = formsData?.data || [];
-
   // Get pending consultations
   const pendingConsultations = consultations.filter(
     (c) => c.status === 'pending' || c.status === 'needs_more_info'
@@ -181,11 +202,10 @@ const ProviderDashboard = () => {
     return `${d.getFullYear()}-${(d.getMonth() + 1).toString().padStart(2, '0')}-${d.getDate().toString().padStart(2, '0')}`;
   };
   
-  // Get the current date - for debugging and comparison
+  // Get the current date - for comparison only
   const currentDate = new Date();
-  console.log('Current date:', currentDate.toISOString(), getFormattedDate(currentDate));
+  const todayFormatted = getFormattedDate(currentDate);
   
-  const todayFormatted = getFormattedDate(new Date());
   const todaySessions = sessions.filter(s => {
     // Check for valid scheduledDate
     if (!s.scheduledDate) return false;
@@ -194,26 +214,26 @@ const ProviderDashboard = () => {
     const sessionDate = new Date(s.scheduledDate);
     const sessionFormatted = getFormattedDate(sessionDate);
     
-    // Debug info to see what's being compared
-    console.log('Session date comparison:', 
-      s.patientName,
-      sessionDate.toISOString(), 
-      sessionFormatted, 
-      'matches today?', sessionFormatted === todayFormatted,
-      'status:', s.status);
-    
     // Consider status and date - ignore time portion for more reliable comparison
     return s.status === 'scheduled' && sessionFormatted === todayFormatted;
   });
-  
-  console.log('Today sessions found:', todaySessions.length, todayFormatted);
 
-  // Handle error state (basic example)
-  if (errorPatients || errorSessions || errorOrders || errorConsultations || errorTasks || errorForms) {
+  // Handle error state 
+  if (hasError) {
     return (
       <div className="text-center py-10 text-red-600">
         <AlertTriangle className="h-12 w-12 mx-auto mb-4" />
         <p>Error loading dashboard data.</p>
+      </div>
+    );
+  }
+
+  // Handle loading state
+  if (isLoading) {
+    return (
+      <div className="text-center py-10">
+        <Loader2 className="h-12 w-12 mx-auto mb-4 animate-spin text-primary" />
+        <p>Loading dashboard data...</p>
       </div>
     );
   }
@@ -381,6 +401,7 @@ const ProviderDashboard = () => {
           </div>
         </div>
 
+        {/* Rest of the component remains the same */}
         {/* Tasks Section */}
         <div className="bg-white shadow rounded-lg overflow-hidden">
           <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center bg-accent4/5">

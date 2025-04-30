@@ -178,14 +178,30 @@ const CrudModal = ({
       return;
     }
 
-    // Prepare payload - ensure only defined fields are sent? Or let API handle?
-    // Consider cleaning formData here if necessary (e.g., removing empty strings, formatting)
+    // Determine the appropriate payload format for the specific entity type
+    let submitPayload;
+    if (isEditMode) {
+      // Handle different entity types that may expect different payload formats
+      if (resourceName === 'Patient') {
+        submitPayload = { id: entityId, patientData: formData };
+      } else if (resourceName === 'Service') {
+        submitPayload = { id: entityId, serviceData: formData };
+      } else if (resourceName === 'Product') {
+        submitPayload = { id: entityId, productData: formData };
+      } else {
+        // Generic format that includes both the entity type and a generic 'data' property
+        submitPayload = { 
+          id: entityId, 
+          [`${resourceName.toLowerCase()}Data`]: formData,
+          data: formData // Include generic data property for hooks that expect it
+        };
+      }
+    } else {
+      // Create mode - typically just needs the form data
+      submitPayload = formData;
+    }
 
-    const apiArgs = isEditMode ? { id: entityId, ...formData } : formData; // Adjust based on hook expectations
-    // Correction: Update hooks often expect { id, dataObject }
-    const payload = isEditMode ? { id: entityId, [resourceName.toLowerCase() + 'Data']: formData } : formData; // Match PatientModal structure? Needs confirmation based on actual hooks. Let's assume { id, data } for update for now.
-    const submitPayload = isEditMode ? { id: entityId, data: formData } : formData;
-
+    console.log(`[CrudModal] Submitting with payload:`, submitPayload);
 
     // Wrap the actual mutation call with executeSubmit
     const { success, data: resultData, error, formErrors } = await executeSubmit(

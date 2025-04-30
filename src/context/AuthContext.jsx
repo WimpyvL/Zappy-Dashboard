@@ -4,10 +4,10 @@ import React, {
   useContext,
   useEffect,
   useCallback,
+  useRef,
 } from 'react';
 import { supabase } from '../lib/supabase'; // Use the correct Supabase client
 import { useAppContext } from './AppContext'; // Import AppContext hook
-// Removed apiService and errorHandling imports
 
 const AuthContext = createContext();
 
@@ -37,6 +37,11 @@ export const AuthProvider = ({ children }) => {
   const [actionLoading, setActionLoading] = useState(false); // Separate loading state for actions like login/logout
   const [error, setError] = useState(null);
   const [sessionValid, setSessionValid] = useState(false); // Add state to track session validity
+  
+  // Use a ref to track the visibility state
+  const documentVisibilityRef = useRef(document.visibilityState);
+  // Use a ref to track validation interval
+  const validationIntervalRef = useRef(null);
 
   // Check current user session on initial load
   useEffect(() => {
@@ -55,18 +60,7 @@ export const AuthProvider = ({ children }) => {
       }
 
       try {
-        // First validate the session with the server
-        const { isValid, user } = await validateSession();
-        setSessionValid(isValid);
-
-        if (!isValid) {
-          console.log('AuthContext: Session validation failed');
-          setCurrentUser(null);
-          setUserRole(undefined);
-          setAuthLoading(false);
-          return;
-        }
-
+        // First get the session from supabase
         const {
           data: { session },
           error: sessionError,
@@ -83,11 +77,12 @@ export const AuthProvider = ({ children }) => {
           setSessionValid(false);
         } else {
           const user = session?.user ?? null;
-          setCurrentUser(user);
-          setSessionValid(!!user);
           
-          // Fetch role separately if user exists
+          // If we have a user from the session
           if (user) {
+            setCurrentUser(user);
+            setSessionValid(true); // Trust the session initially
+            
             try {
               const { data: profile, error: profileError } = await supabase
                 .from('profiles')
@@ -118,10 +113,11 @@ export const AuthProvider = ({ children }) => {
               setError('Failed to fetch user profile.');
             }
           } else {
+            setCurrentUser(null);
             setUserRole(undefined); // No user, no role
+            setSessionValid(false);
             console.log('AuthContext: Session checked, no user found.');
           }
-          // setViewMode logic moved to separate effect
         }
       } catch (error) {
         console.error('AuthContext: Error checking session:', error.message);
@@ -216,24 +212,49 @@ export const AuthProvider = ({ children }) => {
       setAuthLoading(false); // Ensure loading is set to false on error
     }
 
-    // Set up periodic session validation (every 5 minutes)
-    const validationInterval = setInterval(async () => {
-      if (currentUser) {
-        console.log('Performing periodic session validation');
-        const { isValid } = await validateSession();
-        setSessionValid(isValid);
-        if (!isValid) {
-          console.warn('Session has expired or is invalid, logging out');
-          logout();
-        }
+    // Set up visibility change listener to validate session when tab becomes visible again
+    const handleVisibilityChange = () => {
+      const isVisible = document.visibilityState === 'visible';
+      const wasHidden = documentVisibilityRef.current === 'hidden';
+      
+      documentVisibilityRef.current = document.visibilityState;
+      
+      // If the page is becoming visible again and we have a user
+      if (isVisible && wasHidden && currentUser) {
+        console.log('Tab became visible again, checking session...');
+        validateSession().then(({ isValid }) => {
+          if (!isValid) {
+            console.warn('Session expired while away, logging out');
+            logout();
+          }
+        });
       }
-    }, 5 * 60 * 1000); // 5 minutes
+    };
+    
+    document.addEventListener('visibilitychange', handleVisibilityChange);
 
-    // Cleanup subscription and interval on unmount
+    // Set up one validation interval (only if not already set)
+    if (!validationIntervalRef.current) {
+      validationIntervalRef.current = setInterval(async () => {
+        // Only check if we have a user and the tab is visible
+        if (currentUser && document.visibilityState === 'visible') {
+          console.log('Performing periodic session validation');
+          const { isValid } = await validateSession();
+          if (!isValid && sessionValid) {
+            console.warn('Session has expired, logging out');
+            logout();
+          } else {
+            setSessionValid(isValid);
+          }
+        }
+      }, 10 * 60 * 1000); // Every 10 minutes instead of 5
+    }
+
+    // Cleanup subscription, interval, and event listener on unmount
     return () => {
       try {
         subscription?.unsubscribe();
-        clearInterval(validationInterval);
+        document.removeEventListener('visibilitychange', handleVisibilityChange);
       } catch (error) {
         console.error(
           'AuthContext: Error unsubscribing from auth state:',
@@ -241,7 +262,17 @@ export const AuthProvider = ({ children }) => {
         );
       }
     };
-  }, []); // Removed setViewMode from here, handled in separate effect
+  }, []); // Don't include currentUser or sessionValid as dependencies to avoid re-running this effect
+
+  // Cleanup interval on unmount
+  useEffect(() => {
+    return () => {
+      if (validationIntervalRef.current) {
+        clearInterval(validationIntervalRef.current);
+        validationIntervalRef.current = null;
+      }
+    };
+  }, []);
 
   // Effect to set viewMode and log when auth state is resolved
   useEffect(() => {
@@ -282,15 +313,6 @@ export const AuthProvider = ({ children }) => {
             setError(loginError.message || 'Failed to log in.');
           }
           return { success: false, error: loginError.message };
-        }
-
-        // Validate session immediately after login
-        const { isValid } = await validateSession();
-        setSessionValid(isValid);
-        
-        if (!isValid) {
-          setError('Session validation failed after login.');
-          return { success: false, error: 'Session validation failed' };
         }
 
         // User state will be updated by onAuthStateChange listener
@@ -547,11 +569,11 @@ export const AuthProvider = ({ children }) => {
     setError(null);
   }, []);
 
-  // Derive isAuthenticated from currentUser state and session validity
+  // Derive isAuthenticated from currentUser state - don't require sessionValid for UI rendering
   const value = {
     currentUser,
     userRole, // Provide userRole
-    isAuthenticated: !!currentUser && sessionValid, // Now requires both user and valid session
+    isAuthenticated: !!currentUser, // Only check for user to avoid flickering when switching tabs
     authLoading, // Provide authLoading state
     actionLoading, // Provide actionLoading state
     error: error

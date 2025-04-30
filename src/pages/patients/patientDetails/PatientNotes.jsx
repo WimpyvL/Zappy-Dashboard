@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { Plus } from 'lucide-react';
 import { useNotes } from '../../../apis/notes/hooks'; // Import the hook
 import LoadingSpinner from './common/LoadingSpinner';
+import { useNavigate } from 'react-router-dom'; // Import useNavigate hook
 
 const NoteCard = ({ note, onOpenFollowupNotes }) => {
   // Use created_at from the hook data
@@ -16,8 +17,12 @@ const NoteCard = ({ note, onOpenFollowupNotes }) => {
           <span className="text-xs text-gray-500 mr-2">{date}</span>
           <span
             className={`px-2 py-1 text-xs font-medium rounded-full ${
-              note.category === 'follow-up'
+              note.note_type === 'follow-up'
                 ? 'bg-indigo-100 text-indigo-800'
+                : note.note_type === 'Clinical'
+                ? 'bg-blue-100 text-blue-800'
+                : note.note_type === 'Administrative'
+                ? 'bg-green-100 text-green-800'
                 : 'bg-gray-100 text-gray-800'
             }`}
           >
@@ -47,6 +52,7 @@ const NoteCard = ({ note, onOpenFollowupNotes }) => {
 
 const PatientNotes = ({ patientId, onOpenFollowupNotes }) => { // Removed notes and loading props
   const [noteType, setNoteType] = useState('all');
+  const navigate = useNavigate(); // Initialize the navigate hook
   
   // Fetch notes using the hook
   const { data: notesData, isLoading: loading /*, error: _error */ } = useNotes(patientId); // Removed unused error
@@ -85,9 +91,7 @@ const PatientNotes = ({ patientId, onOpenFollowupNotes }) => { // Removed notes 
           </select>
           <button
             className="px-3 py-1 text-sm bg-indigo-600 text-white rounded-md hover:bg-indigo-700 flex items-center"
-            onClick={() =>
-              (window.location.href = `/patients/${patientId}/notes/new`)
-            }
+            onClick={() => navigate(`/patients/${patientId}/notes/new`)}
           >
             <Plus className="h-4 w-4 mr-1" />
             Add Note

@@ -9,6 +9,7 @@ import { AuthProvider } from './context/AuthContext';
 import { AppProvider } from './context/AppContext';
 import { CartProvider } from './context/CartContext';
 import { NotificationsProvider } from './contexts/NotificationsContext';
+import { RouteTrackerProvider } from './context/RouteTrackerContext';
 import ErrorBoundary from './components/common/ErrorBoundary';
 
 // Instantiate QueryClient (moved from App.js)
@@ -35,7 +36,9 @@ root.render(
             <CartProvider>
               <NotificationsProvider>
                 <Router>
-                  <App />
+                  <RouteTrackerProvider options={{ enabled: true, logPrevious: true }}>
+                    <App />
+                  </RouteTrackerProvider>
                 </Router>
               </NotificationsProvider>
             </CartProvider>

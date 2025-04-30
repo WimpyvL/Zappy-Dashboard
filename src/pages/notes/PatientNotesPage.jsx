@@ -2,13 +2,14 @@ import React from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useNotes } from '../../apis/notes/hooks';
 import { Loader2, AlertTriangle, FileText, Calendar, User, Download } from 'lucide-react'; // Added Download icon
+import { useParams } from 'react-router-dom'; // Import useParams
 
 const PatientNotesPage = () => {
   const { currentUser } = useAuth();
-  // Assuming this page is intended for admin/provider view, 
-  // it might need a patientId prop or context instead of using currentUser.id directly.
-  // For now, using currentUser.id as a placeholder if available.
-  const patientId = currentUser?.id; 
+  const { patientId: urlPatientId } = useParams(); // Get patientId from URL if available
+  
+  // Use the patientId from URL if available, otherwise fallback to currentUser.id
+  const patientId = urlPatientId || currentUser?.id; 
 
   const { data: notes, isLoading, error } = useNotes(patientId);
 

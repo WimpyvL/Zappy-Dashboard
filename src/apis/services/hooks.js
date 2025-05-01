@@ -478,7 +478,11 @@ export const useDeleteService = (options = {}) => {
       if (error) {
         console.error(`Error deleting service ${id}:`, error);
         if (error.code === '23503') {
-          throw new Error('Cannot delete service: It is still linked to active sessions or orders');
+          throw new Error('Cannot delete service: It is still linked to active sessions, orders or patients');
+        }
+        // Handle other potential constraint violations
+        if (error.code && error.code.startsWith('23')) {
+          throw new Error(`Cannot delete service due to database constraint: ${error.message}`);
         }
         throw new Error(error.message);
       }

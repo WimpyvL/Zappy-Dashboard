@@ -17,6 +17,7 @@ const SubscriptionDurationsPage = () => {
   const [newDuration, setNewDuration] = useState({
     name: '',
     duration_months: 1,
+    duration_days: null,
     discount_percent: 0
   });
 
@@ -40,6 +41,7 @@ const SubscriptionDurationsPage = () => {
       setNewDuration({
         name: '',
         duration_months: 1,
+        duration_days: null,
         discount_percent: 0
       });
       refetch();
@@ -95,8 +97,8 @@ const SubscriptionDurationsPage = () => {
 
   // Handle update submission
   const handleUpdateSubmit = () => {
-    if (!editingDuration.name || editingDuration.duration_months <= 0) {
-      toast.error('Name and duration are required. Duration must be greater than 0.');
+    if (!editingDuration.name || (editingDuration.duration_months <= 0 && !editingDuration.duration_days)) {
+      toast.error('Name and at least one duration type are required. Duration must be greater than 0.');
       return;
     }
 
@@ -105,6 +107,7 @@ const SubscriptionDurationsPage = () => {
       durationData: {
         name: editingDuration.name,
         duration_months: editingDuration.duration_months,
+        duration_days: editingDuration.duration_days,
         discount_percent: editingDuration.discount_percent || 0
       }
     });
@@ -112,8 +115,8 @@ const SubscriptionDurationsPage = () => {
 
   // Handle create submission
   const handleCreateSubmit = () => {
-    if (!newDuration.name || newDuration.duration_months <= 0) {
-      toast.error('Name and duration are required. Duration must be greater than 0.');
+    if (!newDuration.name || (newDuration.duration_months <= 0 && !newDuration.duration_days)) {
+      toast.error('Name and at least one duration type are required. Duration must be greater than 0.');
       return;
     }
 
@@ -160,6 +163,7 @@ const SubscriptionDurationsPage = () => {
             <tr>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Duration (Months)</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Duration (Days)</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Discount (%)</th>
               <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
             </tr>
@@ -183,6 +187,16 @@ const SubscriptionDurationsPage = () => {
                     className="w-full p-2 border rounded"
                     value={newDuration.duration_months}
                     onChange={(e) => handleCreateFieldChange('duration_months', e.target.value)}
+                  />
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <input
+                    type="number"
+                    min="1"
+                    className="w-full p-2 border rounded"
+                    value={newDuration.duration_days || ''}
+                    placeholder="Optional"
+                    onChange={(e) => handleCreateFieldChange('duration_days', e.target.value ? parseInt(e.target.value) : null)}
                   />
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
@@ -239,6 +253,20 @@ const SubscriptionDurationsPage = () => {
                       />
                     ) : (
                       duration.duration_months
+                    )}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    {editingDuration?.id === duration.id ? (
+                      <input
+                        type="number"
+                        min="1"
+                        className="w-full p-2 border rounded"
+                        value={editingDuration.duration_days || ''}
+                        placeholder="Optional"
+                        onChange={(e) => handleEditFieldChange('duration_days', e.target.value ? parseInt(e.target.value) : null)}
+                      />
+                    ) : (
+                      duration.duration_days || '-'
                     )}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
@@ -307,7 +335,8 @@ const SubscriptionDurationsPage = () => {
         <h3 className="font-bold">About Subscription Durations</h3>
         <p>Subscription durations determine the length and discount for each billing cycle option.</p>
         <ul className="list-disc pl-5 mt-2">
-          <li>Set up durations like Monthly, Quarterly, Semi-Annual, and Annual</li>
+          <li>Set up durations like Monthly (28 days), Quarterly, Semi-Annual, and Annual</li>
+          <li>Use either months or exact days for precise billing periods</li>
           <li>Configure discounts to incentivize longer commitments</li>
           <li>All treatment packages will use these durations for subscription options</li>
         </ul>

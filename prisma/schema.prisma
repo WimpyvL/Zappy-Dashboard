@@ -166,6 +166,7 @@ model SubscriptionDuration {
   id             String   @id @default(uuid())
   name           String   // e.g., "Monthly", "Quarterly", "Semi-Annual", "Annual"
   duration_months Int
+  duration_days  Int?     // Optional field for exact day-based durations (e.g., 28 days)
   discount_percent Float    @default(0)  // e.g., 0 for monthly, 10 for quarterly, etc.
   created_at     DateTime @default(now())
   updated_at     DateTime @updatedAt

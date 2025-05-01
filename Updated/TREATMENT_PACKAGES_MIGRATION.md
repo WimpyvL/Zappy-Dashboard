@@ -91,4 +91,6 @@ The patient subscription page still uses the old treatment packages API. This sh
 
 3. **UI Enhancements**: The unified Products & Subscriptions page could be enhanced with additional filtering and sorting options.
 
-4. **Subscription Durations**: Consider integrating Subscription Durations into the unified management page as well.
+4. **Subscription Durations**: 
+   - Subscription Durations have been enhanced to support 28-day billing periods (see SUBSCRIPTION_DURATION_CHANGES.md)
+   - Consider integrating Subscription Durations into the unified management page as well

@@ -49,6 +49,7 @@ export const useCreateSubscriptionDuration = (options = {}) => {
         const dataToInsert = {
           name: durationData.name, // e.g., "Monthly", "Quarterly", etc.
           duration_months: durationData.duration_months,
+          duration_days: durationData.duration_days || null,
           discount_percent: durationData.discount_percent || 0,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
@@ -105,6 +106,7 @@ export const useUpdateSubscriptionDuration = (options = {}) => {
       const dataToUpdate = {
         name: durationData.name,
         duration_months: durationData.duration_months,
+        duration_days: durationData.duration_days || null,
         discount_percent: durationData.discount_percent,
         updated_at: new Date().toISOString(),
       };
@@ -233,10 +235,10 @@ export const initializeSubscriptionDurations = async () => {
   
   // Create the standard durations
   const standardDurations = [
-    { name: 'Monthly', duration_months: 1, discount_percent: 0 },
-    { name: 'Quarterly', duration_months: 3, discount_percent: 5 },
-    { name: 'Semi-Annual', duration_months: 6, discount_percent: 10 },
-    { name: 'Annual', duration_months: 12, discount_percent: 15 }
+    { name: 'Monthly (28 days)', duration_months: 1, duration_days: 28, discount_percent: 0 },
+    { name: 'Quarterly', duration_months: 3, duration_days: null, discount_percent: 5 },
+    { name: 'Semi-Annual', duration_months: 6, duration_days: null, discount_percent: 10 },
+    { name: 'Annual', duration_months: 12, duration_days: null, discount_percent: 15 }
   ];
   
   const { error: insertError } = await supabase

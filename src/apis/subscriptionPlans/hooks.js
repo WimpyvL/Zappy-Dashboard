@@ -161,6 +161,35 @@ export const useDeleteSubscriptionPlan = (options = {}) => {
   });
 };
 
+// Helper function to calculate subscription end date based on duration
+const calculateEndDate = async (durationId) => {
+  if (!durationId) return null;
+  
+  // Get duration information
+  const { data: duration, error } = await supabase
+    .from('subscription_duration')
+    .select('*')
+    .eq('id', durationId)
+    .single();
+    
+  if (error) {
+    console.error('Error fetching duration:', error);
+    throw new Error(error.message);
+  }
+  
+  const now = new Date();
+  const endDate = new Date(now);
+  
+  // Use days if available, otherwise use months
+  if (duration.duration_days) {
+    endDate.setDate(now.getDate() + duration.duration_days);
+  } else {
+    endDate.setMonth(now.getMonth() + duration.duration_months);
+  }
+  
+  return endDate;
+};
+
 // Hook to pause a subscription
 export const usePauseSubscription = (options = {}) => {
   const queryClient = useQueryClient();

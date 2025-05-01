@@ -494,7 +494,13 @@ export const useSubscribePatient = (options = {}) => {
       // Calculate dates
       const now = new Date();
       const endDate = new Date(now);
-      endDate.setMonth(now.getMonth() + durationData.duration_months);
+      
+      // Use days if available, otherwise use months
+      if (durationData.duration_days) {
+        endDate.setDate(now.getDate() + durationData.duration_days);
+      } else {
+        endDate.setMonth(now.getMonth() + durationData.duration_months);
+      }
 
       // Create subscription in database
       const subscriptionToInsert = {

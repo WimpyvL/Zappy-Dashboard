@@ -25,12 +25,13 @@ model Patient {
   notes        Note[]
   invoices     PbInvoice[]
   tags         PatientTag[]
+  subscriptions PatientSubscription[]
 }
 
 model InsurancePolicy {
   id                String   @id @default(uuid())
   patient_id        String
-  provider_name     String
+  provider_name     String?
   policy_number     String?
   group_number      String?
   subscriber_name   String?
@@ -136,4 +137,57 @@ model Tag {
   created_at  DateTime @default(now())
   updated_at  DateTime @updatedAt
   patients    PatientTag[]
+}
+
+model TreatmentPackage {
+  id            String   @id @default(uuid())
+  name          String
+  description   String?
+  condition     String
+  is_active     Boolean  @default(true)
+  base_price    Float
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt
+  
+  // Relations
+  services      PackageService[]
+  subscriptions PatientSubscription[]
+}
+
+model PackageService {
+  package_id    String
+  service_id    String
+  package       TreatmentPackage @relation(fields: [package_id], references: [id], onDelete: Cascade)
+  
+  @@id([package_id, service_id])
+}
+
+model SubscriptionDuration {
+  id             String   @id @default(uuid())
+  name           String   // e.g., "Monthly", "Quarterly", "Semi-Annual", "Annual"
+  duration_months Int
+  discount_percent Float    @default(0)  // e.g., 0 for monthly, 10 for quarterly, etc.
+  created_at     DateTime @default(now())
+  updated_at     DateTime @updatedAt
+  
+  // Relations
+  subscriptions  PatientSubscription[]
+}
+
+model PatientSubscription {
+  id                 String   @id @default(uuid())
+  patient_id         String
+  package_id         String
+  duration_id        String
+  stripe_subscription_id String?
+  status             String   @default("active")  // active, paused, cancelled
+  current_period_start DateTime
+  current_period_end  DateTime
+  created_at         DateTime @default(now())
+  updated_at         DateTime @updatedAt
+  
+  // Relations
+  patient            Patient @relation(fields: [patient_id], references: [id])
+  package            TreatmentPackage @relation(fields: [package_id], references: [id])
+  duration           SubscriptionDuration @relation(fields: [duration_id], references: [id])
 }

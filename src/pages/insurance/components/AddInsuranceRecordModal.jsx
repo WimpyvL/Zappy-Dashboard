@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { Select } from 'antd';
-import { X, CheckCircle } from 'lucide-react'; // Removed unused Loader2, Added CheckCircle
+import { X, CheckCircle } from 'lucide-react'; 
 import { toast } from 'react-toastify';
 import { debounce } from 'lodash';
 import { usePatients } from '../../../apis/patients/hooks';
@@ -24,35 +24,43 @@ const AddInsuranceRecordModal = ({ isOpen, onClose, onSuccess }) => {
     prior_auth_status: null,
     prior_auth_expiry_date: null,
     notes: '',
+    selectedPatient: null, // Store the complete patient object
   });
   const [selectedPatientName, setSelectedPatientName] = useState('');
+  const [patientSearchTerm, setPatientSearchTerm] = useState('');
   const [debouncedPatientSearchTerm, setDebouncedPatientSearchTerm] = useState('');
 
-  // Debounce handler for patient search
+  // Debounce handler for patient search with shorter delay for better UX
   const debouncePatientSearch = useMemo(
     () => debounce((value) => {
       setDebouncedPatientSearchTerm(value);
-    }, 500),
+    }, 300),
     []
   );
 
   // Handle raw search input change
   const handlePatientSearchInputChange = (value) => {
-    console.log('Search input changed to:', value);
-    // Include empty string case to reset search
+    setPatientSearchTerm(value);
     debouncePatientSearch(value);
   };
 
-  // Fetch Patients for dropdown using debounced search term
-  const { data: patientsData, isLoading: isLoadingPatients } = usePatients(1, { search: debouncedPatientSearchTerm }, 100);
-  const patientOptions = useMemo(() => patientsData?.data || [], [patientsData]); // Memoize patientOptions
+  // Fetch Patients for dropdown using debounced search term - explicitly fetch with search parameter
+  const { data: patientsData, isLoading: isLoadingPatients } = usePatients(
+    1, 
+    { search: debouncedPatientSearchTerm || undefined }, 
+    20
+  );
   
-  // Add console log to check fetched options based on search term
-  useEffect(() => {
-    // This log now only runs when the memoized patientOptions or the search term changes
-    console.log('Patient Options (search term:', debouncedPatientSearchTerm, '):', patientOptions);
-    console.log('Patients data structure:', patientsData);
-  }, [patientOptions, debouncedPatientSearchTerm, patientsData]);
+  // Make sure we extract the data correctly depending on the API response structure
+  const patientOptions = useMemo(() => {
+    const patients = patientsData?.data || patientsData || [];
+    return patients.map(patient => ({
+      id: patient.id,
+      value: patient.id,
+      label: `${patient.first_name || ''} ${patient.last_name || ''}`.trim() || `ID: ${patient.id}`,
+      ...patient // Keep all patient data for reference
+    }));
+  }, [patientsData]);
 
   // Create mutation
   const createRecordMutation = useCreateInsuranceRecord({
@@ -80,8 +88,10 @@ const AddInsuranceRecordModal = ({ isOpen, onClose, onSuccess }) => {
         prior_auth_status: null,
         prior_auth_expiry_date: null,
         notes: '',
+        selectedPatient: null,
       });
       setSelectedPatientName('');
+      setPatientSearchTerm('');
       setDebouncedPatientSearchTerm('');
     }
   }, [isOpen]);
@@ -101,12 +111,11 @@ const AddInsuranceRecordModal = ({ isOpen, onClose, onSuccess }) => {
     setFormData(prev => ({
       ...prev,
       patientId: value,
-      // Store full patient object for reference
       selectedPatient: selectedPatient || null,
     }));
     setSelectedPatientName(selectedPatient ? `${selectedPatient.first_name || ''} ${selectedPatient.last_name || ''}`.trim() : '');
-    // Clear debounced term
-    setDebouncedPatientSearchTerm('');
+    // Clear search term after selection
+    setPatientSearchTerm('');
   };
 
   // Handle form submission
@@ -124,8 +133,6 @@ const AddInsuranceRecordModal = ({ isOpen, onClose, onSuccess }) => {
       status: formData.verification_status, // Map verification_status to status
       coverage_type: formData.coverage_type,
       coverage_details: formData.coverage_details,
-      // prior_auth_status: // Needs mapping based on schema
-      // prior_auth_expiry_date: formData.prior_auth_expiry_date, // Needs mapping
       notes: formData.notes,
       ...(formData.coverage_type === 'Self-Pay' && {
         status: 'not_applicable',
@@ -168,15 +175,11 @@ const AddInsuranceRecordModal = ({ isOpen, onClose, onSuccess }) => {
                 value={formData.patientId}
                 onChange={handlePatientSelect}
                 onSearch={handlePatientSearchInputChange}
-                filterOption={false} // Keep server-side filtering
+                filterOption={false} // Use server-side filtering
                 loading={isLoadingPatients}
-                options={patientOptions.map(p => ({
-                  value: p.id,
-                  label: `${p.first_name || ''} ${p.last_name || ''}`.trim() || `ID: ${p.id}`
-                }))}
+                options={patientOptions}
                 notFoundContent={isLoadingPatients ? <Spinner /> : "No patients found"}
                 defaultActiveFirstOption={false}
-                showArrow={true}
                 allowClear={true}
               />
             </div>

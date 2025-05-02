@@ -249,180 +249,311 @@ const PatientServicesPage = () => {
           </button>
         </div>
       ) : services.length === 0 ? (
-        <div className="space-y-6">
-          <div className="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
-            <div className="p-6">
-              <h3 className="text-xl font-semibold text-gray-900 mb-4">Explore Available Health Services</h3>
-              <p className="text-gray-600 mb-6">Discover our range of personalized health services designed to meet your specific needs.</p>
-              
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {/* Hair Loss Treatment Card */}
-                <div className="bg-blue-50 rounded-lg overflow-hidden border border-blue-100 hover:shadow-md transition-shadow">
-                  <div className="h-3 bg-blue-500"></div>
-                  <div className="p-4">
-                    <div className="flex items-center mb-3">
-                      <span className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center mr-3">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-blue-600" viewBox="0 0 20 20" fill="currentColor">
-                          <path d="M10.394 2.08a1 1 0 00-.788 0l-7 3a1 1 0 000 1.84L5.25 8.051a.999.999 0 01.356-.257l4-1.714a1 1 0 11.788 1.838L7.667 9.088l1.94.831a1 1 0 00.787 0l7-3a1 1 0 000-1.838l-7-3zM3.31 9.397L5 10.12v4.102a8.969 8.969 0 00-1.05-.174 1 1 0 01-.89-.89 11.115 11.115 0 01.25-3.762zM9.3 16.573A9.026 9.026 0 007 14.935v-3.957l1.818.78a3 3 0 002.364 0l5.508-2.361a11.026 11.026 0 01.25 3.762 1 1 0 01-.89.89 8.968 8.968 0 00-5.35 2.524 1 1 0 01-1.4 0zM6 18a1 1 0 001-1v-2.065a8.935 8.935 0 00-2-.712V17a1 1 0 001 1z" />
-                        </svg>
-                      </span>
-                      <h4 className="font-semibold text-blue-800">Hair Loss Treatment</h4>
-                    </div>
-                    <p className="text-sm text-gray-600 mb-3">Personalized treatment plans to prevent hair loss and promote regrowth.</p>
-                    <ul className="text-xs text-gray-600 space-y-1 mb-4">
-                      <li className="flex items-start">
-                        <svg className="h-3.5 w-3.5 text-green-500 mr-1.5 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
-                        </svg>
-                        FDA-approved medications
-                      </li>
-                      <li className="flex items-start">
-                        <svg className="h-3.5 w-3.5 text-green-500 mr-1.5 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
-                        </svg>
-                        Regular progress tracking
-                      </li>
-                    </ul>
+        <div className="space-y-8">
+          {/* Simple Empty State - Hims-inspired */}
+          <div className="bg-white rounded-xl shadow-sm overflow-hidden text-center py-12 px-6">
+            <h3 className="text-2xl font-bold text-gray-900 mb-3">Health Goals?</h3>
+            <p className="text-gray-600 mb-8 max-w-md mx-auto">Let's see if we can help.</p>
+            
+            <a 
+              href="/marketplace" 
+              className="inline-block px-8 py-4 bg-black text-white text-base font-semibold rounded-full hover:bg-gray-800 transition-colors shadow-md"
+            >
+              + Add Treatment
+            </a>
+          </div>
+          
+          {/* Featured Treatment Cards - Full Background with Text Overlay */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {/* Hair Loss Card */}
+            <div className="rounded-xl overflow-hidden shadow-sm group h-64 relative">
+              <img 
+                src="https://images.unsplash.com/photo-1552058544-f2b08422138a?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" 
+                alt="Hair Loss Treatment" 
+                className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-black/20"></div>
+              <div className="absolute inset-0 p-5 flex flex-col justify-between">
+                <div className="flex justify-between items-start">
+                  <h4 className="font-semibold text-white text-xl">Hair Loss</h4>
+                  <span className="text-xs bg-indigo-100 text-indigo-800 px-2 py-0.5 rounded-full">Rx</span>
+                </div>
+                <div>
+                  <p className="text-white/80 text-sm mb-3">Clinically proven treatments to prevent hair loss and promote regrowth.</p>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm font-medium text-white">from $39/month</span>
                     <a 
                       href="/marketplace?service=hair-loss" 
-                      className="block w-full text-center px-3 py-2 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 transition-colors"
+                      className="text-white text-sm font-medium bg-indigo-600 px-3 py-1 rounded-full hover:bg-indigo-700 transition-colors"
                     >
-                      Learn More
-                    </a>
-                  </div>
-                </div>
-                
-                {/* Weight Management Card */}
-                <div className="bg-red-50 rounded-lg overflow-hidden border border-red-100 hover:shadow-md transition-shadow">
-                  <div className="h-3 bg-red-500"></div>
-                  <div className="p-4">
-                    <div className="flex items-center mb-3">
-                      <span className="w-8 h-8 rounded-full bg-red-100 flex items-center justify-center mr-3">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-red-600" viewBox="0 0 20 20" fill="currentColor">
-                          <path fillRule="evenodd" d="M10 2a4 4 0 00-4 4v1H5a1 1 0 00-.994.89l-1 9A1 1 0 004 18h12a1 1 0 00.994-1.11l-1-9A1 1 0 0015 7h-1V6a4 4 0 00-4-4zm2 5V6a2 2 0 10-4 0v1h4zm-6 3a1 1 0 112 0 1 1 0 01-2 0zm7-1a1 1 0 100 2 1 1 0 000-2z" clipRule="evenodd" />
-                        </svg>
-                      </span>
-                      <h4 className="font-semibold text-red-800">Weight Management</h4>
-                    </div>
-                    <p className="text-sm text-gray-600 mb-3">Comprehensive programs to help you achieve and maintain a healthy weight.</p>
-                    <ul className="text-xs text-gray-600 space-y-1 mb-4">
-                      <li className="flex items-start">
-                        <svg className="h-3.5 w-3.5 text-green-500 mr-1.5 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
-                        </svg>
-                        Medically supervised programs
-                      </li>
-                      <li className="flex items-start">
-                        <svg className="h-3.5 w-3.5 text-green-500 mr-1.5 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
-                        </svg>
-                        Nutritional guidance included
-                      </li>
-                    </ul>
-                    <a 
-                      href="/marketplace?service=weight-management" 
-                      className="block w-full text-center px-3 py-2 bg-red-600 text-white text-sm rounded-md hover:bg-red-700 transition-colors"
-                    >
-                      Learn More
-                    </a>
-                  </div>
-                </div>
-                
-                {/* ED Treatment Card */}
-                <div className="bg-purple-50 rounded-lg overflow-hidden border border-purple-100 hover:shadow-md transition-shadow">
-                  <div className="h-3 bg-purple-500"></div>
-                  <div className="p-4">
-                    <div className="flex items-center mb-3">
-                      <span className="w-8 h-8 rounded-full bg-purple-100 flex items-center justify-center mr-3">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-purple-600" viewBox="0 0 20 20" fill="currentColor">
-                          <path fillRule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clipRule="evenodd" />
-                        </svg>
-                      </span>
-                      <h4 className="font-semibold text-purple-800">ED Treatment</h4>
-                    </div>
-                    <p className="text-sm text-gray-600 mb-3">Effective treatments for erectile dysfunction with discreet care.</p>
-                    <ul className="text-xs text-gray-600 space-y-1 mb-4">
-                      <li className="flex items-start">
-                        <svg className="h-3.5 w-3.5 text-green-500 mr-1.5 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
-                        </svg>
-                        Discreet packaging
-                      </li>
-                      <li className="flex items-start">
-                        <svg className="h-3.5 w-3.5 text-green-500 mr-1.5 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
-                        </svg>
-                        Ongoing provider support
-                      </li>
-                    </ul>
-                    <a 
-                      href="/marketplace?service=ed-treatment" 
-                      className="block w-full text-center px-3 py-2 bg-purple-600 text-white text-sm rounded-md hover:bg-purple-700 transition-colors"
-                    >
-                      Learn More
+                      Learn more
                     </a>
                   </div>
                 </div>
               </div>
             </div>
             
-            <div className="bg-gray-50 px-6 py-4 border-t border-gray-200 flex flex-col sm:flex-row justify-between items-center gap-4">
-              <p className="text-sm text-gray-600">
-                Not sure which service is right for you?
-              </p>
-              <div className="flex gap-3">
+            {/* Weight Management Card */}
+            <div className="rounded-xl overflow-hidden shadow-sm group h-64 relative">
+              <img 
+                src="https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" 
+                alt="Weight Management" 
+                className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-black/20"></div>
+              <div className="absolute inset-0 p-5 flex flex-col justify-between">
+                <div className="flex justify-between items-start">
+                  <h4 className="font-semibold text-white text-xl">Weight Management</h4>
+                  <span className="text-xs bg-red-100 text-red-800 px-2 py-0.5 rounded-full">Rx</span>
+                </div>
+                <div>
+                  <p className="text-white/80 text-sm mb-3">Medically supervised program with personalized support.</p>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm font-medium text-white">from $99/month</span>
+                    <a 
+                      href="/marketplace?service=weight-management" 
+                      className="text-white text-sm font-medium bg-red-600 px-3 py-1 rounded-full hover:bg-red-700 transition-colors"
+                    >
+                      Learn more
+                    </a>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            {/* ED Treatment Card */}
+            <div className="rounded-xl overflow-hidden shadow-sm group h-64 relative">
+              <img 
+                src="https://images.unsplash.com/photo-1559839734-2b71ea197ec2?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" 
+                alt="ED Treatment" 
+                className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-black/20"></div>
+              <div className="absolute inset-0 p-5 flex flex-col justify-between">
+                <div className="flex justify-between items-start">
+                  <h4 className="font-semibold text-white text-xl">ED Treatment</h4>
+                  <span className="text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full">Rx</span>
+                </div>
+                <div>
+                  <p className="text-white/80 text-sm mb-3">Effective treatments with discreet, professional care.</p>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm font-medium text-white">from $49/month</span>
+                    <a 
+                      href="/marketplace?service=ed-treatment" 
+                      className="text-white text-sm font-medium bg-blue-600 px-3 py-1 rounded-full hover:bg-blue-700 transition-colors"
+                    >
+                      Learn more
+                    </a>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          {/* Featured Content - Visual Focus */}
+          <div className="bg-amber-100 rounded-xl overflow-hidden shadow-sm">
+            <div className="relative">
+              <img 
+                src="https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80" 
+                alt="Doctor with patient" 
+                className="w-full h-64 md:h-80 object-cover"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex flex-col justify-end p-6">
+                <h3 className="text-2xl font-bold text-white mb-2">Lose the weight, keep the results</h3>
+                <p className="text-white/90 mb-4 max-w-lg">Medically-supervised weight loss program with proven results.</p>
                 <a 
-                  href="/marketplace" 
-                  className="px-4 py-2 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 transition-colors"
+                  href="/marketplace?service=weight-management" 
+                  className="inline-block px-6 py-3 bg-white text-black text-sm font-medium rounded-full hover:bg-gray-100 transition-colors self-start"
                 >
-                  View All Services
-                </a>
-                <a 
-                  href="/support" 
-                  className="px-4 py-2 border border-gray-300 text-gray-700 text-sm rounded-md hover:bg-gray-50 transition-colors"
-                >
-                  Contact Support
+                  Learn more
                 </a>
               </div>
             </div>
           </div>
           
-          <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Educational Resources</h3>
-            <p className="text-gray-600 mb-4">Explore our library of educational resources to learn more about various health topics.</p>
-            
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-              <a href="/resources?category=hair-health" className="group block p-4 bg-gray-50 rounded-lg hover:bg-blue-50 transition-colors">
-                <h4 className="font-medium text-gray-900 group-hover:text-blue-700 transition-colors">Hair Health</h4>
-                <p className="text-sm text-gray-600 mt-1">Learn about maintaining healthy hair and preventing hair loss.</p>
-              </a>
-              <a href="/resources?category=weight-management" className="group block p-4 bg-gray-50 rounded-lg hover:bg-blue-50 transition-colors">
-                <h4 className="font-medium text-gray-900 group-hover:text-blue-700 transition-colors">Weight Management</h4>
-                <p className="text-sm text-gray-600 mt-1">Discover healthy approaches to weight management and nutrition.</p>
-              </a>
-              <a href="/resources?category=mens-health" className="group block p-4 bg-gray-50 rounded-lg hover:bg-blue-50 transition-colors">
-                <h4 className="font-medium text-gray-900 group-hover:text-blue-700 transition-colors">Men's Health</h4>
-                <p className="text-sm text-gray-600 mt-1">Explore topics related to men's health and wellness.</p>
-              </a>
+          {/* Patient Success Stories - Simplified */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {/* Success Story 1 */}
+            <div className="bg-white rounded-xl p-5 shadow-sm">
+              <div className="flex items-center mb-4">
+                <img 
+                  src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=100&h=100&q=80" 
+                  alt="James T." 
+                  className="w-12 h-12 rounded-full object-cover mr-4"
+                />
+                <div>
+                  <h4 className="font-medium text-gray-900">James T.</h4>
+                  <p className="text-xs text-gray-500">Weight Management</p>
+                </div>
+              </div>
+              <p className="text-sm text-gray-700 italic">"I've lost 30 pounds in 6 months. The medical support made all the difference."</p>
             </div>
             
-            <div className="mt-4 text-center">
-              <a href="/resources" className="inline-flex items-center text-blue-600 hover:text-blue-800">
-                View All Resources
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                </svg>
-              </a>
+            {/* Success Story 2 */}
+            <div className="bg-white rounded-xl p-5 shadow-sm">
+              <div className="flex items-center mb-4">
+                <img 
+                  src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?ixlib=rb-4.0.3&auto=format&fit=crop&w=100&h=100&q=80" 
+                  alt="Robert M." 
+                  className="w-12 h-12 rounded-full object-cover mr-4"
+                />
+                <div>
+                  <h4 className="font-medium text-gray-900">Robert M.</h4>
+                  <p className="text-xs text-gray-500">Hair Loss Treatment</p>
+                </div>
+              </div>
+              <p className="text-sm text-gray-700 italic">"After 4 months, I'm seeing significant regrowth. The personalized approach keeps me on track."</p>
+            </div>
+            
+            {/* Success Story 3 */}
+            <div className="bg-white rounded-xl p-5 shadow-sm">
+              <div className="flex items-center mb-4">
+                <img 
+                  src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-4.0.3&auto=format&fit=crop&w=100&h=100&q=80" 
+                  alt="David K." 
+                  className="w-12 h-12 rounded-full object-cover mr-4"
+                />
+                <div>
+                  <h4 className="font-medium text-gray-900">David K.</h4>
+                  <p className="text-xs text-gray-500">ED Treatment</p>
+                </div>
+              </div>
+              <p className="text-sm text-gray-700 italic">"The discreet, professional care has made a tremendous difference in my quality of life."</p>
+            </div>
+          </div>
+          
+          {/* Popular Products Section - Carousel Style */}
+          <div className="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-100">
+            <div className="p-3 border-b flex items-center justify-between bg-gray-50">
+              <div className="flex items-center">
+                <div className="p-1.5 rounded-full mr-2 bg-green-100">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-green-600" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M12 7a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0V8.414l-4.293 4.293a1 1 0 01-1.414 0L8 10.414l-4.293 4.293a1 1 0 01-1.414-1.414l5-5a1 1 0 011.414 0L11 10.586 14.586 7H12z" clipRule="evenodd" />
+                  </svg>
+                </div>
+                <h4 className="text-sm font-medium text-gray-900">Popular Products</h4>
+                <div className="ml-2 bg-green-100 text-green-700 px-2 py-0.5 rounded-full flex items-center text-xs font-medium">
+                  Trending
+                </div>
+              </div>
+              <a href="/marketplace" className="text-blue-600 text-sm font-medium">View all →</a>
+            </div>
+            
+            <div className="p-4">
+              <div className="overflow-x-auto -mx-4 px-4 product-scroll">
+                <div className="flex space-x-4 pb-2 snap-x snap-mandatory">
+                  {/* Product 1 */}
+                  <div className="w-40 flex-shrink-0 bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden snap-start">
+                    <div className="h-32 bg-gray-100 flex items-center justify-center">
+                      <img 
+                        src="https://images.unsplash.com/photo-1607185073253-f0cb7b3d1654?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" 
+                        alt="Biotin Supplement" 
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                    <div className="p-3">
+                      <h4 className="font-medium text-sm">Biotin Supplement</h4>
+                      <p className="text-xs text-gray-500 mb-2 line-clamp-2">Supports healthy hair growth and strength.</p>
+                      <div className="flex justify-between items-center">
+                        <span className="text-xs font-medium">$24.99</span>
+                        <button className="text-xs text-white px-2 py-1 rounded-full bg-black">
+                          Add
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Product 2 */}
+                  <div className="w-40 flex-shrink-0 bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden snap-start">
+                    <div className="h-32 bg-gray-100 flex items-center justify-center">
+                      <img 
+                        src="https://images.unsplash.com/photo-1620916566398-39f1143ab7be?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" 
+                        alt="Hair Growth Shampoo" 
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                    <div className="p-3">
+                      <h4 className="font-medium text-sm">Hair Growth Shampoo</h4>
+                      <p className="text-xs text-gray-500 mb-2 line-clamp-2">Strengthens hair and reduces breakage.</p>
+                      <div className="flex justify-between items-center">
+                        <span className="text-xs font-medium">$18.99</span>
+                        <button className="text-xs text-white px-2 py-1 rounded-full bg-black">
+                          Add
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Product 3 */}
+                  <div className="w-40 flex-shrink-0 bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden snap-start">
+                    <div className="h-32 bg-gray-100 flex items-center justify-center">
+                      <img 
+                        src="https://images.unsplash.com/photo-1490645935967-10de6ba17061?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" 
+                        alt="Fiber Supplement" 
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                    <div className="p-3">
+                      <h4 className="font-medium text-sm">Fiber Supplement</h4>
+                      <p className="text-xs text-gray-500 mb-2 line-clamp-2">Improves fullness & digestive health.</p>
+                      <div className="flex justify-between items-center">
+                        <span className="text-xs font-medium">$19.99</span>
+                        <button className="text-xs text-white px-2 py-1 rounded-full bg-black">
+                          Add
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Product 4 */}
+                  <div className="w-40 flex-shrink-0 bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden snap-start">
+                    <div className="h-32 bg-gray-100 flex items-center justify-center">
+                      <img 
+                        src="https://images.unsplash.com/photo-1512069772995-ec65ed45afd6?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" 
+                        alt="Daily Multivitamin" 
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                    <div className="p-3">
+                      <h4 className="font-medium text-sm">Daily Multivitamin</h4>
+                      <p className="text-xs text-gray-500 mb-2 line-clamp-2">Essential vitamins and minerals for daily health.</p>
+                      <div className="flex justify-between items-center">
+                        <span className="text-xs font-medium">$15.99</span>
+                        <button className="text-xs text-white px-2 py-1 rounded-full bg-black">
+                          Add
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Product 5 */}
+                  <div className="w-40 flex-shrink-0 bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden snap-start">
+                    <div className="h-32 bg-gray-100 flex items-center justify-center">
+                      <img 
+                        src="https://images.unsplash.com/photo-1505751172876-fa1923c5c528?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" 
+                        alt="Protein Powder" 
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                    <div className="p-3">
+                      <h4 className="font-medium text-sm">Protein Powder</h4>
+                      <p className="text-xs text-gray-500 mb-2 line-clamp-2">High-quality protein for muscle recovery.</p>
+                      <div className="flex justify-between items-center">
+                        <span className="text-xs font-medium">$29.99</span>
+                        <button className="text-xs text-white px-2 py-1 rounded-full bg-black">
+                          Add
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
       ) : (
         <ModularServiceInterface services={services} />
       )}
-      
-      {/* Educational Resources Section would go here */}
-      
-      {/* Recommended Products Section would go here */}
     </div>
   );
 };

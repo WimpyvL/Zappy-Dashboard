@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zappy Health - Final Modular Patient Interface</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f5f7fa;
+        }
+        .service-module {
+            transition: all 0.3s ease;
+        }
+        .service-module:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+        .gradient-hair {
+            background: linear-gradient(to right, #4F46E5, #818CF8);
+        }
+        .gradient-weight {
+            background: linear-gradient(to right, #F85C5C, #FF8080);
+        }
+        .gradient-ed {
+            background: linear-gradient(to right, #10B981, #34D399);
+        }
+        
+        .pattern-dots {
+            background-image: radial-gradient(currentColor 1px, transparent 1px);
+            background-size: calc(10 * 1px) calc(10 * 1px);
+            background-color: transparent;
+            opacity: 0.2;
+        }
+        
+        .video-thumbnail {
+            position: relative;
+        }
+        
+        .video-thumbnail::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.2);
+            border-radius: 0.5rem;
+        }
+        
+        .video-thumbnail::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 50px;
+            height: 50px;
+            background: white;
+            border-radius: 50%;
+            box-shadow: 0 0 10px rgba(0,0,0,0.3);
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%234F46E5' width='24' height='24'%3E%3Cpath d='M8 5v14l11-7z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: center;
+            background-size: 24px;
+        }
+        
+        /* Enhanced mobile responsiveness */
+        @media (max-width: 640px) {
+            .resource-scroll, .product-scroll {
+                -webkit-overflow-scrolling: touch;
+                scrollbar-width: none;
+            }
+            
+            .resource-scroll::-webkit-scrollbar, .product-scroll::-webkit-scrollbar {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Main Layout -->
+    <div class="min-h-screen flex flex-col">
+        <!-- Header -->
+        <header class="bg-white shadow-sm">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
+                <div class="flex items-center">
+                    <div class="w-10 h-10 bg-[#F85C5C] rounded-full flex items-center justify-center">
+                        <span class="text-white font-bold">Z</span>
+                    </div>
+                    <h1 class="ml-3 text-xl font-semibold text-gray-900">Zappy Health</h1>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <button class="text-gray-500 hover:text-gray-700">
+                        <i data-lucide="bell" class="w-6 h-6"></i>
+                    </button>
+                    <button class="text-gray-500 hover:text-gray-700">
+                        <i data-lucide="message-square" class="w-6 h-6"></i>
+                    </button>
+                    <div class="w-8 h-8 bg-gray-200 rounded-full overflow-hidden">
+                        <img src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80" alt="User avatar" class="w-full h-full object-cover" />
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div class="mb-8">
+                <h2 class="text-2xl font-bold text-gray-900">My Health Dashboard</h2>
+                <p class="text-gray-600">Manage all your health services in one place</p>
+            </div>
+
+            <!-- Stacked Service Modules -->
+            <div class="space-y-8">
+                <!-- Hair Loss Treatment Module -->
+                <div class="service-module bg-white rounded-xl shadow-md overflow-hidden border-l-4 border-[#4F46E5]">
+                    <!-- Module Header -->
+                    <div class="px-5 py-4 border-b border-gray-100 bg-[#F5F7FF]">
+                        <div class="flex items-center justify-between">
+                            <h3 class="text-lg font-semibold flex items-center text-[#4F46E5]">
+                                <i data-lucide="scissors" class="h-5 w-5 mr-2 text-[#4F46E5]"></i>
+                                Hair Loss Treatment
+                            </h3>
+                            <div class="inline-block px-2 py-1 bg-[#818CF8] text-white text-xs font-medium rounded">
+                                Active
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Module Content -->
+                    <div class="p-5">
+                        <!-- Medications -->
+                        <div class="space-y-4">
+                            <div class="flex items-start">
+                                <div class="flex-shrink-0 h-16 w-16 rounded-lg bg-[#EEF2FF] flex items-center justify-center overflow-hidden">
+                                    <img 
+                                        src="https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80" 
+                                        alt="Finasteride pills" 
+                                        class="w-full h-full object-cover"
+                                    />
+                                </div>
+                                <div class="ml-4">
+                                    <h4 class="text-base font-medium">Finasteride 1mg</h4>
+                                    <p class="text-sm text-gray-500">Take 1 tablet daily</p>
+                                    <div class="mt-2 flex">
+                                        <button class="text-[#4F46E5] text-sm font-medium hover:underline">
+                                            View Instructions
+                                        </button>
+                                        <span class="mx-2 text-gray-300">|</span>
+                                        <button class="text-[#4F46E5] text-sm font-medium hover:underline">
+                                            Refill
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="flex items-start">
+                                <div class="flex-shrink-0 h-16 w-16 rounded-lg bg-[#EEF2FF] flex items-center justify-center overflow-hidden">
+                                    <img 
+                                        src="https://images.unsplash.com/photo-1587854692152-cbe660dbde88?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80" 
+                                        alt="Minoxidil solution" 
+                                        class="w-full h-full object-cover"
+                                    />
+                                </div>
+                                <div class="ml-4">
+                                    <h4 class="text-base font-medium">Minoxidil 5% Solution</h4>
+                                    <p class="text-sm text-gray-500">Apply 1ml to affected areas twice daily</p>
+                                    <div class="mt-2 flex">
+                                        <button class="text-[#4F46E5] text-sm font-medium hover:underline">
+                                            View Instructions
+                                        </button>
+                                        <span class="mx-2 text-gray-300">|</span>
+                                        <button class="text-[#4F46E5] text-sm font-medium hover:underline">
+                                            Refill
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Action Items -->
+                        <div class="mt-6">
+                            <h4 class="text-sm font-medium text-gray-700 mb-3">Action Items</h4>
+                            <div class="space-y-3">
+                                <div class="flex items-center justify-between p-3 bg-[#F5F7FF] rounded-lg border border-[#E0E7FF]">
+                                    <div class="flex items-center">
+                                        <div class="w-8 h-8 rounded-full bg-[#EEF2FF] flex items-center justify-center mr-3">
+                                            <i data-lucide="camera" class="h-4 w-4 text-[#4F46E5]"></i>
+                                        </div>
+                                        <div>
+                                            <h5 class="text-sm font-medium">Scalp Check-in</h5>
+                                            <p class="text-xs text-gray-500">Take photos of your scalp to track progress</p>
+                                        </div>
+                                    </div>
+                                    <button class="px-3 py-1.5 bg-[#4F46E5] text-white text-xs font-medium rounded-full hover:bg-opacity-90">
+                                        Start
+                                    </button>
+                                </div>
+                                
+                                <div class="flex items-center justify-between p-3 bg-[#F5F7FF] rounded-lg border border-[#E0E7FF]">
+                                    <div class="flex items-center">
+                                        <div class="w-8 h-8 rounded-full bg-[#EEF2FF] flex items-center justify-center mr-3">
+                                            <i data-lucide="clipboard-check" class="h-4 w-4 text-[#4F46E5]"></i>
+                                        </div>
+                                        <div>
+                                            <h5 class="text-sm font-medium">Monthly Assessment</h5>
+                                            <p class="text-xs text-gray-500">Complete your monthly hair loss questionnaire</p>
+                                        </div>
+                                    </div>
+                                    <button class="px-3 py-1.5 bg-[#4F46E5] text-white text-xs font-medium rounded-full hover:bg-opacity-90">
+                                        Complete
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        
+                        <!-- Module Actions -->
+                        <div class="mt-6 flex flex-wrap gap-3">
+                            <button class="px-4 py-2 bg-[#4F46E5] text-white rounded-full text-sm font-medium hover:bg-opacity-90 flex items-center">
+                                <i data-lucide="message-square" class="w-4 h-4 mr-2"></i> Message Provider
+                            </button>
+                            <button class="px-4 py-2 bg-gray-100 text-gray-700 rounded-full text-sm font-medium hover:bg-gray-200 flex items-center">
+                                <i data-lucide="shopping-cart" class="w-4 h-4 mr-2"></i> Order Refills
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Hair Loss Provider Recommendation -->
+                <div class="mt-3 bg-white rounded-xl shadow-sm overflow-hidden border border-[#E0E7FF]">
+                    <div class="p-3 bg-[#F5F7FF] border-b border-[#E0E7FF] flex items-center">
+                        <div class="p-1.5 bg-[#EEF2FF] rounded-full mr-2">
+                            <i data-lucide="shield" class="h-4 w-4 text-[#4F46E5]"></i>
+                        </div>
+                        <h4 class="text-sm font-medium text-[#4F46E5]">Provider Recommended</h4>
+                    </div>
+                    <div class="p-4">
+                        <div class="overflow-x-auto -mx-4 px-4 product-scroll">
+                            <div class="flex space-x-4 pb-2 snap-x snap-mandatory">
+                                <!-- Product 1 -->
+                                <div class="w-40 flex-shrink-0 bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden snap-start">
+                                    <div class="h-32 bg-gray-100 flex items-center justify-center">
+                                        <img 
+                                            src="https://images.unsplash.com/photo-1607185073253-f0cb7b3d1654?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=800&q=80" 
+                                            alt="Biotin Supplement" 
+                                            class="w-full h-full object-cover"
+                                        />
+                                    </div>
+                                    <div class="p-3">
+                                        <h4 class="font-medium text-sm">Biotin Supplement</h4>
+                                        <p class="text-xs text-gray-500 mb-2 line-clamp-2">Supports healthy hair growth and strength.</p>
+                                        <div class="flex justify-between items-center">
+                                            <span class="text-xs font-medium">$24.99</span>
+                                            <button class="text-xs bg-[#4F46E5] text-white px-2 py-1 rounded-full">
+                                                Add
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Product 2 -->
+                                <div class="w-40 flex-shrink-0 bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden snap-start">
+                                    <div class="h-32 bg-gray-100 flex items-center justify-center">
+                                        <img 
+                                            src="https://images.unsplash.com/photo-1620916566398-39f1143ab7be?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=800&q=80" 
+                                            alt="Hair Growth Shampoo" 
+                                            class="w-full h-full object-cover"
+                                        />
+                                    </div>
+                                    <div class="p-3">
+                                        <h4 class="font-medium text-sm">Hair Growth Shampoo</h4>
+                                        <p class="text-xs text-gray-500 mb-2 line-clamp-2">Strengthens hair and reduces breakage.</p>
+                                        <div class="flex justify-between items-center">
+                                            <span class="text-xs font-medium">$18.99</span>
+                                            <button class="text-xs bg-[#4F46E5] text-white px-2 py-1 rounded-full">
+                                                Add
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Product 3 -->
+                                <div class="w-40 flex-shrink-0 bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden snap-start">
+                                    <div class="h-32 bg-gray-100 flex items-center justify-center">
+                                        <img 
+                                            src="https://images.unsplash.com/photo-1585751119414-ef2636f8aede?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=800&q=80" 
+                                            alt="Scalp Treatment" 
+                                            class="w-full h-full object-cover"
+                                        />
+                                    </div>
+                                    <div class="p-3">
+                                        <h4 class="font-medium text-sm">Scalp Treatment</h4>
+                                        <p class="text-xs text-gray-500 mb-2 line-clamp-2">Nourishes scalp and promotes hair growth.</p>
+                                        <div class="flex justify-between items-center">
+                                            <span class="text-xs font-medium">$29.99</span>
+                                            <button class="text-xs bg-[#4F46E5] text-white px-2 py-1 rounded-full">
+                                                Add
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Weight Management Module -->
+                <div class="service-module bg-white rounded-xl shadow-md overflow-hidden border-l-4 border-[#F85C5C]">
+                    <!-- Module Header -->
+                    <div class="px-5 py-4 border-b border-gray-100 bg-[#FFF5F5]">
+                        <div class="flex items-center justify-between">
+                            <h3 class="text-lg font-semibold flex items-center text-[#F85C5C]">
+                                <i data-lucide="scale" class="h-5 w-5 mr-2 text-[#F85C5C]"></i>
+                                Weight Management
+                            </h3>
+                            <div class="inline-block px-2 py-1 bg-[#FF8080] text-white text-xs font-medium rounded">
+                                Active
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Module Content -->
+                    <div class="p-5">
+                        <!-- Medications -->
+                        <div class="space-y-4">
+                            <div class="flex items-start">
+                                <div class="flex-shrink-0 h-16 w-16 rounded-lg bg-[#FEF2F2] flex items-center justify-center overflow-hidden">
+                                    <img 
+                                        src="https://images.unsplash.com/photo-1471864190281-a93a3070b6de?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80" 
+                                        alt="Semaglutide injection" 
+                                        class="w-full h-full object-cover"
+                                    />
+                                </div>
+                                <div class="ml-4">
+                                    <h4 class="text-base font-medium">Semaglutide Injection</h4>
+                                    <p class="text-sm text-gray-500">Inject 0.25mg once weekly</p>
+                                    <div class="mt-2 flex">
+                                        <button class="text-[#F85C5C] text-sm font-medium hover:underline">
+                                            View Instructions
+                                        </button>
+                                        <span class="mx-2 text-gray-300">|</span>
+                                        <button class="text-[#F85C5C] text-sm font-medium hover:underline">
+                                            Refill
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="flex items-start">
+                                <div class="flex-shrink-0 h-16 w-16 rounded-lg bg-[#FEF2F2] flex items-center justify-center overflow-hidden">
+                                    <img 
+                                        src="https://images.unsplash.com/photo-1576186726115-4d51596775d1?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80" 
+                                        alt="Multivitamin" 
+                                        class="w-full h-full object-cover"
+                                    />
+                                </div>
+                                <div class="ml-4">
+                                    <h4 class="text-base font-medium">Multivitamin</h4>
+                                    <p class="text-sm text-gray-500">Take 1 tablet daily with food</p>
+                                    <div class="mt-2 flex">
+                                        <button class="text-[#F85C5C] text-sm font-medium hover:underline">
+                                            View Instructions
+                                        </button>
+                                        <span class="mx-2 text-gray-300">|</span>
+                                        <button class="text-[#F85C5C] text-sm font-medium hover:underline">
+                                            Refill
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Action Items -->
+                        <div class="mt-6">
+                            <h4 class="text-sm font-medium text-gray-700 mb-3">Action Items</h4>
+                            <div class="space-y-3">
+                                <div class="flex items-center justify-between p-3 bg-[#FFF5F5] rounded-lg border border-[#FECACA]">
+                                    <div class="flex items-center">
+                                        <div class="w-8 h-8 rounded-full bg-[#FEF2F2] flex items-center justify-center mr-3">
+                                            <i data-lucide="scale" class="h-4 w-4 text-[#F85C5C]"></i>
+                                        </div>
+                                        <div>
+                                            <h5 class="text-sm font-medium">Weekly Weigh-in</h5>
+                                            <p class="text-xs text-gray-500">Record your weight to track progress</p>
+                                        </div>
+                                    </div>
+                                    <button class="px-3 py-1.5 bg-[#F85C5C] text-white text-xs font-medium rounded-full hover:bg-opacity-90">
+                                        Log Weight
+                                    </button>
+                                </div>
+                                
+                                <div class="flex items-center justify-between p-3 bg-[#FFF5F5] rounded-lg border border-[#FECACA]">
+                                    <div class="flex items-center">
+                                        <div class="w-8 h-8 rounded-full bg-[#FEF2F2] flex items-center justify-center mr-3">
+                                            <i data-lucide="utensils" class="h-4 w-4 text-[#F85C5C]"></i>
+                                        </div>
+                                        <div>
+                                            <h5 class="text-sm font-medium">Food Journal</h5>
+                                            <p class="text-xs text-gray-500">Log your meals for the day</p>
+                                        </div>
+                                    </div>
+                                    <button class="px-3 py-1.5 bg-[#F85C5C] text-white text-xs font-medium rounded-full hover:bg-opacity-90">
+                                        Start
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        
+                        <!-- Module Actions -->
+                        <div class="mt-6 flex flex-wrap gap-3">
+                            <button class="px-4 py-2 bg-[#F85C5C] text-white rounded-full text-sm font-medium hover:bg-opacity-90 flex items-center">
+                                <i data-lucide="message-square" class="w-4 h-4 mr-2"></i> Message Provider
+                            </button>
+                            <button class="px-4 py-2 bg-gray-100 text-gray-700 rounded-full text-sm font-medium hover:bg-gray-200 flex items-center">
+                                <i data-lucide="shopping-cart" class="w-4 h-4 mr-2"></i> Order Refills
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Weight Management Provider Recommendation -->
+                <div class="mt-3 bg-white rounded-xl shadow-sm overflow-hidden border border-[#FECACA]">
+                    <div class="p-3 bg-[#FFF5F5] border-b border-[#FECACA] flex items-center">
+                        <div class="p-1.5 bg-[#FEF2F2] rounded-full mr-2">
+                            <i data-lucide="shield" class="h-4 w-4 text-[#F85C5C]"></i>
+                        </div>
+                        <h4 class="text-sm font-medium text-[#F85C5C]">Provider Recommended</h4>
+                    </div>
+                    <div class="p-4">
+                        <div class="overflow-x-auto -mx-4 px-4 product-scroll">
+                            <div class="flex space-x-4 pb-2 snap-x snap-mandatory">
+                                <!-- Product 1 -->
+                                <div class="w-40 flex-shrink-0 bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden snap-start">
+                                    <div class="h-32 bg-gray-100 flex items-center justify-center">
+                                        <img 
+                                            src="https://images.unsplash.com/photo-1490645935967-10de6ba17061?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=800&q=80" 
+                                            alt="Fiber Supplement" 
+                                            class="w-full h-full object-cover"
+                                        />
+                                    </div>
+                                    <div class="p-3">
+                                        <h4 class="font-medium text-sm">Fiber Supplement</h4>
+                                        <p class="text-xs text-gray-500 mb-2 line-clamp-2">Improves fullness & digestive health.</p>
+                                        <div class="flex justify-between items-center">
+                                            <span class="text-xs font-medium">$19.99</span>
+                                            <button class="text-xs bg-[#F85C5C] text-white px-2 py-1 rounded-full">
+                                                Add
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Product 2 -->
+                                <div class="w-40 flex-shrink-0 bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden snap-start">
+                                    <div class="h-32 bg-gray-100 flex items-center justify-center">
+                                        <img 
+                                            src="https://images.unsplash.com/photo-1498837167922-ddd27525d352?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=800&q=80" 
+                                            alt="Electrolyte Drink" 
+                                            class="w-full h-full object-cover"
+                                        />
+                                    </div>
+                                    <div class="p-3">
+                                        <h4 class="font-medium text-sm">Electrolyte Drink</h4>
+                                        <p class="text-xs text-gray-500 mb-2 line-clamp-2">Stay hydrated during weight loss.</p>
+                                        <div class="flex justify-between items-center">
+                                            <span class="text-xs font-medium">$24.99</span>
+                                            <button class="text-xs bg-[#F85C5C] text-white px-2 py-1 rounde

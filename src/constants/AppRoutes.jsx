@@ -67,6 +67,7 @@ import PatientFormsPage from '../pages/forms/PatientFormsPage.jsx'; // Import Pa
 import PatientOrderHistoryPage from '../pages/orders/PatientOrderHistoryPage.jsx'; // Import Patient Order History Page
 import PatientBillingPage from '../pages/billing/PatientBillingPage.jsx'; // Import Patient Billing Page
 import PatientProfilePage from '../pages/profile/PatientProfilePage.jsx'; // Import Patient Profile Page
+import PatientServicesPage from '../pages/patients/PatientServicesPage.jsx'; // Import Patient Services Page
 import EditProfilePage from '../pages/profile/EditProfilePage.jsx'; // Import Edit Profile Page
 import FormsManagementV2 from '../pages/settings/pages/forms-v2/FormsManagementV2.jsx'; // Import Forms V2
 import PaymentMethodsPage from '../pages/payment/PaymentMethodsPage.jsx'; // Import Payment Methods Page
@@ -436,6 +437,16 @@ const AppRoutes = () => {
         element={
           <MainLayout>
             <FormsManagementV2 />
+          </MainLayout>
+        }
+      />
+
+      {/* Patient Services Page Route */}
+      <Route
+        path="/my-services" // Define the path for the patient services page
+        element={
+          <MainLayout>
+            <PatientServicesPage />
           </MainLayout>
         }
       />

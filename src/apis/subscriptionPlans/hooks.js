@@ -1,3 +1,4 @@
+import React from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../../lib/supabase';
 import { toast } from 'react-toastify';
@@ -293,19 +294,58 @@ export const useMySubscription = (patientId, options = {}) => {
         id: 'sub_123456',
         status: 'active',
         current_period_end: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+        current_period_start: new Date().toISOString(),
         subscription_plans: {
+          id: 'plan_123',
           name: 'Premium Plan',
           price: 39.99,
+          category: 'General Health',
           billing_cycle: 'monthly'
         },
         planName: 'Premium Plan',
-        amount: 39.99
+        amount: 39.99,
+        stripe_subscription_id: 'sub_123456',
+        discount_percent: 10
       };
     },
     enabled: !!patientId,
     staleTime: 5 * 60 * 1000, // Cache for 5 minutes
     ...options,
   });
+};
+
+// Hook for fetching patient subscription details formatted for the PatientSubscriptionDetails component
+// This hook replaces usePatientSubscription from treatmentPackages/hooks.js
+export const useMySubscriptionDetails = (patientId, options = {}) => {
+  const subscriptionQuery = useMySubscription(patientId, options);
+  
+  // Transform the data to match the format expected by PatientSubscriptionDetails
+  const transformedData = React.useMemo(() => {
+    const subscription = subscriptionQuery.data;
+    if (!subscription) return null;
+    
+    return {
+      id: subscription.id,
+      status: subscription.status,
+      stripeSubscriptionId: subscription.stripe_subscription_id,
+      currentPeriodStart: subscription.current_period_start,
+      currentPeriodEnd: subscription.current_period_end,
+      packageName: subscription.subscription_plans?.name || 'Premium Plan',
+      packageCondition: subscription.subscription_plans?.category || 'General Health',
+      basePrice: subscription.amount || 39.99,
+      durationName: subscription.subscription_plans?.billing_cycle === 'monthly' ? 'Monthly' : 'Annual',
+      durationMonths: subscription.subscription_plans?.billing_cycle === 'monthly' ? 1 : 12,
+      discountPercent: subscription.discount_percent || 0,
+      price: subscription.amount,
+      totalPrice: subscription.amount,
+      nextBillingDate: subscription.current_period_end
+    };
+  }, [subscriptionQuery.data]);
+  
+  return {
+    ...subscriptionQuery,
+    data: transformedData
+  };
 };
 
 // Hook for fetching the current user's/patient's invoices

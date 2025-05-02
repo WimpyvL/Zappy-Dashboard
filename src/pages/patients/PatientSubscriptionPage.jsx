@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { usePatientSubscription } from '../../apis/treatmentPackages/hooks';
+import { useMySubscriptionDetails } from '../../apis/subscriptionPlans/hooks';
 import { toast } from 'react-toastify';
 
 // Components
 import PatientSubscriptionDetails from '../../components/subscriptions/PatientSubscriptionDetails';
-import TreatmentPackageSelection from '../../components/subscriptions/TreatmentPackageSelection';
+import SubscriptionPlanSelection from '../../components/subscriptions/SubscriptionPlanSelection';
 import PageHeader from '../../components/ui/PageHeader';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
 
@@ -19,7 +19,7 @@ const PatientSubscriptionPage = () => {
     isLoading,
     isError,
     error 
-  } = usePatientSubscription(patientId);
+  } = useMySubscriptionDetails(patientId);
 
   if (isLoading) {
     return (
@@ -52,7 +52,7 @@ const PatientSubscriptionPage = () => {
           <div className="bg-white shadow rounded-lg p-6 mb-8">
             <h2 className="text-xl font-bold mb-4">No Active Subscription</h2>
             <p className="text-gray-600 mb-4">
-              You don't have an active subscription plan. Select a treatment package below to subscribe to our telehealth services.
+              You don't have an active subscription plan. Select a subscription plan below to subscribe to our telehealth services.
             </p>
             <div className="bg-blue-50 border-l-4 border-blue-500 text-blue-700 p-4">
               <h3 className="font-bold">Benefits of subscribing:</h3>
@@ -65,7 +65,7 @@ const PatientSubscriptionPage = () => {
             </div>
           </div>
           
-          <TreatmentPackageSelection patientId={patientId} />
+          <SubscriptionPlanSelection patientId={patientId} />
         </div>
       )}
     </div>

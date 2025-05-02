@@ -9,8 +9,7 @@ import MainLayout from '../layouts/MainLayout.jsx';
 import Login from '../pages/auth/Login.jsx';
 import Signup from '../pages/auth/Signup';
 
-// Dashboard
-import Dashboard from '../pages/Dashboard';
+// Dashboard import removed - no longer needed
 
 // Patient components
 import Patients from '../pages/patients/Patients';
@@ -58,7 +57,11 @@ import MessagingPage from '../pages/messaging/MessagingPage.jsx'; // Import Mess
 import AuditLogPage from '../pages/auditlog/AuditLogPage.jsx'; // Import Audit Log Page
 import SystemMapPage from '../pages/system-map/SystemMapPage.jsx'; // Import SystemMap Page
 import PatientNotesPage from '../pages/notes/PatientNotesPage.jsx'; // Import Patient Notes Page
-import PatientProgramPage from '../pages/program/PatientProgramPage.jsx'; // Import Patient Program Page
+import PatientDashboardPage from '../pages/patients/PatientDashboardPage.jsx'; // Import Patient Dashboard Page
+import PatientHomePage from '../pages/patients/PatientHomePage.jsx'; // Import Patient Home Page
+// DirectPatientHomePage import removed - no longer needed
+// TestPage import removed - no longer needed
+// PatientProgramPage import removed - no longer needed
 import PatientRecordsPage from '../pages/records/PatientRecordsPage.jsx'; // Import Patient Records Page
 import PatientFormsPage from '../pages/forms/PatientFormsPage.jsx'; // Import Patient Forms Page
 import PatientOrderHistoryPage from '../pages/orders/PatientOrderHistoryPage.jsx'; // Import Patient Order History Page
@@ -70,17 +73,21 @@ import PaymentMethodsPage from '../pages/payment/PaymentMethodsPage.jsx'; // Imp
 import NotificationsPage from '../pages/notifications/NotificationsPage.jsx'; // Import Notifications Page
 import LandingPage from '../pages/LandingPage.jsx'; // Import Landing Page
 
+// Resources pages
+import ResourcesPage from '../pages/resources/ResourcesPage.jsx'; // Import Resources Page
+import ResourceDetailPage from '../pages/resources/ResourceDetailPage.jsx'; // Import Resource Detail Page
+
 // Import ChangePasswordPage component
 import ChangePasswordPage from '../pages/profile/ChangePasswordPage.jsx'; // Import Change Password Page
 
 // Subscription components
 // Treatment Packages have been deprecated in favor of the unified Products & Subscriptions management
-// import TreatmentPackagesPage from '../pages/admin/TreatmentPackagesPage';
-// import TreatmentPackageForm from '../pages/admin/TreatmentPackageForm';
+// TreatmentPackagesPage and TreatmentPackageForm imports removed - files deleted
 import SubscriptionDurationsPage from '../pages/admin/SubscriptionDurationsPage';
 import SubscriptionPlansPage from '../pages/admin/SubscriptionPlansPage';
 import PatientSubscriptionPage from '../pages/patients/PatientSubscriptionPage';
 import ProductSubscriptionManagement from '../pages/admin/ProductSubscriptionManagement';
+import ResourceManagementPage from '../pages/admin/ResourceManagementPage';
 
 // Paths constants
 import { paths } from './paths.js';
@@ -102,14 +109,10 @@ const AppRoutes = () => {
       <Route path={paths.login} element={<Login />} />
       <Route path={paths.signup} element={<Signup />} />
       <Route path={`${paths.forms}/:formId`} element={<FormViewer />} />
-      {/* Dashboard moved to /dashboard */}
+      {/* Redirect dashboard to patient home */}
       <Route
         path="/dashboard"
-        element={
-          <MainLayout>
-            <Dashboard />
-          </MainLayout>
-        }
+        element={<Navigate to="/patient-home-v2" replace />}
       />
 
       <Route
@@ -313,15 +316,23 @@ const AppRoutes = () => {
         }
       />
 
-      {/* Patient Program Page Route */}
+      {/* Patient Dashboard Page Route - Removed */}
+
+      {/* Patient Home Page Route - New vibrant UI */}
       <Route
-        path="/program" // Define the path for the patient program page
+        path="/patient-home-v2" // Define the path for the patient home page
         element={
           <MainLayout>
-            <PatientProgramPage />
+            <PatientHomePage />
           </MainLayout>
         }
       />
+
+      {/* Test Page Route - Removed */}
+
+      {/* Direct Patient Home Page Route - Removed */}
+
+      {/* Patient Program Page Route - Removed */}
 
        {/* Placeholder Refill Page Route */}
        <Route
@@ -449,6 +460,26 @@ const AppRoutes = () => {
         }
       />
       
+      {/* Resources Page Route */}
+      <Route
+        path="/resources"
+        element={
+          <MainLayout>
+            <ResourcesPage />
+          </MainLayout>
+        }
+      />
+      
+      {/* Resource Detail Page Route */}
+      <Route
+        path="/resources/:id"
+        element={
+          <MainLayout>
+            <ResourceDetailPage />
+          </MainLayout>
+        }
+      />
+      
       {/* Records Export Page Route - REMOVED */}
 
       {/* Notifications Page Route */}
@@ -543,15 +574,19 @@ const AppRoutes = () => {
         }
       />
       
-      {/* Patient Subscription Management Route */}
+      {/* Educational Resources Management Route */}
       <Route
-        path="/my-subscription"
+        path="/admin/resources"
         element={
           <MainLayout>
-            <PatientSubscriptionPage />
+            <ResourceManagementPage />
           </MainLayout>
         }
       />
+      
+      {/* Patient Subscription Management Route - Removed */}
+      
+      {/* Redirect /my-subscription to /patient-dashboard - Removed */}
 
       {/* Redirect any unknown routes to login page */}
       <Route path="*" element={<Navigate to="/" replace />} />

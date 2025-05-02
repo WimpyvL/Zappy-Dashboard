@@ -1,0 +1,670 @@
+import React, { useState, useEffect } from 'react';
+import { 
+  Package, Tag, Box, Briefcase, Plus, Edit, Trash2, Search, Loader2, Layers
+} from 'lucide-react';
+
+// API Hooks
+import { useTreatmentPackages } from '../../apis/treatmentPackages/hooks';
+import { useSubscriptionDurations } from '../../apis/subscriptionDurations/hooks';
+import { useServices } from '../../apis/services/hooks';
+import { 
+  useProducts, 
+  useCreateProduct, 
+  useUpdateProduct, 
+  useDeleteProduct 
+} from '../../apis/products/hooks';
+import { 
+  useSubscriptionPlans, 
+  useCreateSubscriptionPlan, 
+  useUpdateSubscriptionPlan, 
+  useDeleteSubscriptionPlan 
+} from '../../apis/subscriptionPlans/hooks';
+import {
+  useCategories,
+  useCreateCategory,
+  useUpdateCategory,
+  useDeleteCategory
+} from '../../apis/categories/hooks';
+
+// Components
+import PageHeader from '../../components/ui/PageHeader';
+import LoadingSpinner from '../../components/ui/LoadingSpinner';
+import StatusBadge from '../../components/ui/StatusBadge';
+import ProductModal from '../../components/admin/ProductModal';
+import SubscriptionPlanModal from '../../components/admin/SubscriptionPlanModal';
+import BundleModal from '../../components/admin/BundleModal';
+import ServiceModal from '../../components/admin/ServiceModal';
+import CategoryModal from '../../components/admin/CategoryModal';
+import { toast } from 'react-toastify';
+
+const ProductSubscriptionManagement = () => {
+  const [activeTab, setActiveTab] = useState('products');
+  const [isLoading, setIsLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState('all');
+  const [statusFilter, setStatusFilter] = useState('all');
+  
+  // Modal states
+  const [showProductModal, setShowProductModal] = useState(false);
+  const [showPlanModal, setShowPlanModal] = useState(false);
+  const [showBundleModal, setShowBundleModal] = useState(false);
+  const [showServiceModal, setShowServiceModal] = useState(false);
+  const [showCategoryModal, setShowCategoryModal] = useState(false);
+  const [currentItem, setCurrentItem] = useState(null);
+  const [isEditMode, setIsEditMode] = useState(false);
+
+  // Fetch data
+  const { data: servicesData, isLoading: isLoadingServices } = useServices();
+  const { data: packagesData, isLoading: isLoadingPackages } = useTreatmentPackages();
+  const { data: durationsData, isLoading: isLoadingDurations } = useSubscriptionDurations();
+  const { data: productsData, isLoading: isLoadingProducts } = useProducts();
+  const { data: plansData, isLoading: isLoadingPlans } = useSubscriptionPlans();
+  const { data: categoriesData, isLoading: isLoadingCategories } = useCategories();
+
+  // Process fetched data
+  const services = servicesData?.data || servicesData || [];
+  const products = productsData?.data || productsData || [];
+  const subscriptionPlans = plansData?.data || plansData || [];
+  const categories = categoriesData?.data || categoriesData || [];
+  
+  // Sample data for bundles (since we don't have a real API for them yet)
+  const bundles = [
+    {
+      id: 1,
+      name: 'Hair Loss Kit',
+      bundleId: 'BN-HAIR-001',
+      category: 'Hair',
+      includedProducts: [
+        { productId: 1, quantity: 1 },
+        { productId: 2, quantity: 1 }
+      ],
+      price: 38.50,
+      discount: 5.00,
+      status: 'active'
+    },
+    {
+      id: 2,
+      name: 'Hair Care Complete',
+      bundleId: 'BN-HAIR-002',
+      category: 'Hair',
+      includedProducts: [
+        { productId: 1, quantity: 1 },
+        { productId: 2, quantity: 1 },
+        { productId: 3, quantity: 1 },
+        { productId: 4, quantity: 1 }
+      ],
+      price: 55.00,
+      discount: 10.50,
+      status: 'active'
+    }
+  ];
+
+  // Sample data for providers (since we don't have a real API for them yet)
+  const providers = [
+    { id: 1, name: 'Dr. John Smith', credentials: 'MD' },
+    { id: 2, name: 'Dr. Sarah Johnson', credentials: 'MD' },
+    { id: 3, name: 'Dr. Michael Lee', credentials: 'DO' },
+    { id: 4, name: 'Jane Wilson', credentials: 'NP' }
+  ];
+
+  // Mutation hooks
+  const createProductMutation = useCreateProduct({
+    onSuccess: () => {
+      toast.success('Product created successfully');
+      setShowProductModal(false);
+    },
+    onError: (error) => {
+      toast.error(`Error creating product: ${error.message}`);
+    }
+  });
+
+  const updateProductMutation = useUpdateProduct({
+    onSuccess: () => {
+      toast.success('Product updated successfully');
+      setShowProductModal(false);
+    },
+    onError: (error) => {
+      toast.error(`Error updating product: ${error.message}`);
+    }
+  });
+
+  const deleteProductMutation = useDeleteProduct({
+    onSuccess: () => {
+      toast.success('Product deleted successfully');
+    },
+    onError: (error) => {
+      toast.error(`Error deleting product: ${error.message}`);
+    }
+  });
+
+  const createPlanMutation = useCreateSubscriptionPlan({
+    onSuccess: () => {
+      toast.success('Subscription plan created successfully');
+      setShowPlanModal(false);
+    },
+    onError: (error) => {
+      toast.error(`Error creating subscription plan: ${error.message}`);
+    }
+  });
+
+  const updatePlanMutation = useUpdateSubscriptionPlan({
+    onSuccess: () => {
+      toast.success('Subscription plan updated successfully');
+      setShowPlanModal(false);
+    },
+    onError: (error) => {
+      toast.error(`Error updating subscription plan: ${error.message}`);
+    }
+  });
+
+  const deletePlanMutation = useDeleteSubscriptionPlan({
+    onSuccess: () => {
+      toast.success('Subscription plan deleted successfully');
+    },
+    onError: (error) => {
+      toast.error(`Error deleting subscription plan: ${error.message}`);
+    }
+  });
+
+  const createCategoryMutation = useCreateCategory({
+    onSuccess: () => {
+      toast.success('Category created successfully');
+      setShowCategoryModal(false);
+    },
+    onError: (error) => {
+      toast.error(`Error creating category: ${error.message}`);
+    }
+  });
+
+  const updateCategoryMutation = useUpdateCategory({
+    onSuccess: () => {
+      toast.success('Category updated successfully');
+      setShowCategoryModal(false);
+    },
+    onError: (error) => {
+      toast.error(`Error updating category: ${error.message}`);
+    }
+  });
+
+  const deleteCategoryMutation = useDeleteCategory({
+    onSuccess: () => {
+      toast.success('Category deleted successfully');
+    },
+    onError: (error) => {
+      toast.error(`Error deleting category: ${error.message}`);
+    }
+  });
+
+  // Set loading state
+  useEffect(() => {
+    if (!isLoadingServices && !isLoadingPackages && !isLoadingDurations && 
+        !isLoadingProducts && !isLoadingPlans && !isLoadingCategories) {
+      setIsLoading(false);
+    }
+  }, [isLoadingServices, isLoadingPackages, isLoadingDurations, isLoadingProducts, isLoadingPlans, isLoadingCategories]);
+
+  // Filter functions
+  const filterByCategory = (items, category) => {
+    if (category === 'all') return items;
+    return items.filter(item => item.category?.toLowerCase() === category.toLowerCase());
+  };
+
+  const filterByStatus = (items, status) => {
+    if (status === 'all') return items;
+    return items.filter(item => item.status?.toLowerCase() === status.toLowerCase());
+  };
+
+  const filterBySearch = (items, search) => {
+    if (!search) return items;
+    const lowerSearch = search.toLowerCase();
+    return items.filter(item => 
+      (item.name && item.name.toLowerCase().includes(lowerSearch)) || 
+      (item.sku && item.sku.toLowerCase().includes(lowerSearch)) ||
+      (item.planId && item.planId.toLowerCase().includes(lowerSearch)) ||
+      (item.bundleId && item.bundleId.toLowerCase().includes(lowerSearch)) ||
+      (item.serviceId && item.serviceId.toLowerCase().includes(lowerSearch))
+    );
+  };
+
+  // Apply all filters
+  const filteredProducts = filterBySearch(filterByStatus(filterByCategory(products, categoryFilter), statusFilter), searchTerm);
+  const filteredPlans = filterBySearch(filterByStatus(filterByCategory(subscriptionPlans, categoryFilter), statusFilter), searchTerm);
+  const filteredBundles = filterBySearch(filterByStatus(filterByCategory(bundles, categoryFilter), statusFilter), searchTerm);
+  const filteredServices = filterBySearch(filterByStatus(filterByCategory(services, categoryFilter), statusFilter), searchTerm);
+  const filteredCategories = filterBySearch(filterByStatus(categories, statusFilter), searchTerm);
+
+  // Handle actions
+  const handleAddNew = () => {
+    setIsEditMode(false);
+    setCurrentItem(null);
+    
+    switch (activeTab) {
+      case 'products':
+        setShowProductModal(true);
+        break;
+      case 'subscriptionPlans':
+        setShowPlanModal(true);
+        break;
+      case 'bundles':
+        setShowBundleModal(true);
+        break;
+      case 'services':
+        setShowServiceModal(true);
+        break;
+      case 'categories':
+        setShowCategoryModal(true);
+        break;
+      default:
+        break;
+    }
+  };
+
+  const handleEdit = (item) => {
+    setIsEditMode(true);
+    setCurrentItem(item);
+    
+    switch (activeTab) {
+      case 'products':
+        setShowProductModal(true);
+        break;
+      case 'subscriptionPlans':
+        setShowPlanModal(true);
+        break;
+      case 'bundles':
+        setShowBundleModal(true);
+        break;
+      case 'services':
+        setShowServiceModal(true);
+        break;
+      case 'categories':
+        setShowCategoryModal(true);
+        break;
+      default:
+        break;
+    }
+  };
+
+  const handleDelete = (item) => {
+    if (!window.confirm(`Are you sure you want to delete this ${activeTab.slice(0, -1)}?`)) {
+      return;
+    }
+    
+    switch (activeTab) {
+      case 'products':
+        deleteProductMutation.mutate(item.id);
+        break;
+      case 'subscriptionPlans':
+        deletePlanMutation.mutate(item.id);
+        break;
+      case 'bundles':
+        // Handle bundle deletion (mock for now)
+        toast.success('Bundle deleted successfully');
+        break;
+      case 'services':
+        // Handle service deletion (mock for now)
+        toast.success('Service deleted successfully');
+        break;
+      case 'categories':
+        deleteCategoryMutation.mutate(item.id);
+        break;
+      default:
+        break;
+    }
+  };
+
+  // Handle form submissions
+  const handleProductSubmit = (productData) => {
+    if (isEditMode && currentItem) {
+      updateProductMutation.mutate({
+        id: currentItem.id,
+        productData
+      });
+    } else {
+      createProductMutation.mutate(productData);
+    }
+  };
+
+  const handlePlanSubmit = (planData) => {
+    if (isEditMode && currentItem) {
+      updatePlanMutation.mutate({
+        id: currentItem.id,
+        planData
+      });
+    } else {
+      createPlanMutation.mutate(planData);
+    }
+  };
+
+  const handleBundleSubmit = (bundleData) => {
+    // Mock bundle submission
+    toast.success(isEditMode ? 'Bundle updated successfully' : 'Bundle created successfully');
+    setShowBundleModal(false);
+  };
+
+  const handleServiceSubmit = (serviceData) => {
+    // Mock service submission
+    toast.success(isEditMode ? 'Service updated successfully' : 'Service created successfully');
+    setShowServiceModal(false);
+  };
+
+  const handleCategorySubmit = (categoryData) => {
+    if (isEditMode && currentItem) {
+      // Add original categoryId for comparison in the update function
+      categoryData.originalCategoryId = currentItem.categoryId;
+      updateCategoryMutation.mutate({
+        id: currentItem.id,
+        categoryData
+      });
+    } else {
+      createCategoryMutation.mutate(categoryData);
+    }
+  };
+
+  // Get unique categories from all items
+  const allCategories = [...new Set([
+    ...products.map(p => p.category),
+    ...subscriptionPlans.map(p => p.category),
+    ...bundles.map(b => b.category),
+    ...services.map(s => s.category)
+  ])].filter(Boolean).sort();
+
+  if (isLoading) {
+    return (
+      <div className="container mx-auto px-4 py-6">
+        <PageHeader title="Products & Subscriptions" />
+        <div className="flex justify-center items-center h-64">
+          <LoadingSpinner />
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="container mx-auto px-4 py-6">
+      {/* Page Header */}
+      <div className="flex justify-between items-center mb-6">
+        <PageHeader title="Products & Subscriptions" />
+        <button 
+          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md flex items-center"
+          onClick={handleAddNew}
+        >
+          <Plus className="h-5 w-5 mr-2" />
+          {activeTab === 'products' && 'Add New Product'}
+          {activeTab === 'subscriptionPlans' && 'Add New Plan'}
+          {activeTab === 'bundles' && 'Create New Bundle'}
+          {activeTab === 'services' && 'Add New Service'}
+          {activeTab === 'categories' && 'Add New Category'}
+        </button>
+      </div>
+
+      {/* Main Content */}
+      <div className="bg-white shadow-md rounded-lg overflow-hidden mb-6">
+        {/* Tabs */}
+        <div className="tabs flex border-b border-gray-200">
+          <button 
+            className={`tab px-6 py-3 font-medium ${activeTab === 'products' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
+            onClick={() => setActiveTab('products')}
+          >
+            <Package className="h-4 w-4 inline-block mr-1" />
+            Products
+          </button>
+          <button 
+            className={`tab px-6 py-3 font-medium ${activeTab === 'subscriptionPlans' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
+            onClick={() => setActiveTab('subscriptionPlans')}
+          >
+            <Tag className="h-4 w-4 inline-block mr-1" />
+            Subscription Plans
+          </button>
+          <button 
+            className={`tab px-6 py-3 font-medium ${activeTab === 'bundles' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
+            onClick={() => setActiveTab('bundles')}
+          >
+            <Box className="h-4 w-4 inline-block mr-1" />
+            Bundles
+          </button>
+          <button 
+            className={`tab px-6 py-3 font-medium ${activeTab === 'services' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
+            onClick={() => setActiveTab('services')}
+          >
+            <Briefcase className="h-4 w-4 inline-block mr-1" />
+            Services
+          </button>
+          <button 
+            className={`tab px-6 py-3 font-medium ${activeTab === 'categories' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
+            onClick={() => setActiveTab('categories')}
+          >
+            <Layers className="h-4 w-4 inline-block mr-1" />
+            Categories
+          </button>
+        </div>
+
+        {/* Tab Content */}
+        <div className="p-6">
+          {/* Search and Filters */}
+          <div className="mb-6">
+            <div className="relative max-w-md mb-4">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <Search className="h-5 w-5 text-gray-400" />
+              </div>
+              <input
+                type="text"
+                className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                placeholder={`Search ${activeTab}...`}
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+
+            <div className="flex flex-wrap gap-2 mb-4">
+              <button
+                className={`px-3 py-1 rounded-md text-sm font-medium ${categoryFilter === 'all' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-800 hover:bg-gray-200'}`}
+                onClick={() => setCategoryFilter('all')}
+              >
+                All
+              </button>
+              {allCategories.map(category => (
+                <button
+                  key={category}
+                  className={`px-3 py-1 rounded-md text-sm font-medium ${categoryFilter === category ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-800 hover:bg-gray-200'}`}
+                  onClick={() => setCategoryFilter(category)}
+                >
+                  {category}
+                </button>
+              ))}
+              <div className="flex-grow"></div>
+              <button
+                className={`px-3 py-1 rounded-md text-sm font-medium ${statusFilter === 'all' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-800 hover:bg-gray-200'}`}
+                onClick={() => setStatusFilter('all')}
+              >
+                All Status
+              </button>
+              <button
+                className={`px-3 py-1 rounded-md text-sm font-medium ${statusFilter === 'active' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-800 hover:bg-gray-200'}`}
+                onClick={() => setStatusFilter('active')}
+              >
+                Active
+              </button>
+              <button
+                className={`px-3 py-1 rounded-md text-sm font-medium ${statusFilter === 'draft' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-800 hover:bg-gray-200'}`}
+                onClick={() => setStatusFilter('draft')}
+              >
+                Draft
+              </button>
+            </div>
+          </div>
+
+          {/* Dynamic Tab Content */}
+          {activeTab === 'products' && (
+            <div className="overflow-x-auto">
+              {/* Products table content */}
+              <p className="text-sm text-gray-500">
+                {filteredProducts.length} products found
+              </p>
+            </div>
+          )}
+
+          {activeTab === 'subscriptionPlans' && (
+            <div className="overflow-x-auto">
+              {/* Subscription plans table content */}
+              <p className="text-sm text-gray-500">
+                {filteredPlans.length} subscription plans found
+              </p>
+            </div>
+          )}
+
+          {activeTab === 'bundles' && (
+            <div className="overflow-x-auto">
+              {/* Bundles table content */}
+              <p className="text-sm text-gray-500">
+                {filteredBundles.length} bundles found
+              </p>
+            </div>
+          )}
+
+          {activeTab === 'services' && (
+            <div className="overflow-x-auto">
+              {/* Services table content */}
+              <p className="text-sm text-gray-500">
+                {filteredServices.length} services found
+              </p>
+            </div>
+          )}
+
+          {activeTab === 'categories' && (
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Category
+                    </th>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Description
+                    </th>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      ID
+                    </th>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Products
+                    </th>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Status
+                    </th>
+                    <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {filteredCategories.map((category) => (
+                    <tr key={category.id} className="hover:bg-gray-50">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex items-center">
+                          <div className="text-sm font-medium text-gray-900">
+                            {category.name}
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="text-sm text-gray-500 max-w-xs truncate">
+                          {category.description || 'No description'}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-500">
+                          {category.categoryId}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-500">
+                          {category.productCount || 0}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <StatusBadge status={category.status} />
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        <button
+                          className="text-blue-600 hover:text-blue-900 mr-3"
+                          onClick={() => handleEdit(category)}
+                        >
+                          <Edit className="h-5 w-5" />
+                        </button>
+                        <button
+                          className="text-red-600 hover:text-red-900"
+                          onClick={() => handleDelete(category)}
+                          disabled={category.productCount > 0}
+                          title={category.productCount > 0 ? `Cannot delete: Used by ${category.productCount} products` : ''}
+                        >
+                          <Trash2 className={`h-5 w-5 ${category.productCount > 0 ? 'opacity-50 cursor-not-allowed' : ''}`} />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                  {filteredCategories.length === 0 && (
+                    <tr>
+                      <td colSpan="6" className="px-6 py-4 text-center text-sm text-gray-500">
+                        No categories found
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+              <p className="text-sm text-gray-500 mt-4">
+                {filteredCategories.length} categories found
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Modals */}
+      <ProductModal
+        isOpen={showProductModal}
+        onClose={() => setShowProductModal(false)}
+        onSubmit={handleProductSubmit}
+        product={isEditMode ? currentItem : null}
+        isSubmitting={createProductMutation.isLoading || updateProductMutation.isLoading}
+        services={services.filter(s => s.type === 'service')}
+      />
+
+      <SubscriptionPlanModal
+        isOpen={showPlanModal}
+        onClose={() => setShowPlanModal(false)}
+        onSubmit={handlePlanSubmit}
+        plan={isEditMode ? currentItem : null}
+        isSubmitting={createPlanMutation.isLoading || updatePlanMutation.isLoading}
+        products={products}
+      />
+
+      <BundleModal
+        isOpen={showBundleModal}
+        onClose={() => setShowBundleModal(false)}
+        onSubmit={handleBundleSubmit}
+        bundle={isEditMode ? currentItem : null}
+        isSubmitting={false}
+        products={products}
+      />
+
+      <ServiceModal
+        isOpen={showServiceModal}
+        onClose={() => setShowServiceModal(false)}
+        onSubmit={handleServiceSubmit}
+        service={isEditMode ? currentItem : null}
+        isSubmitting={false}
+        providers={providers}
+      />
+
+      <CategoryModal
+        isOpen={showCategoryModal}
+        onClose={() => setShowCategoryModal(false)}
+        onSubmit={handleCategorySubmit}
+        category={isEditMode ? currentItem : null}
+        isSubmitting={createCategoryMutation.isLoading || updateCategoryMutation.isLoading}
+        productCount={isEditMode && currentItem ? currentItem.productCount || 0 : 0}
+      />
+    </div>
+  );
+};
+
+export default ProductSubscriptionManagement;

@@ -1,6 +1,17 @@
+/**
+ * @deprecated This API is not deprecated itself, but should be accessed through the unified Products & Subscriptions management system.
+ * See DEPRECATED.md for more information.
+ */
+
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../../lib/supabase';
 import { toast } from 'react-toastify';
+
+// Display deprecation warning in console
+console.warn(
+  'The standalone Services management is deprecated. ' +
+  'Please use the unified Products & Subscriptions management system instead.'
+);
 
 // Define query keys for services
 const queryKeys = {

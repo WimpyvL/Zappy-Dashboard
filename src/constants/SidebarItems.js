@@ -22,14 +22,15 @@ import {
   ShoppingCart as PatientOrdersIcon,
   // CalendarCheck as PatientSessionsIcon, // Removed unused
   // MessageSquare as PatientMessagesIcon, // Removed unused
-  LayoutGrid as PatientProgramIcon,
+  // LayoutGrid as PatientProgramIcon, // Removed
   FolderClock as PatientRecordsIcon,
   // CreditCard, // Removed unused (duplicate import)
-  Store as ShopIcon,
+  // Store as ShopIcon, // Removed
   Headphones, // For Customer Support
   // Bot as AssistantIcon, // Removed unused
   // CreditCard as PaymentIcon, // Removed unused (duplicate import)
   UserCog, // For My Information
+  ShoppingBag, // For Marketplace
 } from 'lucide-react';
 
 import { paths } from './paths'; // Ensure paths are imported
@@ -65,13 +66,7 @@ export const sidebarItems = [
     icon: Package,
     color: 'accent4', // Added color
   },
-  {
-    title: 'Products',
-    path: '/products',
-    icon: Pill,
-    color: 'primary', // Added color
-  },
-  // Removed Product Services item
+  // Products are now managed through the unified Products & Subscriptions page
   {
     title: 'Discounts',
     path: '/discounts',
@@ -108,12 +103,7 @@ export const sidebarItems = [
     icon: FileText,
     color: 'accent1', // Added color
   },
-  {
-    title: 'Services',
-    path: '/services',
-    icon: Tag,
-    color: 'accent2', // Added color
-  },
+  // Services are now managed through the unified Products & Subscriptions page
   {
     title: 'Tags',
     path: '/tags',
@@ -125,6 +115,20 @@ export const sidebarItems = [
     path: '/messages',
     icon: MessageSquare,
     color: 'accent4', // Added color
+  },
+  {
+    title: 'Products & Subscriptions',
+    path: '/admin/product-subscription',
+    icon: Package,
+    color: 'primary',
+    isAdmin: true,
+  },
+  // Treatment Packages functionality has been consolidated into Products & Subscriptions
+  {
+    title: 'Subscription Durations',
+    path: '/admin/subscription-durations',
+    icon: Calendar,
+    color: 'accent2',
   },
 ];
 
@@ -152,11 +156,12 @@ export const logoutItem = {
 };
 
 // Define patient sidebar items (Further Simplified View)
+// Combine Shop and Programs into single Marketplace entry
 export const patientSidebarItems = [
   { title: 'Home', path: '/dashboard', icon: PatientDashboardIcon, color: 'accent3' }, // Changed path from '/' to '/dashboard'
   { title: 'Records', path: '/records', icon: PatientRecordsIcon, color: 'accent3' },
-  { title: 'Programs', path: '/program', icon: PatientProgramIcon, color: 'accent4' },
-  { title: 'Shop', path: '/shop', icon: ShopIcon, color: 'accent2' },
+  { title: 'My Subscription', path: '/my-subscription', icon: Calendar, color: 'primary' },
+  { title: 'Marketplace', path: '/marketplace', icon: ShoppingBag, color: 'accent2' }, // Unified marketplace replacing Shop and Programs
 ];
 
 // Define profile dropdown menu items (Simplified)

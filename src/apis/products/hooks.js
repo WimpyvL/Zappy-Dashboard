@@ -1,68 +1,54 @@
+/**
+ * @deprecated This API is not deprecated itself, but should be accessed through the unified Products & Subscriptions management system.
+ * See DEPRECATED.md for more information.
+ */
+
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../../lib/supabase';
 import { toast } from 'react-toastify';
 
-// Define query keys for products
+// Display deprecation warning in console
+console.warn(
+  'The standalone Products management is deprecated. ' +
+  'Please use the unified Products & Subscriptions management system instead.'
+);
+
+// Define query keys
 const queryKeys = {
   all: ['products'],
-  lists: (filters = {}) => [...queryKeys.all, 'list', { filters }],
+  lists: (params = {}) => [...queryKeys.all, 'list', { params }],
   details: (id) => [...queryKeys.all, 'detail', id],
 };
 
-// Get products hook with pagination using Supabase
-export const useProducts = (filters = {}, pageSize = 10) => {
-  const { page, search, category, active } = filters;
-  const currentPage = page || 1;
-  const rangeFrom = (currentPage - 1) * pageSize;
-  const rangeTo = rangeFrom + pageSize - 1;
-
+// Hook for fetching all products
+export const useProducts = (options = {}) => {
   return useQuery({
-    queryKey: queryKeys.lists(filters),
+    queryKey: queryKeys.lists(),
     queryFn: async () => {
-      let query = supabase
+      const { data, error, count } = await supabase
         .from('products')
         .select('*', { count: 'exact' })
-        .order('name', { ascending: true })
-        .range(rangeFrom, rangeTo);
-
-      if (category) {
-        query = query.eq('category', category);
-      }
-      if (active !== undefined) {
-        query = query.eq('is_active', active);
-      }
-      if (search) {
-        query = query.or(`name.ilike.%${search}%,description.ilike.%${search}%`);
-      }
-
-      const { data, error, count } = await query;
+        .order('name', { ascending: true });
 
       if (error) {
         console.error('Error fetching products:', error);
+        toast.error(`Error fetching products: ${error.message}`);
         throw new Error(error.message);
       }
-
-      return {
-        data: data || [],
-        meta: {
-          total: count || 0,
-          per_page: pageSize,
-          current_page: currentPage,
-          last_page: Math.ceil((count || 0) / pageSize),
-        },
-      };
+      
+      return { data: data || [], count };
     },
-    keepPreviousData: true,
+    ...options,
   });
 };
 
-// Get product by ID hook using Supabase
+// Hook for fetching a single product by ID
 export const useProductById = (id, options = {}) => {
   return useQuery({
     queryKey: queryKeys.details(id),
     queryFn: async () => {
       if (!id) return null;
-
+      
       const { data, error } = await supabase
         .from('products')
         .select('*')
@@ -71,9 +57,11 @@ export const useProductById = (id, options = {}) => {
 
       if (error) {
         console.error(`Error fetching product ${id}:`, error);
-        if (error.code === 'PGRST116') return null;
+        if (error.code === 'PGRST116') return null; // Not found
+        toast.error(`Error fetching product details: ${error.message}`);
         throw new Error(error.message);
       }
+      
       return data;
     },
     enabled: !!id,
@@ -81,121 +69,80 @@ export const useProductById = (id, options = {}) => {
   });
 };
 
-// Create product hook using Supabase
+// Hook for creating a product
 export const useCreateProduct = (options = {}) => {
   const queryClient = useQueryClient();
-
+  
   return useMutation({
     mutationFn: async (productData) => {
-      const dataToInsert = {
-        name: productData.name,
-        description: productData.description,
-        sku: productData.sku,
-        category: productData.category,
-        type: productData.type,
-        price: productData.price,
-        one_time_purchase_price: productData.oneTimePurchasePrice,
-        fulfillment_source: productData.fulfillmentSource,
-        requires_prescription: productData.requiresPrescription,
-        interaction_warnings: productData.interactionWarnings,
-        stock_status: productData.stockStatus,
-        image_url: productData.imageUrl,
-        is_active: productData.active ?? true,
-        stripe_price_id: productData.stripePriceId,
-        stripe_one_time_price_id: productData.stripeOneTimePriceId,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      };
-
       const { data, error } = await supabase
         .from('products')
-        .insert(dataToInsert)
+        .insert(productData)
         .select()
         .single();
 
       if (error) {
         console.error('Error creating product:', error);
+        toast.error(`Error creating product: ${error.message}`);
         throw new Error(error.message);
       }
+      
       return data;
     },
     onSuccess: (data, variables, context) => {
-      toast.success('Product created successfully');
       queryClient.invalidateQueries({ queryKey: queryKeys.lists() });
+      toast.success('Product created successfully');
       options.onSuccess?.(data, variables, context);
     },
     onError: (error, variables, context) => {
-      console.error('Create product mutation error:', error);
       toast.error(`Error creating product: ${error.message}`);
       options.onError?.(error, variables, context);
     },
-    onSettled: options.onSettled,
+    ...options,
   });
 };
 
-// Update product hook using Supabase
+// Hook for updating a product
 export const useUpdateProduct = (options = {}) => {
   const queryClient = useQueryClient();
-
+  
   return useMutation({
     mutationFn: async ({ id, productData }) => {
-      if (!id) throw new Error('Product ID is required for update.');
-
-      const dataToUpdate = {
-        name: productData.name,
-        description: productData.description,
-        sku: productData.sku,
-        category: productData.category,
-        type: productData.type,
-        price: productData.price,
-        one_time_purchase_price: productData.oneTimePurchasePrice,
-        fulfillment_source: productData.fulfillmentSource,
-        requires_prescription: productData.requiresPrescription,
-        interaction_warnings: productData.interactionWarnings,
-        stock_status: productData.stockStatus,
-        image_url: productData.imageUrl,
-        is_active: productData.active,
-        stripe_price_id: productData.stripePriceId,
-        stripe_one_time_price_id: productData.stripeOneTimePriceId,
-        updated_at: new Date().toISOString(),
-      };
-
       const { data, error } = await supabase
         .from('products')
-        .update(dataToUpdate)
+        .update(productData)
         .eq('id', id)
         .select()
         .single();
 
       if (error) {
         console.error(`Error updating product ${id}:`, error);
+        toast.error(`Error updating product: ${error.message}`);
         throw new Error(error.message);
       }
+      
       return data;
     },
     onSuccess: (data, variables, context) => {
-      toast.success('Product updated successfully');
       queryClient.invalidateQueries({ queryKey: queryKeys.lists() });
       queryClient.invalidateQueries({ queryKey: queryKeys.details(variables.id) });
+      toast.success('Product updated successfully');
       options.onSuccess?.(data, variables, context);
     },
     onError: (error, variables, context) => {
-      console.error(`Update product ${variables.id} mutation error:`, error);
       toast.error(`Error updating product: ${error.message}`);
       options.onError?.(error, variables, context);
     },
-    onSettled: options.onSettled,
+    ...options,
   });
 };
 
-// Delete product hook using Supabase
+// Hook for deleting a product
 export const useDeleteProduct = (options = {}) => {
   const queryClient = useQueryClient();
-
+  
   return useMutation({
     mutationFn: async (id) => {
-      if (!id) throw new Error('Product ID is required for deletion.');
-
       const { error } = await supabase
         .from('products')
         .delete()
@@ -203,24 +150,22 @@ export const useDeleteProduct = (options = {}) => {
 
       if (error) {
         console.error(`Error deleting product ${id}:`, error);
-        if (error.code === '23503') {
-          throw new Error('Cannot delete product: It is still linked to other records');
-        }
+        toast.error(`Error deleting product: ${error.message}`);
         throw new Error(error.message);
       }
-      return { success: true, id };
+      
+      return { id };
     },
     onSuccess: (data, variables, context) => {
-      toast.success('Product deleted successfully');
       queryClient.invalidateQueries({ queryKey: queryKeys.lists() });
       queryClient.removeQueries({ queryKey: queryKeys.details(variables) });
+      toast.success('Product deleted successfully');
       options.onSuccess?.(data, variables, context);
     },
     onError: (error, variables, context) => {
-      console.error(`Delete product ${variables} mutation error:`, error);
       toast.error(`Error deleting product: ${error.message}`);
       options.onError?.(error, variables, context);
     },
-    onSettled: options.onSettled,
+    ...options,
   });
 };

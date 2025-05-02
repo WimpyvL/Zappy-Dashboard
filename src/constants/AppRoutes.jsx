@@ -53,6 +53,7 @@ import DiscountManagement from '../pages/discounts/DiscountManagement';
 import TagManagement from '../pages/tags/TagManagement';
 import FormViewer from '../pages/settings/pages/forms/FormViewer.jsx';
 import ShopPage from '../pages/shop/ShopPage.jsx'; // Import the new ShopPage
+import MarketplacePage from '../pages/marketplace/MarketplacePage.jsx'; // Import the new MarketplacePage
 import MessagingPage from '../pages/messaging/MessagingPage.jsx'; // Import Messaging Page
 import AuditLogPage from '../pages/auditlog/AuditLogPage.jsx'; // Import Audit Log Page
 import SystemMapPage from '../pages/system-map/SystemMapPage.jsx'; // Import SystemMap Page
@@ -71,6 +72,15 @@ import LandingPage from '../pages/LandingPage.jsx'; // Import Landing Page
 
 // Import ChangePasswordPage component
 import ChangePasswordPage from '../pages/profile/ChangePasswordPage.jsx'; // Import Change Password Page
+
+// Subscription components
+// Treatment Packages have been deprecated in favor of the unified Products & Subscriptions management
+// import TreatmentPackagesPage from '../pages/admin/TreatmentPackagesPage';
+// import TreatmentPackageForm from '../pages/admin/TreatmentPackageForm';
+import SubscriptionDurationsPage from '../pages/admin/SubscriptionDurationsPage';
+import SubscriptionPlansPage from '../pages/admin/SubscriptionPlansPage';
+import PatientSubscriptionPage from '../pages/patients/PatientSubscriptionPage';
+import ProductSubscriptionManagement from '../pages/admin/ProductSubscriptionManagement';
 
 // Paths constants
 import { paths } from './paths.js';
@@ -228,15 +238,10 @@ const AppRoutes = () => {
         }
       />
 
+      {/* Products are now managed through the unified Products & Subscriptions page */}
       <Route
         path={paths.products}
-        element={
-          <ProtectedRoute>
-            <MainLayout>
-              <ProductManagement />
-            </MainLayout>
-          </ProtectedRoute>
-        }
+        element={<Navigate to="/admin/product-subscription" replace />}
       />
 
       <Route
@@ -250,15 +255,10 @@ const AppRoutes = () => {
         }
       />
 
+      {/* Services are now managed through the unified Products & Subscriptions page */}
       <Route
         path={paths.services}
-        element={
-          <ProtectedRoute>
-            <MainLayout>
-              <ServiceManagement />
-            </MainLayout>
-          </ProtectedRoute>
-        }
+        element={<Navigate to="/admin/product-subscription" replace />}
       />
 
       <Route
@@ -315,6 +315,16 @@ const AppRoutes = () => {
               <ShopPage />
             </MainLayout>
           </ProtectedRoute>
+        }
+      />
+
+      {/* Marketplace Page Route - Unified shop, programs, and subscriptions */}
+      <Route
+        path="/marketplace" 
+        element={
+          <MainLayout>
+            <MarketplacePage />
+          </MainLayout>
         }
       />
 
@@ -567,6 +577,62 @@ const AppRoutes = () => {
               <PaymentMethodsPage />
             </MainLayout>
           </ProtectedRoute>
+        }
+      />
+
+      {/* Admin Dashboard for Products & Subscriptions */}
+      <Route
+        path="/admin/product-subscription"
+        element={
+          <MainLayout>
+            <ProductSubscriptionManagement />
+          </MainLayout>
+        }
+      />
+
+      {/* Treatment Packages Management Routes - Redirected to unified Products & Subscriptions */}
+      <Route
+        path="/admin/packages"
+        element={<Navigate to="/admin/product-subscription" replace />}
+      />
+      
+      <Route
+        path="/admin/packages/create"
+        element={<Navigate to="/admin/product-subscription" replace />}
+      />
+      
+      <Route
+        path="/admin/packages/edit/:id"
+        element={<Navigate to="/admin/product-subscription" replace />}
+      />
+      
+      {/* Subscription Durations Management Route */}
+      <Route
+        path="/admin/subscription-durations"
+        element={
+          <MainLayout>
+            <SubscriptionDurationsPage />
+          </MainLayout>
+        }
+      />
+      
+      {/* Subscription Plans Management Route */}
+      <Route
+        path="/admin/subscription-plans"
+        element={
+          <MainLayout>
+            <SubscriptionPlansPage />
+          </MainLayout>
+        }
+      />
+      
+      {/* Patient Subscription Management Route */}
+      <Route
+        path="/my-subscription"
+        element={
+          <MainLayout>
+            <PatientSubscriptionPage />
+          </MainLayout>
         }
       />
 

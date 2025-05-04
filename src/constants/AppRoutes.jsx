@@ -59,6 +59,7 @@ import SystemMapPage from '../pages/system-map/SystemMapPage.jsx'; // Import Sys
 import PatientNotesPage from '../pages/notes/PatientNotesPage.jsx'; // Import Patient Notes Page
 import PatientDashboardPage from '../pages/patients/PatientDashboardPage.jsx'; // Import Patient Dashboard Page
 import PatientHomePage from '../pages/patients/PatientHomePage.jsx'; // Import Patient Home Page
+import ModularPatientServicesPage from '../pages/patients/ModularPatientServicesPage.jsx'; // Import Modular Patient Services Page
 // DirectPatientHomePage import removed - no longer needed
 // TestPage import removed - no longer needed
 // PatientProgramPage import removed - no longer needed
@@ -68,6 +69,8 @@ import PatientOrderHistoryPage from '../pages/orders/PatientOrderHistoryPage.jsx
 import PatientBillingPage from '../pages/billing/PatientBillingPage.jsx'; // Import Patient Billing Page
 import PatientProfilePage from '../pages/profile/PatientProfilePage.jsx'; // Import Patient Profile Page
 import PatientServicesPage from '../pages/patients/PatientServicesPage.jsx'; // Import Patient Services Page
+import PatientServicesPageV2 from '../pages/patients/PatientServicesPageV2.jsx'; // Import Patient Services Page V2
+import PatientServicesPageV3 from '../pages/patients/PatientServicesPageV3.jsx'; // Import Patient Services Page V3
 import EditProfilePage from '../pages/profile/EditProfilePage.jsx'; // Import Edit Profile Page
 import FormsManagementV2 from '../pages/settings/pages/forms-v2/FormsManagementV2.jsx'; // Import Forms V2
 import PaymentMethodsPage from '../pages/payment/PaymentMethodsPage.jsx'; // Import Payment Methods Page
@@ -110,10 +113,10 @@ const AppRoutes = () => {
       <Route path={paths.login} element={<Login />} />
       <Route path={paths.signup} element={<Signup />} />
       <Route path={`${paths.forms}/:formId`} element={<FormViewer />} />
-      {/* Redirect dashboard to patient home */}
+      {/* Redirect dashboard to care page */}
       <Route
         path="/dashboard"
-        element={<Navigate to="/patient-home-v2" replace />}
+        element={<Navigate to="/care" replace />}
       />
 
       <Route
@@ -329,6 +332,12 @@ const AppRoutes = () => {
         }
       />
 
+      {/* Redirect root to care page */}
+      <Route
+        path="/"
+        element={<Navigate to="/care" replace />}
+      />
+
       {/* Test Page Route - Removed */}
 
       {/* Direct Patient Home Page Route - Removed */}
@@ -441,14 +450,25 @@ const AppRoutes = () => {
         }
       />
 
-      {/* Patient Services Page Route */}
+      {/* Care Page Route (formerly Patient Services) */}
       <Route
-        path="/my-services" // Define the path for the patient services page
+        path="/care" // Define the path for the care page
         element={
           <MainLayout>
-            <PatientServicesPage />
+            <PatientServicesPageV3 />
           </MainLayout>
         }
+      />
+      
+      {/* Redirect old my-services paths to care */}
+      <Route
+        path="/my-services"
+        element={<Navigate to="/care" replace />}
+      />
+      
+      <Route
+        path="/my-services-v3"
+        element={<Navigate to="/care" replace />}
       />
 
       {/* Patient Records Page Route */}

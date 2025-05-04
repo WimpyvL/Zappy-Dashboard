@@ -167,8 +167,7 @@ export const logoutItem = {
 // Define patient sidebar items (Further Simplified View)
 // Combine Shop and Programs into single Marketplace entry
 export const patientSidebarItems = [
-  { title: 'New Home', path: '/patient-home-v2', icon: Home, color: 'accent4' }, // New Vibrant Home Page
-  { title: 'My Services', path: '/my-services', icon: Layers, color: 'primary' }, // Modular Services Interface
+  { title: 'Care', path: '/care', icon: Layers, color: 'primary' }, // Modular Services Interface (renamed from My Services)
   { title: 'Records', path: '/records', icon: PatientRecordsIcon, color: 'accent3' },
   { title: 'Marketplace', path: '/marketplace', icon: ShoppingBag, color: 'accent2' }, // Unified marketplace replacing Shop and Programs
   { title: 'Resources', path: '/resources', icon: BookOpen, color: 'accent1' }, // Educational resources

@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Simplified Category-First Patient Services Page</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #f9fafb;
+    }
+    .product-scroll::-webkit-scrollbar {
+      height: 4px;
+    }
+    .product-scroll::-webkit-scrollbar-track {
+      background: #f1f1f1;
+      border-radius: 10px;
+    }
+    .product-scroll::-webkit-scrollbar-thumb {
+      background: #d1d5db;
+      border-radius: 10px;
+    }
+    .product-scroll::-webkit-scrollbar-thumb:hover {
+      background: #9ca3af;
+    }
+    .subscription-details {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.3s ease-out;
+    }
+    .subscription-details.open {
+      max-height: 500px;
+    }
+  </style>
+</head>
+<body>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div class="flex justify-between items-center mb-6">
+      <h1 class="text-2xl font-bold text-gray-900">My Health Services</h1>
+      <p class="text-gray-500">Manage all your health services in one place</p>
+    </div>
+
+    <!-- ACTIVE STATE - SIMPLIFIED CATEGORY FIRST APPROACH -->
+    <div id="active-state" class="space-y-8">
+      <!-- Weight Management Category Module -->
+      <div class="service-module bg-white rounded-xl shadow-md overflow-hidden border-l-4" style="border-left-color: #F85C5C;">
+        <!-- Module Header -->
+        <div class="px-5 py-4 border-b border-gray-100" style="background-color: #FFF5F5;">
+          <div class="flex items-center justify-between">
+            <h3 class="text-lg font-semibold flex items-center" style="color: #F85C5C;">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor" style="color: #F85C5C;">
+                <path fill-rule="evenodd" d="M10 2a1 1 0 011 1v1.323l3.954 1.582 1.599.8a1 1 0 01-.554 1.838l-1.599-.8-1.499-.6v2.507a5 5 0 11-4.8 0V5.143l-1.5.6-1.599.8a1 1 0 01-.554-1.838l1.599-.8L9 4.323V3a1 1 0 011-1z" clip-rule="evenodd" />
+              </svg>
+              Weight Management
+            </h3>
+            <div class="inline-block px-2 py-1 text-white text-xs font-medium rounded" style="background-color: #FF8080;">
+              Active
+            </div>
+          </div>
+        </div>
+        
+        <!-- Module Content -->
+        <div class="p-5">
+          <!-- Simplified Treatment Summary -->
+          <div class="flex justify-between items-center mb-4">
+            <div>
+              <h4 class="font-medium">Semaglutide 0.5mg</h4>
+              <p class="text-sm text-gray-500">Weekly injection for weight management</p>
+            </div>
+            <span class="bg-red-100 text-red-800 px-2 py-0.5 text-xs font-medium rounded-full">
+              Week 4 of 24
+            </span>
+          </div>
+          
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            <div>
+              <span class="text-xs text-gray-500">Next Dose</span>
+              <p class="font-medium text-sm">Tomorrow at 9:00 AM</p>
+            </div>
+            
+            <div>
+              <span class="text-xs text-gray-500">Next Shipment</span>
+              <p class="font-medium text-sm">May 15, 2025</p>
+            </div>
+          </div>
+          
+          <div class="mb-6">
+            <div class="w-full bg-gray-200 rounded-full h-1.5">
+              <div class="bg-red-600 h-1.5 rounded-full" style="width: 16%"></div>
+            </div>
+          </div>
+          
+          <!-- Collapsible Subscription Information -->
+          <div class="mb-6 border-t border-b border-gray-100 py-3">
+            <button id="weight-subscription-toggle" class="w-full flex justify-between items-center" onclick="toggleSubscription('weight-subscription')">
+              <div class="flex items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" viewBox="0 0 20 20" fill="currentColor" style="color: #F85C5C;">
+                  <path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd" />
+                </svg>
+                <span class="font-medium text-sm">Weight Management Plan</span>
+              </div>
+              <div class="flex items-center">
+                <span class="text-sm mr-2">$99/month</span>
+                <svg id="weight-subscription-icon" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                  <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+                </svg>
+              </div>
+            </button>
+            
+            <div id="weight-subscription" class="subscription-details mt-3">
+              <div class="p-3 bg-gray-50 rounded-lg">
+                <div class="flex justify-between items-center mb-3">
+                  <div>
+                    <span class="text-xs text-gray-500">Next Payment</span>
+                    <p class="font-medium text-sm">May 2, 2025</p>
+                  </div>
+                </div>
+                
+                <div class="mb-3">
+                  <span class="text-xs text-gray-500">Plan Includes</span>
+                  <ul class="mt-1 space-y-1">
+                    <li class="text-xs flex items-start">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 text-red-500 mr-1 mt-0.5 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                      </svg>
+                      Monthly supply of Semaglutide 0.5mg
+                    </li>
+                    <li class="text-xs flex items-start">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 text-red-500 mr-1 mt-0.5 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                      </svg>
+                      Unlimited messaging with your provider
+                    </li>
+                    <li class="text-xs flex items-start">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 text-red-500 mr-1 mt-0.5 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                      </svg>
+                      Quarterly virtual check-ins with healthcare provider
+                    </li>
+                  </ul>
+                </div>
+                
+                <button class="w-full py-1.5 text-xs font-medium text-red-800 bg-white rounded-full border border-red-200">
+                  Manage Plan
+                </button>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Action Items -->
+          <div class="mt-6">
+            <h4 class="text-sm font-medium text-gray-700 mb-3">Action Items</h4>
+            <div class="space-y-3">
+              <div class="flex items-center justify-between p-3 rounded-lg border border-gray-200">
+                <div class="flex items-center">
+                  <div class="w-8 h-8 rounded-full flex items-center justify-center mr-3 bg-red-50">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" style="color: #F85C5C;">
+                      <path fill-rule="evenodd" d="M10 2a1 1 0 011 1v1.323l3.954 1.582 1.599.8a1 1 0 01-.554 1.838l-1.599-.8-1.499-.6v2.507a5 5 0 11-4.8 0V5.143l-1.5.6-1.599.8a1 1 0 01-.554-1.838l1.599-.8L9 4.323V3a1 1 0 011-1z" clip-rule="evenodd" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h5 class="text-sm font-medium">Weekly Weigh-in</h5>
+                    <p class="text-xs text-gray-500">Record your weight to track progress</p>
+                  </div>
+                </div>
+                <button class="px-3 py-1.5 text-white text-xs font-medium rounded-full hover:bg-opacity-90" style="background-color: #F85C5C;">
+                  Log Weight
+                </button>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Module Actions -->
+          <div class="mt-6 flex flex-wrap gap-3">
+            <button class="px-4 py-2 text-white rounded-full text-sm font-medium hover:bg-opacity-90 flex items-center" style="background-color: #F85C5C;">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M18 5v8a2 2 0 01-2 2h-5l-5 4v-4H4a2 2 0 01-2-2V5a2 2 0 012-2h12a2 2 0 012 2zM7 8H5v2h2V8zm2 0h2v2H9V8zm6 0h-2v2h2V8z" clip-rule="evenodd" />
+              </svg>
+              Message Provider
+            </button>
+            <button class="px-4 py-2 bg-gray-100 text-gray-700 rounded-full text-sm font-medium hover:bg-gray-200 flex items-center">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                <path d="M3 1a1 1 0 000 2h1.22l.305 1.222a.997.997 0 00.01.042l1.358 5.43-.893.892C3.74 11.846 4.632 14 6.414 14H15a1 1 0 000-2H6.414l1-1H14a1 1 0 00.894-.553l3-6A1 1 0 0017 3H6.28l-.31-1.243A1 1 0 005 1H3zM16 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zM6.5 18a1.5 1.5 0 100-3 1.5 1.5 0 000 3z" />
+              </svg>
+              Order Refills
+            </button>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Provider Recommendations for Weight Management -->
+      <div class="mt-3 bg-white rounded-xl shadow-sm overflow-hidden border border-gray-200">
+        <div class="p-3 border-b flex items-center">
+          <div class="p-1.5 rounded-full mr-2 bg-red-50">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" style="color: #F85C5C;">
+              <path fill-rule="evenodd" d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+            </svg>
+          </div>
+          <h4 class="text-sm font-medium" style="color: #F85C5C;">Provider Recommended for Weight Management</h4>
+        </div>
+        <div class="p-4">
+          <div class="overflow-x-auto -mx-4 px-4 product-scroll">
+            <div class="flex space-x-4 pb-2 snap-x snap-mandatory">
+              <div class="w-40 flex-shrink-0 bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden snap-start">
+                <div class="h-32 bg-gray-100 flex items-center justify-center">
+                  <img src="https://images.unsplash.com/photo-1490645935967-10de6ba17061?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=800&q=80" alt="Fiber Supplement" class="w-full h-full object-cover" />
+                </div>
+                <div class="p-3">
+                  <h4 class="font-medium text-sm">Fiber Supplement</h4>
+                  <p class="text-xs text-gray-500 mb-2 line-clamp-2">Improves fullness & digestive health.</p>
+                  <div class="flex justify-between items-center">
+                    <span class="text-xs font-medium">$19.99</span>
+                    <button class="text-xs text-white px-2 py-1 rounded-full" style="background-color: #F85C5C;">
+                      Add
+                    </button>
+                  </div>
+                </div>
+              </div>
+              <div class="w-40 flex-shrink-0 bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden snap-start">
+                <div class="h-32 bg-gray-100 flex items-center justify-center">
+                  <img src="https://images.unsplash.com/photo-1505751172876-fa1923c5c528?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=800&q=80" alt="Protein Powder" class="w-full h-full object-cover" />
+                </div>
+                <div class="p-3">
+                  <h4 class="font-medium text-sm">Protein Powder</h4>
+                  <p class="text-xs text-gray-500 mb-2 line-clamp-2">High-quality protein for muscle recovery.</p>
+                  <div class="flex justify-between items-center">
+                    <span class="text-xs font-medium">$29.99</span>
+                    <button class="text-xs text-white px-2 py-1 rounded-full" style="background-color: #F85C5C;">
+                      Add
+                    </button>
+                  </div>
+                </div>
+              </div>
+              <div class="w-40 flex-shrink-0 bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden snap-start">
+                <div class="h-32 bg-gray-100 flex items-center justify-center">
+                  <img src="https://images.unsplash.com/photo-1512069772995-ec65ed45afd6?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=800&q=80" alt="Daily Multivitamin" class="w-full h-full object-cover" />
+                </div>
+                <div class="p-3">
+                  <h4 class="font-medium text-sm">Daily Multivitamin</h4>
+                  <p class="text-xs text-gray-500 mb-2 line-clamp-2">Essential vitamins and minerals for daily health.</p>
+                  <div class="flex justify-between items-center">
+                    <span class="text-xs font-medium">$15.99</span>
+                    <button class="text-xs text-white px-2 py-1 rounded-full" style="background-color: #F85C5C;">
+                      Add
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Hair Loss Category Module -->
+      <div class="service-module bg-white rounded-xl shadow-md overflow-hidden border-l-4" style="border-left-color: #4F46E5;">
+        <!-- Module Header -->
+        <div class="px-5 py-4 border-b border-gray-100" style="background-color: #F5F7FF;">
+          <div class="flex items-center justify-between">
+            <h3 class="text-lg font-semibold flex items-center" style="color: #4F46E5;">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor" style="color: #4F46E5;">
+                <path fill-rule="evenodd" d="M5 5a3 3 0 015-2.236A3 3 0 0114.83 6H16a2 2 0 110 4h-5V9a1 1 0 10-2 0v1H4a2 2 0 110-4h1.17A3 3 0 015 5zm4 1V5a1 1 0 10-2 0v1H5a1 1 0 100 2h2v1a2 2 0 104 0V8h2a1 1 0 100-2h-2V5a1 1 0 10-2 0v1H7z" clip-rule="evenodd" />
+              </svg>
+              Hair Loss Treatment
+            </h3>
+            <div class="inline-block px-2 py-1 text-white text-xs font-medium rounded" style="background-color: #818CF8;">
+              Active
+            </div>
+          </div>
+        </div>
+        
+        <!-- Module Content -->
+        <div class="p-5">
+          <!-- Simplified Treatment Summary -->
+          <div class="flex justify-between items-center mb-4">
+            <div>
+              <h4 class="font-medium">Finasteride & Minoxidil</h4>
+              <p class="text-sm text-gray-500">Daily treatment for hair loss</p>
+            </div>
+            <span class="bg-indigo-100 text-indigo-800 px-2 py-0.5 text-xs font-medium rounded-full">
+              Month 3 of 12
+            </span>
+          </div>
+          
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            <div>
+              <span class="text-xs text-gray-500">Next Refill</span>
+              <p class="font-medium text-sm">June 1, 2025</p>
+            </div>
+            
+            <div>
+              <span class="text-xs text-gray-500">Next Check-in</span>
+              <p class="font-medium text-sm">July 15, 2025</p>
+            </div>
+          </div>
+          
+          <div class="mb-6">
+            <div class="w-full bg-gray-200 rounded-full h-1.5">
+              <div class="bg-indigo-600 h-1.5 rounded-full" style="width: 25%"></div>
+            </div>
+          </div>
+          
+          <!-- Medications List -->
+          <div class="space-y-4 mb-6">
+            <div class="flex items-start">
+              <div class="flex-shrink-0 h-16 w-16 rounded-lg flex items-center justify-center overflow-hidden bg-gray-100">
+                <img src="https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80" alt="Finasteride 1mg" class="w-full h-full object-cover" />
+              </div>
+              <div class="ml-4">
+                <h4 class="text-base font-medium">Finasteride 1mg</h4>
+                <p class="text-sm text-gray-500">Take 1 tablet daily</p>
+                <div class="mt-2 flex">
+                  <button class="text-sm font-medium hover:underline" style="color: #4F46E5;">
+                    View Instructions
+                  </button>
+                  <span class="mx-2 text-gray-300">|</span>
+                  <button class="text-sm font-medium hover:underline" style="color: #4F46E5;">
+                    Refill
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Collapsible Subscription Information -->
+          <div class="mb-6 border-t border-b border-gray-100 py-3">
+            <button id="hair-subscription-toggle" class="w-full flex justify-between items-center" onclick="toggleSubscription('hair-subscription')">
+              <div class="flex items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" viewBox="0 0 20 20" fill="currentColor" style="color: #4F46E5;">
+                  <path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd" />
+                </svg>
+                <span class="font-medium text-sm">Hair Loss Plan</span>
+              </div>
+              <div class="flex items-center">
+                <span class="text-sm mr-2">$49/month</span>
+                <svg id="hair-subscription-icon" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                  <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+                </svg>
+              </div>
+            </button>
+            
+            <div id="hair-subscription" class="subscription-details mt-3">
+              <div class="p-3 bg-gray-50 rounded-lg">
+                <div class="flex justify-between items-center mb-3">
+                  <div>
+                    <span class="text-xs text-gray-500">Next Payment</span>
+                    <p class="font-medium text-sm">June 1, 2025</p>
+                  </div>
+                </div>
+                
+                <div class="mb-3">
+                  <span class="text-xs text-gray-500">Plan Includes</span>
+                  <ul class="mt-1 space-y-1">
+                    <li class="text-xs flex items-start">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 text-indigo-500 mr-1 mt-0.5 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                      </svg>
+                      Monthly supply of Finasteride & Minoxidil
+                    </li>
+                    <li class="text-xs flex items-start">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 text-indigo-500 mr-1 mt-0.5 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                      </svg>
+                      Quarterly scalp check-ins
+                    </li>
+                  </ul>
+                </div>
+                
+                <button class="w-full py-1.5 text-xs font-medium text-indigo-800 bg-white rounded-full border border-indigo-200">
+                  Manage Plan
+                </button>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Action Items -->

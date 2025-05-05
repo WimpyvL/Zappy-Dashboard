@@ -82,11 +82,8 @@ const PatientServicesPage = () => {
       </button>
       <style>{customStyles}</style>
       
-      {/* Status Bar */}
-      <div className="h-8 bg-gray-800"></div>
-      
       {/* Header Section */}
-      <div className="bg-teal-600 px-4 py-4">
+      <div className="bg-teal-500 px-4 pt-6 pb-8 rounded-b-3xl relative shadow-md">
         <div className="flex justify-between items-center mb-3">
           <div>
             <h1 className="text-xl font-bold text-white">{greeting}, {user?.first_name || 'James'}</h1>

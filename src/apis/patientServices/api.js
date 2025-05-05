@@ -285,68 +285,83 @@ export const fetchServiceMedications = async (patientId, serviceType) => {
     throw new Error('Patient ID and Service Type are required');
   }
 
-  // In a real implementation, this would fetch from a medications table
-  // For now, we'll return mock data based on the service type
-  const mockMedications = {
-    'hair-loss': [
-      {
-        id: 'fin-1mg',
-        name: 'Finasteride 1mg',
-        instructions: 'Take 1 tablet daily',
-        imageUrl: 'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80',
-        refillStatus: 'available',
-        lastRefill: '2025-04-15',
-        nextRefill: '2025-05-15'
-      },
-      {
-        id: 'min-5',
-        name: 'Minoxidil 5% Solution',
-        instructions: 'Apply 1ml to affected areas twice daily',
-        imageUrl: 'https://images.unsplash.com/photo-1587854692152-cbe660dbde88?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80',
-        refillStatus: 'available',
-        lastRefill: '2025-04-15',
-        nextRefill: '2025-05-15'
-      }
-    ],
-    'weight-management': [
-      {
-        id: 'sem-025',
-        name: 'Semaglutide Injection',
-        instructions: 'Inject 0.25mg once weekly',
-        imageUrl: 'https://images.unsplash.com/photo-1471864190281-a93a3070b6de?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80',
-        refillStatus: 'available',
-        lastRefill: '2025-04-20',
-        nextRefill: '2025-05-20'
-      },
-      {
-        id: 'multi-1',
-        name: 'Multivitamin',
-        instructions: 'Take 1 tablet daily with food',
-        imageUrl: 'https://images.unsplash.com/photo-1576186726115-4d51596775d1?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80',
-        refillStatus: 'available',
-        lastRefill: '2025-04-10',
-        nextRefill: '2025-05-10'
-      }
-    ],
-    'ed-treatment': [
-      {
-        id: 'sild-50',
-        name: 'Sildenafil 50mg',
-        instructions: 'Take 1 tablet as needed, 1 hour before activity',
-        imageUrl: 'https://images.unsplash.com/photo-1626015435409-b6b2b479c291?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80',
-        refillStatus: 'available',
-        lastRefill: '2025-04-05',
-        nextRefill: '2025-05-05'
-      }
-    ]
-  };
+  // First, find the service ID for the given service type
+  const { data: services, error: serviceError } = await supabase
+    .from('services')
+    .select('id')
+    .eq('service_type', serviceType)
+    .single();
 
-  // Simulate API delay
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      resolve(mockMedications[serviceType] || []);
-    }, 500);
-  });
+  if (serviceError) {
+    throw serviceError;
+  }
+
+  if (!services) {
+    throw new Error(`Service with type ${serviceType} not found`);
+  }
+
+  // Find the patient's enrollment for this service
+  const { data: enrollment, error: enrollmentError } = await supabase
+    .from('patient_service_enrollments')
+    .select('id')
+    .eq('patient_id', patientId)
+    .eq('service_id', services.id)
+    .eq('status', 'active')
+    .single();
+
+  if (enrollmentError && enrollmentError.code !== 'PGRST116') {
+    throw enrollmentError;
+  }
+
+  // If patient is not enrolled, return empty array
+  if (!enrollment) {
+    return [];
+  }
+
+  // Fetch medications for this enrollment
+  const { data: medications, error: medicationsError } = await supabase
+    .from('patient_medications')
+    .select(`
+      id,
+      name,
+      instructions,
+      image_url,
+      refill_status,
+      last_refill,
+      next_refill,
+      dosage,
+      frequency,
+      side_effects,
+      warnings,
+      provider_notes,
+      is_eligible_for_refill,
+      refill_eligibility_reason
+    `)
+    .eq('patient_id', patientId)
+    .eq('service_enrollment_id', enrollment.id)
+    .order('name');
+
+  if (medicationsError) {
+    throw medicationsError;
+  }
+
+  // Transform the data to match the expected format
+  return (medications || []).map(med => ({
+    id: med.id,
+    name: med.name,
+    instructions: med.instructions,
+    imageUrl: med.image_url,
+    refillStatus: med.refill_status,
+    lastRefill: med.last_refill,
+    nextRefill: med.next_refill,
+    dosage: med.dosage,
+    frequency: med.frequency,
+    sideEffects: med.side_effects,
+    warnings: med.warnings,
+    providerNotes: med.provider_notes,
+    isEligibleForRefill: med.is_eligible_for_refill,
+    refillEligibilityReason: med.refill_eligibility_reason
+  }));
 };
 
 /**
@@ -360,75 +375,75 @@ export const fetchServiceActionItems = async (patientId, serviceType) => {
     throw new Error('Patient ID and Service Type are required');
   }
 
-  // In a real implementation, this would fetch from an action items table
-  // For now, we'll return mock data based on the service type
-  const mockActionItems = {
-    'hair-loss': [
-      {
-        id: 'scalp-checkin',
-        title: 'Scalp Check-in',
-        description: 'Take photos of your scalp to track progress',
-        icon: 'camera',
-        buttonText: 'Start',
-        dueDate: '2025-05-10',
-        status: 'pending'
-      },
-      {
-        id: 'monthly-assessment',
-        title: 'Monthly Assessment',
-        description: 'Complete your monthly hair loss questionnaire',
-        icon: 'assessment',
-        buttonText: 'Complete',
-        dueDate: '2025-05-15',
-        status: 'pending'
-      }
-    ],
-    'weight-management': [
-      {
-        id: 'weekly-weighin',
-        title: 'Weekly Weigh-in',
-        description: 'Record your weight to track progress',
-        icon: 'weight',
-        buttonText: 'Log Weight',
-        dueDate: '2025-05-05',
-        status: 'pending'
-      },
-      {
-        id: 'food-journal',
-        title: 'Food Journal',
-        description: 'Log your meals for the day',
-        icon: 'food',
-        buttonText: 'Start',
-        dueDate: '2025-05-02',
-        status: 'pending'
-      }
-    ],
-    'ed-treatment': [
-      {
-        id: 'treatment-effectiveness',
-        title: 'Treatment Effectiveness',
-        description: 'Complete a brief survey about your experience',
-        icon: 'assessment',
-        buttonText: 'Complete',
-        dueDate: '2025-05-20',
-        status: 'pending'
-      },
-      {
-        id: 'bp-check',
-        title: 'Blood Pressure Check',
-        description: 'Record your blood pressure readings',
-        icon: 'health',
-        buttonText: 'Log BP',
-        dueDate: '2025-05-12',
-        status: 'pending'
-      }
-    ]
-  };
+  // First, find the service ID for the given service type
+  const { data: services, error: serviceError } = await supabase
+    .from('services')
+    .select('id')
+    .eq('service_type', serviceType)
+    .single();
 
-  // Simulate API delay
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      resolve(mockActionItems[serviceType] || []);
-    }, 500);
-  });
+  if (serviceError) {
+    throw serviceError;
+  }
+
+  if (!services) {
+    throw new Error(`Service with type ${serviceType} not found`);
+  }
+
+  // Find the patient's enrollment for this service
+  const { data: enrollment, error: enrollmentError } = await supabase
+    .from('patient_service_enrollments')
+    .select('id')
+    .eq('patient_id', patientId)
+    .eq('service_id', services.id)
+    .eq('status', 'active')
+    .single();
+
+  if (enrollmentError && enrollmentError.code !== 'PGRST116') {
+    throw enrollmentError;
+  }
+
+  // If patient is not enrolled, return empty array
+  if (!enrollment) {
+    return [];
+  }
+
+  // Fetch action items for this enrollment
+  const { data: actionItems, error: actionItemsError } = await supabase
+    .from('patient_action_items')
+    .select(`
+      id,
+      title,
+      description,
+      icon,
+      button_text,
+      due_date,
+      status,
+      last_completed,
+      frequency,
+      priority,
+      provider_notes
+    `)
+    .eq('patient_id', patientId)
+    .eq('service_enrollment_id', enrollment.id)
+    .order('due_date');
+
+  if (actionItemsError) {
+    throw actionItemsError;
+  }
+
+  // Transform the data to match the expected format
+  return (actionItems || []).map(item => ({
+    id: item.id,
+    title: item.title,
+    description: item.description,
+    icon: item.icon,
+    buttonText: item.button_text,
+    dueDate: item.due_date,
+    status: item.status,
+    lastCompleted: item.last_completed,
+    frequency: item.frequency,
+    priority: item.priority,
+    providerNotes: item.provider_notes
+  }));
 };

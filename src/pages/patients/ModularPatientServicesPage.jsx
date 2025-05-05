@@ -7,6 +7,8 @@ import useToast from '../../hooks/useToast';
 import PatientServicesEmptyState from './PatientServicesEmptyState';
 import Modal from '../../components/ui/Modal';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
+import MedicationInstructionsModal from '../../components/patient/MedicationInstructionsModal';
+import WeightConfirmationModal from '../../components/patient/WeightConfirmationModal';
 
 /**
  * ModularPatientServicesPage - A category-first approach to displaying patient services
@@ -22,6 +24,22 @@ const ModularPatientServicesPage = () => {
   const [greeting, setGreeting] = useState('Good morning');
   const [selectedService, setSelectedService] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  
+  // State for medication instructions modal
+  const [medicationModalOpen, setMedicationModalOpen] = useState(false);
+  const [selectedMedication, setSelectedMedication] = useState(null);
+  
+  // Handler for viewing medication instructions
+  const handleViewMedicationInstructions = (medication) => {
+    setSelectedMedication(medication);
+    setMedicationModalOpen(true);
+  };
+  
+  // Handler for closing medication instructions modal
+  const handleCloseMedicationModal = () => {
+    setMedicationModalOpen(false);
+    setSelectedMedication(null);
+  };
 
   // Set greeting based on time of day
   useEffect(() => {
@@ -151,9 +169,33 @@ const ModularPatientServicesPage = () => {
     serviceRecommendations
   ]);
 
+  // State for cart
+  const [cartCount, setCartCount] = useState(0);
+  const [isAddingToCart, setIsAddingToCart] = useState(false);
+  
   // Handler functions
-  const handleAddProduct = (product) => {
-    showToast('success', `${product.name} added to cart`);
+  const handleAddProduct = async (product, service) => {
+    try {
+      setIsAddingToCart(true);
+      
+      // In a real implementation, this would save to the database
+      // await cartApi.addToCart({
+      //   productId: product.id,
+      //   quantity: 1,
+      //   userId: user.id,
+      //   price: product.price // Store the displayed price to ensure consistency
+      // });
+      
+      // Update cart count in UI
+      setCartCount(prevCount => prevCount + 1);
+      
+      showToast('success', `${product.name} added to cart`);
+    } catch (error) {
+      console.error('Error adding product to cart:', error);
+      showToast('error', 'Failed to add product to cart. Please try again.');
+    } finally {
+      setIsAddingToCart(false);
+    }
   };
   
   const handleCheckIn = () => {
@@ -178,8 +220,80 @@ const ModularPatientServicesPage = () => {
     showToast('info', 'Taking progress photos');
   };
   
-  const handleLogWeight = () => {
+  // State for weight logging
+  const [weightModalOpen, setWeightModalOpen] = useState(false);
+  const [weight, setWeight] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  // State for weight confirmation modal
+  const [weightConfirmationOpen, setWeightConfirmationOpen] = useState(false);
+  const [previousWeight, setPreviousWeight] = useState(null);
+  const [goalWeight, setGoalWeight] = useState(180); // Example goal weight
+  
+  const handleLogWeight = (action, service) => {
+    // Open weight input modal
+    setWeightModalOpen(true);
+  };
+  
+  const submitWeight = async () => {
+    if (!weight || isNaN(parseFloat(weight))) {
+      showToast('error', 'Please enter a valid weight');
+      return;
+    }
+    
+    try {
+      setIsSubmitting(true);
+      
+      // In a real implementation, this would save to the database and get the previous weight
+      // const response = await patientServicesApi.logPatientWeight(user.id, weight, new Date().toISOString());
+      // const previousWeight = response.previousWeight;
+      
+      // For demo purposes, we'll simulate a previous weight
+      const previousWeightValue = 195.5; // This would come from the API in a real implementation
+      setPreviousWeight(previousWeightValue);
+      
+      // Update local state to reflect the change
+      const updatedServices = [...processedServices];
+      const weightServiceIndex = updatedServices.findIndex(s => s.type === 'weight-management');
+      
+      if (weightServiceIndex >= 0) {
+        const service = updatedServices[weightServiceIndex];
+        if (service.actionItems) {
+          const actionItemIndex = service.actionItems.findIndex(item => item.icon === 'weight');
+          
+          if (actionItemIndex >= 0) {
+            service.actionItems[actionItemIndex] = {
+              ...service.actionItems[actionItemIndex],
+              lastCompleted: new Date().toISOString(),
+              status: 'completed'
+            };
+          }
+        }
+      }
+      
+      setProcessedServices(updatedServices);
+      setWeightModalOpen(false);
+      
+      // Show the weight confirmation modal
+      setWeightConfirmationOpen(true);
+    } catch (error) {
+      console.error('Error logging weight:', error);
+      showToast('error', 'Failed to save weight data. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+  
+  // Handler for closing weight confirmation modal
+  const handleCloseWeightConfirmation = () => {
+    setWeightConfirmationOpen(false);
+    setWeight('');
     showToast('success', 'Weight logged successfully');
+  };
+  
+  const handleCloseWeightModal = () => {
+    setWeightModalOpen(false);
+    setWeight('');
   };
   
   const handleViewPlanDetails = (service) => {
@@ -218,30 +332,99 @@ const ModularPatientServicesPage = () => {
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 bg-gray-50 min-h-screen">
+    <div className="max-w-md mx-auto sm:max-w-lg md:max-w-2xl lg:max-w-4xl bg-gray-50 min-h-screen pb-20">
       {/* Header Section */}
-      <div className="flex justify-between items-center mb-6">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">My Health Services</h1>
-          <p className="text-gray-500">Manage all your health services in one place</p>
+      <div className="bg-teal-500 px-4 pt-6 pb-8 rounded-b-3xl relative shadow-md">
+        <div className="flex justify-between items-center mb-3">
+          <div>
+            <h1 className="text-2xl font-bold text-white">My Health Services</h1>
+            <p className="text-teal-100 text-sm">Manage all your health services in one place</p>
+          </div>
+          <div className="flex items-center space-x-3">
+            <div className="relative">
+              <button 
+                className="w-10 h-10 rounded-full bg-white bg-opacity-20 flex items-center justify-center"
+                onClick={() => navigate('/cart')}
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+                </svg>
+                {cartCount > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
+                    {cartCount}
+                  </span>
+                )}
+              </button>
+            </div>
+            <div className="w-10 h-10 rounded-full bg-white bg-opacity-20 flex items-center justify-center">
+              <svg className="h-5 w-5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                <circle cx="12" cy="7" r="4"></circle>
+              </svg>
+            </div>
+          </div>
         </div>
-        <div className="text-right">
-          <p className="text-lg font-medium">{greeting}, {user?.first_name || 'there'}</p>
+        <p className="text-teal-100 text-sm">{greeting}, {user?.first_name || 'there'}</p>
+      </div>
+      
+      <div className="px-4 pt-6">
+        {/* Services Section */}
+        <div className="space-y-8">
+          <ModularServiceInterface 
+            services={processedServices} 
+            onViewPlanDetails={handleViewPlanDetails}
+            onMessageProvider={handleMessageProvider}
+            onOrderRefills={() => showToast('info', 'Navigating to refill page')}
+            onLogWeight={handleLogWeight}
+            onTakePhotos={handleTakePhotos}
+            onAddProduct={handleAddProduct}
+            onViewMedicationInstructions={handleViewMedicationInstructions}
+          />
         </div>
       </div>
 
-      {/* Services Section */}
-      <div className="space-y-8">
-        <ModularServiceInterface 
-          services={processedServices} 
-          onViewPlanDetails={handleViewPlanDetails}
-          onMessageProvider={handleMessageProvider}
-          onOrderRefills={() => showToast('info', 'Navigating to refill page')}
-          onLogWeight={handleLogWeight}
-          onTakePhotos={handleTakePhotos}
-          onAddProduct={handleAddProduct}
-        />
-      </div>
+      {/* Weight Logging Modal */}
+      <Modal
+        isOpen={weightModalOpen}
+        onClose={handleCloseWeightModal}
+        title="Log Your Weight"
+        size="sm"
+      >
+        <div className="p-4">
+          <div className="mb-4">
+            <label htmlFor="weight" className="block text-sm font-medium text-gray-700 mb-1">
+              Enter your weight (lbs)
+            </label>
+            <input
+              type="number"
+              id="weight"
+              value={weight}
+              onChange={(e) => setWeight(e.target.value)}
+              className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+              placeholder="Enter weight in pounds"
+              min="1"
+              max="999"
+            />
+          </div>
+          
+          <div className="flex justify-end mt-6">
+            <button 
+              onClick={handleCloseWeightModal}
+              className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-200 mr-2"
+              disabled={isSubmitting}
+            >
+              Cancel
+            </button>
+            <button 
+              onClick={submitWeight}
+              className="px-4 py-2 bg-blue-500 text-white rounded-lg text-sm font-medium hover:bg-blue-600"
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? 'Saving...' : 'Save Weight'}
+            </button>
+          </div>
+        </div>
+      </Modal>
 
       {/* Subscription Plan Modal */}
       {selectedService && (
@@ -323,6 +506,22 @@ const ModularPatientServicesPage = () => {
           </div>
         </Modal>
       )}
+      
+      {/* Medication Instructions Modal */}
+      <MedicationInstructionsModal
+        isOpen={medicationModalOpen}
+        onClose={handleCloseMedicationModal}
+        medication={selectedMedication}
+      />
+      
+      {/* Weight Confirmation Modal */}
+      <WeightConfirmationModal
+        isOpen={weightConfirmationOpen}
+        onClose={handleCloseWeightConfirmation}
+        weight={parseFloat(weight)}
+        previousWeight={previousWeight}
+        goalWeight={goalWeight}
+      />
     </div>
   );
 };

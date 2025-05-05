@@ -64,8 +64,9 @@ const PatientHomePage = () => {
       <style>
         {styles.horizontalScroll}
       </style>
+      
       {/* Header Section */}
-      <div className="bg-teal-600 px-4 pt-6 pb-6 rounded-b-xl relative shadow-md">
+      <div className="bg-teal-500 px-4 pt-6 pb-8 rounded-b-3xl relative shadow-md">
         <div className="flex justify-between items-center mb-1">
           <div>
             <h1 className="text-xl font-bold text-white">Hey {user?.first_name || 'Michel'}!</h1>

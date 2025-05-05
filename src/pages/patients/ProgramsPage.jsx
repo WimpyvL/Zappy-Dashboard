@@ -47,9 +47,6 @@ const ProgramsPage = () => {
     <div className="max-w-md mx-auto sm:max-w-lg md:max-w-2xl lg:max-w-4xl bg-gray-50 min-h-screen pb-20">
       <style>{customStyles}</style>
       
-      {/* Status Bar */}
-      <div className="h-8 bg-gray-800"></div>
-      
       {/* Header */}
       <div className="bg-teal-500 px-4 pt-6 pb-8 rounded-b-3xl relative shadow-md">
         <div className="flex justify-between items-center mb-5">

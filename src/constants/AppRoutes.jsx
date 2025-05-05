@@ -92,6 +92,7 @@ import SubscriptionPlansPage from '../pages/admin/SubscriptionPlansPage';
 import PatientSubscriptionPage from '../pages/patients/PatientSubscriptionPage';
 import ProductSubscriptionManagement from '../pages/admin/ProductSubscriptionManagement';
 import ResourceManagementPage from '../pages/admin/ResourceManagementPage';
+import CartPage from '../pages/cart/CartPage'; // Import the new CartPage
 
 // Paths constants
 import { paths } from './paths.js';
@@ -557,6 +558,16 @@ const AppRoutes = () => {
         element={
           <MainLayout>
             <PaymentMethodsPage />
+          </MainLayout>
+        }
+      />
+      
+      {/* Cart Page Route */}
+      <Route
+        path="/cart" // Define the path for the cart page
+        element={
+          <MainLayout>
+            <CartPage />
           </MainLayout>
         }
       />

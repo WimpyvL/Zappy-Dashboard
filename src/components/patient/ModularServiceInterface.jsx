@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { memo } from 'react';
 import { LucideScissors, LucideScale, LucidePill, LucideShield, LucideMessageSquare, LucideShoppingCart, LucideCamera, LucideClipboardCheck, LucideUtensils, LucideHeartPulse } from 'lucide-react';
+import './ModularServiceInterface.css';
 
 /**
  * ModularServiceInterface - A component for displaying patient services in a modular interface
@@ -15,7 +16,8 @@ const ModularServiceInterface = ({
   onOrderRefills = () => {},
   onLogWeight = () => {},
   onTakePhotos = () => {},
-  onAddProduct = () => {}
+  onAddProduct = () => {},
+  onViewMedicationInstructions = () => {}
 }) => {
   // Map service type to icon and color scheme
   const serviceConfig = {
@@ -114,13 +116,31 @@ const ModularServiceInterface = ({
                           <h4 className="text-base font-medium">{medication.name}</h4>
                           <p className="text-sm text-gray-500">{medication.instructions}</p>
                           <div className="mt-2 flex">
-                            <button className="text-sm font-medium hover:underline" 
-                                    style={{ color: config.colors.primary }}>
+                            <button 
+                              className="text-sm font-medium hover:underline" 
+                              style={{ color: config.colors.primary }}
+                              onClick={() => onViewMedicationInstructions(medication)}
+                            >
                               View Instructions
                             </button>
                             <span className="mx-2 text-gray-300">|</span>
-                            <button className="text-sm font-medium hover:underline" 
-                                    style={{ color: config.colors.primary }}>
+                            <button 
+                              className="text-sm font-medium hover:underline" 
+                              style={{ color: config.colors.primary }}
+                              onClick={() => {
+                                // Check eligibility before showing refill UI
+                                const isEligible = medication.isEligibleForRefill !== false;
+                                if (isEligible) {
+                                  console.log('Refill medication:', medication.name);
+                                  onOrderRefills(service);
+                                } else {
+                                  console.log('Not eligible for refill:', medication.name);
+                                  // This would typically show a toast with the reason
+                                  const reason = medication.refillEligibilityReason || 'Too soon for refill';
+                                  alert(`Not eligible for refill: ${reason}`);
+                                }
+                              }}
+                            >
                               Refill
                             </button>
                           </div>
@@ -147,7 +167,7 @@ const ModularServiceInterface = ({
                         const ActionIcon = actionIcons[action.icon] || LucideClipboardCheck;
                         
                         return (
-                          <div key={actionIndex} className="flex items-center justify-between p-3 rounded-lg border" 
+                          <div key={actionIndex} className="action-item flex items-center justify-between p-3 rounded-lg border" 
                                style={{ backgroundColor: config.colors.light, borderColor: config.colors.border }}>
                             <div className="flex items-center">
                               <div className="w-8 h-8 rounded-full flex items-center justify-center mr-3" 

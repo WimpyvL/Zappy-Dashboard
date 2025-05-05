@@ -25,7 +25,6 @@ import {
   Calendar,
   Loader2,
 } from 'lucide-react';
-import ChildishDrawingElement from '../../components/ui/ChildishDrawingElement';
 
 // Custom Spinner component using primary color
 const Spinner = () => (
@@ -295,9 +294,6 @@ const Orders = () => {
 
   return (
     <div className="relative overflow-hidden pb-10">
-      <ChildishDrawingElement type="doodle" color="accent2" position="top-right" size={100} rotation={10} opacity={0.1} />
-      <ChildishDrawingElement type="scribble" color="accent4" position="bottom-left" size={120} rotation={-5} opacity={0.1} />
-
       <div className="flex justify-between items-center mb-6 relative z-10">
         <h1 className="text-2xl font-bold text-gray-800">Orders</h1>
         <button

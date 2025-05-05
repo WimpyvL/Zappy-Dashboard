@@ -18,7 +18,6 @@ import ConsultationFilters from './components/ConsultationFilters';
 import PatientSelectionModal from './components/PatientSelectionModal';
 import EmailPatientModal from './components/EmailPatientModal';
 import InitialConsultationNotes from './InitialConsultationNotes'; // Still used fullscreen/modal
-import ChildishDrawingElement from '../../components/ui/ChildishDrawingElement';
 
 const InitialConsultations = () => {
   // --- State ---
@@ -188,9 +187,6 @@ const InitialConsultations = () => {
   // --- Render ---
   return (
     <div className="relative overflow-hidden pb-10">
-      <ChildishDrawingElement type="watercolor" color="accent2" position="top-right" size={120} rotation={-10} opacity={0.1} />
-      <ChildishDrawingElement type="doodle" color="accent4" position="bottom-left" size={100} rotation={15} opacity={0.1} />
-
       <div className="flex justify-between items-center mb-6 relative z-10">
         <h1 className="text-2xl font-bold text-gray-800">Initial Consultations</h1>
         <button

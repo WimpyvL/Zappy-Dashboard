@@ -10,7 +10,6 @@ import {
   AlertCircle,
   Loader,
 } from 'lucide-react';
-import ChildishDrawingElement from '../../components/ui/ChildishDrawingElement'; // Import drawing element
 import {
   useCreateDiscount,
   useDeleteDiscount,
@@ -241,10 +240,6 @@ const DiscountManagement = () => {
 
   return (
     <div className="relative overflow-hidden pb-10"> {/* Add relative positioning and padding */}
-      {/* Add childish drawing elements */}
-      <ChildishDrawingElement type="scribble" color="accent2" position="top-right" size={110} rotation={-5} opacity={0.1} />
-      <ChildishDrawingElement type="watercolor" color="accent4" position="bottom-left" size={130} rotation={10} opacity={0.1} />
-
       <div className="flex justify-between items-center mb-6 relative z-10"> {/* Added z-index */}
         <h1 className="text-2xl font-bold text-gray-800">
           Discount Management

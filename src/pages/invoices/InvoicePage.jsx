@@ -3,7 +3,6 @@ import { Link } from 'react-router-dom';
 import { Select } from 'antd';
 import { usePatients } from '../../apis/patients/hooks';
 import { useInvoices, useCreateInvoice } from '../../apis/invoices/hooks';
-import ChildishDrawingElement from '../../components/ui/ChildishDrawingElement'; // Import drawing element
 import { toast } from 'react-toastify'; // Import toast for potential errors
 
 // Helper function to format date
@@ -224,9 +223,6 @@ const InvoicePage = () => {
 
   return (
     <div className="relative overflow-hidden pb-10">
-      <ChildishDrawingElement type="watercolor" color="accent3" position="top-right" size={100} rotation={-15} opacity={0.1} />
-      <ChildishDrawingElement type="doodle" color="accent1" position="bottom-left" size={110} rotation={5} opacity={0.1} />
-
       <div className="flex justify-between items-center mb-6 relative z-10">
         <h1 className="text-2xl font-bold text-gray-800">Invoices</h1>
         <button

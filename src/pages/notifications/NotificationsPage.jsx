@@ -5,7 +5,6 @@ import {
   FileText, Pill, CreditCard, Settings, ChevronRight, 
   Trash2, Filter, CheckCheck // Removed unused Clock, X
 } from 'lucide-react';
-import ChildishDrawingElement from '../../components/ui/ChildishDrawingElement';
 import { format } from 'date-fns'; // Removed unused formatDistanceToNow
 
 // Helper function to get icon based on notification type
@@ -397,10 +396,6 @@ const NotificationsPage = () => {
 
   return (
     <div className="container mx-auto px-4 py-6 relative overflow-hidden pb-10">
-      {/* Decorative elements */}
-      <ChildishDrawingElement type="watercolor" color="accent1" position="top-right" size={180} rotation={-10} />
-      <ChildishDrawingElement type="doodle" color="accent4" position="bottom-left" size={150} rotation={15} />
-      
       {/* Page Header */}
       <div className="border-b border-gray-200 pb-4 mb-6">
         <h1 className="text-2xl font-bold text-gray-900">Notifications</h1>

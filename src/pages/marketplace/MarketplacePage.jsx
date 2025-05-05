@@ -12,7 +12,6 @@ import {
   Tag,
 } from 'lucide-react';
 import { message, Tabs } from 'antd';
-import ChildishDrawingElement from '../../components/ui/ChildishDrawingElement';
 
 // Mock product data
 const mockProducts = [
@@ -569,10 +568,6 @@ const MarketplacePage = () => {
 
   return (
     <div className="container mx-auto px-4 py-6 relative overflow-hidden pb-10">
-      {/* Decorative elements */}
-      <ChildishDrawingElement type="scribble" color="accent2" position="top-right" size={150} rotation={-10} opacity={0.1} />
-      <ChildishDrawingElement type="watercolor" color="accent1" position="bottom-left" size={180} rotation={20} opacity={0.15} />
-      
       {/* Page Header */}
       <div className="border-b border-gray-200 pb-4 mb-6">
         <h1 className="text-2xl font-bold text-gray-900">Marketplace</h1>

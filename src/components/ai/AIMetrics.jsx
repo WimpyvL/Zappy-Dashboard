@@ -1,7 +1,6 @@
 import React from 'react';
 import { useAIMetrics } from '../../apis/ai/hooks';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
-import { RefreshCw } from 'lucide-react';
+import { RefreshCw, BarChart, PieChart } from 'lucide-react';
 import LoadingSpinner from '../ui/LoadingSpinner';
 
 /**
@@ -97,30 +96,36 @@ const AIMetrics = () => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Category Distribution */}
         <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="text-lg font-medium mb-4">Usage by Category</h3>
+          <h3 className="text-lg font-medium mb-4 flex items-center">
+            <PieChart className="h-5 w-5 mr-2 text-accent3" />
+            Usage by Category
+          </h3>
           
           {categoryData.length > 0 ? (
-            <div className="h-64">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={categoryData}
-                    cx="50%"
-                    cy="50%"
-                    labelLine={false}
-                    outerRadius={80}
-                    fill="#8884d8"
-                    dataKey="value"
-                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                  >
-                    {categoryData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip formatter={(value) => [`${value} calls`, 'Usage']} />
-                  <Legend />
-                </PieChart>
-              </ResponsiveContainer>
+            <div className="h-64 overflow-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Usage</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Percentage</th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {categoryData.map((category, index) => {
+                    const total = categoryData.reduce((sum, item) => sum + item.value, 0);
+                    const percentage = ((category.value / total) * 100).toFixed(1);
+                    
+                    return (
+                      <tr key={`category-${index}`}>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{category.name}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{category.value} calls</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{percentage}%</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
             </div>
           ) : (
             <div className="h-64 flex items-center justify-center text-gray-500">
@@ -131,24 +136,31 @@ const AIMetrics = () => {
         
         {/* Daily Usage */}
         <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="text-lg font-medium mb-4">Daily Usage (Last 14 Days)</h3>
+          <h3 className="text-lg font-medium mb-4 flex items-center">
+            <BarChart className="h-5 w-5 mr-2 text-accent1" />
+            Daily Usage (Last 14 Days)
+          </h3>
           
           {dailyData.length > 0 ? (
-            <div className="h-64">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={dailyData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="date" tickFormatter={formatDate} />
-                  <YAxis />
-                  <Tooltip 
-                    formatter={(value, name) => [value, name === 'count' ? 'API Calls' : 'Tokens']}
-                    labelFormatter={(label) => `Date: ${formatDate(label)}`}
-                  />
-                  <Legend />
-                  <Bar dataKey="count" name="API Calls" fill="#4F46E5" />
-                  <Bar dataKey="tokens" name="Tokens" fill="#F85C5C" />
-                </BarChart>
-              </ResponsiveContainer>
+            <div className="h-64 overflow-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">API Calls</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tokens</th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {dailyData.map((day, index) => (
+                    <tr key={`day-${index}`}>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{formatDate(day.date)}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{day.count}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{day.tokens}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           ) : (
             <div className="h-64 flex items-center justify-center text-gray-500">

@@ -69,18 +69,20 @@ const MainLayout = ({ children }) => {
       {/* Shopping Cart drawer */}
       <ShoppingCart isOpen={isCartOpen} onClose={toggleCart} />
 
-      {/* Bottom Navigation for mobile-focused pages */}
+      {/* Bottom Navigation for mobile-focused pages - hidden on desktop */}
       {isMobilePage && (
-        <BottomNavigation 
-          activePage={getActivePage()}
-          notifications={{
-            home: 0,
-            care: 0,
-            programs: 0,
-            shop: 0,
-            learn: 0
-          }}
-        />
+        <div className="md:hidden">
+          <BottomNavigation 
+            activePage={getActivePage()}
+            notifications={{
+              home: 0,
+              care: 0,
+              programs: 0,
+              shop: 0,
+              learn: 0
+            }}
+          />
+        </div>
       )}
       
       {/* Legacy Patient Bottom Navigation for non-mobile-focused pages */}

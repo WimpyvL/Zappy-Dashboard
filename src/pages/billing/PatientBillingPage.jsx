@@ -7,7 +7,6 @@ import {
   Loader2, AlertTriangle, FileText, CheckCircle, 
   Clock, Download, Award // Removed unused CreditCard
 } from 'lucide-react';
-import ChildishDrawingElement from '../../components/ui/ChildishDrawingElement'; // Import drawing element
 
 // Helper function to format date
 const formatDate = (dateString) => {
@@ -84,9 +83,6 @@ const PatientBillingPage = () => {
 
   return (
     <div className="container mx-auto px-4 py-6 relative overflow-hidden pb-10">
-      {/* Decorative elements */}
-      <ChildishDrawingElement type="watercolor" color="accent1" position="top-right" size={150} rotation={-10} opacity={0.2} />
-      
       {/* Page Header */}
       <div className="border-b border-gray-200 pb-4 mb-6">
         <h1 className="text-2xl font-bold text-gray-900">My Plan</h1>

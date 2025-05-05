@@ -16,6 +16,7 @@ import {
   MessageSquare,
   History,
   Map,
+  Sparkles, // For AI Dashboard
   // Patient view icons
   LayoutDashboard as PatientDashboardIcon,
   // User as PatientProfileIcon, // Removed unused
@@ -140,6 +141,13 @@ export const sidebarItems = [
     path: '/admin/resources',
     icon: BookOpen,
     color: 'accent3',
+    isAdmin: true,
+  },
+  {
+    title: 'AI Dashboard',
+    path: '/admin/ai-dashboard',
+    icon: Sparkles,
+    color: 'accent4',
     isAdmin: true,
   },
 ];

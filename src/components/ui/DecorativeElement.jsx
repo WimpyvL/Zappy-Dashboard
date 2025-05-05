@@ -1,7 +1,7 @@
 import React from 'react';
 
 /**
- * A decorative component that renders childish drawing elements
+ * A decorative component that renders visual elements
  * to add a friendly, approachable feel to the UI
  * 
  * @param {Object} props
@@ -12,7 +12,7 @@ import React from 'react';
  * @param {number} props.rotation - Rotation in degrees
  * @param {number} props.opacity - Opacity value (0-1)
  */
-const ChildishDrawingElement = ({ 
+const DecorativeElement = ({ 
   type = 'scribble', 
   color = 'accent1',
   position = 'top-right',
@@ -122,4 +122,4 @@ const ChildishDrawingElement = ({
   );
 };
 
-export default ChildishDrawingElement;
+export default DecorativeElement;

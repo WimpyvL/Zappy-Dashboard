@@ -1,15 +1,12 @@
 import React from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom'; // Removed unused Link
+import { Routes, Route, Navigate } from 'react-router-dom';
 
 // Layout wrapper
 import MainLayout from '../layouts/MainLayout.jsx';
-// import ProtectedRoute from "../appGuards/ProtectedRoute.jsx"; // Temporarily commented out
 
 // Authentication pages
 import Login from '../pages/auth/Login.jsx';
 import Signup from '../pages/auth/Signup';
-
-// Dashboard import removed - no longer needed
 
 // Patient components
 import Patients from '../pages/patients/Patients';
@@ -60,10 +57,6 @@ import PatientDashboardPage from '../pages/patients/PatientDashboardPage.jsx'; /
 import PatientHomePage from '../pages/patients/PatientHomePage.jsx'; // Import Patient Home Page
 import ProgramsPage from '../pages/patients/ProgramsPage.jsx'; // Import Programs Page
 import ShopPage from '../pages/patients/ShopPage.jsx'; // Import Shop Page
-// LearnPage import removed
-// DirectPatientHomePage import removed - no longer needed
-// TestPage import removed - no longer needed
-// PatientProgramPage import removed - no longer needed
 import PatientRecordsPage from '../pages/records/PatientRecordsPage.jsx'; // Import Patient Records Page
 import PatientFormsPage from '../pages/forms/PatientFormsPage.jsx'; // Import Patient Forms Page
 import PatientOrderHistoryPage from '../pages/orders/PatientOrderHistoryPage.jsx'; // Import Patient Order History Page
@@ -92,6 +85,7 @@ import SubscriptionPlansPage from '../pages/admin/SubscriptionPlansPage';
 import PatientSubscriptionPage from '../pages/patients/PatientSubscriptionPage';
 import ProductSubscriptionManagement from '../pages/admin/ProductSubscriptionManagement';
 import ResourceManagementPage from '../pages/admin/ResourceManagementPage';
+import AIDashboardPage from '../pages/admin/AIDashboardPage';
 import CartPage from '../pages/cart/CartPage'; // Import the new CartPage
 
 // Paths constants
@@ -624,6 +618,16 @@ const AppRoutes = () => {
         element={
           <MainLayout>
             <ResourceManagementPage />
+          </MainLayout>
+        }
+      />
+      
+      {/* AI Dashboard Route */}
+      <Route
+        path="/admin/ai-dashboard"
+        element={
+          <MainLayout>
+            <AIDashboardPage />
           </MainLayout>
         }
       />

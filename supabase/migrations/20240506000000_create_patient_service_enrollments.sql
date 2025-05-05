@@ -20,11 +20,22 @@ CREATE INDEX IF NOT EXISTS idx_patient_service_enrollments_service_id ON patient
 CREATE INDEX IF NOT EXISTS idx_patient_service_enrollments_subscription_id ON patient_service_enrollments(subscription_id);
 CREATE INDEX IF NOT EXISTS idx_patient_service_enrollments_status ON patient_service_enrollments(status);
 
+-- Create services table if it doesn't exist
+CREATE TABLE IF NOT EXISTS services (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    name VARCHAR(255) NOT NULL UNIQUE,
+    description TEXT,
+    price DECIMAL(10, 2) DEFAULT 0,
+    category VARCHAR(100),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
 -- Add service_type column to services table if it doesn't exist
 DO $$
 BEGIN
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
-                   WHERE table_name = 'services' AND column_name = 'service_type') THEN
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'services') AND
+       NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'services' AND column_name = 'service_type') THEN
         ALTER TABLE services ADD COLUMN service_type VARCHAR(100);
         
         -- Add comment explaining service_type
@@ -35,8 +46,8 @@ END $$;
 -- Add features column to services table if it doesn't exist
 DO $$
 BEGIN
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
-                   WHERE table_name = 'services' AND column_name = 'features') THEN
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'services') AND
+       NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'services' AND column_name = 'features') THEN
         ALTER TABLE services ADD COLUMN features JSONB DEFAULT '{}'::jsonb;
         
         -- Add comment explaining features
@@ -47,8 +58,8 @@ END $$;
 -- Add resource_categories column to services table if it doesn't exist
 DO $$
 BEGIN
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
-                   WHERE table_name = 'services' AND column_name = 'resource_categories') THEN
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'services') AND
+       NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'services' AND column_name = 'resource_categories') THEN
         ALTER TABLE services ADD COLUMN resource_categories TEXT[] DEFAULT '{}';
         
         -- Add comment explaining resource_categories
@@ -59,8 +70,8 @@ END $$;
 -- Add product_categories column to services table if it doesn't exist
 DO $$
 BEGIN
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
-                   WHERE table_name = 'services' AND column_name = 'product_categories') THEN
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'services') AND
+       NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'services' AND column_name = 'product_categories') THEN
         ALTER TABLE services ADD COLUMN product_categories TEXT[] DEFAULT '{}';
         
         -- Add comment explaining product_categories
@@ -124,8 +135,8 @@ WHERE
 -- Add service_ids array to subscription_plans table if it doesn't exist
 DO $$
 BEGIN
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
-                   WHERE table_name = 'subscription_plans' AND column_name = 'service_ids') THEN
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'subscription_plans') AND
+       NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'subscription_plans' AND column_name = 'service_ids') THEN
         ALTER TABLE subscription_plans ADD COLUMN service_ids UUID[] DEFAULT '{}';
         
         -- Add comment explaining service_ids
@@ -134,9 +145,14 @@ BEGIN
 END $$;
 
 -- Update existing subscription plans to include services (if any exist)
-UPDATE subscription_plans sp
-SET service_ids = ARRAY(
-    SELECT id FROM services 
-    WHERE category = sp.category
-)
-WHERE service_ids IS NULL OR service_ids = '{}';
+DO $$
+BEGIN
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'subscription_plans') THEN
+        UPDATE subscription_plans sp
+        SET service_ids = ARRAY(
+            SELECT id FROM services 
+            WHERE category = sp.category
+        )
+        WHERE service_ids IS NULL OR service_ids = '{}';
+    END IF;
+END $$;

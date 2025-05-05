@@ -51,7 +51,6 @@ import ServiceManagement from '../pages/services/ServiceManagement';
 import DiscountManagement from '../pages/discounts/DiscountManagement';
 import TagManagement from '../pages/tags/TagManagement';
 import FormViewer from '../pages/settings/pages/forms/FormViewer.jsx';
-import ShopPage from '../pages/shop/ShopPage.jsx'; // Import the new ShopPage
 import MarketplacePage from '../pages/marketplace/MarketplacePage.jsx'; // Import the new MarketplacePage
 import MessagingPage from '../pages/messaging/MessagingPage.jsx'; // Import Messaging Page
 import AuditLogPage from '../pages/auditlog/AuditLogPage.jsx'; // Import Audit Log Page
@@ -59,7 +58,9 @@ import SystemMapPage from '../pages/system-map/SystemMapPage.jsx'; // Import Sys
 import PatientNotesPage from '../pages/notes/PatientNotesPage.jsx'; // Import Patient Notes Page
 import PatientDashboardPage from '../pages/patients/PatientDashboardPage.jsx'; // Import Patient Dashboard Page
 import PatientHomePage from '../pages/patients/PatientHomePage.jsx'; // Import Patient Home Page
-import ModularPatientServicesPage from '../pages/patients/ModularPatientServicesPage.jsx'; // Import Modular Patient Services Page
+import ProgramsPage from '../pages/patients/ProgramsPage.jsx'; // Import Programs Page
+import ShopPage from '../pages/patients/ShopPage.jsx'; // Import Shop Page
+// LearnPage import removed
 // DirectPatientHomePage import removed - no longer needed
 // TestPage import removed - no longer needed
 // PatientProgramPage import removed - no longer needed
@@ -69,8 +70,7 @@ import PatientOrderHistoryPage from '../pages/orders/PatientOrderHistoryPage.jsx
 import PatientBillingPage from '../pages/billing/PatientBillingPage.jsx'; // Import Patient Billing Page
 import PatientProfilePage from '../pages/profile/PatientProfilePage.jsx'; // Import Patient Profile Page
 import PatientServicesPage from '../pages/patients/PatientServicesPage.jsx'; // Import Patient Services Page
-import PatientServicesPageV2 from '../pages/patients/PatientServicesPageV2.jsx'; // Import Patient Services Page V2
-import PatientServicesPageV3 from '../pages/patients/PatientServicesPageV3.jsx'; // Import Patient Services Page V3
+import ModularPatientServicesPage from '../pages/patients/ModularPatientServicesPage.jsx'; // Import Modular Patient Services Page
 import EditProfilePage from '../pages/profile/EditProfilePage.jsx'; // Import Edit Profile Page
 import FormsManagementV2 from '../pages/settings/pages/forms-v2/FormsManagementV2.jsx'; // Import Forms V2
 import PaymentMethodsPage from '../pages/payment/PaymentMethodsPage.jsx'; // Import Payment Methods Page
@@ -270,7 +270,7 @@ const AppRoutes = () => {
         }
       />
 
-      {/* Shop Page Route */}
+      {/* Shop Page Route - New UI (replacing Marketplace) */}
       <Route
         path="/shop" // Define the path for the shop page
         element={
@@ -280,14 +280,10 @@ const AppRoutes = () => {
         }
       />
 
-      {/* Marketplace Page Route - Unified shop, programs, and subscriptions */}
+      {/* Redirect Marketplace to Shop */}
       <Route
-        path="/marketplace" 
-        element={
-          <MainLayout>
-            <MarketplacePage />
-          </MainLayout>
-        }
+        path="/marketplace"
+        element={<Navigate to="/shop" replace />}
       />
 
       {/* Messaging Page Route */}
@@ -331,11 +327,33 @@ const AppRoutes = () => {
           </MainLayout>
         }
       />
+      
+      {/* Home Page Route - Redesigned UI (replacing Records) */}
+      <Route
+        path="/home" // Define the path for the home page
+        element={
+          <MainLayout>
+            <PatientHomePage />
+          </MainLayout>
+        }
+      />
+      
+      {/* Programs Page Route - Redesigned UI (replacing Resources) */}
+      <Route
+        path="/programs" // Define the path for the programs page
+        element={
+          <MainLayout>
+            <ProgramsPage />
+          </MainLayout>
+        }
+      />
+      
+      {/* Learn Page Route - Removed */}
 
-      {/* Redirect root to care page */}
+      {/* Redirect root to home page */}
       <Route
         path="/"
-        element={<Navigate to="/care" replace />}
+        element={<Navigate to="/home" replace />}
       />
 
       {/* Test Page Route - Removed */}
@@ -455,7 +473,7 @@ const AppRoutes = () => {
         path="/care" // Define the path for the care page
         element={
           <MainLayout>
-            <PatientServicesPageV3 />
+            <ModularPatientServicesPage />
           </MainLayout>
         }
       />
@@ -471,44 +489,28 @@ const AppRoutes = () => {
         element={<Navigate to="/care" replace />}
       />
 
-      {/* Patient Records Page Route */}
+      {/* Redirect Records to Home */}
       <Route
-        path="/records" // Define the path for the patient records page
-        element={
-          <MainLayout>
-            <PatientRecordsPage />
-          </MainLayout>
-        }
+        path="/records"
+        element={<Navigate to="/home" replace />}
       />
       
-      {/* Patient Records All History Page Route */}
+      {/* Redirect Records All History to Home */}
       <Route
-        path="/records/all" // Define the path for the complete records history
-        element={
-          <MainLayout>
-            <PatientRecordsPage showAllHistory={true} />
-          </MainLayout>
-        }
+        path="/records/all"
+        element={<Navigate to="/home" replace />}
       />
       
-      {/* Resources Page Route */}
+      {/* Redirect Resources to Programs */}
       <Route
         path="/resources"
-        element={
-          <MainLayout>
-            <ResourcesPage />
-          </MainLayout>
-        }
+        element={<Navigate to="/programs" replace />}
       />
       
-      {/* Resource Detail Page Route */}
+      {/* Resource Detail Page Route - Redirected to Programs */}
       <Route
         path="/resources/:id"
-        element={
-          <MainLayout>
-            <ResourceDetailPage />
-          </MainLayout>
-        }
+        element={<Navigate to="/programs" replace />}
       />
       
       {/* Records Export Page Route - REMOVED */}

@@ -1,462 +1,282 @@
 import React, { useState, useEffect } from 'react';
-import ModularServiceInterface from '../../components/patient/ModularServiceInterface';
-import LoadingSpinner from '../../components/ui/LoadingSpinner';
-import PageHeader from '../../components/ui/PageHeader';
-import { usePatientServices, useServiceMedications, useServiceActionItems } from '../../apis/patientServices/hooks';
-import { useRecommendedProducts } from '../../hooks/useRecommendedProducts';
+import PatientServicesEmptyState from './PatientServicesEmptyState';
+import { toast } from 'react-toastify';
+import { useAuth } from '../../context/AuthContext';
+import { useNavigate } from 'react-router-dom';
 
-/**
- * PatientServicesPage - A page component that displays a patient's enrolled services
- * using the modular interface design.
- */
 const PatientServicesPage = () => {
-  const [services, setServices] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  
-  const { data: patientServices, isLoading: servicesLoading, error: servicesError } = usePatientServices();
-  const { data: recommendedProducts, isLoading: productsLoading } = useRecommendedProducts();
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const [activeTab, setActiveTab] = useState('treatments');
+  const [greeting, setGreeting] = useState('Good morning');
+  const [hasActiveTreatments, setHasActiveTreatments] = useState(true);
   
   useEffect(() => {
-    // Process data when patient services and recommended products are loaded
-    if (!servicesLoading && !productsLoading && patientServices) {
-      try {
-        // Transform patient services data into the format expected by ModularServiceInterface
-        const formattedServices = patientServices.map(service => {
-          // Find recommendations for this service
-          const serviceRecommendations = recommendedProducts?.filter(
-            product => service.productCategories?.includes(product.category)
-          ) || [];
-          
-          return {
-            id: service.id,
-            name: service.name,
-            type: service.type,
-            status: service.status,
-            // We'll fetch medications and action items separately in the component
-            // This is just the initial structure
-            medications: [],
-            actionItems: [],
-            recommendations: serviceRecommendations.map(product => ({
-              name: product.name,
-              description: product.description,
-              price: product.price.toFixed(2),
-              imageUrl: product.imageUrl
-            }))
-          };
-        });
-        
-        setServices(formattedServices);
-        setLoading(false);
-      } catch (err) {
-        console.error('Error formatting service data:', err);
-        setError('Failed to process service data');
-        setLoading(false);
-      }
+    const hour = new Date().getHours();
+    if (hour < 12) setGreeting('Good morning');
+    else if (hour < 18) setGreeting('Good afternoon');
+    else setGreeting('Good evening');
+  }, []);
+  
+  // Handler functions
+  const handleAddProduct = (product) => toast.success(`${product} added to cart`);
+  const handleCheckIn = () => toast.success('Check-in initiated for weight treatment');
+  const handleMessageProvider = () => {
+    navigate('/messaging');
+    toast.info('Messaging provider');
+  };
+  const handleReferral = () => toast.info('Referral link copied to clipboard!');
+  const handleMarkDone = () => toast.success('Medication marked as taken!');
+  const handleTakePhotos = () => {
+    navigate('/patients/progress-photos');
+    toast.info('Taking progress photos');
+  };
+  
+  // Toggle between empty state and active treatments view (for demo purposes)
+  const toggleView = () => {
+    setHasActiveTreatments(!hasActiveTreatments);
+  };
+
+  // Custom CSS
+  const customStyles = `
+    .status-badge {
+      display: inline-block;
+      padding: 0.125rem 0.5rem;
+      font-size: 0.75rem;
+      font-weight: 500;
+      border-radius: 9999px;
+      text-transform: capitalize;
     }
-  }, [patientServices, recommendedProducts, servicesLoading, productsLoading]);
-  
-  // Handle error states
-  useEffect(() => {
-    if (servicesError) {
-      setError('Failed to load your services data');
-      setLoading(false);
+    .status-active { 
+      background-color: #DCFCE7; 
+      color: #166534; 
     }
-  }, [servicesError]);
-  
-  // Sample data for development/testing
-  const sampleServices = [
-    {
-      id: '1',
-      name: 'Hair Loss Treatment',
-      type: 'hair-loss',
-      status: 'Active',
-      medications: [
-        {
-          name: 'Finasteride 1mg',
-          instructions: 'Take 1 tablet daily',
-          imageUrl: 'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80'
-        },
-        {
-          name: 'Minoxidil 5% Solution',
-          instructions: 'Apply 1ml to affected areas twice daily',
-          imageUrl: 'https://images.unsplash.com/photo-1587854692152-cbe660dbde88?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80'
-        }
-      ],
-      actionItems: [
-        {
-          title: 'Scalp Check-in',
-          description: 'Take photos of your scalp to track progress',
-          icon: 'camera',
-          buttonText: 'Start'
-        },
-        {
-          title: 'Monthly Assessment',
-          description: 'Complete your monthly hair loss questionnaire',
-          icon: 'assessment',
-          buttonText: 'Complete'
-        }
-      ],
-      recommendations: [
-        {
-          name: 'Biotin Supplement',
-          description: 'Supports healthy hair growth and strength.',
-          price: '24.99',
-          imageUrl: 'https://images.unsplash.com/photo-1607185073253-f0cb7b3d1654?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=800&q=80'
-        },
-        {
-          name: 'Hair Growth Shampoo',
-          description: 'Strengthens hair and reduces breakage.',
-          price: '18.99',
-          imageUrl: 'https://images.unsplash.com/photo-1620916566398-39f1143ab7be?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=800&q=80'
-        }
-      ]
-    },
-    {
-      id: '2',
-      name: 'Weight Management',
-      type: 'weight-management',
-      status: 'Active',
-      medications: [
-        {
-          name: 'Semaglutide Injection',
-          instructions: 'Inject 0.25mg once weekly',
-          imageUrl: 'https://images.unsplash.com/photo-1471864190281-a93a3070b6de?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80'
-        }
-      ],
-      actionItems: [
-        {
-          title: 'Weekly Weigh-in',
-          description: 'Record your weight to track progress',
-          icon: 'weight',
-          buttonText: 'Log Weight'
-        },
-        {
-          title: 'Food Journal',
-          description: 'Log your meals for the day',
-          icon: 'food',
-          buttonText: 'Start'
-        }
-      ],
-      recommendations: [
-        {
-          name: 'Fiber Supplement',
-          description: 'Improves fullness & digestive health.',
-          price: '19.99',
-          imageUrl: 'https://images.unsplash.com/photo-1490645935967-10de6ba17061?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=800&q=80'
-        }
-      ]
+    .card-shadow {
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
     }
-  ];
-  
-  // Create state for medications and action items
-  const [serviceTypes, setServiceTypes] = useState([]);
-  
-  // Extract service types when services are loaded
-  useEffect(() => {
-    if (services.length > 0) {
-      const types = services.map(service => service.type);
-      setServiceTypes(types);
+    .scroll-snap-x {
+      scroll-snap-type: x mandatory;
+      -webkit-overflow-scrolling: touch;
     }
-  }, [services]);
-  
-  // Fetch medications for each service type
-  const { data: hairLossMedications, isLoading: hairLossMedsLoading } = useServiceMedications('hair-loss');
-  const { data: weightManagementMedications, isLoading: weightManagementMedsLoading } = useServiceMedications('weight-management');
-  const { data: edMedications, isLoading: edMedsLoading } = useServiceMedications('ed-treatment');
-  
-  // Fetch action items for each service type
-  const { data: hairLossActionItems, isLoading: hairLossActionsLoading } = useServiceActionItems('hair-loss');
-  const { data: weightManagementActionItems, isLoading: weightManagementActionsLoading } = useServiceActionItems('weight-management');
-  const { data: edActionItems, isLoading: edActionsLoading } = useServiceActionItems('ed-treatment');
-  
-  // Update services with medications and action items
-  useEffect(() => {
-    if (services.length === 0) return;
-    
-    const medicationsMap = {
-      'hair-loss': hairLossMedications,
-      'weight-management': weightManagementMedications,
-      'ed-treatment': edMedications
-    };
-    
-    const actionItemsMap = {
-      'hair-loss': hairLossActionItems,
-      'weight-management': weightManagementActionItems,
-      'ed-treatment': edActionItems
-    };
-    
-    const updatedServices = services.map(service => {
-      return {
-        ...service,
-        medications: medicationsMap[service.type] || [],
-        actionItems: actionItemsMap[service.type] || []
-      };
-    });
-    
-    setServices(updatedServices);
-  }, [
-    services, 
-    hairLossMedications, weightManagementMedications, edMedications,
-    hairLossActionItems, weightManagementActionItems, edActionItems
-  ]);
-  
-  // Determine whether to show services or empty state
-  useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const viewMode = urlParams.get('view') || 'default';
-    
-    if (process.env.NODE_ENV === 'development') {
-      if (viewMode === 'empty') {
-        // Force empty state for testing
-        setServices([]);
-        setLoading(false);
-      } else if (!patientServices && !servicesLoading && viewMode !== 'empty') {
-        // Use sample data in development mode when not explicitly showing empty state
-        setServices(sampleServices);
-        setLoading(false);
-      }
-    } else {
-      // In production, only show services if they exist in the database
-      if (!servicesLoading && patientServices) {
-        if (patientServices.length === 0) {
-          setServices([]);
-        }
-        setLoading(false);
-      }
+    .scroll-snap-x > div {
+      scroll-snap-align: start;
     }
-  }, [patientServices, servicesLoading]);
-  
+    .tabs-wrapper::-webkit-scrollbar {
+      display: none;
+    }
+  `;
+
+  // If user has no active treatments, show the empty state
+  if (!hasActiveTreatments) {
+    return <PatientServicesEmptyState />;
+  }
+
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <PageHeader 
-        title="My Health Services" 
-        description="Manage all your health services in one place"
-      />
+    <div className="max-w-md mx-auto sm:max-w-lg md:max-w-2xl lg:max-w-4xl bg-gray-50 min-h-screen pb-20">
+      {/* Demo toggle button - remove in production */}
+      <button 
+        onClick={toggleView}
+        className="fixed bottom-24 right-4 z-50 bg-gray-800 text-white px-3 py-2 rounded-lg text-xs"
+      >
+        Show Empty State
+      </button>
+      <style>{customStyles}</style>
       
-      {loading ? (
-        <div className="flex justify-center items-center h-64">
-          <LoadingSpinner size="lg" />
-        </div>
-      ) : error ? (
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md">
-          <p>{error}</p>
+      {/* Status Bar */}
+      <div className="h-8 bg-gray-800"></div>
+      
+      {/* Header Section */}
+      <div className="bg-teal-600 px-4 py-4">
+        <div className="flex justify-between items-center mb-3">
+          <div>
+            <h1 className="text-xl font-bold text-white">{greeting}, {user?.first_name || 'James'}</h1>
+            <p className="text-teal-100 text-sm">The support you need, when you need it.</p>
+          </div>
           <button 
-            className="mt-2 text-sm font-medium text-red-600 hover:text-red-800"
-            onClick={() => window.location.reload()}
+            className="w-10 h-10 rounded-full bg-white bg-opacity-20 flex items-center justify-center"
+            onClick={() => navigate('/profile')}
           >
-            Try Again
+            <svg className="h-5 w-5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+              <circle cx="12" cy="7" r="4"></circle>
+            </svg>
           </button>
         </div>
-      ) : services.length === 0 ? (
-        <div className="space-y-8">
-          {/* Simple Empty State - Hims-inspired */}
-          <div className="bg-white rounded-xl shadow-sm overflow-hidden text-center py-12 px-6">
-            <h3 className="text-2xl font-bold text-gray-900 mb-3">Health Goals?</h3>
-            <p className="text-gray-600 mb-8 max-w-md mx-auto">Let's see if we can help.</p>
-            
-            <a 
-              href="/marketplace" 
-              className="inline-block px-8 py-4 bg-black text-white text-base font-semibold rounded-full hover:bg-gray-800 transition-colors shadow-md"
+      </div>
+
+      {/* Priority Action Card */}
+      <div className="px-4 mt-3 mb-4">
+        <div className="bg-white rounded-xl shadow-md overflow-hidden p-4 border-l-4 border-yellow-500">
+          <div className="flex items-center">
+            <div className="w-10 h-10 rounded-full bg-yellow-500 flex items-center justify-center mr-3 flex-shrink-0">
+              <svg className="h-5 w-5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M20 6L9 17L4 12"></path>
+              </svg>
+            </div>
+            <div className="flex-1">
+              <h3 className="text-base font-bold text-gray-800">Take your meds today</h3>
+              <p className="text-sm text-gray-600">Semaglutide - due by 8:00 PM</p>
+            </div>
+            <button 
+              className="bg-teal-500 hover:bg-teal-600 text-white text-sm font-medium px-4 py-2 rounded-lg shadow-sm ml-2"
+              onClick={handleMarkDone}
             >
-              + Add Treatment
-            </a>
+              Mark Done
+            </button>
           </div>
-          
-          {/* Featured Treatment Cards - Full Background with Text Overlay */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {/* Hair Loss Card */}
-            <div className="rounded-xl overflow-hidden shadow-sm group h-64 relative">
-              <img 
-                src="https://images.unsplash.com/photo-1552058544-f2b08422138a?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" 
-                alt="Hair Loss Treatment" 
-                className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-black/20"></div>
-              <div className="absolute inset-0 p-5 flex flex-col justify-between">
-                <div className="flex justify-between items-start">
-                  <h4 className="font-semibold text-white text-xl">Hair Loss</h4>
-                  <span className="text-xs bg-indigo-100 text-indigo-800 px-2 py-0.5 rounded-full">Rx</span>
-                </div>
-                <div>
-                  <p className="text-white/80 text-sm mb-3">Clinically proven treatments to prevent hair loss and promote regrowth.</p>
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm font-medium text-white">from $39/month</span>
-                    <a 
-                      href="/marketplace?service=hair-loss" 
-                      className="text-white text-sm font-medium bg-indigo-600 px-3 py-1 rounded-full hover:bg-indigo-700 transition-colors"
-                    >
-                      Learn more
-                    </a>
+        </div>
+      </div>
+
+      {/* Main Tabs */}
+      <div className="px-4 mb-4">
+        <div className="flex border-b border-gray-200">
+          <button 
+            className="px-4 py-2 border-b-2 border-teal-500 text-teal-600 font-medium flex items-center"
+            onClick={() => setActiveTab('treatments')}
+          >
+            <svg className="h-4 w-4 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M21 9 L21 15 L3 15 L3 9 C3 5 7 3 12 3 C17 3 21 5 21 9 M6 15 L6 19 C6 20 7 21 8 21 L16 21 C17 21 18 20 18 19 L18 15"></path>
+            </svg>
+            Treatments
+          </button>
+          <button 
+            className="px-4 py-2 text-gray-500 font-medium flex items-center"
+            onClick={() => setActiveTab('messages')}
+          >
+            <svg className="h-4 w-4 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+            </svg>
+            Messages
+          </button>
+          <button 
+            className="px-4 py-2 text-gray-500 font-medium flex items-center"
+            onClick={() => setActiveTab('insights')}
+          >
+            <svg className="h-4 w-4 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <circle cx="12" cy="12" r="10"></circle>
+              <path d="M12 16v-4M12 8h.01"></path>
+            </svg>
+            Insights
+          </button>
+        </div>
+      </div>
+
+      {/* Treatments Tab Content */}
+      {activeTab === 'treatments' && (
+        <div className="px-4 py-2">
+          {/* Weight Management Section */}
+          <section className="mb-6">
+            <h2 className="text-lg font-bold mb-4 text-teal-600">Weight Management</h2>
+            
+            {/* Weight Treatment Card - Full Width */}
+            <div className="bg-white rounded-xl card-shadow overflow-hidden mb-4 w-full">
+              <div className="p-4">
+                <div className="flex items-center mb-3">
+                  <div className="w-10 h-10 rounded-full bg-teal-100 flex items-center justify-center mr-3 flex-shrink-0">
+                    <svg className="h-5 w-5 text-teal-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M21 9 L21 15 L3 15 L3 9 C3 5 7 3 12 3 C17 3 21 5 21 9 M6 15 L6 19 C6 20 7 21 8 21 L16 21 C17 21 18 20 18 19 L18 15"></path>
+                    </svg>
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-base font-bold text-gray-800">Semaglutide 0.5mg</h3>
+                      <span className="status-badge status-active">Active</span>
+                    </div>
+                    <p className="text-sm text-gray-600">Weekly injection for weight management</p>
                   </div>
                 </div>
-              </div>
-            </div>
-            
-            {/* Weight Management Card */}
-            <div className="rounded-xl overflow-hidden shadow-sm group h-64 relative">
-              <img 
-                src="https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" 
-                alt="Weight Management" 
-                className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-black/20"></div>
-              <div className="absolute inset-0 p-5 flex flex-col justify-between">
-                <div className="flex justify-between items-start">
-                  <h4 className="font-semibold text-white text-xl">Weight Management</h4>
-                  <span className="text-xs bg-red-100 text-red-800 px-2 py-0.5 rounded-full">Rx</span>
-                </div>
-                <div>
-                  <p className="text-white/80 text-sm mb-3">Medically supervised program with personalized support.</p>
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm font-medium text-white">from $99/month</span>
-                    <a 
-                      href="/marketplace?service=weight-management" 
-                      className="text-white text-sm font-medium bg-red-600 px-3 py-1 rounded-full hover:bg-red-700 transition-colors"
-                    >
-                      Learn more
-                    </a>
+
+                <div className="p-3 bg-teal-50 rounded-lg mb-4">
+                  <div className="flex items-center">
+                    <svg className="h-5 w-5 text-teal-600 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <circle cx="12" cy="12" r="10"></circle>
+                      <polyline points="12 6 12 12 16 14"></polyline>
+                    </svg>
+                    <div>
+                      <p className="text-sm font-medium text-gray-800">Next dose: Today by 8:00 PM</p>
+                      <p className="text-xs text-gray-600">Take your medication on time for best results</p>
+                    </div>
                   </div>
                 </div>
-              </div>
-            </div>
-            
-            {/* ED Treatment Card */}
-            <div className="rounded-xl overflow-hidden shadow-sm group h-64 relative">
-              <img 
-                src="https://images.unsplash.com/photo-1559839734-2b71ea197ec2?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" 
-                alt="ED Treatment" 
-                className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-black/20"></div>
-              <div className="absolute inset-0 p-5 flex flex-col justify-between">
-                <div className="flex justify-between items-start">
-                  <h4 className="font-semibold text-white text-xl">ED Treatment</h4>
-                  <span className="text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full">Rx</span>
-                </div>
-                <div>
-                  <p className="text-white/80 text-sm mb-3">Effective treatments with discreet, professional care.</p>
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm font-medium text-white">from $49/month</span>
-                    <a 
-                      href="/marketplace?service=ed-treatment" 
-                      className="text-white text-sm font-medium bg-blue-600 px-3 py-1 rounded-full hover:bg-blue-700 transition-colors"
-                    >
-                      Learn more
-                    </a>
+                
+                {/* Progress Visualization */}
+                <div className="flex justify-center items-center mb-4">
+                  <div className="relative w-36 h-36">
+                    {/* Circular Progress Background */}
+                    <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
+                      <circle cx="50" cy="50" r="45" fill="none" stroke="#E2E8F0" strokeWidth="10" />
+                      <circle cx="50" cy="50" r="45" fill="none" stroke="#0D9488" strokeWidth="10" 
+                              strokeDasharray="282.7" strokeDashoffset="198" />
+                    </svg>
+                    {/* Progress Info in Center */}
+                    <div className="absolute inset-0 flex flex-col items-center justify-center">
+                      <div className="text-3xl font-bold text-teal-700">-8</div>
+                      <div className="text-sm text-gray-600">pounds</div>
+                      <div className="mt-1 text-xs text-teal-600 font-medium">28% to goal</div>
+                    </div>
                   </div>
                 </div>
-              </div>
-            </div>
-          </div>
-          
-          {/* Featured Content - Visual Focus */}
-          <div className="bg-amber-100 rounded-xl overflow-hidden shadow-sm">
-            <div className="relative">
-              <img 
-                src="https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80" 
-                alt="Doctor with patient" 
-                className="w-full h-64 md:h-80 object-cover"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex flex-col justify-end p-6">
-                <h3 className="text-2xl font-bold text-white mb-2">Lose the weight, keep the results</h3>
-                <p className="text-white/90 mb-4 max-w-lg">Medically-supervised weight loss program with proven results.</p>
-                <a 
-                  href="/marketplace?service=weight-management" 
-                  className="inline-block px-6 py-3 bg-white text-black text-sm font-medium rounded-full hover:bg-gray-100 transition-colors self-start"
-                >
-                  Learn more
-                </a>
-              </div>
-            </div>
-          </div>
-          
-          {/* Patient Success Stories - Simplified */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {/* Success Story 1 */}
-            <div className="bg-white rounded-xl p-5 shadow-sm">
-              <div className="flex items-center mb-4">
-                <img 
-                  src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=100&h=100&q=80" 
-                  alt="James T." 
-                  className="w-12 h-12 rounded-full object-cover mr-4"
-                />
-                <div>
-                  <h4 className="font-medium text-gray-900">James T.</h4>
-                  <p className="text-xs text-gray-500">Weight Management</p>
+                
+                {/* Treatment Details */}
+                <div className="border-t border-gray-100 pt-3 space-y-2">
+                  <div className="flex justify-between">
+                    <span className="text-sm text-gray-500">Dosage</span>
+                    <span className="text-sm font-medium text-gray-800">0.5mg weekly injection</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm text-gray-500">Storage</span>
+                    <span className="text-sm font-medium text-gray-800">Refrigerate (36-46°F)</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm text-gray-500">Progress</span>
+                    <span className="text-sm font-medium text-gray-800">-8 lbs in 5 weeks</span>
+                  </div>
+                </div>
+                
+                {/* Action Buttons */}
+                <div className="flex gap-3 mt-4">
+                  <button 
+                    className="flex-1 bg-teal-500 hover:bg-teal-600 text-white text-sm font-medium py-2.5 px-4 rounded-lg shadow-sm"
+                    onClick={handleCheckIn}
+                  >
+                    Check-in
+                  </button>
+                  <button 
+                    className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-800 text-sm font-medium py-2.5 px-4 rounded-lg"
+                    onClick={handleMessageProvider}
+                  >
+                    Message
+                  </button>
                 </div>
               </div>
-              <p className="text-sm text-gray-700 italic">"I've lost 30 pounds in 6 months. The medical support made all the difference."</p>
             </div>
             
-            {/* Success Story 2 */}
-            <div className="bg-white rounded-xl p-5 shadow-sm">
-              <div className="flex items-center mb-4">
-                <img 
-                  src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?ixlib=rb-4.0.3&auto=format&fit=crop&w=100&h=100&q=80" 
-                  alt="Robert M." 
-                  className="w-12 h-12 rounded-full object-cover mr-4"
-                />
-                <div>
-                  <h4 className="font-medium text-gray-900">Robert M.</h4>
-                  <p className="text-xs text-gray-500">Hair Loss Treatment</p>
-                </div>
-              </div>
-              <p className="text-sm text-gray-700 italic">"After 4 months, I'm seeing significant regrowth. The personalized approach keeps me on track."</p>
-            </div>
-            
-            {/* Success Story 3 */}
-            <div className="bg-white rounded-xl p-5 shadow-sm">
-              <div className="flex items-center mb-4">
-                <img 
-                  src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-4.0.3&auto=format&fit=crop&w=100&h=100&q=80" 
-                  alt="David K." 
-                  className="w-12 h-12 rounded-full object-cover mr-4"
-                />
-                <div>
-                  <h4 className="font-medium text-gray-900">David K.</h4>
-                  <p className="text-xs text-gray-500">ED Treatment</p>
-                </div>
-              </div>
-              <p className="text-sm text-gray-700 italic">"The discreet, professional care has made a tremendous difference in my quality of life."</p>
-            </div>
-          </div>
-          
-          {/* Popular Products Section - Carousel Style */}
-          <div className="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-100">
-            <div className="p-3 border-b flex items-center justify-between bg-gray-50">
-              <div className="flex items-center">
-                <div className="p-1.5 rounded-full mr-2 bg-green-100">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-green-600" viewBox="0 0 20 20" fill="currentColor">
-                    <path fillRule="evenodd" d="M12 7a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0V8.414l-4.293 4.293a1 1 0 01-1.414 0L8 10.414l-4.293 4.293a1 1 0 01-1.414-1.414l5-5a1 1 0 011.414 0L11 10.586 14.586 7H12z" clipRule="evenodd" />
-                  </svg>
-                </div>
-                <h4 className="text-sm font-medium text-gray-900">Popular Products</h4>
-                <div className="ml-2 bg-green-100 text-green-700 px-2 py-0.5 rounded-full flex items-center text-xs font-medium">
-                  Trending
-                </div>
-              </div>
-              <a href="/marketplace" className="text-blue-600 text-sm font-medium">View all →</a>
-            </div>
-            
-            <div className="p-4">
-              <div className="overflow-x-auto -mx-4 px-4 product-scroll">
-                <div className="flex space-x-4 pb-2 snap-x snap-mandatory">
+            {/* Provider Recommendations */}
+            <div className="mb-4">
+              <h3 className="text-sm font-medium text-teal-600 mb-3 flex items-center">
+                <svg className="h-4 w-4 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path>
+                  <line x1="7" y1="7" x2="7.01" y2="7"></line>
+                </svg>
+                Provider Recommended
+              </h3>
+              
+              <div className="overflow-x-auto pb-4 scroll-snap-x">
+                <div className="flex space-x-4 pb-2">
                   {/* Product 1 */}
-                  <div className="w-40 flex-shrink-0 bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden snap-start">
+                  <div className="w-40 flex-shrink-0 bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden">
                     <div className="h-32 bg-gray-100 flex items-center justify-center">
-                      <img 
-                        src="https://images.unsplash.com/photo-1607185073253-f0cb7b3d1654?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" 
-                        alt="Biotin Supplement" 
-                        className="w-full h-full object-cover"
-                      />
+                      <img src="https://via.placeholder.com/160x128" alt="Nutritional Supplement" className="w-full h-full object-cover" />
                     </div>
                     <div className="p-3">
-                      <h4 className="font-medium text-sm">Biotin Supplement</h4>
-                      <p className="text-xs text-gray-500 mb-2 line-clamp-2">Supports healthy hair growth and strength.</p>
+                      <h4 className="font-medium text-sm">Nutritional Supplement</h4>
+                      <p className="text-xs text-gray-500 mb-2 line-clamp-2">Daily vitamin supplement to support your weight management journey</p>
                       <div className="flex justify-between items-center">
-                        <span className="text-xs font-medium">$24.99</span>
-                        <button className="text-xs text-white px-2 py-1 rounded-full bg-black">
+                        <span className="text-xs font-medium">$29.99</span>
+                        <button 
+                          className="bg-teal-500 hover:bg-teal-600 text-white text-xs font-medium px-2 py-1 rounded-full"
+                          onClick={() => handleAddProduct('Nutritional Supplement')}
+                        >
                           Add
                         </button>
                       </div>
@@ -464,83 +284,322 @@ const PatientServicesPage = () => {
                   </div>
                   
                   {/* Product 2 */}
-                  <div className="w-40 flex-shrink-0 bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden snap-start">
+                  <div className="w-40 flex-shrink-0 bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden">
                     <div className="h-32 bg-gray-100 flex items-center justify-center">
-                      <img 
-                        src="https://images.unsplash.com/photo-1620916566398-39f1143ab7be?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" 
-                        alt="Hair Growth Shampoo" 
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                    <div className="p-3">
-                      <h4 className="font-medium text-sm">Hair Growth Shampoo</h4>
-                      <p className="text-xs text-gray-500 mb-2 line-clamp-2">Strengthens hair and reduces breakage.</p>
-                      <div className="flex justify-between items-center">
-                        <span className="text-xs font-medium">$18.99</span>
-                        <button className="text-xs text-white px-2 py-1 rounded-full bg-black">
-                          Add
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  {/* Product 3 */}
-                  <div className="w-40 flex-shrink-0 bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden snap-start">
-                    <div className="h-32 bg-gray-100 flex items-center justify-center">
-                      <img 
-                        src="https://images.unsplash.com/photo-1490645935967-10de6ba17061?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" 
-                        alt="Fiber Supplement" 
-                        className="w-full h-full object-cover"
-                      />
+                      <img src="https://via.placeholder.com/160x128" alt="Fiber Supplement" className="w-full h-full object-cover" />
                     </div>
                     <div className="p-3">
                       <h4 className="font-medium text-sm">Fiber Supplement</h4>
-                      <p className="text-xs text-gray-500 mb-2 line-clamp-2">Improves fullness & digestive health.</p>
+                      <p className="text-xs text-gray-500 mb-2 line-clamp-2">Improves fullness & digestive health</p>
                       <div className="flex justify-between items-center">
                         <span className="text-xs font-medium">$19.99</span>
-                        <button className="text-xs text-white px-2 py-1 rounded-full bg-black">
+                        <button 
+                          className="bg-teal-500 hover:bg-teal-600 text-white text-xs font-medium px-2 py-1 rounded-full"
+                          onClick={() => handleAddProduct('Fiber Supplement')}
+                        >
+                          Add
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Friend Referral Discount - Connected to Products */}
+              <div className="bg-yellow-50 rounded-lg p-3 border border-yellow-200">
+                <div className="flex items-center">
+                  <div className="w-10 h-10 rounded-full bg-yellow-100 flex items-center justify-center mr-3">
+                    <svg className="h-5 w-5 text-yellow-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                      <circle cx="9" cy="7" r="4"></circle>
+                      <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                      <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                    </svg>
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="font-bold text-gray-800 text-sm">Friend Referral Bonus</h3>
+                    <p className="text-xs text-gray-600">When a friend joins using your code, you both get $30 off any product!</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            {/* Hair Loss Treatment Section */}
+            <h2 className="text-lg font-bold mb-4 text-teal-600">Hair Loss Treatment</h2>
+            
+            {/* Hair Treatment Card - Full Width */}
+            <div className="bg-white rounded-xl card-shadow overflow-hidden mb-4 w-full">
+              <div className="p-4">
+                <div className="flex items-center mb-3">
+                  <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center mr-3 flex-shrink-0">
+                    <svg className="h-5 w-5 text-blue-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M16 14a5 5 0 01-5 5 5 5 0 01-5-5M8 9l4-5 4 5M12 3v6"></path>
+                    </svg>
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-base font-bold text-gray-800">Finasteride 1mg</h3>
+                      <span className="status-badge status-active">Active</span>
+                    </div>
+                    <p className="text-sm text-gray-600">Daily tablet for hair loss treatment</p>
+                  </div>
+                </div>
+                
+                <div className="p-3 bg-blue-50 rounded-lg mb-4">
+                  <div className="flex items-center">
+                    <svg className="h-5 w-5 text-blue-600 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+                      <circle cx="12" cy="13" r="4"></circle>
+                    </svg>
+                    <div>
+                      <p className="text-sm font-medium text-gray-800">Next task: Take progress photos by May 10</p>
+                      <p className="text-xs text-gray-600">Document your progress for better results tracking</p>
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Action Buttons */}
+                <div className="flex gap-3 mt-4">
+                  <button 
+                    className="flex-1 bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium py-2.5 px-4 rounded-lg shadow-sm"
+                    onClick={handleTakePhotos}
+                  >
+                    Take Photos
+                  </button>
+                  <button 
+                    className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-800 text-sm font-medium py-2.5 px-4 rounded-lg"
+                    onClick={handleMessageProvider}
+                  >
+                    Message
+                  </button>
+                </div>
+              </div>
+            </div>
+            
+            {/* Referral Banner - Full Width */}
+            <div className="bg-gradient-to-r from-yellow-400 to-yellow-500 rounded-xl overflow-hidden shadow-md mb-6 w-full">
+              <div className="p-4 flex items-center">
+                <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center mr-4">
+                  <svg className="h-6 w-6 text-yellow-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                  </svg>
+                </div>
+                <div className="flex-1">
+                  <h3 className="font-bold text-white text-lg">Share with a buddy, get $20 credit</h3>
+                  <p className="text-white text-sm opacity-90">Invite friends to join Zappy Health.</p>
+                  
+                  <div className="mt-2 bg-white bg-opacity-20 rounded-lg px-3 py-2">
+                    <div className="flex items-center">
+                      <div className="flex -space-x-2 mr-2">
+                        <div className="w-6 h-6 rounded-full bg-white border-2 border-yellow-500 flex items-center justify-center z-30 text-yellow-600 font-bold text-xs">J</div>
+                        <div className="w-6 h-6 rounded-full bg-white border-2 border-yellow-500 flex items-center justify-center z-20 text-yellow-600 font-bold text-xs">S</div>
+                        <div className="w-6 h-6 rounded-full bg-white border-2 border-yellow-500 flex items-center justify-center z-10 text-yellow-600 font-bold text-xs">M</div>
+                      </div>
+                      <span className="text-xs text-white">You've already referred 3 friends!</span>
+                    </div>
+                  </div>
+                </div>
+                <button 
+                  className="bg-white text-yellow-500 hover:bg-yellow-50 text-sm font-bold px-4 py-2 rounded-lg shadow-sm"
+                  onClick={handleReferral}
+                >
+                  Invite
+                </button>
+              </div>
+            </div>
+            
+            {/* Medication Guide Section */}
+            <div className="mb-6">
+              <h2 className="text-lg font-bold mb-4 text-teal-600">Medication Guide</h2>
+              <div className="bg-white rounded-xl card-shadow overflow-hidden mb-4 w-full">
+                <div className="p-4">
+                  <div className="flex items-center mb-3">
+                    <div className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center mr-3 flex-shrink-0">
+                      <svg className="h-5 w-5 text-purple-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M12 2a9 9 0 0 1 9 9c0 3.6-2.4 6.9-5.5 8.5L12 22l-3.5-2.5C5.4 17.9 3 14.6 3 11a9 9 0 0 1 9-9z"></path>
+                        <circle cx="12" cy="11" r="3"></circle>
+                      </svg>
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="text-base font-bold text-gray-800">Semaglutide Injection Guide</h3>
+                      <p className="text-sm text-gray-600">Step-by-step instructions for your weekly injection</p>
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-3 mb-4">
+                    <div className="flex items-start">
+                      <div className="w-6 h-6 rounded-full bg-teal-100 flex items-center justify-center mr-2 flex-shrink-0 text-teal-600 font-bold text-xs">
+                        1
+                      </div>
+                      <p className="text-sm text-gray-700">Remove pen from refrigerator 30 minutes before injection</p>
+                    </div>
+                    <div className="flex items-start">
+                      <div className="w-6 h-6 rounded-full bg-teal-100 flex items-center justify-center mr-2 flex-shrink-0 text-teal-600 font-bold text-xs">
+                        2
+                      </div>
+                      <p className="text-sm text-gray-700">Clean injection site with alcohol swab</p>
+                    </div>
+                    <div className="flex items-start">
+                      <div className="w-6 h-6 rounded-full bg-teal-100 flex items-center justify-center mr-2 flex-shrink-0 text-teal-600 font-bold text-xs">
+                        3
+                      </div>
+                      <p className="text-sm text-gray-700">Inject into abdomen, thigh, or upper arm</p>
+                    </div>
+                    <div className="flex items-start">
+                      <div className="w-6 h-6 rounded-full bg-teal-100 flex items-center justify-center mr-2 flex-shrink-0 text-teal-600 font-bold text-xs">
+                        4
+                      </div>
+                      <p className="text-sm text-gray-700">Hold for 5 seconds, then dispose of needle safely</p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex gap-3">
+                    <button 
+                      className="flex-1 bg-purple-500 hover:bg-purple-600 text-white text-sm font-medium py-2.5 px-4 rounded-lg shadow-sm"
+                      onClick={() => navigate('/medication-guide')}
+                    >
+                      View Full Guide
+                    </button>
+                    <button 
+                      className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-800 text-sm font-medium py-2.5 px-4 rounded-lg"
+                      onClick={() => navigate('/video-tutorial')}
+                    >
+                      Watch Video
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            {/* Subscription Details Section */}
+            <div className="mb-6">
+              <h2 className="text-lg font-bold mb-4 text-teal-600">Subscription Details</h2>
+              <div className="bg-white rounded-xl card-shadow overflow-hidden mb-4 w-full">
+                <div className="p-4">
+                  <div className="flex items-center mb-3">
+                    <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center mr-3 flex-shrink-0">
+                      <svg className="h-5 w-5 text-green-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                        <line x1="16" y1="2" x2="16" y2="6"></line>
+                        <line x1="8" y1="2" x2="8" y2="6"></line>
+                        <line x1="3" y1="10" x2="21" y2="10"></line>
+                      </svg>
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="text-base font-bold text-gray-800">Weight Management Plan</h3>
+                      <div className="flex items-center">
+                        <span className="text-sm text-gray-600 mr-2">Premium</span>
+                        <span className="bg-green-100 text-green-800 text-xs px-2 py-0.5 rounded-full">Active</span>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="border-t border-gray-100 pt-3 space-y-2 mb-4">
+                    <div className="flex justify-between">
+                      <span className="text-sm text-gray-500">Next billing date</span>
+                      <span className="text-sm font-medium text-gray-800">May 15, 2025</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm text-gray-500">Monthly cost</span>
+                      <span className="text-sm font-medium text-gray-800">$99.00</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm text-gray-500">Includes</span>
+                      <span className="text-sm font-medium text-gray-800">Medication, Provider Support</span>
+                    </div>
+                  </div>
+                  
+                  <div className="bg-green-50 p-3 rounded-lg mb-4">
+                    <div className="flex items-center">
+                      <svg className="h-5 w-5 text-green-600 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M20 6L9 17l-5-5"></path>
+                      </svg>
+                      <p className="text-sm text-gray-800">Your next refill will ship automatically on May 12</p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex gap-3">
+                    <button 
+                      className="flex-1 bg-green-500 hover:bg-green-600 text-white text-sm font-medium py-2.5 px-4 rounded-lg shadow-sm"
+                      onClick={() => navigate('/subscription-details')}
+                    >
+                      Manage Plan
+                    </button>
+                    <button 
+                      className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-800 text-sm font-medium py-2.5 px-4 rounded-lg"
+                      onClick={() => navigate('/billing-history')}
+                    >
+                      Billing History
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            {/* Popular Treatments Section */}
+            <div className="mb-8">
+              <div className="flex justify-between items-center mb-3">
+                <h2 className="text-lg font-bold text-green-600 flex items-center">
+                  Popular Treatments
+                  <svg className="h-5 w-5 ml-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
+                    <polyline points="17 6 23 6 23 12"></polyline>
+                  </svg>
+                </h2>
+              </div>
+              
+              <div className="overflow-x-auto pb-4 scroll-snap-x">
+                <div className="flex space-x-4 pb-2">
+                  {/* Product 1 */}
+                  <div className="w-40 flex-shrink-0 bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden">
+                    <div className="h-32 bg-gray-100 flex items-center justify-center relative">
+                      <img src="https://via.placeholder.com/160x128" alt="Tirzepatide" className="w-full h-full object-cover" />
+                      <div className="absolute top-2 right-2 bg-green-100 px-2 py-0.5 rounded-full">
+                        <span className="text-xs font-medium text-green-800">New</span>
+                      </div>
+                    </div>
+                    <div className="p-3">
+                      <div className="bg-teal-100 rounded-full px-2 py-0.5 inline-block mb-1">
+                        <span className="text-xs text-teal-700">Weight</span>
+                      </div>
+                      <h4 className="font-medium text-sm">Tirzepatide</h4>
+                      <p className="text-xs text-gray-500 mb-2 line-clamp-2">New weight management medication with dual hormone action</p>
+                      <div className="flex justify-between items-center">
+                        <div>
+                          <span className="text-xs font-medium">$199.99</span>
+                          <span className="text-xs line-through text-gray-400 ml-1">$249.99</span>
+                        </div>
+                        <button 
+                          className="bg-teal-500 hover:bg-teal-600 text-white text-xs font-medium px-2 py-1 rounded-full"
+                          onClick={() => handleAddProduct('Tirzepatide')}
+                        >
                           Add
                         </button>
                       </div>
                     </div>
                   </div>
                   
-                  {/* Product 4 */}
-                  <div className="w-40 flex-shrink-0 bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden snap-start">
-                    <div className="h-32 bg-gray-100 flex items-center justify-center">
-                      <img 
-                        src="https://images.unsplash.com/photo-1512069772995-ec65ed45afd6?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" 
-                        alt="Daily Multivitamin" 
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                    <div className="p-3">
-                      <h4 className="font-medium text-sm">Daily Multivitamin</h4>
-                      <p className="text-xs text-gray-500 mb-2 line-clamp-2">Essential vitamins and minerals for daily health.</p>
-                      <div className="flex justify-between items-center">
-                        <span className="text-xs font-medium">$15.99</span>
-                        <button className="text-xs text-white px-2 py-1 rounded-full bg-black">
-                          Add
-                        </button>
+                  {/* Product 2 */}
+                  <div className="w-40 flex-shrink-0 bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden">
+                    <div className="h-32 bg-gray-100 flex items-center justify-center relative">
+                      <img src="https://via.placeholder.com/160x128" alt="Dutasteride" className="w-full h-full object-cover" />
+                      <div className="absolute top-2 right-2 bg-yellow-100 px-2 py-0.5 rounded-full">
+                        <span className="text-xs font-medium text-yellow-800">Popular</span>
                       </div>
                     </div>
-                  </div>
-                  
-                  {/* Product 5 */}
-                  <div className="w-40 flex-shrink-0 bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden snap-start">
-                    <div className="h-32 bg-gray-100 flex items-center justify-center">
-                      <img 
-                        src="https://images.unsplash.com/photo-1505751172876-fa1923c5c528?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" 
-                        alt="Protein Powder" 
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
                     <div className="p-3">
-                      <h4 className="font-medium text-sm">Protein Powder</h4>
-                      <p className="text-xs text-gray-500 mb-2 line-clamp-2">High-quality protein for muscle recovery.</p>
+                      <div className="bg-blue-100 rounded-full px-2 py-0.5 inline-block mb-1">
+                        <span className="text-xs text-blue-700">Hair</span>
+                      </div>
+                      <h4 className="font-medium text-sm">Dutasteride</h4>
+                      <p className="text-xs text-gray-500 mb-2 line-clamp-2">Advanced hair loss treatment targeting both types of DHT</p>
                       <div className="flex justify-between items-center">
-                        <span className="text-xs font-medium">$29.99</span>
-                        <button className="text-xs text-white px-2 py-1 rounded-full bg-black">
+                        <span className="text-xs font-medium">$89.99</span>
+                        <button 
+                          className="bg-teal-500 hover:bg-teal-600 text-white text-xs font-medium px-2 py-1 rounded-full"
+                          onClick={() => handleAddProduct('Dutasteride')}
+                        >
                           Add
                         </button>
                       </div>
@@ -549,11 +608,36 @@ const PatientServicesPage = () => {
                 </div>
               </div>
             </div>
+          </section>
+        </div>
+      )}
+      
+      {/* Messages Tab Content */}
+      {activeTab === 'messages' && (
+        <div className="px-4 py-2">
+          <div className="text-center py-8 text-gray-500">
+            <svg className="h-12 w-12 mx-auto mb-4 text-gray-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+            </svg>
+            <p>Your messages will appear here</p>
           </div>
         </div>
-      ) : (
-        <ModularServiceInterface services={services} />
       )}
+      
+      {/* Insights Tab Content */}
+      {activeTab === 'insights' && (
+        <div className="px-4 py-2">
+          <div className="text-center py-8 text-gray-500">
+            <svg className="h-12 w-12 mx-auto mb-4 text-gray-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
+              <polyline points="17 6 23 6 23 12"></polyline>
+            </svg>
+            <p>Your insights will appear here</p>
+          </div>
+        </div>
+      )}
+      
+      {/* Bottom Navigation is now handled by MainLayout.jsx */}
     </div>
   );
 };

@@ -33,6 +33,9 @@ import {
   ShoppingBag, // For Marketplace
   BookOpen, // For Resources
   Layers, // For My Services
+  Award, // For Programs
+  // TrendingUp, // For Learn - Removed
+  Heart, // For Home
 } from 'lucide-react';
 
 import { paths } from './paths'; // Ensure paths are imported
@@ -164,13 +167,13 @@ export const logoutItem = {
   action: () => console.log('Logging out...'),
 };
 
-// Define patient sidebar items (Further Simplified View)
-// Combine Shop and Programs into single Marketplace entry
+// Define patient sidebar items (Redesigned UI)
+// Home replaces Records, Shop replaces Marketplace, Programs replaces Resources
 export const patientSidebarItems = [
-  { title: 'Care', path: '/care', icon: Layers, color: 'primary' }, // Modular Services Interface (renamed from My Services)
-  { title: 'Records', path: '/records', icon: PatientRecordsIcon, color: 'accent3' },
-  { title: 'Marketplace', path: '/marketplace', icon: ShoppingBag, color: 'accent2' }, // Unified marketplace replacing Shop and Programs
-  { title: 'Resources', path: '/resources', icon: BookOpen, color: 'accent1' }, // Educational resources
+  { title: 'Home', path: '/home', icon: Heart, color: 'primary' }, // Home page (replaces Records)
+  { title: 'Care', path: '/care', icon: Layers, color: 'accent1' }, // Modular Services Interface
+  { title: 'Programs', path: '/programs', icon: Award, color: 'accent2' }, // Programs page (replaces Resources)
+  { title: 'Shop', path: '/shop', icon: ShoppingBag, color: 'accent3' }, // Shop page (replaces Marketplace)
 ];
 
 // Define profile dropdown menu items (Simplified)

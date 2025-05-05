@@ -1,6 +1,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import StatusBadge from './StatusBadge';
+import { getWeightManagementImage, getHairTreatmentImage, getWellnessImage, getSexualHealthImage } from '../../../utils/placeholderImages';
 
 /**
  * TreatmentCard component
@@ -29,19 +30,35 @@ const TreatmentCard = ({
   secondaryAction,
   resourceLinks = []
 }) => {
-  // Define treatment type styles
+  // Define treatment type styles using our theme colors
   const typeStyles = {
     weight: {
-      headerBg: 'bg-[#dbeafe]',
-      titleColor: 'text-[#2D7FF9]',
-      buttonBg: 'bg-[#2D7FF9]',
-      badgeVariant: 'info'
+      headerBg: 'bg-weight-blue',
+      titleColor: 'text-zappy-blue',
+      buttonBg: 'bg-zappy-blue',
+      badgeVariant: 'info',
+      image: getWeightManagementImage(300, 200)
     },
     hair: {
-      headerBg: 'bg-[#ede9fe]',
-      titleColor: 'text-[#2D7FF9]',
-      buttonBg: 'bg-purple-600',
-      badgeVariant: 'purple'
+      headerBg: 'bg-hair-purple',
+      titleColor: 'text-zappy-blue',
+      buttonBg: 'bg-zappy-blue',
+      badgeVariant: 'info',
+      image: getHairTreatmentImage(300, 200)
+    },
+    wellness: {
+      headerBg: 'bg-wellness-green',
+      titleColor: 'text-success',
+      buttonBg: 'bg-success',
+      badgeVariant: 'success',
+      image: getWellnessImage(300, 200)
+    },
+    sexual: {
+      headerBg: 'bg-sexual-health-pink',
+      titleColor: 'text-error',
+      buttonBg: 'bg-error',
+      badgeVariant: 'error',
+      image: getSexualHealthImage(300, 200)
     }
   };
   
@@ -56,16 +73,16 @@ const TreatmentCard = ({
           <h3 className={`font-bold text-lg ${styles.titleColor}`}>{title}</h3>
           <StatusBadge status={status} variant={status === 'active' ? 'success' : 'gray'} />
         </div>
-        <p className="text-sm text-[#4b5563] mt-1">{subtitle}</p>
+        <p className="text-sm text-text-medium mt-1">{subtitle}</p>
       </div>
       
       <div className="p-5">
         {/* Next Task */}
         {nextTask && (
-          <div className="bg-[#FFD100] bg-opacity-20 p-3 rounded-lg mb-4">
-            <p className="font-bold text-gray-900">{nextTask.title}</p>
+          <div className="bg-zappy-yellow bg-opacity-30 p-3 rounded-lg mb-4">
+            <p className="font-bold text-text-dark">{nextTask.title}</p>
             {nextTask.description && (
-              <p className="text-sm text-gray-700">{nextTask.description}</p>
+              <p className="text-sm text-text-medium">{nextTask.description}</p>
             )}
           </div>
         )}
@@ -92,7 +109,7 @@ const TreatmentCard = ({
           <div className="flex space-x-4 mb-4">
             {primaryAction && (
               <button 
-                className={`${styles.buttonBg} text-white px-4 py-2 rounded-full text-sm font-medium flex-1`}
+                className={`${styles.buttonBg} text-white px-4 py-2 rounded-full text-sm font-medium flex-1 hover:bg-opacity-90 transition-colors`}
                 onClick={primaryAction.onClick}
               >
                 {primaryAction.text}
@@ -101,7 +118,7 @@ const TreatmentCard = ({
             
             {secondaryAction && (
               <button 
-                className="border border-gray-300 px-4 py-2 rounded-full text-sm font-medium flex-1"
+                className="border border-border-gray text-text-medium hover:bg-gray-50 px-4 py-2 rounded-full text-sm font-medium flex-1 transition-colors"
                 onClick={secondaryAction.onClick}
               >
                 {secondaryAction.text}
@@ -116,20 +133,20 @@ const TreatmentCard = ({
             {resourceLinks.map((link, index) => (
               <button 
                 key={index}
-                className="w-full flex items-center justify-between p-3 rounded-md hover:bg-gray-50 text-left min-h-[44px]"
+                className="w-full flex items-center justify-between p-3 rounded-md hover:bg-gray-50 text-left min-h-[44px] transition-colors"
                 onClick={link.onClick}
               >
                 <div className="flex items-center">
                   {link.icon && (
-                    <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center mr-3">
+                    <div className={`w-8 h-8 rounded-full ${styles.headerBg} bg-opacity-70 flex items-center justify-center mr-3`}>
                       {link.icon}
                     </div>
                   )}
-                  <span className="font-medium">{link.text}</span>
+                  <span className="font-medium text-text-dark">{link.text}</span>
                 </div>
                 <svg 
                   xmlns="http://www.w3.org/2000/svg" 
-                  className="h-5 w-5 text-gray-400" 
+                  className={`h-5 w-5 ${styles.titleColor}`}
                   viewBox="0 0 20 20" 
                   fill="currentColor"
                 >
@@ -149,7 +166,7 @@ const TreatmentCard = ({
 };
 
 TreatmentCard.propTypes = {
-  type: PropTypes.oneOf(['weight', 'hair']),
+  type: PropTypes.oneOf(['weight', 'hair', 'wellness', 'sexual']),
   title: PropTypes.string.isRequired,
   subtitle: PropTypes.string.isRequired,
   status: PropTypes.string,

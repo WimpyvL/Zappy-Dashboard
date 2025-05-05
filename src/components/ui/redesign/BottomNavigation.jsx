@@ -5,14 +5,13 @@ import {
   Home, 
   Heart, 
   Calendar, 
-  ShoppingBag, 
-  BookOpen 
+  ShoppingBag
 } from 'lucide-react';
 
 /**
  * BottomNavigation component
  * 
- * A fixed bottom navigation bar with 5 main sections: Home, Care, Programs, Shop, and Learn
+ * A fixed bottom navigation bar with 4 main sections: Home, Care, Programs, and Shop
  * 
  * @param {string} activePage - The currently active page
  * @param {object} notifications - Object with notification counts for each section
@@ -43,12 +42,6 @@ const BottomNavigation = ({ activePage, notifications = {} }) => {
       name: 'Shop', 
       icon: ShoppingBag, 
       route: '/shop' 
-    },
-    { 
-      id: 'learn', 
-      name: 'Learn', 
-      icon: BookOpen, 
-      route: '/learn' 
     }
   ];
   
@@ -82,13 +75,12 @@ const BottomNavigation = ({ activePage, notifications = {} }) => {
 };
 
 BottomNavigation.propTypes = {
-  activePage: PropTypes.oneOf(['home', 'care', 'programs', 'shop', 'learn']).isRequired,
+  activePage: PropTypes.oneOf(['home', 'care', 'programs', 'shop']).isRequired,
   notifications: PropTypes.shape({
     home: PropTypes.number,
     care: PropTypes.number,
     programs: PropTypes.number,
-    shop: PropTypes.number,
-    learn: PropTypes.number
+    shop: PropTypes.number
   })
 };
 

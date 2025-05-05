@@ -8,7 +8,15 @@ import { LucideScissors, LucideScale, LucidePill, LucideShield, LucideMessageSqu
  * It displays patient services in a modular format with provider recommendations directly
  * below each service module.
  */
-const ModularServiceInterface = ({ services = [] }) => {
+const ModularServiceInterface = ({ 
+  services = [], 
+  onViewPlanDetails = () => {},
+  onMessageProvider = () => {},
+  onOrderRefills = () => {},
+  onLogWeight = () => {},
+  onTakePhotos = () => {},
+  onAddProduct = () => {}
+}) => {
   // Map service type to icon and color scheme
   const serviceConfig = {
     'hair-loss': {
@@ -66,9 +74,21 @@ const ModularServiceInterface = ({ services = [] }) => {
                     <ServiceIcon className="h-5 w-5 mr-2" style={{ color: config.colors.primary }} />
                     {service.name}
                   </h3>
-                  <div className="inline-block px-2 py-1 text-white text-xs font-medium rounded" 
-                       style={{ backgroundColor: config.colors.secondary }}>
-                    {service.status}
+                  <div className="flex items-center space-x-3">
+                    <button 
+                      className="text-xs font-medium hover:underline flex items-center"
+                      style={{ color: config.colors.primary }}
+                      onClick={() => onViewPlanDetails(service)}
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd" />
+                      </svg>
+                      Plan Details
+                    </button>
+                    <div className="inline-block px-2 py-1 text-white text-xs font-medium rounded" 
+                         style={{ backgroundColor: config.colors.secondary }}>
+                      {service.status}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -139,8 +159,21 @@ const ModularServiceInterface = ({ services = [] }) => {
                                 <p className="text-xs text-gray-500">{action.description}</p>
                               </div>
                             </div>
-                            <button className="px-3 py-1.5 text-white text-xs font-medium rounded-full hover:bg-opacity-90" 
-                                    style={{ backgroundColor: config.colors.primary }}>
+                            <button 
+                              className="px-3 py-1.5 text-white text-xs font-medium rounded-full hover:bg-opacity-90" 
+                              style={{ backgroundColor: config.colors.primary }}
+                              onClick={() => {
+                                // Handle different action types
+                                if (action.icon === 'weight') {
+                                  onLogWeight(action, service);
+                                } else if (action.icon === 'camera') {
+                                  onTakePhotos(action, service);
+                                } else {
+                                  // Generic handler for other action types
+                                  console.log(`Action ${action.title} clicked`);
+                                }
+                              }}
+                            >
                               {action.buttonText}
                             </button>
                           </div>
@@ -152,11 +185,17 @@ const ModularServiceInterface = ({ services = [] }) => {
                 
                 {/* Module Actions */}
                 <div className="mt-6 flex flex-wrap gap-3">
-                  <button className="px-4 py-2 text-white rounded-full text-sm font-medium hover:bg-opacity-90 flex items-center" 
-                          style={{ backgroundColor: config.colors.primary }}>
+                  <button 
+                    className="px-4 py-2 text-white rounded-full text-sm font-medium hover:bg-opacity-90 flex items-center" 
+                    style={{ backgroundColor: config.colors.primary }}
+                    onClick={() => onMessageProvider(service)}
+                  >
                     <LucideMessageSquare className="w-4 h-4 mr-2" /> Message Provider
                   </button>
-                  <button className="px-4 py-2 bg-gray-100 text-gray-700 rounded-full text-sm font-medium hover:bg-gray-200 flex items-center">
+                  <button 
+                    className="px-4 py-2 bg-gray-100 text-gray-700 rounded-full text-sm font-medium hover:bg-gray-200 flex items-center"
+                    onClick={() => onOrderRefills(service)}
+                  >
                     <LucideShoppingCart className="w-4 h-4 mr-2" /> Order Refills
                   </button>
                 </div>
@@ -193,8 +232,11 @@ const ModularServiceInterface = ({ services = [] }) => {
                             <p className="text-xs text-gray-500 mb-2 line-clamp-2">{product.description}</p>
                             <div className="flex justify-between items-center">
                               <span className="text-xs font-medium">${product.price}</span>
-                              <button className="text-xs text-white px-2 py-1 rounded-full" 
-                                      style={{ backgroundColor: config.colors.primary }}>
+                              <button 
+                                className="text-xs text-white px-2 py-1 rounded-full" 
+                                style={{ backgroundColor: config.colors.primary }}
+                                onClick={() => onAddProduct(product, service)}
+                              >
                                 Add
                               </button>
                             </div>

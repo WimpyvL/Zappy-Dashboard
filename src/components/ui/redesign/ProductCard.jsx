@@ -1,5 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
+import { getProductImage, getWeightManagementImage, getHairTreatmentImage, getWellnessImage, getSexualHealthImage } from '../../../utils/placeholderImages';
 
 /**
  * ProductCard component
@@ -31,22 +32,24 @@ const ProductCard = ({
   onAddToCart,
   onViewDetails
 }) => {
-  // Define badge color variants
+  // Define badge color variants using our theme colors
   const badgeVariants = {
-    info: 'bg-[#dbeafe] text-[#2D7FF9]',
-    success: 'bg-[#d1fae5] text-[#10b981]',
-    warning: 'bg-[#FFD100] bg-opacity-70 text-gray-900',
-    purple: 'bg-purple-100 text-purple-600',
-    gray: 'bg-gray-100 text-gray-600'
+    info: 'bg-info bg-opacity-15 text-info',
+    success: 'bg-success bg-opacity-15 text-success',
+    warning: 'bg-warning bg-opacity-30 text-text-dark',
+    error: 'bg-error bg-opacity-15 text-error',
+    gray: 'bg-text-light bg-opacity-15 text-text-medium'
   };
   
-  // Define tag color variants
+  // Define tag color variants using our theme colors
   const tagVariants = {
-    info: 'bg-blue-100 text-blue-600',
-    weight: 'bg-blue-100 text-blue-600',
-    hair: 'bg-purple-100 text-purple-600',
-    bundle: 'bg-green-100 text-green-600',
-    gray: 'bg-gray-100 text-gray-600'
+    info: 'bg-info bg-opacity-15 text-info',
+    weight: 'bg-weight-blue text-zappy-blue',
+    hair: 'bg-hair-purple text-purple-600',
+    wellness: 'bg-wellness-green text-success',
+    sexual: 'bg-sexual-health-pink text-error',
+    bundle: 'bg-zappy-yellow bg-opacity-30 text-text-dark',
+    gray: 'bg-text-light bg-opacity-15 text-text-medium'
   };
   
   // Get the appropriate color classes
@@ -75,9 +78,18 @@ const ProductCard = ({
             className="w-full h-full object-cover"
           />
         ) : (
-          <div className="w-full h-full flex items-center justify-center bg-gray-200">
-            <span className="text-gray-400">No image</span>
-          </div>
+          // Use category-specific placeholder images based on tag
+          <img 
+            src={
+              tagVariant === 'weight' ? getWeightManagementImage(300, 200) :
+              tagVariant === 'hair' ? getHairTreatmentImage(300, 200) :
+              tagVariant === 'wellness' ? getWellnessImage(300, 200) :
+              tagVariant === 'sexual' ? getSexualHealthImage(300, 200) :
+              getProductImage(300, 200, tag || 'Product')
+            } 
+            alt={title} 
+            className="w-full h-full object-cover"
+          />
         )}
         
         {/* Badge (e.g., "Works with Wegovy®") */}
@@ -98,7 +110,7 @@ const ProductCard = ({
       {/* Product Info */}
       <div className="p-3">
         <h4 
-          className="font-medium text-sm cursor-pointer hover:text-[#2D7FF9]"
+          className="font-medium text-sm cursor-pointer hover:text-zappy-blue transition-colors"
           onClick={onViewDetails}
         >
           {title}
@@ -118,7 +130,7 @@ const ProductCard = ({
             
             {/* Discount percentage */}
             {discountPercentage > 0 && (
-              <span className="text-xs text-green-600 ml-1">
+              <span className="text-xs text-success ml-1">
                 -{discountPercentage}%
               </span>
             )}
@@ -126,7 +138,7 @@ const ProductCard = ({
           
           {/* Add to Cart Button */}
           <button 
-            className="text-xs text-white px-3 py-1.5 rounded-full bg-[#2D7FF9]"
+            className="text-xs text-white px-3 py-1.5 rounded-full bg-zappy-blue hover:bg-opacity-90 transition-colors"
             onClick={(e) => {
               e.stopPropagation();
               onAddToCart && onAddToCart();
@@ -147,9 +159,9 @@ ProductCard.propTypes = {
   price: PropTypes.number.isRequired,
   originalPrice: PropTypes.number,
   badge: PropTypes.string,
-  badgeVariant: PropTypes.oneOf(['info', 'success', 'warning', 'purple', 'gray']),
+  badgeVariant: PropTypes.oneOf(['info', 'success', 'warning', 'error', 'gray']),
   tag: PropTypes.string,
-  tagVariant: PropTypes.oneOf(['info', 'weight', 'hair', 'bundle', 'gray']),
+  tagVariant: PropTypes.oneOf(['info', 'weight', 'hair', 'wellness', 'sexual', 'bundle', 'gray']),
   onAddToCart: PropTypes.func,
   onViewDetails: PropTypes.func
 };

@@ -1,10 +1,10 @@
 // components/patients/components/PatientForms.jsx
 import React, { useState } from 'react';
 import { Plus, CheckCircle, Clock, XCircle, Send, RefreshCw } from 'lucide-react'; // Added icons
-// import { toast } from 'react-toastify'; // Removed unused toast
-import { useSendFormReminder, useResendForm } from '../../../apis/forms/hooks'; // Import new hooks
+import { toast } from 'react-toastify';
+import { useSendFormReminder, useResendForm, useSendFormToPatient } from '../../../apis/forms/hooks'; // Import hooks
 import LoadingSpinner from './common/LoadingSpinner';
-import { useNavigate } from 'react-router-dom'; // Add React Router navigation
+import FormSelectionModal from '../../../components/forms/FormSelectionModal';
 
 const FormStatusBadge = ({ status }) => {
   return (
@@ -32,8 +32,8 @@ const FormStatusBadge = ({ status }) => {
 };
 
 const PatientForms = ({ patientId, forms, loading }) => {
-  const navigate = useNavigate(); // Add navigate function
   const [formFilter, setFormFilter] = useState('all');
+  const [showFormSelectionModal, setShowFormSelectionModal] = useState(false);
 
   // Format date for display
   const formatDate = (dateString) => {
@@ -52,8 +52,15 @@ const PatientForms = ({ patientId, forms, loading }) => {
       ? forms
       : forms.filter((form) => form.status === formFilter);
 
+  // Hooks for form actions
   const sendReminderMutation = useSendFormReminder();
   const resendFormMutation = useResendForm();
+  const sendFormToPatientMutation = useSendFormToPatient({
+    onSuccess: () => {
+      setShowFormSelectionModal(false);
+      // Optionally refetch forms list here if needed
+    }
+  });
 
   // Send form reminder
   const handleSendFormReminder = (formId) => {
@@ -63,6 +70,16 @@ const PatientForms = ({ patientId, forms, loading }) => {
   // Resend form
   const handleResendForm = (formId) => {
     resendFormMutation.mutate({ patientId, formId });
+  };
+
+  // Handle form selection from modal
+  const handleFormSelect = (formId) => {
+    if (!formId) return;
+    
+    sendFormToPatientMutation.mutate({ 
+      patientId, 
+      formId 
+    });
   };
 
   return (
@@ -82,7 +99,7 @@ const PatientForms = ({ patientId, forms, loading }) => {
           </select>
           <button
             className="px-3 py-1 text-sm bg-indigo-600 text-white rounded-md hover:bg-indigo-700 flex items-center"
-            onClick={() => navigate(`/forms?patientId=${patientId}`)}
+            onClick={() => setShowFormSelectionModal(true)}
           >
             <Plus className="h-4 w-4 mr-1" />
             Send Form
@@ -171,6 +188,14 @@ const PatientForms = ({ patientId, forms, loading }) => {
             : `No ${formFilter} forms found for this patient.`}
         </div>
       )}
+
+      {/* Form Selection Modal */}
+      <FormSelectionModal
+        isOpen={showFormSelectionModal}
+        onClose={() => setShowFormSelectionModal(false)}
+        patientId={patientId}
+        onFormSelect={handleFormSelect}
+      />
     </div>
   );
 };

@@ -228,6 +228,7 @@ export const useCreateConsultation = (options = {}) => {
     mutationFn: async (consultationData) => {
       const dataToInsert = {
         ...consultationData,
+        status: 'reviewed', // Set status to 'reviewed' by default when creating a consultation
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       };
@@ -246,8 +247,15 @@ export const useCreateConsultation = (options = {}) => {
     },
     onSuccess: (data, variables, context) => {
       toast.success('Consultation created successfully');
-      queryClient.invalidateQueries({ queryKey: queryKeys.lists() });
-      options.onSuccess?.(data, variables, context);
+      
+      // Force invalidate all consultation queries to ensure fresh data
+      console.log("Invalidating consultation queries after creation");
+      queryClient.invalidateQueries({ queryKey: queryKeys.all });
+      
+      // Add a small delay before calling the onSuccess callback to ensure the UI has time to update
+      setTimeout(() => {
+        options.onSuccess?.(data, variables, context);
+      }, 300);
     },
     onError: (error, variables, context) => {
       toast.error(

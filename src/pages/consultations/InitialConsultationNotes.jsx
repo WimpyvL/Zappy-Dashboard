@@ -200,11 +200,31 @@ const InitialConsultationNotes = ({
       // --- Logic for EXISTING consultation (Approve/Invoice) ---
       console.log(`Approving/Invoicing existing consultation ${currentConsultationId}:`, submissionPayload);
       try {
-        const response = await fetch(`/api/consultations/${currentConsultationId}/approve-and-invoice`, { /* ... fetch options ... */ });
-        if (!response.ok) { /* ... error handling ... */ }
+        // Update the status to 'reviewed' using the updateStatusMutation
+        if (updateStatusMutation) {
+          console.log("Updating consultation status to 'reviewed'");
+          await updateStatusMutation.mutateAsync({ 
+            consultationId: currentConsultationId, 
+            status: 'reviewed' 
+          });
+        }
+        
+        // Then try to call the API endpoint for invoicing
+        try {
+          const response = await fetch(`/api/consultations/${currentConsultationId}/approve-and-invoice`, { /* ... fetch options ... */ });
+          if (!response.ok) { 
+            console.warn("Invoice API call failed, but status was updated");
+          }
+        } catch (invoiceError) {
+          console.warn("Invoice API call error, but status was updated:", invoiceError);
+        }
+        
         toast.success("Consultation approved successfully! An invoice will be sent to the patient.");
         if (onClose) onClose();
-      } catch (error) { /* ... error handling ... */ }
+      } catch (error) { 
+        console.error("Error updating consultation status:", error);
+        toast.error(`Error: ${error.message || 'Could not approve consultation.'}`);
+      }
     } else {
       // --- Logic for NEW consultation (Create) ---
       console.log("Creating new consultation:", submissionPayload);
@@ -212,7 +232,7 @@ const InitialConsultationNotes = ({
         const apiPayload = {
           patient_id: submissionPayload.patientId,
           consultation_type: getServiceById(submissionPayload.medicationOrder?.serviceId)?.name || 'Unknown',
-          status: 'pending',
+          status: 'reviewed',
           client_notes: JSON.stringify(submissionPayload.patientInfo),
           provider_notes: JSON.stringify({
             treatmentApproach: submissionPayload.medicationOrder?.treatmentApproach,

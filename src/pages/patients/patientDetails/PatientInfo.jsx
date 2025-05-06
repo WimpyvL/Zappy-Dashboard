@@ -1,11 +1,11 @@
 // components/patients/components/PatientInfo.jsx
 import React from 'react';
-import { Mail, Phone, MapPin, Calendar, AlertCircle, Edit } from 'lucide-react';
-import ConsolidatedSubscriptions from '../../../components/subscriptions/ConsolidatedSubscriptions';
-import { usePatientSubscription } from '../../../apis/treatmentPackages/hooks';
+import { Mail, Phone, MapPin, Calendar, CreditCard, Clock, CheckSquare, AlertCircle } from 'lucide-react';
+import PatientSubscriptions from '../PatientSubscriptions';
+import { usePatientSubscription } from '../../../apis/treatmentPackages/hooks'; // Fixed hook name from plural to singular
 
 const PatientInfo = ({ patient }) => {
-  // Fetch patient's subscription using the hook
+  // Fetch patient's subscription using the correct hook (singular, not plural)
   const { data: subscription, isLoading: isLoadingSubscription } = usePatientSubscription(patient.id);
   // Using activeSubscription directly since usePatientSubscription already returns the active one
   const activeSubscription = subscription;
@@ -66,18 +66,9 @@ const PatientInfo = ({ patient }) => {
       <div className="lg:col-span-2 space-y-6">
         {/* Enhanced Patient Information Card */}
         <div className="bg-white p-6 rounded-lg shadow">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-lg font-medium text-gray-900 flex items-center">
-              <span className="mr-2">🧑</span> Patient Information
-            </h2>
-            <button
-              className="px-3 py-1 text-sm bg-white border border-gray-300 rounded-md hover:bg-gray-50 flex items-center"
-              onClick={() => alert('Edit functionality needs to be implemented')}
-            >
-              <Edit className="h-4 w-4 mr-1" />
-              Edit
-            </button>
-          </div>
+          <h2 className="text-lg font-medium text-gray-900 mb-4 flex items-center">
+            <span className="mr-2">🧑</span> Patient Information
+          </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-3">
               <div>
@@ -194,75 +185,124 @@ const PatientInfo = ({ patient }) => {
           )}
         </div>
 
-        {/* Consolidated Subscriptions Component */}
-        <ConsolidatedSubscriptions patient={patient} />
+        {/* Full Subscriptions Component (moved to bottom) */}
+        <PatientSubscriptions patient={patient} />
       </div>
 
-      {/* Right column - now used for other patient information */}
+      {/* Right column (subscription status and progress) */}
       <div className="space-y-6">
-        {/* Insurance Information Card */}
+        {/* Subscription Status Card (New) */}
         <div className="bg-white p-6 rounded-lg shadow">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-lg font-medium text-gray-900 flex items-center">
-              <span className="mr-2">🏥</span> Insurance Information
-            </h2>
-            <button
-              className="px-3 py-1 text-sm bg-white border border-gray-300 rounded-md hover:bg-gray-50 flex items-center"
-              onClick={() => alert('Insurance edit functionality needs to be implemented')}
-            >
-              <Edit className="h-4 w-4 mr-1" />
-              Edit
-            </button>
-          </div>
+          <h2 className="text-lg font-medium text-gray-900 mb-4 flex items-center">
+            <span className="mr-2">💳</span> Subscription Status
+          </h2>
           
-          <div className="space-y-3">
-            <div>
-              <p className="text-sm text-gray-500">Insurance Provider</p>
-              <p className="text-sm font-medium">{patient.insurance_provider || 'Not provided'}</p>
+          {isLoadingSubscription ? (
+            <div className="py-4 text-center text-gray-500">Loading subscription status...</div>
+          ) : activeSubscription ? (
+            <div className="space-y-3">
+              <div>
+                <p className="text-sm text-gray-500">Subscription ID</p>
+                <p className="text-sm font-medium">{activeSubscription.id?.substring(0, 8) || 'Not available'}</p>
+              </div>
+              
+              <div>
+                <p className="text-sm text-gray-500">Status</p>
+                <p className="text-sm font-medium">
+                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColorClass(activeSubscription.status)}`}>
+                    {activeSubscription.status?.charAt(0).toUpperCase() + activeSubscription.status?.slice(1) || 'Unknown'}
+                  </span>
+                </p>
+              </div>
+              
+              <div>
+                <p className="text-sm text-gray-500">Started</p>
+                <p className="text-sm font-medium">{formatDate(activeSubscription.currentPeriodStart)}</p>
+              </div>
+              
+              <div>
+                <p className="text-sm text-gray-500">Billing Cycle</p>
+                <p className="text-sm font-medium flex items-center">
+                  <Clock className="h-4 w-4 text-gray-400 mr-2" />
+                  {activeSubscription.durationName || 'Monthly'}
+                </p>
+              </div>
+              
+              <div>
+                <p className="text-sm text-gray-500">Next Billing Date</p>
+                <p className="text-sm font-medium">{formatDate(activeSubscription.currentPeriodEnd)}</p>
+              </div>
+              
+              <div>
+                <p className="text-sm text-gray-500">Payment Method</p>
+                <p className="text-sm font-medium flex items-center">
+                  <CreditCard className="h-4 w-4 text-gray-400 mr-2" />
+                  {activeSubscription.stripeSubscriptionId ? 'Credit card on file' : 'Not available'}
+                </p>
+              </div>
+              
+              <div className="flex justify-end space-x-3 mt-4">
+                <button className="px-3 py-1 text-xs border border-gray-300 text-gray-700 rounded hover:bg-gray-50">
+                  Update Payment
+                </button>
+                <button className="px-3 py-1 text-xs border border-gray-300 text-gray-700 rounded hover:bg-gray-50">
+                  {activeSubscription.status === 'active' ? 'Pause' : 'Resume'} Subscription
+                </button>
+              </div>
             </div>
-            
-            <div>
-              <p className="text-sm text-gray-500">Policy Number</p>
-              <p className="text-sm font-medium">{patient.insurance_policy_number || 'Not provided'}</p>
+          ) : (
+            <div className="py-4 text-center text-gray-500">
+              No active subscription found.
             </div>
-            
-            <div>
-              <p className="text-sm text-gray-500">Group Number</p>
-              <p className="text-sm font-medium">{patient.insurance_group_number || 'Not provided'}</p>
-            </div>
-            
-            <div>
-              <p className="text-sm text-gray-500">Primary Holder</p>
-              <p className="text-sm font-medium">{patient.insurance_primary_holder || 'Patient'}</p>
-            </div>
-            
-            {/* Removed small update button in favor of the main Edit button */}
-          </div>
+          )}
         </div>
-        
-        {/* Pharmacy Information Card */}
+
+        {/* Treatment Progress Card (New) */}
         <div className="bg-white p-6 rounded-lg shadow">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-lg font-medium text-gray-900 flex items-center">
-              <span className="mr-2">💊</span> Pharmacy Information
-            </h2>
-            <button
-              className="px-3 py-1 text-sm bg-white border border-gray-300 rounded-md hover:bg-gray-50 flex items-center"
-              onClick={() => alert('Pharmacy edit functionality needs to be implemented')}
-            >
-              <Edit className="h-4 w-4 mr-1" />
-              Edit
-            </button>
-          </div>
+          <h2 className="text-lg font-medium text-gray-900 mb-4 flex items-center">
+            <span className="mr-2">📊</span> Compliance Summary
+          </h2>
           
-          <div className="space-y-3">
+          {isLoadingSubscription ? (
+            <div className="py-4 text-center text-gray-500">Loading compliance data...</div>
+          ) : activeSubscription ? (
             <div>
-              <p className="text-sm text-gray-500">Preferred Pharmacy</p>
-              <p className="text-sm font-medium">{patient.preferred_pharmacy || 'Not specified'}</p>
+              {/* Simple progress indicator */}
+              <div className="mt-4">
+                <div className="text-sm text-gray-500 mb-1">Treatment Adherence</div>
+                <div className="w-full bg-gray-200 rounded-full h-2">
+                  {/* Assuming 75% progress as a placeholder */}
+                  <div className="bg-green-500 h-2 rounded-full" style={{ width: '75%' }}></div>
+                </div>
+                <div className="flex justify-between text-xs text-gray-500 mt-1">
+                  <div>Start</div>
+                  <div className="flex items-center">
+                    <CheckSquare className="h-3 w-3 text-green-500 mr-1" />
+                    <span>75% adherence rate</span>
+                  </div>
+                  <div>Goal</div>
+                </div>
+              </div>
+              
+              {/* Key metrics */}
+              <div className="grid grid-cols-2 gap-3 mt-4">
+                <div className="bg-gray-50 p-3 rounded">
+                  <div className="text-xs text-gray-500">Appointments</div>
+                  <div className="text-lg font-semibold">4/5</div>
+                  <div className="text-xs text-green-600">80% attended</div>
+                </div>
+                <div className="bg-gray-50 p-3 rounded">
+                  <div className="text-xs text-gray-500">Medication</div>
+                  <div className="text-lg font-semibold">28/30</div>
+                  <div className="text-xs text-green-600">93% adherence</div>
+                </div>
+              </div>
             </div>
-            
-            {/* Removed small update button in favor of the main Edit button */}
-          </div>
+          ) : (
+            <div className="py-4 text-center text-gray-500">
+              No treatment compliance data available.
+            </div>
+          )}
         </div>
       </div>
     </div>

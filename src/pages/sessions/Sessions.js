@@ -7,6 +7,7 @@ import { usePatients, usePatientById } from '../../apis/patients/hooks';
 import { useProviders } from '../../apis/providers/hooks';
 import { useSessions, useUpdateSessionStatus, useCreateSession } from '../../apis/sessions/hooks'; // Import create hook
 import { useGetUsers } from '../../apis/users/hooks';
+import { useForms } from '../../apis/forms/hooks'; // Import forms hook
 import PatientFollowUpNotes from '../patients/PatientFollowUpNotes'; // Import PatientFollowUpNotes component
 import {
   Search,
@@ -94,9 +95,11 @@ const Sessions = () => {
   const [scheduleFormData, setScheduleFormData] = useState({
     patientId: null,
     sessionType: 'medical',
+    serviceType: '', // Add the service type field
     doctorId: null,
     dateTime: null,
     notes: '',
+    sendForm: null, // Changed from boolean to form ID (null means no form selected)
   });
   const [showNoteModal, setShowNoteModal] = useState(false);
   const [selectedSessionNote, setSelectedSessionNote] = useState(null);
@@ -154,13 +157,17 @@ const Sessions = () => {
   // Fetch providers for the dropdown
   const { data: providersData, isLoading: isLoadingProviders } = useProviders();
   const allProviders = providersData || [];
+  
+  // Fetch available forms
+  const { data: formsData, isLoading: isLoadingForms } = useForms();
+  const availableForms = formsData?.data || [];
 
   // Create session mutation
   const createSessionMutation = useCreateSession({
     onSuccess: () => {
       setShowScheduleModal(false); // Close modal on success
       // Optionally reset form state here if needed
-      setScheduleFormData({ patientId: null, sessionType: 'medical', doctorId: null, dateTime: null, notes: '' });
+      setScheduleFormData({ patientId: null, sessionType: 'medical', serviceType: '', doctorId: null, dateTime: null, notes: '', sendForm: null });
     },
     // onError handled globally by the hook (toast)
   });
@@ -711,6 +718,45 @@ const Sessions = () => {
                     <Radio value="psych">Psych</Radio>
                   </Radio.Group>
                 </div>
+
+                {/* Service Type Field - New */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Service Type</label>
+                  <Select
+                    style={{ width: '100%' }}
+                    placeholder="Select Service Type"
+                    value={scheduleFormData.serviceType || undefined}
+                    onChange={value => setScheduleFormData(prev => ({ ...prev, serviceType: value }))}
+                    options={[
+                      { value: 'consultation', label: 'Consultation' },
+                      { value: 'follow-up', label: 'Follow-up' },
+                      { value: 'urgent-care', label: 'Urgent Care' },
+                      { value: 'wellness', label: 'Wellness Check' }
+                    ]}
+                  />
+                </div>
+
+                {/* Send Form Option - Dropdown with available forms */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Pre-consultation Form</label>
+                  <Select
+                    style={{ width: '100%' }}
+                    placeholder="Select a form to send"
+                    value={scheduleFormData.sendForm}
+                    onChange={value => setScheduleFormData(prev => ({ ...prev, sendForm: value }))}
+                    loading={isLoadingForms}
+                    notFoundContent="No forms available"
+                    options={
+                      availableForms.length > 0 
+                        ? availableForms.map(form => ({
+                            value: form.id,
+                            label: form.title || form.name
+                          }))
+                        : [{ value: null, label: 'No forms available', disabled: true }]
+                    }
+                  />
+                </div>
+
                 {/* Provider Field */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Provider <span className="text-red-500">*</span></label>

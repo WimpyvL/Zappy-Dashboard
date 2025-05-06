@@ -1,12 +1,15 @@
 import React from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom'; // Removed unused Link
 
 // Layout wrapper
 import MainLayout from '../layouts/MainLayout.jsx';
+// import ProtectedRoute from "../appGuards/ProtectedRoute.jsx"; // Temporarily commented out
 
 // Authentication pages
 import Login from '../pages/auth/Login.jsx';
 import Signup from '../pages/auth/Signup';
+
+// Dashboard import removed - no longer needed
 
 // Patient components
 import Patients from '../pages/patients/Patients';
@@ -48,6 +51,7 @@ import ServiceManagement from '../pages/services/ServiceManagement';
 import DiscountManagement from '../pages/discounts/DiscountManagement';
 import TagManagement from '../pages/tags/TagManagement';
 import FormViewer from '../pages/settings/pages/forms/FormViewer.jsx';
+import ShopPage from '../pages/shop/ShopPage.jsx'; // Import the new ShopPage
 import MarketplacePage from '../pages/marketplace/MarketplacePage.jsx'; // Import the new MarketplacePage
 import MessagingPage from '../pages/messaging/MessagingPage.jsx'; // Import Messaging Page
 import AuditLogPage from '../pages/auditlog/AuditLogPage.jsx'; // Import Audit Log Page
@@ -55,15 +59,15 @@ import SystemMapPage from '../pages/system-map/SystemMapPage.jsx'; // Import Sys
 import PatientNotesPage from '../pages/notes/PatientNotesPage.jsx'; // Import Patient Notes Page
 import PatientDashboardPage from '../pages/patients/PatientDashboardPage.jsx'; // Import Patient Dashboard Page
 import PatientHomePage from '../pages/patients/PatientHomePage.jsx'; // Import Patient Home Page
-import ProgramsPage from '../pages/patients/ProgramsPage.jsx'; // Import Programs Page
-import ShopPage from '../pages/patients/ShopPage.jsx'; // Import Shop Page
+// DirectPatientHomePage import removed - no longer needed
+// TestPage import removed - no longer needed
+// PatientProgramPage import removed - no longer needed
 import PatientRecordsPage from '../pages/records/PatientRecordsPage.jsx'; // Import Patient Records Page
 import PatientFormsPage from '../pages/forms/PatientFormsPage.jsx'; // Import Patient Forms Page
 import PatientOrderHistoryPage from '../pages/orders/PatientOrderHistoryPage.jsx'; // Import Patient Order History Page
 import PatientBillingPage from '../pages/billing/PatientBillingPage.jsx'; // Import Patient Billing Page
 import PatientProfilePage from '../pages/profile/PatientProfilePage.jsx'; // Import Patient Profile Page
 import PatientServicesPage from '../pages/patients/PatientServicesPage.jsx'; // Import Patient Services Page
-import ModularPatientServicesPage from '../pages/patients/ModularPatientServicesPage.jsx'; // Import Modular Patient Services Page
 import EditProfilePage from '../pages/profile/EditProfilePage.jsx'; // Import Edit Profile Page
 import FormsManagementV2 from '../pages/settings/pages/forms-v2/FormsManagementV2.jsx'; // Import Forms V2
 import PaymentMethodsPage from '../pages/payment/PaymentMethodsPage.jsx'; // Import Payment Methods Page
@@ -85,8 +89,6 @@ import SubscriptionPlansPage from '../pages/admin/SubscriptionPlansPage';
 import PatientSubscriptionPage from '../pages/patients/PatientSubscriptionPage';
 import ProductSubscriptionManagement from '../pages/admin/ProductSubscriptionManagement';
 import ResourceManagementPage from '../pages/admin/ResourceManagementPage';
-import AIDashboardPage from '../pages/admin/AIDashboardPage';
-import CartPage from '../pages/cart/CartPage'; // Import the new CartPage
 
 // Paths constants
 import { paths } from './paths.js';
@@ -108,10 +110,10 @@ const AppRoutes = () => {
       <Route path={paths.login} element={<Login />} />
       <Route path={paths.signup} element={<Signup />} />
       <Route path={`${paths.forms}/:formId`} element={<FormViewer />} />
-      {/* Redirect dashboard to care page */}
+      {/* Redirect dashboard to patient home */}
       <Route
         path="/dashboard"
-        element={<Navigate to="/care" replace />}
+        element={<Navigate to="/patient-home-v2" replace />}
       />
 
       <Route
@@ -265,7 +267,7 @@ const AppRoutes = () => {
         }
       />
 
-      {/* Shop Page Route - New UI (replacing Marketplace) */}
+      {/* Shop Page Route */}
       <Route
         path="/shop" // Define the path for the shop page
         element={
@@ -275,10 +277,14 @@ const AppRoutes = () => {
         }
       />
 
-      {/* Redirect Marketplace to Shop */}
+      {/* Marketplace Page Route - Unified shop, programs, and subscriptions */}
       <Route
-        path="/marketplace"
-        element={<Navigate to="/shop" replace />}
+        path="/marketplace" 
+        element={
+          <MainLayout>
+            <MarketplacePage />
+          </MainLayout>
+        }
       />
 
       {/* Messaging Page Route */}
@@ -321,34 +327,6 @@ const AppRoutes = () => {
             <PatientHomePage />
           </MainLayout>
         }
-      />
-      
-      {/* Home Page Route - Redesigned UI (replacing Records) */}
-      <Route
-        path="/home" // Define the path for the home page
-        element={
-          <MainLayout>
-            <PatientHomePage />
-          </MainLayout>
-        }
-      />
-      
-      {/* Programs Page Route - Redesigned UI (replacing Resources) */}
-      <Route
-        path="/programs" // Define the path for the programs page
-        element={
-          <MainLayout>
-            <ProgramsPage />
-          </MainLayout>
-        }
-      />
-      
-      {/* Learn Page Route - Removed */}
-
-      {/* Redirect root to home page */}
-      <Route
-        path="/"
-        element={<Navigate to="/home" replace />}
       />
 
       {/* Test Page Route - Removed */}
@@ -463,49 +441,54 @@ const AppRoutes = () => {
         }
       />
 
-      {/* Care Page Route (formerly Patient Services) */}
+      {/* Patient Services Page Route */}
       <Route
-        path="/care" // Define the path for the care page
+        path="/my-services" // Define the path for the patient services page
         element={
           <MainLayout>
-            <ModularPatientServicesPage />
+            <PatientServicesPage />
+          </MainLayout>
+        }
+      />
+
+      {/* Patient Records Page Route */}
+      <Route
+        path="/records" // Define the path for the patient records page
+        element={
+          <MainLayout>
+            <PatientRecordsPage />
           </MainLayout>
         }
       />
       
-      {/* Redirect old my-services paths to care */}
+      {/* Patient Records All History Page Route */}
       <Route
-        path="/my-services"
-        element={<Navigate to="/care" replace />}
+        path="/records/all" // Define the path for the complete records history
+        element={
+          <MainLayout>
+            <PatientRecordsPage showAllHistory={true} />
+          </MainLayout>
+        }
       />
       
-      <Route
-        path="/my-services-v3"
-        element={<Navigate to="/care" replace />}
-      />
-
-      {/* Redirect Records to Home */}
-      <Route
-        path="/records"
-        element={<Navigate to="/home" replace />}
-      />
-      
-      {/* Redirect Records All History to Home */}
-      <Route
-        path="/records/all"
-        element={<Navigate to="/home" replace />}
-      />
-      
-      {/* Redirect Resources to Programs */}
+      {/* Resources Page Route */}
       <Route
         path="/resources"
-        element={<Navigate to="/programs" replace />}
+        element={
+          <MainLayout>
+            <ResourcesPage />
+          </MainLayout>
+        }
       />
       
-      {/* Resource Detail Page Route - Redirected to Programs */}
+      {/* Resource Detail Page Route */}
       <Route
         path="/resources/:id"
-        element={<Navigate to="/programs" replace />}
+        element={
+          <MainLayout>
+            <ResourceDetailPage />
+          </MainLayout>
+        }
       />
       
       {/* Records Export Page Route - REMOVED */}
@@ -552,16 +535,6 @@ const AppRoutes = () => {
         element={
           <MainLayout>
             <PaymentMethodsPage />
-          </MainLayout>
-        }
-      />
-      
-      {/* Cart Page Route */}
-      <Route
-        path="/cart" // Define the path for the cart page
-        element={
-          <MainLayout>
-            <CartPage />
           </MainLayout>
         }
       />
@@ -618,16 +591,6 @@ const AppRoutes = () => {
         element={
           <MainLayout>
             <ResourceManagementPage />
-          </MainLayout>
-        }
-      />
-      
-      {/* AI Dashboard Route */}
-      <Route
-        path="/admin/ai-dashboard"
-        element={
-          <MainLayout>
-            <AIDashboardPage />
           </MainLayout>
         }
       />

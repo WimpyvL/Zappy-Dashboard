@@ -10,12 +10,15 @@ import {
   AlertCircle,
   Loader,
 } from 'lucide-react';
+import { toast } from 'react-toastify';
+import { supabase } from '../../lib/supabase';
 import {
   useCreateDiscount,
   useDeleteDiscount,
   useDiscounts,
   useUpdateDiscount,
 } from '../../apis/discounts/hooks';
+import { useSubscriptionPlans } from '../../apis/subscriptionPlans/hooks';
 
 const DiscountManagement = () => {
   // State for filters and search
@@ -42,6 +45,7 @@ const DiscountManagement = () => {
     status: 'Active',
     usage_limit: null,
     usage_limit_per_user: null,
+    subscription_plan_ids: [],
   });
 
   // Use TanStack Query hooks
@@ -49,6 +53,7 @@ const DiscountManagement = () => {
   const createDiscount = useCreateDiscount();
   const updateDiscount = useUpdateDiscount();
   const deleteDiscount = useDeleteDiscount();
+  const { data: subscriptionPlans, isLoading: isLoadingSubscriptionPlans } = useSubscriptionPlans();
 
   // Extract discounts from the query data
   const discounts = data?.data || [];
@@ -188,9 +193,15 @@ const DiscountManagement = () => {
     }
 
     try {
+      // Delete the discount directly using the mutation
+      // The cascade delete in the database will handle any related records
       await deleteDiscount.mutateAsync(id);
+      
+      // Show success message
+      toast.success('Discount deleted successfully');
     } catch (err) {
       console.error('Error deleting discount:', err);
+      toast.error(`Error deleting discount: ${err.message || 'Unknown error'}`);
     }
   };
 
@@ -644,43 +655,226 @@ const DiscountManagement = () => {
 
                 <div className="mb-4">
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Requirement
+                    Requirements
                   </label>
-                  <select
-                    name="requirement"
-                    className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm rounded-md"
-                    value={formData.requirement}
-                    onChange={handleInputChange}
-                  >
-                    <option value="None">No minimum requirement</option>
-                    <option value="Subscription duration">
-                      Minimum subscription duration
-                    </option>
-                    <option value="Customer referral">Customer referral</option>
-                    <option value="New patients only">New patients only</option>
-                    <option value="Specific products">Specific products</option>
-                  </select>
+                  <div className="border border-gray-300 rounded-md p-3 max-h-60 overflow-y-auto">
+                    <div className="space-y-2">
+                      <label className="flex items-center">
+                        <input
+                          type="checkbox"
+                          name="requirements"
+                          value="Minimum Purchase"
+                          checked={formData.requirements?.includes('Minimum Purchase')}
+                          onChange={(e) => {
+                            const value = e.target.value;
+                            const isChecked = e.target.checked;
+                            
+                            setFormData(prev => {
+                              const currentRequirements = prev.requirements || [];
+                              
+                              if (isChecked) {
+                                return {
+                                  ...prev,
+                                  requirements: [...currentRequirements, value]
+                                };
+                              } else {
+                                return {
+                                  ...prev,
+                                  requirements: currentRequirements.filter(req => req !== value)
+                                };
+                              }
+                            });
+                          }}
+                          className="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded"
+                        />
+                        <span className="ml-2 text-sm text-gray-700">
+                          Minimum Purchase
+                        </span>
+                      </label>
+                      
+                      <label className="flex items-center">
+                        <input
+                          type="checkbox"
+                          name="requirements"
+                          value="Subscription Plans"
+                          checked={formData.requirements?.includes('Subscription Plans')}
+                          onChange={(e) => {
+                            const value = e.target.value;
+                            const isChecked = e.target.checked;
+                            
+                            setFormData(prev => {
+                              const currentRequirements = prev.requirements || [];
+                              
+                              if (isChecked) {
+                                return {
+                                  ...prev,
+                                  requirements: [...currentRequirements, value]
+                                };
+                              } else {
+                                return {
+                                  ...prev,
+                                  requirements: currentRequirements.filter(req => req !== value)
+                                };
+                              }
+                            });
+                          }}
+                          className="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded"
+                        />
+                        <span className="ml-2 text-sm text-gray-700">
+                          Subscription Plans
+                        </span>
+                      </label>
+                      
+                      <label className="flex items-center">
+                        <input
+                          type="checkbox"
+                          name="requirements"
+                          value="New patients only"
+                          checked={formData.requirements?.includes('New patients only')}
+                          onChange={(e) => {
+                            const value = e.target.value;
+                            const isChecked = e.target.checked;
+                            
+                            setFormData(prev => {
+                              const currentRequirements = prev.requirements || [];
+                              
+                              if (isChecked) {
+                                return {
+                                  ...prev,
+                                  requirements: [...currentRequirements, value]
+                                };
+                              } else {
+                                return {
+                                  ...prev,
+                                  requirements: currentRequirements.filter(req => req !== value)
+                                };
+                              }
+                            });
+                          }}
+                          className="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded"
+                        />
+                        <span className="ml-2 text-sm text-gray-700">
+                          New patients only
+                        </span>
+                      </label>
+                      
+                      <label className="flex items-center">
+                        <input
+                          type="checkbox"
+                          name="requirements"
+                          value="Specific products"
+                          checked={formData.requirements?.includes('Specific products')}
+                          onChange={(e) => {
+                            const value = e.target.value;
+                            const isChecked = e.target.checked;
+                            
+                            setFormData(prev => {
+                              const currentRequirements = prev.requirements || [];
+                              
+                              if (isChecked) {
+                                return {
+                                  ...prev,
+                                  requirements: [...currentRequirements, value]
+                                };
+                              } else {
+                                return {
+                                  ...prev,
+                                  requirements: currentRequirements.filter(req => req !== value)
+                                };
+                              }
+                            });
+                          }}
+                          className="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded"
+                        />
+                        <span className="ml-2 text-sm text-gray-700">
+                          Specific products
+                        </span>
+                      </label>
+                    </div>
+                  </div>
+                  <p className="mt-1 text-xs text-gray-500">
+                    Select one or more requirements for this discount
+                  </p>
                 </div>
 
-                {formData.requirement === 'Subscription duration' && (
+                {formData.requirements?.includes('Minimum Purchase') && (
                   <div className="mb-4">
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Minimum Purchase Amount
+                      Minimum Purchase Amount ($)
                     </label>
                     <div className="relative rounded-md shadow-sm">
                       <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                         <span className="text-gray-500 sm:text-sm">$</span>
                       </div>
-                        <input
-                          type="number"
-                          name="min_purchase"
-                          min="0"
-                          step="0.01"
-                          className="block w-full pl-7 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm rounded-md"
-                          value={formData.min_purchase}
-                          onChange={handleInputChange}
-                        />
+                      <input
+                        type="number"
+                        name="min_purchase"
+                        min="0"
+                        step="0.01"
+                        className="block w-full pl-7 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm rounded-md"
+                        value={formData.min_purchase}
+                        onChange={handleInputChange}
+                      />
                     </div>
+                    <p className="mt-1 text-xs text-gray-500">
+                      Discount will only apply to orders with a total value equal to or greater than this amount
+                    </p>
+                  </div>
+                )}
+
+                {formData.requirements?.includes('Subscription Plans') && (
+                  <div className="mb-4">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Subscription Plans
+                    </label>
+                    <div className="border border-gray-300 rounded-md p-3 max-h-60 overflow-y-auto">
+                      {isLoadingSubscriptionPlans ? (
+                        <div className="flex items-center justify-center py-2">
+                          <Loader className="h-5 w-5 text-primary animate-spin mr-2" />
+                          <span>Loading plans...</span>
+                        </div>
+                      ) : (
+                        <div className="space-y-2">
+                          {subscriptionPlans?.map(plan => (
+                            <label key={plan.id} className="flex items-center">
+                              <input
+                                type="checkbox"
+                                name="subscription_plan_ids"
+                                value={plan.id}
+                                checked={formData.subscription_plan_ids?.includes(plan.id)}
+                                onChange={(e) => {
+                                  const planId = e.target.value;
+                                  const isChecked = e.target.checked;
+                                  
+                                  setFormData(prev => {
+                                    const currentPlans = prev.subscription_plan_ids || [];
+                                    
+                                    if (isChecked) {
+                                      return {
+                                        ...prev,
+                                        subscription_plan_ids: [...currentPlans, planId]
+                                      };
+                                    } else {
+                                      return {
+                                        ...prev,
+                                        subscription_plan_ids: currentPlans.filter(id => id !== planId)
+                                      };
+                                    }
+                                  });
+                                }}
+                                className="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded"
+                              />
+                              <span className="ml-2 text-sm text-gray-700">
+                                {plan.name} (${plan.price})
+                              </span>
+                            </label>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                    <p className="mt-1 text-xs text-gray-500">
+                      Select one or more subscription plans to apply this discount to
+                    </p>
                   </div>
                 )}
               </div>
@@ -900,43 +1094,226 @@ const DiscountManagement = () => {
 
                 <div className="mb-4">
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Requirement
+                    Requirements
                   </label>
-                  <select
-                    name="requirement"
-                    className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm rounded-md"
-                    value={formData.requirement}
-                    onChange={handleInputChange}
-                  >
-                    <option value="None">No minimum requirement</option>
-                    <option value="Subscription duration">
-                      Minimum subscription duration
-                    </option>
-                    <option value="Customer referral">Customer referral</option>
-                    <option value="New patients only">New patients only</option>
-                    <option value="Specific products">Specific products</option>
-                  </select>
+                  <div className="border border-gray-300 rounded-md p-3 max-h-60 overflow-y-auto">
+                    <div className="space-y-2">
+                      <label className="flex items-center">
+                        <input
+                          type="checkbox"
+                          name="requirements"
+                          value="Minimum Purchase"
+                          checked={formData.requirements?.includes('Minimum Purchase')}
+                          onChange={(e) => {
+                            const value = e.target.value;
+                            const isChecked = e.target.checked;
+                            
+                            setFormData(prev => {
+                              const currentRequirements = prev.requirements || [];
+                              
+                              if (isChecked) {
+                                return {
+                                  ...prev,
+                                  requirements: [...currentRequirements, value]
+                                };
+                              } else {
+                                return {
+                                  ...prev,
+                                  requirements: currentRequirements.filter(req => req !== value)
+                                };
+                              }
+                            });
+                          }}
+                          className="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded"
+                        />
+                        <span className="ml-2 text-sm text-gray-700">
+                          Minimum Purchase
+                        </span>
+                      </label>
+                      
+                      <label className="flex items-center">
+                        <input
+                          type="checkbox"
+                          name="requirements"
+                          value="Subscription Plans"
+                          checked={formData.requirements?.includes('Subscription Plans')}
+                          onChange={(e) => {
+                            const value = e.target.value;
+                            const isChecked = e.target.checked;
+                            
+                            setFormData(prev => {
+                              const currentRequirements = prev.requirements || [];
+                              
+                              if (isChecked) {
+                                return {
+                                  ...prev,
+                                  requirements: [...currentRequirements, value]
+                                };
+                              } else {
+                                return {
+                                  ...prev,
+                                  requirements: currentRequirements.filter(req => req !== value)
+                                };
+                              }
+                            });
+                          }}
+                          className="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded"
+                        />
+                        <span className="ml-2 text-sm text-gray-700">
+                          Subscription Plans
+                        </span>
+                      </label>
+                      
+                      <label className="flex items-center">
+                        <input
+                          type="checkbox"
+                          name="requirements"
+                          value="New patients only"
+                          checked={formData.requirements?.includes('New patients only')}
+                          onChange={(e) => {
+                            const value = e.target.value;
+                            const isChecked = e.target.checked;
+                            
+                            setFormData(prev => {
+                              const currentRequirements = prev.requirements || [];
+                              
+                              if (isChecked) {
+                                return {
+                                  ...prev,
+                                  requirements: [...currentRequirements, value]
+                                };
+                              } else {
+                                return {
+                                  ...prev,
+                                  requirements: currentRequirements.filter(req => req !== value)
+                                };
+                              }
+                            });
+                          }}
+                          className="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded"
+                        />
+                        <span className="ml-2 text-sm text-gray-700">
+                          New patients only
+                        </span>
+                      </label>
+                      
+                      <label className="flex items-center">
+                        <input
+                          type="checkbox"
+                          name="requirements"
+                          value="Specific products"
+                          checked={formData.requirements?.includes('Specific products')}
+                          onChange={(e) => {
+                            const value = e.target.value;
+                            const isChecked = e.target.checked;
+                            
+                            setFormData(prev => {
+                              const currentRequirements = prev.requirements || [];
+                              
+                              if (isChecked) {
+                                return {
+                                  ...prev,
+                                  requirements: [...currentRequirements, value]
+                                };
+                              } else {
+                                return {
+                                  ...prev,
+                                  requirements: currentRequirements.filter(req => req !== value)
+                                };
+                              }
+                            });
+                          }}
+                          className="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded"
+                        />
+                        <span className="ml-2 text-sm text-gray-700">
+                          Specific products
+                        </span>
+                      </label>
+                    </div>
+                  </div>
+                  <p className="mt-1 text-xs text-gray-500">
+                    Select one or more requirements for this discount
+                  </p>
                 </div>
 
-                {formData.requirement === 'Subscription duration' && (
+                {formData.requirements?.includes('Minimum Purchase') && (
                   <div className="mb-4">
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Minimum Purchase Amount
+                      Minimum Purchase Amount ($)
                     </label>
                     <div className="relative rounded-md shadow-sm">
                       <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                         <span className="text-gray-500 sm:text-sm">$</span>
                       </div>
-                        <input
-                          type="number"
-                          name="min_purchase"
-                          min="0"
-                          step="0.01"
-                          className="block w-full pl-7 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm rounded-md"
-                          value={formData.min_purchase}
-                          onChange={handleInputChange}
-                        />
+                      <input
+                        type="number"
+                        name="min_purchase"
+                        min="0"
+                        step="0.01"
+                        className="block w-full pl-7 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm rounded-md"
+                        value={formData.min_purchase}
+                        onChange={handleInputChange}
+                      />
                     </div>
+                    <p className="mt-1 text-xs text-gray-500">
+                      Discount will only apply to orders with a total value equal to or greater than this amount
+                    </p>
+                  </div>
+                )}
+
+                {formData.requirements?.includes('Subscription Plans') && (
+                  <div className="mb-4">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Subscription Plans
+                    </label>
+                    <div className="border border-gray-300 rounded-md p-3 max-h-60 overflow-y-auto">
+                      {isLoadingSubscriptionPlans ? (
+                        <div className="flex items-center justify-center py-2">
+                          <Loader className="h-5 w-5 text-primary animate-spin mr-2" />
+                          <span>Loading plans...</span>
+                        </div>
+                      ) : (
+                        <div className="space-y-2">
+                          {subscriptionPlans?.map(plan => (
+                            <label key={plan.id} className="flex items-center">
+                              <input
+                                type="checkbox"
+                                name="subscription_plan_ids"
+                                value={plan.id}
+                                checked={formData.subscription_plan_ids?.includes(plan.id)}
+                                onChange={(e) => {
+                                  const planId = e.target.value;
+                                  const isChecked = e.target.checked;
+                                  
+                                  setFormData(prev => {
+                                    const currentPlans = prev.subscription_plan_ids || [];
+                                    
+                                    if (isChecked) {
+                                      return {
+                                        ...prev,
+                                        subscription_plan_ids: [...currentPlans, planId]
+                                      };
+                                    } else {
+                                      return {
+                                        ...prev,
+                                        subscription_plan_ids: currentPlans.filter(id => id !== planId)
+                                      };
+                                    }
+                                  });
+                                }}
+                                className="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded"
+                              />
+                              <span className="ml-2 text-sm text-gray-700">
+                                {plan.name} (${plan.price})
+                              </span>
+                            </label>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                    <p className="mt-1 text-xs text-gray-500">
+                      Select one or more subscription plans to apply this discount to
+                    </p>
                   </div>
                 )}
               </div>

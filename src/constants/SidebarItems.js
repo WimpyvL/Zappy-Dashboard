@@ -16,7 +16,6 @@ import {
   MessageSquare,
   History,
   Map,
-  Sparkles, // For AI Dashboard
   // Patient view icons
   LayoutDashboard as PatientDashboardIcon,
   // User as PatientProfileIcon, // Removed unused
@@ -34,9 +33,6 @@ import {
   ShoppingBag, // For Marketplace
   BookOpen, // For Resources
   Layers, // For My Services
-  Award, // For Programs
-  // TrendingUp, // For Learn - Removed
-  Heart, // For Home
 } from 'lucide-react';
 
 import { paths } from './paths'; // Ensure paths are imported
@@ -143,13 +139,6 @@ export const sidebarItems = [
     color: 'accent3',
     isAdmin: true,
   },
-  {
-    title: 'AI Dashboard',
-    path: '/admin/ai-dashboard',
-    icon: Sparkles,
-    color: 'accent4',
-    isAdmin: true,
-  },
 ];
 
 // Define settings items separately
@@ -175,13 +164,14 @@ export const logoutItem = {
   action: () => console.log('Logging out...'),
 };
 
-// Define patient sidebar items (Redesigned UI)
-// Home replaces Records, Shop replaces Marketplace, Programs replaces Resources
+// Define patient sidebar items (Further Simplified View)
+// Combine Shop and Programs into single Marketplace entry
 export const patientSidebarItems = [
-  { title: 'Home', path: '/home', icon: Heart, color: 'primary' }, // Home page (replaces Records)
-  { title: 'Care', path: '/care', icon: Layers, color: 'accent1' }, // Modular Services Interface
-  { title: 'Programs', path: '/programs', icon: Award, color: 'accent2' }, // Programs page (replaces Resources)
-  { title: 'Shop', path: '/shop', icon: ShoppingBag, color: 'accent3' }, // Shop page (replaces Marketplace)
+  { title: 'New Home', path: '/patient-home-v2', icon: Home, color: 'accent4' }, // New Vibrant Home Page
+  { title: 'My Services', path: '/my-services', icon: Layers, color: 'primary' }, // Modular Services Interface
+  { title: 'Records', path: '/records', icon: PatientRecordsIcon, color: 'accent3' },
+  { title: 'Marketplace', path: '/marketplace', icon: ShoppingBag, color: 'accent2' }, // Unified marketplace replacing Shop and Programs
+  { title: 'Resources', path: '/resources', icon: BookOpen, color: 'accent1' }, // Educational resources
 ];
 
 // Define profile dropdown menu items (Simplified)

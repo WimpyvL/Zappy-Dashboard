@@ -1,6 +1,6 @@
-import React from 'react';
-import { 
-  Bell, User, Home, Calendar, FileText, ShoppingBag, 
+import React, { memo, useCallback } from 'react';
+import {
+  Bell, User, Home, Calendar, FileText, ShoppingBag,
   Camera, Clock, Check, ChevronRight, Plus, MessageSquare,
   ArrowRight, TrendingDown, Settings
 } from 'lucide-react';
@@ -10,8 +10,8 @@ import { useAuth } from '../../context/AuthContext';
 import Button from '../../components/ui/redesign/Button';
 import StatusBadge from '../../components/ui/redesign/StatusBadge';
 
-// Custom CSS classes
-const styles = {
+// Custom CSS classes - moved outside component
+const STYLES = {
   horizontalScroll: `
     .horizontal-scroll {
       scrollbar-width: none;
@@ -26,43 +26,174 @@ const styles = {
   upsellCard: 'shadow-md'
 };
 
+// Smaller, focused components
+const PriorityActionCard = memo(({ icon: Icon, title, description, buttonText, buttonVariant, onClick }) => (
+  <div className={`p-3 border-l-4 border-${buttonVariant === 'warning' ? 'yellow' : 'teal'}-500 mx-3 mb-3 bg-${buttonVariant === 'warning' ? 'yellow' : 'teal'}-50 rounded-r-lg flex items-center`}>
+    <div className={`w-10 h-10 rounded-full bg-${buttonVariant === 'warning' ? 'yellow' : 'teal'}-100 flex items-center justify-center mr-3 flex-shrink-0`}>
+      <Icon className={`h-5 w-5 text-${buttonVariant === 'warning' ? 'yellow' : 'teal'}-600`} />
+    </div>
+    <div className="flex-1">
+      <h3 className="text-sm font-bold text-text-dark">{title}</h3>
+      <p className="text-xs text-text-medium">{description}</p>
+    </div>
+    <Button
+      variant={buttonVariant}
+      size="small"
+      onClick={onClick}
+    >
+      {buttonText}
+    </Button>
+  </div>
+));
+
+const TreatmentCard = memo(({
+  icon: Icon,
+  title,
+  status,
+  details,
+  progress,
+  primaryButtonText,
+  onPrimaryAction,
+  onViewDetails
+}) => (
+  <div className="bg-white rounded-xl shadow-sm overflow-hidden mb-4">
+    <div className="p-4 flex items-center">
+      <div className={`w-10 h-10 rounded-full ${title.includes('Hair') ? 'bg-hair-purple' : 'bg-teal-100'} flex items-center justify-center mr-3 flex-shrink-0`}>
+        <Icon className={`h-5 w-5 ${title.includes('Hair') ? 'text-zappy-blue' : 'text-teal-600'}`} />
+      </div>
+      <div className="flex-1">
+        <div className="flex items-center justify-between mb-1">
+          <h3 className="text-base font-bold text-text-dark">{title}</h3>
+          <StatusBadge status={status} variant="success" />
+        </div>
+        <div className="flex justify-between items-center">
+          <p className="text-sm text-text-medium">
+            {details}
+          </p>
+          {progress && <p className={`text-sm font-semibold ${progress.includes('-') ? 'text-green-600' : 'text-text-medium'}`}>{progress}</p>}
+        </div>
+      </div>
+      <button
+        className="ml-2 text-gray-400 hover:text-gray-600"
+        onClick={onViewDetails}
+      >
+        <ChevronRight className="h-6 w-6" />
+      </button>
+    </div>
+    
+    <div className="px-4 py-3 border-t border-gray-100">
+      <div className="flex">
+        <div className="flex-1 pr-2">
+          <Button
+            variant="primary"
+            className={title.includes('Hair') ? '' : 'bg-teal-500 hover:bg-teal-600 text-white'}
+            fullWidth
+            onClick={onPrimaryAction}
+          >
+            {primaryButtonText}
+          </Button>
+        </div>
+        <div className="flex-1 pl-2">
+          <Button
+            variant="secondary"
+            fullWidth
+            onClick={onViewDetails}
+          >
+            View Details
+          </Button>
+        </div>
+      </div>
+    </div>
+  </div>
+));
+
+const MessageCard = memo(({ initials, name, time, message, onClick }) => (
+  <div className="bg-white rounded-xl shadow-sm overflow-hidden mb-4">
+    <div className="p-4 border-l-4 border-teal-500">
+      <div className="flex items-start">
+        <div className="w-10 h-10 rounded-full bg-teal-100 flex items-center justify-center mr-3 flex-shrink-0">
+          <span className="text-teal-600 font-bold text-sm">{initials}</span>
+        </div>
+        <div className="flex-1">
+          <div className="flex justify-between items-center mb-1">
+            <h3 className="text-sm font-bold text-text-dark">{name}</h3>
+            <span className="text-xs text-text-light">{time}</span>
+          </div>
+          <p className="text-sm text-text-medium line-clamp-2">{message}</p>
+        </div>
+        <button
+          className="ml-3 w-8 h-8 rounded-full bg-teal-50 hover:bg-teal-100 flex items-center justify-center flex-shrink-0"
+          onClick={onClick}
+        >
+          <ArrowRight className="h-4 w-4 text-teal-600" />
+        </button>
+      </div>
+    </div>
+  </div>
+));
+
+const LearningCard = memo(({ category, title, description, duration, bgColor }) => (
+  <div className="w-64 flex-shrink-0 bg-white rounded-xl shadow-sm overflow-hidden">
+    <div className={`h-32 ${bgColor} relative flex items-center justify-center`}>
+      <svg className={`h-16 w-16 ${category === 'Weight' ? 'text-teal-300' : 'text-zappy-blue opacity-30'}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1">
+        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+        <circle cx="8.5" cy="8.5" r="1.5"></circle>
+        <polyline points="21 15 16 10 5 21"></polyline>
+      </svg>
+      <button className={`absolute w-12 h-12 rounded-full ${category === 'Weight' ? 'bg-teal-500 hover:bg-teal-600' : 'bg-zappy-blue hover:bg-zappy-blue'} flex items-center justify-center shadow-lg`}>
+        <svg className="h-5 w-5 text-white ml-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <polygon points="5 3 19 12 5 21 5 3"></polygon>
+        </svg>
+      </button>
+      <div className="absolute top-2 left-2 bg-black bg-opacity-50 rounded px-1.5 py-0.5">
+        <span className="text-white text-xs font-medium">{duration}</span>
+      </div>
+    </div>
+    <div className="p-3">
+      <span className={`text-xs ${category === 'Weight' ? 'text-teal-700 bg-teal-100' : 'text-zappy-blue bg-hair-purple'} px-2 py-0.5 rounded-full mb-1 inline-block font-medium`}>{category}</span>
+      <h3 className="font-semibold text-sm mb-1 text-text-dark">{title}</h3>
+      <p className="text-xs text-text-medium">{description}</p>
+    </div>
+  </div>
+));
+
 const PatientHomePage = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   
-  // Handler functions
-  const handleTakePhotos = () => {
+  // Handler functions with useCallback for better performance
+  const handleTakePhotos = useCallback(() => {
     toast.success('Taking progress photos');
     navigate('/care');
-  };
+  }, [navigate]);
   
-  const handleViewDetails = (treatmentType) => {
+  const handleViewDetails = useCallback((treatmentType) => {
     navigate(`/care/${treatmentType}`);
     toast.info(`Viewing details for ${treatmentType} treatment`);
-  };
+  }, [navigate]);
   
-  const handleCheckIn = () => {
+  const handleCheckIn = useCallback(() => {
     navigate('/care/weight/check-in');
     toast.info('Opening weight check-in form');
-  };
+  }, [navigate]);
   
-  const handleMessageClick = () => {
+  const handleMessageClick = useCallback(() => {
     navigate('/messaging');
     toast.info('Opening message thread');
-  };
+  }, [navigate]);
   
-  const handleReferral = () => {
+  const handleReferral = useCallback(() => {
     toast.info('Referral link copied to clipboard!');
-  };
+  }, []);
   
-  const handleMarkDone = () => {
+  const handleMarkDone = useCallback(() => {
     toast.success('Medication marked as taken!');
-  };
+  }, []);
 
   return (
     <div className="max-w-md mx-auto sm:max-w-lg md:max-w-2xl lg:max-w-4xl bg-gray-50 min-h-screen pb-20">
       <style>
-        {styles.horizontalScroll}
+        {STYLES.horizontalScroll}
       </style>
       
       {/* Header Section */}
@@ -77,9 +208,9 @@ const PatientHomePage = () => {
               <Bell className="h-5 w-5 text-white" />
               <span className="absolute top-0 right-0 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-teal-600"></span>
             </button>
-            <button 
+            <button
               className="w-10 h-10 rounded-full bg-white bg-opacity-20 flex items-center justify-center"
-              onClick={() => navigate('/profile')}
+              onClick={useCallback(() => navigate('/profile'), [navigate])}
             >
               <User className="h-5 w-5 text-white" />
             </button>
@@ -92,42 +223,23 @@ const PatientHomePage = () => {
         <div className="bg-white rounded-xl shadow-sm overflow-hidden">
           <h2 className="text-base font-bold text-text-dark p-4 pb-2">Priority Actions</h2>
           
-          {/* First Priority Card */}
-          <div className="p-3 border-l-4 border-yellow-500 mx-3 mb-3 bg-yellow-50 rounded-r-lg flex items-center">
-            <div className="w-10 h-10 rounded-full bg-yellow-100 flex items-center justify-center mr-3 flex-shrink-0">
-              <Camera className="h-5 w-5 text-yellow-600" />
-            </div>
-            <div className="flex-1">
-              <h3 className="text-sm font-bold text-text-dark">Hair Progress Photos</h3>
-              <p className="text-xs text-text-medium">Just a few days left - take 2 mins</p>
-            </div>
-            <Button 
-              variant="warning"
-              size="small"
-              onClick={handleTakePhotos}
-            >
-              Take Photos
-            </Button>
-          </div>
+          <PriorityActionCard
+            icon={Camera}
+            title="Hair Progress Photos"
+            description="Just a few days left - take 2 mins"
+            buttonText="Take Photos"
+            buttonVariant="warning"
+            onClick={handleTakePhotos}
+          />
           
-          {/* Second Priority Card */}
-          <div className="p-3 border-l-4 border-teal-500 mx-3 mb-3 bg-teal-50 rounded-r-lg flex items-center">
-            <div className="w-10 h-10 rounded-full bg-teal-100 flex items-center justify-center mr-3 flex-shrink-0">
-              <Clock className="h-5 w-5 text-teal-600" />
-            </div>
-            <div className="flex-1">
-              <h3 className="text-sm font-bold text-text-dark">Take Semaglutide</h3>
-              <p className="text-xs text-text-medium">Due by 8:00 PM today</p>
-            </div>
-            <Button 
-              variant="primary"
-              className="bg-teal-500 hover:bg-teal-600 text-white"
-              size="small"
-              onClick={handleMarkDone}
-            >
-              Mark Done
-            </Button>
-          </div>
+          <PriorityActionCard
+            icon={Clock}
+            title="Take Semaglutide"
+            description="Due by 8:00 PM today"
+            buttonText="Mark Done"
+            buttonVariant="primary"
+            onClick={handleMarkDone}
+          />
         </div>
       </div>
 
@@ -135,108 +247,31 @@ const PatientHomePage = () => {
       <div className="px-4 py-2">
         <h2 className="text-lg font-bold text-text-dark mb-3">Your Treatments</h2>
         
-        {/* Weight Treatment Card */}
-        <div className="bg-white rounded-xl shadow-sm overflow-hidden mb-4">
-          <div className="p-4 flex items-center">
-            <div className="w-10 h-10 rounded-full bg-teal-100 flex items-center justify-center mr-3 flex-shrink-0">
-              <TrendingDown className="h-5 w-5 text-teal-600" />
-            </div>
-            <div className="flex-1">
-              <div className="flex items-center justify-between mb-1">
-                <h3 className="text-base font-bold text-text-dark">Weight Journey</h3>
-                <StatusBadge status="active" variant="success" />
-              </div>
-              <div className="flex justify-between items-center">
-                <p className="text-sm text-text-medium">
-                  <span className="font-medium">Current:</span> 220 lbs (BMI: 31.5)
-                </p>
-                <p className="text-sm font-semibold text-green-600">-8 lbs</p>
-              </div>
-            </div>
-            <button 
-              className="ml-2 text-gray-400 hover:text-gray-600"
-              onClick={() => handleViewDetails('weight')}
-            >
-              <ChevronRight className="h-6 w-6" />
-            </button>
-          </div>
-          
-          <div className="px-4 py-3 border-t border-gray-100">
-            <div className="flex">
-              <div className="flex-1 pr-2">
-                <Button 
-                  variant="primary"
-                  className="bg-teal-500 hover:bg-teal-600 text-white"
-                  fullWidth
-                  onClick={handleCheckIn}
-                >
-                  Check-in Weight
-                </Button>
-              </div>
-              <div className="flex-1 pl-2">
-                <Button 
-                  variant="secondary"
-                  fullWidth
-                  onClick={() => handleViewDetails('weight')}
-                >
-                  View Details
-                </Button>
-              </div>
-            </div>
-          </div>
-        </div>
+        <TreatmentCard
+          icon={TrendingDown}
+          title="Weight Journey"
+          status="active"
+          details={<><span className="font-medium">Current:</span> 220 lbs (BMI: 31.5)</>}
+          progress="-8 lbs"
+          primaryButtonText="Check-in Weight"
+          onPrimaryAction={handleCheckIn}
+          onViewDetails={() => handleViewDetails('weight')}
+        />
         
-        {/* Hair Treatment Card */}
-        <div className="bg-white rounded-xl shadow-sm overflow-hidden mb-4">
-          <div className="p-4 flex items-center">
-            <div className="w-10 h-10 rounded-full bg-hair-purple flex items-center justify-center mr-3 flex-shrink-0">
-              <svg className="h-5 w-5 text-zappy-blue" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M16 14a5 5 0 01-5 5 5 5 0 01-5-5M8 9l4-5 4 5M12 3v6"></path>
-              </svg>
-            </div>
-            <div className="flex-1">
-              <div className="flex items-center justify-between mb-1">
-                <h3 className="text-base font-bold text-text-dark">Hair Regrowth</h3>
-                <StatusBadge status="active" variant="success" />
-              </div>
-              <div className="flex justify-between items-center">
-                <p className="text-sm text-text-medium">
-                  <span className="font-medium">Progress:</span> Month 3 of treatment
-                </p>
-                <p className="text-sm text-text-medium">Photos due May 10</p>
-              </div>
-            </div>
-            <button 
-              className="ml-2 text-gray-400 hover:text-gray-600"
-              onClick={() => handleViewDetails('hair')}
-            >
-              <ChevronRight className="h-6 w-6" />
-            </button>
-          </div>
-          
-          <div className="px-4 py-3 border-t border-gray-100">
-            <div className="flex">
-              <div className="flex-1 pr-2">
-                <Button 
-                  variant="primary"
-                  fullWidth
-                  onClick={handleTakePhotos}
-                >
-                  Take Photos
-                </Button>
-              </div>
-              <div className="flex-1 pl-2">
-                <Button 
-                  variant="secondary"
-                  fullWidth
-                  onClick={() => handleViewDetails('hair')}
-                >
-                  View Details
-                </Button>
-              </div>
-            </div>
-          </div>
-        </div>
+        <TreatmentCard
+          icon={() => (
+            <svg className="h-5 w-5 text-zappy-blue" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M16 14a5 5 0 01-5 5 5 5 0 01-5-5M8 9l4-5 4 5M12 3v6"></path>
+            </svg>
+          )}
+          title="Hair Regrowth"
+          status="active"
+          details={<><span className="font-medium">Progress:</span> Month 3 of treatment</>}
+          progress="Photos due May 10"
+          primaryButtonText="Take Photos"
+          onPrimaryAction={handleTakePhotos}
+          onViewDetails={() => handleViewDetails('hair')}
+        />
       </div>
       
       {/* Enhanced Referral Section */}
@@ -353,86 +388,41 @@ const PatientHomePage = () => {
       <div className="px-4 py-2">
         <div className="flex justify-between items-center mb-3">
           <h2 className="text-lg font-bold text-text-dark">Messages</h2>
-          <a href="#" className="text-sm font-medium text-teal-600" onClick={() => navigate('/messaging')}>View All</a>
+          <a href="#" className="text-sm font-medium text-teal-600" onClick={useCallback(() => navigate('/messaging'), [navigate])}>View All</a>
         </div>
         
-        <div className="bg-white rounded-xl shadow-sm overflow-hidden mb-4">
-          <div className="p-4 border-l-4 border-teal-500">
-            <div className="flex items-start">
-              <div className="w-10 h-10 rounded-full bg-teal-100 flex items-center justify-center mr-3 flex-shrink-0">
-                <span className="text-teal-600 font-bold text-sm">MC</span>
-              </div>
-              <div className="flex-1">
-                <div className="flex justify-between items-center mb-1">
-                  <h3 className="text-sm font-bold text-text-dark">Dr. Michael Chen</h3>
-                  <span className="text-xs text-text-light">Yesterday</span>
-                </div>
-                <p className="text-sm text-text-medium line-clamp-2">Your recent blood work looks good. I'm glad to see the improvements in your cholesterol levels. Let's continue...</p>
-              </div>
-              <button 
-                className="ml-3 w-8 h-8 rounded-full bg-teal-50 hover:bg-teal-100 flex items-center justify-center flex-shrink-0"
-                onClick={handleMessageClick}
-              >
-                <ArrowRight className="h-4 w-4 text-teal-600" />
-              </button>
-            </div>
-          </div>
-        </div>
+        <MessageCard
+          initials="MC"
+          name="Dr. Michael Chen"
+          time="Yesterday"
+          message="Your recent blood work looks good. I'm glad to see the improvements in your cholesterol levels. Let's continue..."
+          onClick={handleMessageClick}
+        />
       </div>
       
       {/* Learn Section */}
       <div className="px-4 py-2">
         <div className="flex justify-between items-center mb-2">
           <h2 className="text-lg font-bold text-text-dark">Learn & Grow</h2>
-          <a href="#" className="text-sm font-medium text-teal-600" onClick={() => navigate('/resources')}>See All</a>
+          <a href="#" className="text-sm font-medium text-teal-600" onClick={useCallback(() => navigate('/resources'), [navigate])}>See All</a>
         </div>
         
         <div className="flex space-x-4 overflow-x-auto pb-4 horizontal-scroll">
-          <div className="w-64 flex-shrink-0 bg-white rounded-xl shadow-sm overflow-hidden">
-            <div className="h-32 bg-teal-100 relative flex items-center justify-center">
-              <svg className="h-16 w-16 text-teal-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1">
-                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-                <circle cx="8.5" cy="8.5" r="1.5"></circle>
-                <polyline points="21 15 16 10 5 21"></polyline>
-              </svg>
-              <button className="absolute w-12 h-12 rounded-full bg-teal-500 flex items-center justify-center shadow-lg hover:bg-teal-600">
-                <svg className="h-5 w-5 text-white ml-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <polygon points="5 3 19 12 5 21 5 3"></polygon>
-                </svg>
-              </button>
-              <div className="absolute top-2 left-2 bg-black bg-opacity-50 rounded px-1.5 py-0.5">
-                <span className="text-white text-xs font-medium">1:32</span>
-              </div>
-            </div>
-            <div className="p-3">
-              <span className="text-xs text-teal-700 bg-teal-100 px-2 py-0.5 rounded-full mb-1 inline-block font-medium">Weight</span>
-              <h3 className="font-semibold text-sm mb-1 text-text-dark">Maximizing Your Wegovy® Results</h3>
-              <p className="text-xs text-text-medium">Simple tips from Dr. Chen</p>
-            </div>
-          </div>
+          <LearningCard
+            category="Weight"
+            title="Maximizing Your Wegovy® Results"
+            description="Simple tips from Dr. Chen"
+            duration="1:32"
+            bgColor="bg-teal-100"
+          />
           
-          <div className="w-64 flex-shrink-0 bg-white rounded-xl shadow-sm overflow-hidden">
-            <div className="h-32 bg-hair-purple relative flex items-center justify-center">
-              <svg className="h-16 w-16 text-zappy-blue opacity-30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1">
-                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-                <circle cx="8.5" cy="8.5" r="1.5"></circle>
-                <polyline points="21 15 16 10 5 21"></polyline>
-              </svg>
-              <button className="absolute w-12 h-12 rounded-full bg-zappy-blue flex items-center justify-center shadow-lg hover:bg-zappy-blue">
-                <svg className="h-5 w-5 text-white ml-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <polygon points="5 3 19 12 5 21 5 3"></polygon>
-                </svg>
-              </button>
-              <div className="absolute top-2 left-2 bg-black bg-opacity-50 rounded px-1.5 py-0.5">
-                <span className="text-white text-xs font-medium">2:15</span>
-              </div>
-            </div>
-            <div className="p-3">
-              <span className="text-xs text-zappy-blue bg-hair-purple px-2 py-0.5 rounded-full mb-1 inline-block font-medium">Hair</span>
-              <h3 className="font-semibold text-sm mb-1 text-text-dark">Taking Perfect Progress Photos</h3>
-              <p className="text-xs text-text-medium">Get the most accurate tracking</p>
-            </div>
-          </div>
+          <LearningCard
+            category="Hair"
+            title="Taking Perfect Progress Photos"
+            description="Get the most accurate tracking"
+            duration="2:15"
+            bgColor="bg-hair-purple"
+          />
         </div>
       </div>
       
@@ -441,4 +431,4 @@ const PatientHomePage = () => {
   );
 };
 
-export default PatientHomePage;
+export default memo(PatientHomePage);

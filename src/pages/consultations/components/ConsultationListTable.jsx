@@ -101,29 +101,32 @@ const ConsultationListTable = ({
                     <div className="relative">
                       <button
                         className="text-gray-500 hover:text-gray-700 disabled:opacity-50"
-                        onClick={() => setShowActionDropdown(showActionDropdown === consultation.id ? null : consultation.id)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setShowActionDropdown(showActionDropdown === consultation.id ? null : consultation.id);
+                        }}
                         disabled={isMutatingStatus}
                       >
                         <MoreHorizontal className="h-5 w-5" />
                       </button>
                       {showActionDropdown === consultation.id && (
-                        <div className="absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-10">
+                        <div className="absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-50" style={{ transform: 'translateX(-100%)' }}>
                           <div className="py-1" role="menu" aria-orientation="vertical">
-                            <button onClick={() => { onSendEmail(consultation); setShowActionDropdown(null); }} className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left" role="menuitem">
+                            <button onClick={(e) => { e.stopPropagation(); onSendEmail(consultation); setShowActionDropdown(null); }} className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left" role="menuitem">
                               <Calendar className="h-4 w-4 mr-2 text-gray-500" /> Mark for Follow-up
                             </button>
                             {consultation.status !== 'archived' && (
-                              <button onClick={() => { onArchive(consultation); setShowActionDropdown(null); }} className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left" role="menuitem">
+                              <button onClick={(e) => { e.stopPropagation(); onArchive(consultation); setShowActionDropdown(null); }} className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left" role="menuitem">
                                 <Archive className="h-4 w-4 mr-2 text-gray-500" /> Archive
                               </button>
                             )}
                             {consultation.status !== 'pending' && (
-                                <button onClick={() => { onUpdateStatus(consultation, 'pending'); setShowActionDropdown(null); }} className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left" role="menuitem">
+                                <button onClick={(e) => { e.stopPropagation(); onUpdateStatus(consultation, 'pending'); setShowActionDropdown(null); }} className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left" role="menuitem">
                                   <Clock className="h-4 w-4 mr-2 text-gray-500" /> Mark as Pending
                                 </button>
                             )}
                              {consultation.status !== 'reviewed' && (
-                                <button onClick={() => { onUpdateStatus(consultation, 'reviewed'); setShowActionDropdown(null); }} className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left" role="menuitem">
+                                <button onClick={(e) => { e.stopPropagation(); onUpdateStatus(consultation, 'reviewed'); setShowActionDropdown(null); }} className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left" role="menuitem">
                                   <CheckCircle className="h-4 w-4 mr-2 text-gray-500" /> Mark as Reviewed
                                 </button>
                             )}

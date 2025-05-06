@@ -1,16 +1,59 @@
-import React, { memo } from 'react';
+import React, { memo, useCallback } from 'react';
 import { LucideScissors, LucideScale, LucidePill, LucideShield, LucideMessageSquare, LucideShoppingCart, LucideCamera, LucideClipboardCheck, LucideUtensils, LucideHeartPulse } from 'lucide-react';
 import './ModularServiceInterface.css';
 
+// Map service type to icon and color scheme - moved outside component for better performance
+const SERVICE_CONFIG = {
+  'hair-loss': {
+    icon: LucideScissors,
+    colors: {
+      primary: '#4F46E5',
+      secondary: '#818CF8',
+      light: '#F5F7FF',
+      lighter: '#EEF2FF',
+      border: '#E0E7FF'
+    }
+  },
+  'weight-management': {
+    icon: LucideScale,
+    colors: {
+      primary: '#F85C5C',
+      secondary: '#FF8080',
+      light: '#FFF5F5',
+      lighter: '#FEF2F2',
+      border: '#FECACA'
+    }
+  },
+  'ed-treatment': {
+    icon: LucidePill,
+    colors: {
+      primary: '#10B981',
+      secondary: '#34D399',
+      light: '#F0FDF9',
+      lighter: '#ECFDF5',
+      border: '#A7F3D0'
+    }
+  }
+};
+
+// Action icon mapping - moved outside component
+const ACTION_ICONS = {
+  'camera': LucideCamera,
+  'assessment': LucideClipboardCheck,
+  'weight': LucideScale,
+  'food': LucideUtensils,
+  'health': LucideHeartPulse
+};
+
 /**
  * ModularServiceInterface - A component for displaying patient services in a modular interface
- * 
+ *
  * This component implements the modular patient interface design as shown in the HTML mockup.
  * It displays patient services in a modular format with provider recommendations directly
  * below each service module.
  */
-const ModularServiceInterface = ({ 
-  services = [], 
+const ModularServiceInterface = ({
+  services = [],
   onViewPlanDetails = () => {},
   onMessageProvider = () => {},
   onOrderRefills = () => {},
@@ -19,44 +62,11 @@ const ModularServiceInterface = ({
   onAddProduct = () => {},
   onViewMedicationInstructions = () => {}
 }) => {
-  // Map service type to icon and color scheme
-  const serviceConfig = {
-    'hair-loss': {
-      icon: LucideScissors,
-      colors: {
-        primary: '#4F46E5',
-        secondary: '#818CF8',
-        light: '#F5F7FF',
-        lighter: '#EEF2FF',
-        border: '#E0E7FF'
-      }
-    },
-    'weight-management': {
-      icon: LucideScale,
-      colors: {
-        primary: '#F85C5C',
-        secondary: '#FF8080',
-        light: '#FFF5F5',
-        lighter: '#FEF2F2',
-        border: '#FECACA'
-      }
-    },
-    'ed-treatment': {
-      icon: LucidePill,
-      colors: {
-        primary: '#10B981',
-        secondary: '#34D399',
-        light: '#F0FDF9',
-        lighter: '#ECFDF5',
-        border: '#A7F3D0'
-      }
-    }
-  };
 
-  // Helper function to get service configuration
-  const getServiceConfig = (serviceType) => {
-    return serviceConfig[serviceType] || serviceConfig['hair-loss']; // Default to hair-loss if type not found
-  };
+  // Helper function to get service configuration - with null check for serviceType
+  const getServiceConfig = useCallback((serviceType) => {
+    return SERVICE_CONFIG[serviceType || 'hair-loss'] || SERVICE_CONFIG['hair-loss'];
+  }, []);
 
   return (
     <div className="space-y-8">
@@ -131,11 +141,9 @@ const ModularServiceInterface = ({
                                 // Check eligibility before showing refill UI
                                 const isEligible = medication.isEligibleForRefill !== false;
                                 if (isEligible) {
-                                  console.log('Refill medication:', medication.name);
                                   onOrderRefills(service);
                                 } else {
-                                  console.log('Not eligible for refill:', medication.name);
-                                  // This would typically show a toast with the reason
+                                  // Use a more appropriate notification method instead of alert
                                   const reason = medication.refillEligibilityReason || 'Too soon for refill';
                                   alert(`Not eligible for refill: ${reason}`);
                                 }
@@ -156,15 +164,7 @@ const ModularServiceInterface = ({
                     <h4 className="text-sm font-medium text-gray-700 mb-3">Action Items</h4>
                     <div className="space-y-3">
                       {service.actionItems.map((action, actionIndex) => {
-                        // Map action type to icon
-                        const actionIcons = {
-                          'camera': LucideCamera,
-                          'assessment': LucideClipboardCheck,
-                          'weight': LucideScale,
-                          'food': LucideUtensils,
-                          'health': LucideHeartPulse
-                        };
-                        const ActionIcon = actionIcons[action.icon] || LucideClipboardCheck;
+                        const ActionIcon = ACTION_ICONS[action?.icon] || LucideClipboardCheck;
                         
                         return (
                           <div key={actionIndex} className="action-item flex items-center justify-between p-3 rounded-lg border" 
@@ -190,7 +190,7 @@ const ModularServiceInterface = ({
                                   onTakePhotos(action, service);
                                 } else {
                                   // Generic handler for other action types
-                                  console.log(`Action ${action.title} clicked`);
+                                  // No action needed for now
                                 }
                               }}
                             >
@@ -275,4 +275,5 @@ const ModularServiceInterface = ({
   );
 };
 
-export default ModularServiceInterface;
+// Wrap with memo for performance optimization
+export default memo(ModularServiceInterface);

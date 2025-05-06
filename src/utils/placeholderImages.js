@@ -135,13 +135,13 @@ export const getPersonImage = (width = 300, height = 300) => {
 };
 
 /**
- * Get a placeholder image for a doctor/provider
+ * Get a placeholder image for a provider
  * @param {number} width - Width of the image (default: 300)
  * @param {number} height - Height of the image (default: 300)
  * @returns {string} - URL for the placeholder image
  */
-export const getDoctorImage = (width = 300, height = 300) => {
-  // Use professional looking portraits for doctors
+export const getProviderImage = (width = 300, height = 300) => {
+  // Use professional looking portraits for providers
   return `https://randomuser.me/api/portraits/men/${Math.floor(Math.random() * 20) + 30}.jpg`;
 };
 
@@ -153,5 +153,5 @@ export default {
   getSexualHealthImage,
   getProductImage,
   getPersonImage,
-  getDoctorImage,
+  getProviderImage,
 };

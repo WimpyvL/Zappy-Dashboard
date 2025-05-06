@@ -278,7 +278,7 @@ const Signup = () => {
                 onChange={handleInputChange}
               >
                 <option value="patient">Patient</option>
-                <option value="doctor">Doctor</option>
+                <option value="provider">Provider</option>
                 <option value="admin">Administrator</option>
               </select>
             </div>

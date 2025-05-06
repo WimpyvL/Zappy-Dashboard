@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { usePatientSubscription } from '../apis/treatmentPackages/hooks';
 
 /**
@@ -12,33 +12,17 @@ export const usePatientTreatmentProgram = (patientId) => {
   const [error, setError] = useState(null);
   
   // Fetch the patient's subscription
-  const { 
-    data: subscription, 
+  const {
+    data: subscription,
     isLoading: isLoadingSubscription,
     error: subscriptionError
   } = usePatientSubscription(patientId);
   
-  useEffect(() => {
-    // If subscription is still loading, wait
-    if (isLoadingSubscription) return;
+  // Create mock program data based on subscription - moved outside useEffect for better performance
+  const createMockProgram = useCallback((subscription) => {
+    if (!subscription) return null;
     
-    // If there was an error fetching the subscription
-    if (subscriptionError) {
-      setError(subscriptionError);
-      setIsLoading(false);
-      return;
-    }
-    
-    // If no subscription, set program to null
-    if (!subscription) {
-      setProgram(null);
-      setIsLoading(false);
-      return;
-    }
-    
-    // For now, we'll create a mock program based on the subscription data
-    // In a real implementation, this would fetch the actual program data from the API
-    const mockProgram = {
+    return {
       name: subscription.packageName || "Weight Management Program - Phase 1",
       goal: "Lose 5-10% of body weight in 3 months.",
       duration: `${subscription.durationMonths || 3} Months`,
@@ -62,10 +46,51 @@ export const usePatientTreatmentProgram = (patientId) => {
       coach: { name: "Dr. Emily Carter", id: "provider-1" },
       treatmentType: subscription.packageCondition || "weight-management"
     };
+  }, []);
+  
+  useEffect(() => {
+    // Flag to track if component is mounted
+    let isMounted = true;
     
-    setProgram(mockProgram);
-    setIsLoading(false);
-  }, [patientId, subscription, isLoadingSubscription, subscriptionError]);
+    const processProgramData = () => {
+      // If subscription is still loading, wait
+      if (isLoadingSubscription) return;
+      
+      // If there was an error fetching the subscription
+      if (subscriptionError) {
+        if (isMounted) {
+          setError(subscriptionError);
+          setIsLoading(false);
+        }
+        return;
+      }
+      
+      // If no subscription, set program to null
+      if (!subscription) {
+        if (isMounted) {
+          setProgram(null);
+          setIsLoading(false);
+        }
+        return;
+      }
+      
+      // Create mock program based on subscription data
+      const mockProgram = createMockProgram(subscription);
+      
+      // Only update state if component is still mounted
+      if (isMounted) {
+        setProgram(mockProgram);
+        setIsLoading(false);
+      }
+    };
+    
+    processProgramData();
+    
+    // Cleanup function to prevent memory leaks
+    return () => {
+      isMounted = false;
+    };
+  }, [patientId, subscription, isLoadingSubscription, subscriptionError, createMockProgram]);
   
   return {
     data: program,

@@ -151,7 +151,7 @@ const Sessions = () => {
   const { data: patientsData, isLoading: isLoadingPatients } = usePatients(); // Fetch all patients
   const allPatients = patientsData?.data || [];
 
-  // Fetch doctors/providers for the dropdown
+  // Fetch providers for the dropdown
   const { data: providersData, isLoading: isLoadingProviders } = useProviders();
   const allProviders = providersData || [];
 
@@ -639,39 +639,67 @@ const Sessions = () => {
               onSubmit={e => {
                 e.preventDefault();
                 const finalData = {
-                  patient_id: scheduleFormData.patientId, // Always use selected patient
+                  patient_id: preselectedPatientId || scheduleFormData.patientId, // Use preselected patient ID if available
                   type: scheduleFormData.sessionType,
                   provider_id: scheduleFormData.doctorId,
                   scheduled_date: scheduleFormData.dateTime,
                   session_notes: scheduleFormData.notes,
                   status: 'scheduled',
                 };
-                if (!finalData.patient_id || !finalData.provider_id || !finalData.scheduled_date) {
-                  toast.error("Please select patient, doctor, and date/time.");
+                
+                // Check if patient ID is available (either preselected or manually selected)
+                if (!finalData.patient_id) {
+                  toast.error("Please select a patient.");
+                  return;
+                }
+                
+                // Check other required fields
+                if (!finalData.provider_id) {
+                  toast.error("Please select a provider.");
+                  return;
+                }
+                
+                if (!finalData.scheduled_date) {
+                  toast.error("Please select a date.");
                   return;
                 }
                 createSessionMutation.mutate(finalData);
               }}
             >
               <div className="p-6 space-y-4">
-                {/* Patient Field */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Patient <span className="text-red-500">*</span></label>
-                  <Select
-                    showSearch
-                    style={{ width: '100%' }}
-                    placeholder="Search or Select Patient"
-                    optionFilterProp="children"
-                    value={scheduleFormData.patientId || undefined}
-                    onChange={value => setScheduleFormData(prev => ({ ...prev, patientId: value }))}
-                    filterOption={(input, option) => (option?.label ?? '').toLowerCase().includes(input.toLowerCase())}
-                    loading={isLoadingPatients}
-                    options={allPatients.map(p => ({
-                      value: p.id,
-                      label: `${p.first_name || ''} ${p.last_name || ''}`.trim() || `ID: ${p.id}`
-                    }))}
-                  />
-                </div>
+                {/* Patient Field - Only shown if no preselected patient */}
+                {!preselectedPatientId && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Patient <span className="text-red-500">*</span></label>
+                    <Select
+                      showSearch
+                      style={{ width: '100%' }}
+                      placeholder="Search or Select Patient"
+                      optionFilterProp="children"
+                      value={scheduleFormData.patientId || undefined}
+                      onChange={value => setScheduleFormData(prev => ({ ...prev, patientId: value }))}
+                      filterOption={(input, option) => (option?.label ?? '').toLowerCase().includes(input.toLowerCase())}
+                      loading={isLoadingPatients}
+                      options={allPatients.map(p => ({
+                        value: p.id,
+                        label: `${p.first_name || ''} ${p.last_name || ''}`.trim() || `ID: ${p.id}`
+                      }))}
+                    />
+                  </div>
+                )}
+                
+                {/* Display selected patient info if preselected */}
+                {preselectedPatientId && preselectedPatientDetails && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Patient</label>
+                    <div className="p-3 bg-gray-50 rounded-md">
+                      <p className="font-medium">
+                        {`${preselectedPatientDetails.first_name || ''} ${preselectedPatientDetails.last_name || ''}`.trim() || `ID: ${preselectedPatientId}`}
+                      </p>
+                      <p className="text-sm text-gray-500">{preselectedPatientDetails.email || 'No email'}</p>
+                    </div>
+                  </div>
+                )}
                 {/* Session Type Field */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Session Type <span className="text-red-500">*</span></label>
@@ -683,13 +711,13 @@ const Sessions = () => {
                     <Radio value="psych">Psych</Radio>
                   </Radio.Group>
                 </div>
-                {/* Doctor Field */}
+                {/* Provider Field */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Doctor <span className="text-red-500">*</span></label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Provider <span className="text-red-500">*</span></label>
                   <Select
                     showSearch
                     style={{ width: '100%' }}
-                    placeholder="Select Doctor"
+                    placeholder="Select Provider"
                     optionFilterProp="children"
                     value={scheduleFormData.doctorId || undefined}
                     onChange={value => setScheduleFormData(prev => ({ ...prev, doctorId: value }))}
@@ -701,15 +729,25 @@ const Sessions = () => {
                     }))}
                   />
                 </div>
-                {/* Date & Time Field */}
+                {/* Date Field (removed time selection) */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Date & Time <span className="text-red-500">*</span></label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Date <span className="text-red-500">*</span></label>
                   <DatePicker
-                    showTime
                     style={{ width: '100%' }}
                     value={scheduleFormData.dateTime ? dayjs(scheduleFormData.dateTime) : null}
-                    onChange={date => setScheduleFormData(prev => ({ ...prev, dateTime: date ? date.toISOString() : null }))}
-                    format="YYYY-MM-DD HH:mm"
+                    onChange={date => {
+                      // Set time to noon (12:00) by default when only date is selected
+                      if (date) {
+                        const dateWithDefaultTime = date.hour(12).minute(0).second(0);
+                        setScheduleFormData(prev => ({ 
+                          ...prev, 
+                          dateTime: dateWithDefaultTime.toISOString() 
+                        }));
+                      } else {
+                        setScheduleFormData(prev => ({ ...prev, dateTime: null }));
+                      }
+                    }}
+                    format="YYYY-MM-DD"
                   />
                 </div>
                 {/* Notes Field */}

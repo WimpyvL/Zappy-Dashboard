@@ -238,7 +238,7 @@ const ProgramsPage = () => {
                 <span className="text-xs text-gray-500">Sex Tips</span>
                 <div className="flex items-center">
                   <div className="w-5 h-5 rounded-full bg-white border border-teal-400">
-                    <img src="https://via.placeholder.com/50x50" alt="Doctor avatar" className="w-full h-full rounded-full object-cover" />
+                    <img src="https://via.placeholder.com/50x50" alt="Provider avatar" className="w-full h-full rounded-full object-cover" />
                   </div>
                 </div>
               </div>
@@ -274,9 +274,9 @@ const ProgramsPage = () => {
                 <span className="text-white text-xs">1 min</span>
               </div>
               
-              {/* Doctor Badge */}
+              {/* Provider Badge */}
               <div className="absolute top-3 right-3 w-8 h-8 rounded-full bg-teal-100 border-2 border-white">
-                <img src="https://via.placeholder.com/50x50" alt="Doctor avatar" className="w-full h-full rounded-full object-cover" />
+                <img src="https://via.placeholder.com/50x50" alt="Provider avatar" className="w-full h-full rounded-full object-cover" />
               </div>
             </div>
             
@@ -328,7 +328,7 @@ const ProgramsPage = () => {
                 <span className="text-xs text-gray-500">Relationships</span>
                 <div className="flex items-center">
                   <div className="w-5 h-5 rounded-full bg-white border border-teal-400">
-                    <img src="https://via.placeholder.com/50x50" alt="Doctor avatar" className="w-full h-full rounded-full object-cover" />
+                    <img src="https://via.placeholder.com/50x50" alt="Provider avatar" className="w-full h-full rounded-full object-cover" />
                   </div>
                 </div>
               </div>
@@ -429,7 +429,7 @@ const ProgramsPage = () => {
               
               {/* Doctor Badge */}
               <div className="absolute top-3 right-3 w-8 h-8 rounded-full bg-teal-100 border-2 border-white">
-                <img src="https://via.placeholder.com/50x50" alt="Doctor avatar" className="w-full h-full rounded-full object-cover" />
+                <img src="https://via.placeholder.com/50x50" alt="Provider avatar" className="w-full h-full rounded-full object-cover" />
               </div>
             </div>
             

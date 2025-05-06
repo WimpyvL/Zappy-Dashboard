@@ -1,8 +1,14 @@
-import { useMemo } from 'react';
+import { useMemo, useCallback } from 'react';
 import { useProducts } from '../apis/products/hooks';
 
 /**
  * Hook to get recommended products based on patient treatment type
+ * 
+ * NOTE: This hook uses the Products API which is marked as deprecated in the UI layer,
+ * but the API itself is still functional. According to the migration documentation,
+ * the Products functionality has been consolidated into a unified Products & Subscriptions
+ * management system, but the API endpoints remain the same for backward compatibility.
+ * 
  * @param {string} patientId - The patient ID
  * @param {string} treatmentType - The type of treatment the patient is on
  * @param {Object} options - Additional options
@@ -16,41 +22,55 @@ export const useRecommendedProducts = (patientId, treatmentType, options = {}) =
   // Fetch all products from the admin-created catalog
   const { data: products, isLoading, error } = useProducts();
   
+  // Filter products by treatment type
+  const filterByTreatmentType = useCallback((products, treatmentType) => {
+    if (!treatmentType) return products;
+    
+    return products.filter(product =>
+      product?.category?.toLowerCase() === treatmentType.toLowerCase() ||
+      product?.tags?.includes(treatmentType.toLowerCase())
+    );
+  }, []);
+  
+  // Get popular products that aren't already in the filtered list
+  const getPopularProducts = useCallback((allProducts, filteredProducts, count) => {
+    return allProducts
+      .filter(p => p.isPopular && !filteredProducts.includes(p))
+      .slice(0, count);
+  }, []);
+  
+  // Get random products to fill remaining slots
+  const getRandomProducts = useCallback((allProducts, filteredProducts, count) => {
+    const remainingProducts = allProducts.filter(p => !filteredProducts.includes(p));
+    
+    return remainingProducts
+      .sort(() => 0.5 - Math.random())
+      .slice(0, count);
+  }, []);
+  
   // Filter and sort products based on treatment type and other criteria
   const recommendedProducts = useMemo(() => {
     if (!products || !Array.isArray(products)) return [];
     
     // Start with all products
-    let filtered = [...products];
-    
-    // Filter by treatment type if provided
-    if (treatmentType) {
-      filtered = filtered.filter(product => 
-        product.category?.toLowerCase() === treatmentType.toLowerCase() ||
-        product.tags?.includes(treatmentType.toLowerCase())
-      );
-    }
+    let filtered = filterByTreatmentType([...products], treatmentType);
     
     // If we don't have enough products after filtering by treatment type,
     // and includePopular is true, add some popular products
     if (filtered.length < limit && includePopular) {
-      const popularProducts = products.filter(p => p.isPopular && !filtered.includes(p));
-      filtered = [...filtered, ...popularProducts].slice(0, limit);
+      const popularProducts = getPopularProducts(products, filtered, limit - filtered.length);
+      filtered = [...filtered, ...popularProducts];
     }
     
     // If we still don't have enough products, add some random ones
     if (filtered.length < limit) {
-      const remainingProducts = products.filter(p => !filtered.includes(p));
-      const randomProducts = remainingProducts
-        .sort(() => 0.5 - Math.random())
-        .slice(0, limit - filtered.length);
-      
+      const randomProducts = getRandomProducts(products, filtered, limit - filtered.length);
       filtered = [...filtered, ...randomProducts];
     }
     
     // Limit to the requested number of products
     return filtered.slice(0, limit);
-  }, [products, treatmentType, limit, includePopular]);
+  }, [products, treatmentType, limit, includePopular, filterByTreatmentType, getPopularProducts, getRandomProducts]);
   
   return {
     recommendedProducts,

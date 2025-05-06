@@ -3,7 +3,6 @@ import { useAuth } from '../../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { CheckSquare, Target, BookOpen, MessageSquare, BarChart2, Check, Play, Clock } from 'lucide-react';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
-import CrossSellSection from '../../components/patient/CrossSellSection';
 import { usePatientTreatmentProgram } from '../../hooks/usePatientTreatmentProgram';
 import { useRecommendedProducts } from '../../hooks/useRecommendedProducts';
 import { toast } from 'react-toastify';

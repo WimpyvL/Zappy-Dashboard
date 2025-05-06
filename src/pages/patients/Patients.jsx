@@ -27,27 +27,16 @@ const patientFormFields = [
   { name: 'first_name', label: 'First Name', type: 'text', required: 'First name is required.', gridCols: 1 },
   { name: 'last_name', label: 'Last Name', type: 'text', required: 'Last name is required.', gridCols: 1 },
   { name: 'email', label: 'Email', type: 'email', required: 'A valid email is required.', validation: { pattern: { value: /^\S+@\S+$/i, message: 'Invalid email format' } }, gridCols: 2 },
-  { name: 'phone', label: 'Phone', type: 'tel', placeholder: '(XXX) XXX-XXXX', gridCols: 2 },
-  { name: 'date_of_birth', label: 'Date of Birth', type: 'date', gridCols: 1 },
-  {
-    name: 'status',
-    label: 'Status',
-    type: 'select',
-    defaultValue: 'active', // Default status
-    options: [
-      { value: 'active', label: 'Active' },
-      { value: 'inactive', label: 'Inactive' },
-      { value: 'suspended', label: 'Suspended' },
-      { value: 'blacklisted', label: 'Blacklisted' },
-      { value: 'pending', label: 'Pending' },
-    ],
-    gridCols: 1,
-  },
-  { name: 'address', label: 'Street Address', type: 'text', gridCols: 2 },
-  { name: 'city', label: 'City', type: 'text', gridCols: 1 },
-  { name: 'state', label: 'State', type: 'text', gridCols: 1 },
-  { name: 'zip', label: 'ZIP Code', type: 'text', gridCols: 1 },
-  // Add other fields as needed based on patients schema and modal requirements
+  { name: 'phone', label: 'Phone', type: 'tel', placeholder: '(XXX) XXX-XXXX', required: 'Phone number is required.', gridCols: 2 },
+  { name: 'date_of_birth', label: 'Date of Birth', type: 'date', required: 'Date of birth is required.', gridCols: 1 },
+  // Status field removed as requested
+  { name: 'address', label: 'Address', type: 'address', required: 'Address is required.', gridCols: 2, placeholder: 'Start typing to search for an address' }, // Changed to address API field that includes city, state, and zip
+  { name: 'preferred_pharmacy', label: 'Preferred Pharmacy', type: 'text', gridCols: 2, placeholder: 'Enter preferred pharmacy name and location' }, // Added pharmacy field
+  // Insurance information fields
+  { name: 'insurance_provider', label: 'Insurance Provider', type: 'text', gridCols: 1 },
+  { name: 'insurance_policy_number', label: 'Policy Number', type: 'text', gridCols: 1 },
+  { name: 'insurance_group_number', label: 'Group Number', type: 'text', gridCols: 1 },
+  { name: 'insurance_primary_holder', label: 'Primary Insurance Holder', type: 'text', gridCols: 1, placeholder: 'If not the patient' },
 ];
 
 
@@ -404,21 +393,20 @@ const Patients = () => {
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tags</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Subscription Plan</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Next Appointment</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Doctor</th>
                 <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {loading ? (
                 <tr>
-                  <td colSpan="7" className="px-6 py-4 text-center">
+                  <td colSpan="6" className="px-6 py-4 text-center">
                      <div className="flex justify-center"><div className="animate-spin rounded-full h-6 w-6 border-b-2 border-indigo-500"></div></div>
                     <p className="mt-2 text-sm text-gray-500">Loading patients...</p>
                   </td>
                 </tr>
               ) : error ? (
                 <tr>
-                  <td colSpan="7" className="px-6 py-4 text-center text-red-500">Error loading patients: {error.message || 'Unknown error'}</td>
+                  <td colSpan="6" className="px-6 py-4 text-center text-red-500">Error loading patients: {error.message || 'Unknown error'}</td>
                 </tr>
               ) : patients.length > 0 ? (
                 patients.map((patient) => (
@@ -455,9 +443,6 @@ const Patients = () => {
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {patient.next_session_date ? new Date(patient.next_session_date).toLocaleDateString() : 'None scheduled'}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {patient.doctor || 'Not assigned'}
-                    </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <div className="flex items-center justify-end">
                         <button onClick={() => handleEditClick(patient)} className="text-gray-500 hover:text-indigo-600" title="Edit Patient">
@@ -469,7 +454,7 @@ const Patients = () => {
                 ))
               ) : (
                 <tr>
-                  <td colSpan="7" className="px-6 py-4 text-center text-gray-500">No patients found matching your criteria.</td>
+                  <td colSpan="6" className="px-6 py-4 text-center text-gray-500">No patients found matching your criteria.</td>
                 </tr>
               )}
             </tbody>

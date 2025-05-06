@@ -46,29 +46,51 @@ const patientsApi = {
    * @returns {Promise<object>} - A promise resolving to the patient data.
    */
   getById: async (id) => {
-    // React Query hooks are typically used within components.
-    // This adapter function needs to perform the fetch directly or find a way
-    // to trigger the hook's fetch function if possible outside a component context.
-    // Often, the hook itself might return a fetch function, or we call Supabase directly.
-    // Let's assume a direct call for simplicity in this adapter structure.
-    console.warn(
-      'patientsApi.getById: Using direct Supabase call. Ensure consistency with usePatientById hook logic.',
-    );
-    const { data, error } = await supabase
-      .from('patients')
-      .select('*')
-      .eq('id', id)
-      .single(); // Use .single() if expecting one record
+    try {
+      console.log(`Fetching patient with ID: ${id}`);
+      
+      // Try to fetch from the patients table
+      const { data, error } = await supabase
+        .from('patients')
+        .select('*, related_tags')
+        .eq('id', id)
+        .single();
 
-    if (error) {
-      console.error(`Error fetching patient ${id}:`, error);
-      // Handle 'not found' specifically if needed, or let the generic error handler manage it.
-      if (error.code === 'PGRST116') { // PostgREST code for zero rows returned by single()
-         throw new Error(`Patient with ID ${id} not found.`);
+      if (error) {
+        console.error(`Error fetching patient ${id}:`, error);
+        
+        // If the table doesn't exist or there's a permission issue, try an alternative approach
+        if (error.code === '42P01' || error.code === '42501') { // Table doesn't exist or permission denied
+          console.log('Attempting to fetch patient from users table as fallback...');
+          
+          // Try users table as fallback (if that's where patient data might be stored)
+          const { data: userData, error: userError } = await supabase
+            .from('users')
+            .select('*')
+            .eq('id', id)
+            .single();
+            
+          if (userError) {
+            console.error(`Fallback fetch failed for patient ${id}:`, userError);
+            throw new Error(`Could not find patient data. Please check database configuration.`);
+          }
+          
+          return userData;
+        }
+        
+        // Handle 'not found' specifically
+        if (error.code === 'PGRST116') { // PostgREST code for zero rows returned by single()
+          throw new Error(`Patient with ID ${id} not found.`);
+        }
+        
+        throw error;
       }
+      
+      return data;
+    } catch (error) {
+      console.error(`Error in getById for patient ${id}:`, error);
       throw error;
     }
-    return data;
   },
 
   /**

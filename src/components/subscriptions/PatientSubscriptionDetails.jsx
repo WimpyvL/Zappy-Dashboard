@@ -1,7 +1,5 @@
 import React from 'react';
-import { usePatientSubscription } from '../../apis/treatmentPackages/hooks';
-import { usePauseSubscription, useCancelSubscription } from '../../apis/subscriptionPlans/hooks';
-import { useCreateCustomerPortalSession } from '../../apis/subscriptionPlans/hooks';
+import { useMySubscriptionDetails, usePauseSubscription, useCancelSubscription, useCreateCustomerPortalSession } from '../../apis/subscriptionPlans/hooks';
 import { toast } from 'react-toastify';
 import { format } from 'date-fns';
 
@@ -14,7 +12,7 @@ const PatientSubscriptionDetails = ({ patientId }) => {
     data: subscription, 
     isLoading,
     refetch 
-  } = usePatientSubscription(patientId);
+  } = useMySubscriptionDetails(patientId);
 
   // Mutations for subscription management
   const { mutate: pauseSubscription, isLoading: isPausing } = usePauseSubscription({
@@ -94,10 +92,10 @@ const PatientSubscriptionDetails = ({ patientId }) => {
       <div className="p-6">
         <h2 className="text-xl font-bold mb-4">Your Subscription</h2>
         
-        {/* Package details */}
+        {/* Plan details */}
         <div className="mb-6">
           <h3 className="font-semibold text-gray-900">{subscription.packageName}</h3>
-          <div className="text-sm text-gray-600">Condition: {subscription.packageCondition}</div>
+          <div className="text-sm text-gray-600">Category: {subscription.packageCondition}</div>
         </div>
         
         {/* Subscription details */}
@@ -175,7 +173,7 @@ const PatientSubscriptionDetails = ({ patientId }) => {
       <div className="bg-gray-50 px-6 py-4 border-t">
         <h3 className="text-sm font-medium text-gray-500">What's included in your subscription:</h3>
         <ul className="mt-2 list-disc pl-5 text-sm text-gray-600">
-          <li>Access to all telehealth services in your treatment package</li>
+          <li>Access to all telehealth services in your subscription plan</li>
           <li>Ongoing support from healthcare providers</li>
           <li>Secure messaging with your care team</li>
           <li>Medication management and prescription renewals (if applicable)</li>

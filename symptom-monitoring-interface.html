@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Symptom Monitoring Interface</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f7fa;
+            padding: 20px;
+        }
+        .container {
+            max-width: 480px;
+            margin: 0 auto;
+        }
+        .card {
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05), 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+        .symptom-btn {
+            transition: all 0.2s ease;
+        }
+        .symptom-btn:hover {
+            transform: translateY(-2px);
+        }
+        .symptom-btn.active {
+            transform: translateY(0);
+        }
+        .slider-track {
+            height: 8px;
+            border-radius: 4px;
+            background-color: #E5E7EB;
+        }
+        .slider-fill {
+            height: 8px;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="text-2xl font-bold text-gray-800 mb-6">Symptom Monitoring</h1>
+        
+        <!-- Symptom Tracker Card -->
+        <div class="card bg-white p-5 mb-6">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-lg font-semibold text-gray-800">How are you feeling today?</h2>
+                <span class="bg-teal-100 text-teal-800 text-xs px-2 py-1 rounded-full font-medium">Weight Management</span>
+            </div>
+            
+            <!-- Symptom Selection -->
+            <div class="mb-5">
+                <h3 class="text-sm font-medium text-gray-700 mb-3">Are you experiencing any symptoms?</h3>
+                <div class="grid grid-cols-2 gap-2">
+                    <button class="symptom-btn p-3 text-sm rounded-lg border border-gray-200 text-gray-700 hover:border-red-200 hover:bg-red-50 hover:text-red-700">
+                        Nausea
+                    </button>
+                    <button class="symptom-btn p-3 text-sm rounded-lg border border-gray-200 text-gray-700 hover:border-red-200 hover:bg-red-50 hover:text-red-700">
+                        Fatigue
+                    </button>
+                    <button class="symptom-btn active p-3 text-sm rounded-lg border border-red-200 bg-red-50 text-red-700">
+                        Headache
+                    </button>
+                    <button class="symptom-btn p-3 text-sm rounded-lg border border-gray-200 text-gray-700 hover:border-red-200 hover:bg-red-50 hover:text-red-700">
+                        Dizziness
+                    </button>
+                    <button class="symptom-btn p-3 text-sm rounded-lg border border-gray-200 text-gray-700 hover:border-red-200 hover:bg-red-50 hover:text-red-700">
+                        Constipation
+                    </button>
+                    <button class="symptom-btn p-3 text-sm rounded-lg border border-gray-200 text-gray-700 hover:border-red-200 hover:bg-red-50 hover:text-red-700">
+                        Other...
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Severity Slider -->
+            <div class="mb-5">
+                <h3 class="text-sm font-medium text-gray-700 mb-3">How severe is your headache?</h3>
+                <div class="flex items-center">
+                    <button class="text-gray-400 hover:text-gray-600">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                    </button>
+                    <div class="flex-1 mx-3">
+                        <div class="slider-track">
+                            <div class="slider-fill bg-orange-400" style="width: 60%"></div>
+                        </div>
+                        <div class="flex justify-between mt-1">
+                            <span class="text-xs text-gray-500">Mild</span>
+                            <span class="text-xs text-gray-500">Moderate</span>
+                            <span class="text-xs text-gray-500">Severe</span>
+                        </div>
+                    </div>
+                    <button class="text-gray-400 hover:text-gray-600">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Additional Notes -->
+            <div class="mb-5">
+                <h3 class="text-sm font-medium text-gray-700 mb-2">Additional notes</h3>
+                <textarea class="w-full p-3 border border-gray-200 rounded-lg text-sm" rows="3" placeholder="Describe your symptoms in more detail...">Throbbing pain on the right side of my head. Started about 2 hours after taking medication. Slightly better when lying down.</textarea>
+            </div>
+            
+            <!-- Timing Information -->
+            <div class="mb-5">
+                <h3 class="text-sm font-medium text-gray-700 mb-2">When did this symptom start?</h3>
+                <div class="flex space-x-2">
+                    <button class="px-3 py-2 text-sm rounded-lg border border-gray-200 text-gray-700">
+                        Just now
+                    </button>
+                    <button class="px-3 py-2 text-sm rounded-lg border border-teal-200 bg-teal-50 text-teal-700">
+                        Today
+                    </button>
+                    <button class="px-3 py-2 text-sm rounded-lg border border-gray-200 text-gray-700">
+                        Yesterday
+                    </button>
+                    <button class="px-3 py-2 text-sm rounded-lg border border-gray-200 text-gray-700">
+                        Earlier
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Submit Button -->
+            <div class="flex justify-between">
+                <button class="text-gray-500 text-sm">
+                    Cancel
+                </button>
+                <button class="px-4 py-2 bg-teal-500 text-white text-sm font-medium rounded-lg">
+                    Log Symptom
+                </button>
+            </div>
+        </div>
+        
+        <!-- Symptom History Card -->
+        <div class="card bg-white p-5 mb-6">
+            <h2 class="text-lg font-semibold text-gray-800 mb-4">Recent Symptom History</h2>
+            
+            <!-- Timeline View -->
+            <div class="relative pl-8 mb-5">
+                <!-- Timeline Line -->
+                <div class="absolute left-3 top-0 bottom-0 w-0.5 bg-gray-200"></div>
+                
+                <!-- Today's Entry -->
+                <div class="mb-5 relative">
+                    <div class="absolute left-0 top-0 w-6 h-6 rounded-full bg-red-100 flex items-center justify-center -translate-x-3">
+                        <div class="w-2 h-2 rounded-full bg-red-500"></div>
+                    </div>
+                    <div class="bg-red-50 rounded-lg p-3 border border-red-100">
+                        <div class="flex justify-between items-center mb-1">
+                            <h3 class="text-sm font-medium text-red-700">Headache</h3>
+                            <span class="text-xs text-gray-500">Today, 2:15 PM</span>
+                        </div>
+                        <div class="flex items-center mb-2">
+                            <span class="text-xs bg-red-100 text-red-700 px-2 py-0.5 rounded-full">Moderate (3/5)</span>
+                        </div>
+                        <p class="text-xs text-gray-600">Throbbing pain on the right side of my head. Started about 2 hours after taking medication. Slightly better when lying down.</p>
+                    </div>
+                </div>
+                
+                <!-- Yesterday's Entry -->
+                <div class="mb-5 relative">
+                    <div class="absolute left-0 top-0 w-6 h-6 rounded-full bg-yellow-100 flex items-center justify-center -translate-x-3">
+                        <div class="w-2 h-2 rounded-full bg-yellow-500"></div>
+                    </div>
+                    <div class="bg-yellow-50 rounded-lg p-3 border border-yellow-100">
+                        <div class="flex justify-between items-center mb-1">
+                            <h3 class="text-sm font-medium text-yellow-700">Nausea</h3>
+                            <span class="text-xs text-gray-500">Yesterday, 9:30 AM</span>
+                        </div>
+                        <div class="flex items-center mb-2">
+                            <span class="text-xs bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded-full">Mild (2/5)</span>
+                        </div>
+                        <p class="text-xs text-gray-600">Mild nausea after breakfast. Lasted about 30 minutes then subsided.</p>
+                    </div>
+                </div>
+                
+                <!-- 3 Days Ago Entry -->
+                <div class="relative">
+                    <div class="absolute left-0 top-0 w-6 h-6 rounded-full bg-gray-100 flex items-center justify-center -translate-x-3">
+                        <div class="w-2 h-2 rounded-full bg-gray-500"></div>
+                    </div>
+                    <div class="bg-gray-50 rounded-lg p-3 border border-gray-100">
+                        <div class="flex justify-between items-center mb-1">
+                            <h3 class="text-sm font-medium text-gray-700">Fatigue</h3>
+                            <span class="text-xs text-gray-500">May 1, 4:45 PM</span>
+                        </div>
+                        <div class="flex items-center mb-2">
+                            <span class="text-xs bg-gray-100 text-gray-700 px-2 py-0.5 rounded-full">Mild (1/5)</span>
+                        </div>
+                        <p class="text-xs text-gray-600">Slight fatigue in the afternoon. Improved after taking a short nap.</p>
+                    </div>
+                </div>
+            </div>
+            
+            <button class="w-full py-2 text-sm text-teal-600 font-medium">
+                View Full History
+            </button>
+        </div>
+        
+        <!-- Emergency Warning Card -->
+        <div class="card bg-white p-5 border-l-4 border-red-500">
+            <div class="flex items-start">
+                <div class="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center mr-3 flex-shrink-0">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                </div>
+                <div>
+                    <h3 class="text-base font-semibold text-red-700">Experiencing severe symptoms?</h3>
+                    <p class="text-sm text-red-600 mb-2">If you have any of these symptoms, seek immediate medical attention:</p>
+                    <ul class="list-disc list-inside text-sm text-red-600 space-y-1">
+                        <li>Severe chest pain or pressure</li>
+                        <li>Difficulty breathing or shortness of breath</li>
+                        <li>Severe headache with confusion or blurred vision</li>
+                        <li>Sudden severe abdominal pain</li>
+                    </ul>
+                    <div class="mt-3">
+                        <button class="bg-red-600 hover:bg-red-700 text-white text-sm font-medium px-4 py-2 rounded-lg mr-2">
+                            Call Emergency Services
+                        </button>
+                        <button class="bg-white border border-red-200 text-red-600 text-sm font-medium px-4 py-2 rounded-lg">
+                            Message Provider
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

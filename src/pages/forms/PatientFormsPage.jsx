@@ -10,7 +10,6 @@ import {
   // ArrowRight, // Removed unused ArrowRight
   Star
 } from 'lucide-react';
-import ChildishDrawingElement from '../../components/ui/ChildishDrawingElement'; // Import drawing element
 
 // Helper function to format date
 const formatDate = (dateString) => {
@@ -46,9 +45,6 @@ const FormCompletionCelebration = ({ formName, onDismiss }) => {
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-lg shadow-xl p-6 max-w-md w-full relative overflow-hidden">
-        <ChildishDrawingElement type="scribble" color="accent1" position="top-right" size={100} rotation={-15} />
-        <ChildishDrawingElement type="doodle" color="accent2" position="bottom-left" size={80} rotation={10} />
-        
         <div className="text-center mb-6">
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-green-100 mb-4">
             <CheckCircle className="h-8 w-8 text-green-600" />
@@ -169,10 +165,6 @@ const PatientFormsPage = () => {
   // Render the component using mock data (or real data if hook was enabled)
   return (
     <div className="container mx-auto px-4 py-6 relative overflow-hidden pb-10">
-      {/* Decorative elements */}
-      <ChildishDrawingElement type="watercolor" color="accent2" position="top-right" size={180} rotation={-10} />
-      <ChildishDrawingElement type="doodle" color="accent4" position="bottom-left" size={150} rotation={15} />
-      
       {/* Page Header */}
       <div className="border-b border-gray-200 pb-4 mb-6">
         <h1 className="text-2xl font-bold text-gray-900">My Forms</h1>

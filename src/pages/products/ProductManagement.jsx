@@ -15,7 +15,6 @@ import {
   Loader2, // Added
   AlertTriangle, // Added for error display
 } from 'lucide-react';
-import ChildishDrawingElement from '../../components/ui/ChildishDrawingElement'; // Import drawing element
 
 import {
   PageHeader,
@@ -645,10 +644,6 @@ const ProductManagement = () => {
 
   return (
     <div className="relative overflow-hidden pb-10"> {/* Add relative positioning and padding */}
-      {/* Add childish drawing elements */}
-      <ChildishDrawingElement type="watercolor" color="accent1" position="top-right" size={120} rotation={-15} opacity={0.1} />
-      <ChildishDrawingElement type="scribble" color="accent3" position="bottom-left" size={100} rotation={5} opacity={0.1} />
-
       <PageHeader title="Product & Subscription Management" />
       {/* Tabs */}
       <div className="mb-6 relative z-10"> {/* Added z-index */}

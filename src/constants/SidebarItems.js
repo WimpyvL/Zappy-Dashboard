@@ -22,7 +22,7 @@ import {
   ShoppingCart as PatientOrdersIcon,
   // CalendarCheck as PatientSessionsIcon, // Removed unused
   // MessageSquare as PatientMessagesIcon, // Removed unused
-  // LayoutGrid as PatientProgramIcon, // Removed
+  LayoutGrid as PatientProgramIcon,
   FolderClock as PatientRecordsIcon,
   // CreditCard, // Removed unused (duplicate import)
   // Store as ShopIcon, // Removed
@@ -31,6 +31,8 @@ import {
   // CreditCard as PaymentIcon, // Removed unused (duplicate import)
   UserCog, // For My Information
   ShoppingBag, // For Marketplace
+  BookOpen, // For Resources
+  Layers, // For My Services
 } from 'lucide-react';
 
 import { paths } from './paths'; // Ensure paths are imported
@@ -130,6 +132,13 @@ export const sidebarItems = [
     icon: Calendar,
     color: 'accent2',
   },
+  {
+    title: 'Educational Resources',
+    path: '/admin/resources',
+    icon: BookOpen,
+    color: 'accent3',
+    isAdmin: true,
+  },
 ];
 
 // Define settings items separately
@@ -158,10 +167,11 @@ export const logoutItem = {
 // Define patient sidebar items (Further Simplified View)
 // Combine Shop and Programs into single Marketplace entry
 export const patientSidebarItems = [
-  { title: 'Home', path: '/dashboard', icon: PatientDashboardIcon, color: 'accent3' }, // Changed path from '/' to '/dashboard'
+  { title: 'New Home', path: '/patient-home-v2', icon: Home, color: 'accent4' }, // New Vibrant Home Page
+  { title: 'My Services', path: '/my-services', icon: Layers, color: 'primary' }, // Modular Services Interface
   { title: 'Records', path: '/records', icon: PatientRecordsIcon, color: 'accent3' },
-  { title: 'My Subscription', path: '/my-subscription', icon: Calendar, color: 'primary' },
   { title: 'Marketplace', path: '/marketplace', icon: ShoppingBag, color: 'accent2' }, // Unified marketplace replacing Shop and Programs
+  { title: 'Resources', path: '/resources', icon: BookOpen, color: 'accent1' }, // Educational resources
 ];
 
 // Define profile dropdown menu items (Simplified)

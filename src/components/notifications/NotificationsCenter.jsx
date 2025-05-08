@@ -5,7 +5,6 @@ import {
   FileText, Pill, CreditCard, Settings, ChevronRight, 
   CheckCheck, Clock
 } from 'lucide-react';
-import ChildishDrawingElement from '../ui/ChildishDrawingElement';
 import { formatDistanceToNow } from 'date-fns';
 
 // Helper function to get icon based on notification type
@@ -193,8 +192,6 @@ const NotificationsCenter = () => {
               <div className="h-full flex flex-col bg-white shadow-xl overflow-hidden">
                 {/* Header */}
                 <div className="px-4 py-3 border-b border-gray-200 bg-white relative overflow-hidden">
-                  <ChildishDrawingElement type="doodle" color="accent1" position="top-right" size={80} rotation={-15} opacity={0.1} />
-                  
                   <div className="flex items-center justify-between">
                     <h2 className="text-lg font-medium text-gray-900">Notifications</h2>
                     <div className="flex items-center space-x-2">

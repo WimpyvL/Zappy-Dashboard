@@ -243,6 +243,68 @@ export const useResendForm = (options = {}) => {
   });
 };
 
+// Hook to send a form to a patient
+export const useSendFormToPatient = (options = {}) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ patientId, formId }) => {
+      if (!patientId || !formId) {
+        throw new Error("Patient ID and Form ID are required to send the form.");
+      }
+      
+      // Prepare data for form_requests table
+      const formRequestData = {
+        patient_id: patientId,
+        questionnaire_id: formId,
+        status: 'pending',
+        sent_date: new Date().toISOString(),
+        deadline_date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // 7 days from now
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+
+      // Insert into form_requests table
+      const { data, error } = await supabase
+        .from('form_requests')
+        .insert(formRequestData)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error sending form to patient:', error);
+        throw new Error(error.message);
+      }
+
+      // Optionally trigger email notification via Edge Function
+      try {
+        await supabase.functions.invoke('send-form-notification', {
+          body: { patientId, formId, formRequestId: data.id },
+        });
+      } catch (notificationError) {
+        console.warn('Form sent but notification failed:', notificationError);
+        // Don't throw error here, as the form was successfully sent
+      }
+
+      return data;
+    },
+    onSuccess: (data, variables, context) => {
+      // Invalidate patient forms queries to refresh the list
+      if (variables.patientId) {
+        queryClient.invalidateQueries({ 
+          queryKey: queryKeys.patientForms(variables.patientId) 
+        });
+      }
+      toast.success('Form sent to patient successfully.');
+      options.onSuccess?.(data, variables, context);
+    },
+    onError: (error, variables, context) => {
+      toast.error(`Error sending form: ${error.message || 'Unknown error'}`);
+      options.onError?.(error, variables, context);
+    },
+    onSettled: options.onSettled,
+  });
+};
+
 // Hook to update an existing form (questionnaire) using Supabase
 export const useUpdateForm = (options = {}) => {
   const queryClient = useQueryClient();

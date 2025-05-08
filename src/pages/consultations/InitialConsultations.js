@@ -18,7 +18,6 @@ import ConsultationFilters from './components/ConsultationFilters';
 import PatientSelectionModal from './components/PatientSelectionModal';
 import EmailPatientModal from './components/EmailPatientModal';
 import InitialConsultationNotes from './InitialConsultationNotes'; // Still used fullscreen/modal
-import ChildishDrawingElement from '../../components/ui/ChildishDrawingElement';
 
 const InitialConsultations = () => {
   // --- State ---
@@ -131,7 +130,7 @@ const InitialConsultations = () => {
     setShowConsultationNotesModal(true); // Open notes modal immediately after selection
   };
 
-  const handleViewConsultation = (consultation) => {
+  const handleViewConsultation = (consultation, forceEdit = false) => {
     // Need patient data for the notes modal, find it (assuming consultations join patient data)
     // This might need adjustment based on actual data structure from useConsultations
     const patientData = {
@@ -142,15 +141,40 @@ const InitialConsultations = () => {
         // Add other necessary fields
     };
     setSelectedPatientForNew(patientData); // Set patient context for the notes modal
-    setSelectedConsultation(consultation); // Set the consultation being viewed/edited
-    setShowConsultationNotesModal(true);
+    
+    // If forceEdit is true or if coming from Edit button, set status to pending first
+    if (forceEdit && consultation.status === 'reviewed') {
+      console.log("Setting consultation to editable mode");
+      updateStatusMutation.mutate(
+        { consultationId: consultation.id, status: 'pending' },
+        {
+          onSuccess: () => {
+            // After status is updated, set the consultation with updated status
+            const updatedConsultation = {
+              ...consultation,
+              status: 'pending' // Update the status locally for immediate UI feedback
+            };
+            setSelectedConsultation(updatedConsultation);
+            setShowConsultationNotesModal(true);
+          }
+        }
+      );
+    } else {
+      setSelectedConsultation(consultation);
+      setShowConsultationNotesModal(true);
+    }
   };
 
   const handleCloseNotesModal = () => {
     setShowConsultationNotesModal(false);
     setSelectedPatientForNew(null);
     setSelectedConsultation(null);
-    refetchConsultations(); // Refetch list when notes modal closes
+    
+    // Force refetch with a delay to ensure the server has time to update
+    setTimeout(() => {
+      console.log("Refetching consultations after modal close");
+      refetchConsultations(); // Refetch list when notes modal closes
+    }, 500);
   };
 
   const handleSendEmail = (consultation) => {
@@ -188,9 +212,6 @@ const InitialConsultations = () => {
   // --- Render ---
   return (
     <div className="relative overflow-hidden pb-10">
-      <ChildishDrawingElement type="watercolor" color="accent2" position="top-right" size={120} rotation={-10} opacity={0.1} />
-      <ChildishDrawingElement type="doodle" color="accent4" position="bottom-left" size={100} rotation={15} opacity={0.1} />
-
       <div className="flex justify-between items-center mb-6 relative z-10">
         <h1 className="text-2xl font-bold text-gray-800">Initial Consultations</h1>
         <button

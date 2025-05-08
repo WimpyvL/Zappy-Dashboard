@@ -5,7 +5,6 @@ import {
   Loader2, AlertTriangle, User, Bell, Lock, Edit, 
   CreditCard, FileText, ChevronRight, ShieldCheck, Building
 } from 'lucide-react'; 
-import ChildishDrawingElement from '../../components/ui/ChildishDrawingElement';
 import { useGetProfile } from '../../apis/users/hooks';
 import { toast } from 'react-toastify';
 import { formatPhoneNumber } from '../../utils/formatters';
@@ -72,10 +71,6 @@ const PatientProfilePage = () => {
 
   return (
     <div className="container mx-auto px-4 py-6 space-y-6 relative overflow-hidden pb-10">
-      {/* Decorative elements */}
-      <ChildishDrawingElement type="watercolor" color="accent4" position="top-right" size={150} rotation={-10} opacity={0.15} />
-      <ChildishDrawingElement type="scribble" color="accent3" position="bottom-left" size={120} rotation={15} opacity={0.1} />
-      
       {/* Page Header */}
       <div className="border-b border-gray-200 pb-4 mb-6">
         <h1 className="text-2xl font-bold text-gray-900">My Account</h1>

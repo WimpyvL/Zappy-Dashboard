@@ -3,7 +3,6 @@ import React, { useState } from 'react'; // Import useState
 // import { useMyOrders } from '../../apis/orders/hooks'; // Temporarily disable hook for mock data
 // import { Link } from 'react-router-dom'; // Removed unused Link
 import { /* Loader2, AlertTriangle, */ Package, CheckCircle, Clock, XCircle, Truck, Info } from 'lucide-react'; // Removed unused Loader2, AlertTriangle, Replaced TruckIcon with Truck, added Info
-import ChildishDrawingElement from '../../components/ui/ChildishDrawingElement'; // Import drawing element
 import OrderDetailModal from '../../components/orders/OrderDetailModal'; // Import the modal
 
 // Helper function to format date
@@ -120,10 +119,6 @@ const PatientOrderHistoryPage = () => {
   // Use mock data
   return (
     <div className="container mx-auto px-4 py-6 relative overflow-hidden pb-10">
-      {/* Decorative elements */}
-      <ChildishDrawingElement type="doodle" color="accent1" position="top-right" size={150} rotation={-10} opacity={0.15} />
-      <ChildishDrawingElement type="watercolor" color="primary" position="bottom-left" size={180} rotation={20} opacity={0.1} />
-      
       {/* Page Header */}
       <div className="border-b border-gray-200 pb-4 mb-6">
         <h1 className="text-2xl font-bold text-gray-900">My Order History</h1>

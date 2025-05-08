@@ -1,7 +1,6 @@
 import React from 'react';
 import { useOrderById } from '../../apis/orders/hooks'; // Assuming hook path
 import { X, Package, MapPin, Truck, Info, Loader2, AlertTriangle } from 'lucide-react'; // Removed Calendar, DollarSign
-import ChildishDrawingElement from '../ui/ChildishDrawingElement'; // Assuming path
 import { StatusBadge } from '../../pages/orders/PatientOrderHistoryPage'; // Reuse StatusBadge
 
 // Helper function to format date
@@ -133,9 +132,6 @@ const OrderDetailModal = ({ orderId, isOpen, onClose }) => {
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl relative overflow-hidden">
-        {/* Decorative elements */}
-        <ChildishDrawingElement type="doodle" color="accent1" position="top-right" size={100} rotation={-15} opacity={0.1} />
-        
         {/* Modal Header */}
         <div className="flex justify-between items-center p-4 border-b border-gray-200 bg-accent1/5">
           <div className="flex items-center">

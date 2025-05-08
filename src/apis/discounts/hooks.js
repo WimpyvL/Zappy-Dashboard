@@ -16,31 +16,82 @@ export const useDiscounts = (params = {}) => {
   return useQuery({
     queryKey: queryKeys.lists(params),
     queryFn: async () => {
-      let query = supabase
-        .from('discounts')
-        .select('*')
-        .order('name', { ascending: true }); // Example order
+      try {
+        // First try to fetch with the relationship
+        let query = supabase
+          .from('discounts')
+          .select(`
+            *,
+            discount_subscription_plans:discount_subscription_plans(
+              subscription_plan_id
+            )
+          `)
+          .order('name', { ascending: true });
 
-      // Apply filters if any
-      if (params.status !== undefined) {
-        query = query.eq('status', params.status);
-      }
-      if (params.code) {
-         query = query.ilike('code', `%${params.code}%`);
-      }
+        // Apply filters if any
+        if (params.status !== undefined) {
+          query = query.eq('status', params.status);
+        }
+        if (params.code) {
+           query = query.ilike('code', `%${params.code}%`);
+        }
 
-      const { data, error } = await query;
+        const { data, error } = await query;
 
-      if (error) {
-        console.error('Error fetching discounts:', error);
-        throw new Error(error.message);
+        if (error) {
+          // If there's an error related to the relationship, fall back to basic query
+          if (error.message.includes('relationship') || error.message.includes('schema cache')) {
+            console.warn('Falling back to basic query without relationships:', error.message);
+            
+            // Try again with a simpler query
+            const basicQuery = supabase
+              .from('discounts')
+              .select('*')
+              .order('name', { ascending: true });
+              
+            // Apply the same filters
+            if (params.status !== undefined) {
+              basicQuery.eq('status', params.status);
+            }
+            if (params.code) {
+              basicQuery.ilike('code', `%${params.code}%`);
+            }
+            
+            const basicResult = await basicQuery;
+            
+            if (basicResult.error) {
+              console.error('Error in fallback query:', basicResult.error);
+              throw new Error(basicResult.error.message);
+            }
+            
+            // Map data without the relationship
+            const mappedData = basicResult.data?.map(d => ({
+                ...d,
+                status: d.status ? 'Active' : 'Inactive',
+                subscription_plan_ids: []
+            })) || [];
+            
+            return { data: mappedData };
+          }
+          
+          // For other errors, throw normally
+          console.error('Error fetching discounts:', error);
+          throw new Error(error.message);
+        }
+        
+        // Map data to include subscription_plan_ids array
+        const mappedData = data?.map(d => ({
+            ...d,
+            status: d.status ? 'Active' : 'Inactive',
+            subscription_plan_ids: d.discount_subscription_plans?.map(dsp => dsp.subscription_plan_id) || []
+        })) || [];
+        
+        return { data: mappedData };
+      } catch (error) {
+        console.error('Unexpected error in useDiscounts:', error);
+        // Return empty data rather than throwing to prevent UI from breaking
+        return { data: [] };
       }
-      // Map data if needed (e.g., convert status boolean to string)
-      const mappedData = data?.map(d => ({
-          ...d,
-          status: d.status ? 'Active' : 'Inactive' // Example mapping
-      })) || [];
-      return { data: mappedData }; // Return data wrapped in object if needed
     },
   });
 };
@@ -52,23 +103,65 @@ export const useDiscountById = (id, options = {}) => {
     queryFn: async () => {
       if (!id) return null;
 
-      const { data, error } = await supabase
-        .from('discounts')
-        .select('*')
-        .eq('id', id)
-        .single();
+      try {
+        // First try with the relationship
+        const { data, error } = await supabase
+          .from('discounts')
+          .select(`
+            *,
+            discount_subscription_plans:discount_subscription_plans(
+              subscription_plan_id
+            )
+          `)
+          .eq('id', id)
+          .single();
 
-      if (error) {
-        console.error(`Error fetching discount ${id}:`, error);
-        if (error.code === 'PGRST116') return null; // Not found
-        throw new Error(error.message);
+        if (error) {
+          // If there's an error related to the relationship, fall back to basic query
+          if (error.message.includes('relationship') || error.message.includes('schema cache')) {
+            console.warn('Falling back to basic query without relationships:', error.message);
+            
+            // Try again with a simpler query
+            const basicResult = await supabase
+              .from('discounts')
+              .select('*')
+              .eq('id', id)
+              .single();
+              
+            if (basicResult.error) {
+              console.error(`Error fetching discount ${id}:`, basicResult.error);
+              if (basicResult.error.code === 'PGRST116') return null; // Not found
+              throw new Error(basicResult.error.message);
+            }
+            
+            // Map data without the relationship
+            const mappedData = basicResult.data ? {
+                ...basicResult.data,
+                status: basicResult.data.status ? 'Active' : 'Inactive',
+                subscription_plan_ids: []
+            } : null;
+            
+            return mappedData;
+          }
+          
+          // For other errors, handle normally
+          console.error(`Error fetching discount ${id}:`, error);
+          if (error.code === 'PGRST116') return null; // Not found
+          throw new Error(error.message);
+        }
+        
+        // Map data to include subscription_plan_ids array
+        const mappedData = data ? {
+            ...data,
+            status: data.status ? 'Active' : 'Inactive',
+            subscription_plan_ids: data.discount_subscription_plans?.map(dsp => dsp.subscription_plan_id) || []
+        } : null;
+        
+        return mappedData;
+      } catch (error) {
+        console.error(`Unexpected error in useDiscountById:`, error);
+        return null;
       }
-       // Map data if needed
-       const mappedData = data ? {
-           ...data,
-           status: data.status ? 'Active' : 'Inactive' // Example mapping
-       } : null;
-      return mappedData;
     },
     enabled: !!id,
     ...options,
@@ -80,23 +173,29 @@ export const useCreateDiscount = (options = {}) => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (discountData) => {
-      // Map frontend fields to DB columns, explicitly setting null for unused type
+      // Extract subscription plan IDs
+      const subscriptionPlanIds = discountData.subscription_plan_ids || [];
+      
+      // Map frontend fields to DB columns
       const dataToInsert = {
-        ...discountData, // Include name, code, description, etc.
-        value: parseFloat(discountData.value) || 0, // Use the unified value field from schema
-        discount_type: discountData.discount_type || 'percentage', // Use the discount_type field from schema
-        status: discountData.status || 'Active', // Keep as text: 'Active', 'Inactive', 'Scheduled', 'Expired'
-        // Handle date fields properly
+        ...discountData,
+        value: parseFloat(discountData.value) || 0,
+        discount_type: discountData.discount_type || 'percentage',
+        status: discountData.status || 'Active',
         valid_from: discountData.valid_from ? discountData.valid_from : null,
         valid_until: discountData.valid_until ? discountData.valid_until : null,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       };
       
-      // Remove redundant fields if any
-      delete dataToInsert.amount; 
+      // Remove fields that don't belong in the discounts table
+      delete dataToInsert.amount;
       delete dataToInsert.percentage;
+      delete dataToInsert.subscription_plan_ids;
+      delete dataToInsert.subscription_plan_id; // Remove old single plan ID field
+      delete dataToInsert.requirements; // Remove requirements array that doesn't exist in DB
 
+      // Start a transaction
       const { data, error } = await supabase
         .from('discounts')
         .insert(dataToInsert)
@@ -105,12 +204,36 @@ export const useCreateDiscount = (options = {}) => {
 
       if (error) {
         console.error('Error creating discount:', error);
-         if (error.code === '23505') { // Unique violation (likely on 'code')
-           throw new Error(`Discount code '${dataToInsert.code}' already exists.`);
-         }
+        if (error.code === '23505') {
+          throw new Error(`Discount code '${dataToInsert.code}' already exists.`);
+        }
         throw new Error(error.message);
       }
-      return data;
+
+      // If subscription plans were selected, try to create junction table entries
+      if (subscriptionPlanIds.length > 0) {
+        try {
+          const junctionEntries = subscriptionPlanIds.map(planId => ({
+            discount_id: data.id,
+            subscription_plan_id: planId,
+            created_at: new Date().toISOString()
+          }));
+
+          const { error: junctionError } = await supabase
+            .from('discount_subscription_plans')
+            .insert(junctionEntries);
+
+          if (junctionError) {
+            console.error('Error linking discount to subscription plans:', junctionError);
+            // Don't throw here, just log the error and continue
+          }
+        } catch (err) {
+          console.error('Error handling subscription plan links:', err);
+          // Don't throw here, just log the error and continue
+        }
+      }
+
+      return { ...data, subscription_plan_ids: subscriptionPlanIds };
     },
     onSuccess: (data, variables, context) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.lists() });
@@ -132,24 +255,31 @@ export const useUpdateDiscount = (options = {}) => {
     mutationFn: async ({ id, discountData }) => {
       if (!id) throw new Error("Discount ID is required for update.");
 
+      // Extract subscription plan IDs
+      const subscriptionPlanIds = discountData.subscription_plan_ids || [];
+      
       const dataToUpdate = {
         ...discountData,
-        value: parseFloat(discountData.value) || 0, // Use the unified value field
-        discount_type: discountData.discount_type || 'percentage', // Use the discount_type field directly
-        status: discountData.status || 'Active', // Keep status as text: 'Active', 'Inactive', etc.
-        // Handle date fields properly
+        value: parseFloat(discountData.value) || 0,
+        discount_type: discountData.discount_type || 'percentage',
+        status: discountData.status || 'Active',
         valid_from: discountData.valid_from ? discountData.valid_from : null,
         valid_until: discountData.valid_until ? discountData.valid_until : null,
         updated_at: new Date().toISOString(),
       };
       
-      // Remove redundant fields
+      // Remove fields that don't belong in the discounts table
       delete dataToUpdate.id;
       delete dataToUpdate.created_at;
       delete dataToUpdate.amount;
       delete dataToUpdate.percentage;
-      delete dataToUpdate.usage_count; // Assuming usage_count is managed by backend triggers/logic
+      delete dataToUpdate.usage_count;
+      delete dataToUpdate.subscription_plan_ids;
+      delete dataToUpdate.subscription_plan_id; // Remove old single plan ID field
+      delete dataToUpdate.discount_subscription_plans; // Remove joined data
+      delete dataToUpdate.requirements; // Remove requirements array that doesn't exist in DB
 
+      // Start a transaction
       const { data, error } = await supabase
         .from('discounts')
         .update(dataToUpdate)
@@ -159,12 +289,48 @@ export const useUpdateDiscount = (options = {}) => {
 
       if (error) {
         console.error(`Error updating discount ${id}:`, error);
-         if (error.code === '23505') { // Unique violation (likely on 'code')
-           throw new Error(`Discount code '${dataToUpdate.code}' already exists.`);
-         }
+        if (error.code === '23505') {
+          throw new Error(`Discount code '${dataToUpdate.code}' already exists.`);
+        }
         throw new Error(error.message);
       }
-      return data;
+
+      // Try to handle subscription plan links, but don't fail if the table doesn't exist
+      try {
+        // Try to delete existing junction table entries
+        const { error: deleteError } = await supabase
+          .from('discount_subscription_plans')
+          .delete()
+          .eq('discount_id', id);
+
+        if (deleteError && !deleteError.message.includes('relation') && !deleteError.message.includes('schema cache')) {
+          console.error(`Error removing existing subscription plan links:`, deleteError);
+          // Don't throw here, just log the error and continue
+        }
+
+        // If subscription plans were selected, create new junction table entries
+        if (subscriptionPlanIds.length > 0) {
+          const junctionEntries = subscriptionPlanIds.map(planId => ({
+            discount_id: id,
+            subscription_plan_id: planId,
+            created_at: new Date().toISOString()
+          }));
+
+          const { error: junctionError } = await supabase
+            .from('discount_subscription_plans')
+            .insert(junctionEntries);
+
+          if (junctionError && !junctionError.message.includes('relation') && !junctionError.message.includes('schema cache')) {
+            console.error('Error linking discount to subscription plans:', junctionError);
+            // Don't throw here, just log the error and continue
+          }
+        }
+      } catch (err) {
+        console.error('Error handling subscription plan links:', err);
+        // Don't throw here, just log the error and continue
+      }
+
+      return { ...data, subscription_plan_ids: subscriptionPlanIds };
     },
     onSuccess: (data, variables, context) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.lists() });
@@ -187,6 +353,18 @@ export const useDeleteDiscount = (options = {}) => {
     mutationFn: async (id) => {
       if (!id) throw new Error("Discount ID is required for deletion.");
 
+      // Try to delete from the discount_subscription_plans table first, but don't fail if it doesn't exist
+      try {
+        await supabase
+          .from('discount_subscription_plans')
+          .delete()
+          .eq('discount_id', id);
+      } catch (err) {
+        console.warn('Error deleting from discount_subscription_plans (may not exist yet):', err);
+        // Continue with the main deletion even if this fails
+      }
+
+      // Now delete the discount
       const { error } = await supabase
         .from('discounts')
         .delete()

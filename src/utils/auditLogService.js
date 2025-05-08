@@ -43,10 +43,22 @@ const logAuditEvent = async (action, details = {}, userId = null) => {
   console.info(`[Audit Log] Action: ${action}`, { details, userId });
 };
 
-// Removed unused logErrorEvent function
+/**
+ * Records an error event in the audit log.
+ *
+ * @param {Error} error - The error object to log.
+ * @param {string} context - The context where the error occurred.
+ * @param {object} [additionalDetails={}] - Optional additional details about the error.
+ * @param {string} [userId] - Optional: The ID of the user who experienced the error.
+ */
+const logErrorEvent = async (error, context, additionalDetails = {}, userId = null) => {
+  // For now, just log to console
+  console.error(`[Audit Log] Error in ${context}:`, error, { additionalDetails, userId });
+};
 
 const auditLogService = {
   log: logAuditEvent,
+  logError: logErrorEvent
 };
 
 export default auditLogService;

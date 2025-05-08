@@ -5,7 +5,6 @@ import {
   Calendar, Clock, ArrowRight,
   StickyNote, Eye // Removed unused FileText, Package, CreditCard, ShieldAlert, Stethoscope, Folder
 } from 'lucide-react';
-import ChildishDrawingElement from '../../components/ui/ChildishDrawingElement';
 import NoteViewModal from '../../components/notes/NoteViewModal'; // Import the modal
 
 // Timeline Item Component - Modified to handle note clicks
@@ -220,10 +219,6 @@ const PatientRecordsPage = ({ showAllHistory = false }) => {
 
   return (
     <div className="container mx-auto px-4 py-6 relative overflow-hidden pb-10">
-      {/* Decorative elements */}
-      <ChildishDrawingElement type="watercolor" color="accent3" position="top-right" size={150} rotation={-10} opacity={0.2} />
-      <ChildishDrawingElement type="doodle" color="accent2" position="bottom-left" size={120} rotation={15} opacity={0.15} />
-      
       {/* Page Header */}
       <div className="border-b border-gray-200 pb-4 mb-6">
         {showAllHistory ? (

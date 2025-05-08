@@ -1,6 +1,5 @@
 import React from 'react';
 import { X, Download, Calendar, User, StickyNote } from 'lucide-react';
-import ChildishDrawingElement from '../ui/ChildishDrawingElement';
 
 // Helper function to format date
 const formatDate = (dateString) => {
@@ -50,10 +49,6 @@ const NoteViewModal = ({ note, isOpen, onClose }) => {
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl relative overflow-hidden">
-        {/* Decorative elements */}
-        <ChildishDrawingElement type="scribble" color="accent4" position="top-right" size={100} rotation={-15} opacity={0.1} />
-        <ChildishDrawingElement type="doodle" color="accent3" position="bottom-left" size={80} rotation={10} opacity={0.1} />
-        
         {/* Modal Header */}
         <div className="flex justify-between items-center p-4 border-b border-gray-200 bg-accent4/5">
           <div className="flex items-center">

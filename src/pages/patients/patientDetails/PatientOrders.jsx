@@ -1,9 +1,9 @@
 // components/patients/components/PatientOrders.jsx
-import React from 'react'; // Removed unused useState, useEffect
-import { Link, useNavigate } from 'react-router-dom'; // Add useNavigate
-import { Plus, Clock, CheckCircle, XCircle, FileText, Hash, Loader2 } from 'lucide-react'; // Added FileText, Hash, Loader2
-// Removed unused LoadingSpinner import
-import { useOrders } from '../../../apis/orders/hooks'; // Import the useOrders hook
+import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
+import { Plus, Clock, CheckCircle, XCircle, FileText, Hash, Loader2 } from 'lucide-react';
+import { useOrders } from '../../../apis/orders/hooks';
+import CreateOrderModal from '../../../components/orders/CreateOrderModal';
 
 const OrderStatusBadge = ({ status }) => {
   return (
@@ -63,12 +63,18 @@ const formatDate = (dateString) => {
 
 
 const PatientOrders = ({ patientId }) => {
-  const navigate = useNavigate(); // Add navigate function
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  
   // Fix the parameter name from patients_id to patientId to match what the hook expects
-  const { data: ordersData, isLoading: loading, error } = useOrders(1, { patientId: patientId }, 100);
+  const { data: ordersData, isLoading: loading, error, refetch } = useOrders(1, { patientId: patientId }, 100);
 
   // The hook returns the data wrapped in an object with data property
   const orders = ordersData?.data || [];
+  
+  // Handle order creation success
+  const handleOrderCreated = () => {
+    refetch(); // Refresh the orders list
+  };
 
   return (
     <div className="bg-white p-6 rounded-lg shadow">
@@ -76,12 +82,20 @@ const PatientOrders = ({ patientId }) => {
         <h2 className="text-lg font-medium text-gray-900">Order History</h2>
         <button
           className="px-3 py-1 text-sm bg-indigo-600 text-white rounded-md hover:bg-indigo-700 flex items-center"
-          onClick={() => navigate(`/orders?patientId=${patientId}`)}
+          onClick={() => setShowCreateModal(true)}
         >
           <Plus className="h-4 w-4 mr-1" />
           Create New Order
         </button>
       </div>
+      
+      {/* Create Order Modal */}
+      <CreateOrderModal
+        isOpen={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        initialPatientId={patientId}
+        onOrderCreated={handleOrderCreated}
+      />
 
       {loading ? (
         <div className="flex justify-center items-center py-8">

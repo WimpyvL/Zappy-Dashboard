@@ -1,0 +1,89 @@
+/* Mobile responsiveness for ModularServiceInterface */
+
+/* Base styles */
+.service-module {
+  transition: all 0.3s ease;
+}
+
+/* Mobile styles */
+@media (max-width: 768px) {
+  .service-module {
+    border-radius: 0.5rem;
+  }
+  
+  /* Adjust padding for smaller screens */
+  .service-module .p-5 {
+    padding: 1rem;
+  }
+  
+  /* Make action items more compact */
+  .service-module .action-item {
+    padding: 0.75rem;
+  }
+  
+  /* Adjust medication display */
+  .service-module .flex.items-start {
+    flex-direction: column;
+  }
+  
+  .service-module .flex.items-start > div:first-child {
+    margin-bottom: 0.5rem;
+  }
+  
+  .service-module .flex.items-start > div:last-child {
+    margin-left: 0;
+  }
+  
+  /* Make buttons full width on mobile */
+  .service-module .flex.flex-wrap.gap-3 {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  
+  .service-module .flex.flex-wrap.gap-3 button {
+    width: 100%;
+    justify-content: center;
+  }
+  
+  /* Improve product carousel scrolling */
+  .product-scroll {
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 0.5rem;
+  }
+  
+  .product-scroll .flex.space-x-4 {
+    padding-bottom: 0.5rem;
+  }
+  
+  /* Increase touch targets */
+  button, a {
+    min-height: 44px;
+    min-width: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+}
+
+/* Landscape mode */
+@media screen and (orientation: landscape) and (max-width: 900px) {
+  .service-module .flex.items-start {
+    flex-direction: row;
+  }
+  
+  .service-module .flex.items-start > div:first-child {
+    margin-bottom: 0;
+  }
+  
+  .service-module .flex.items-start > div:last-child {
+    margin-left: 1rem;
+  }
+  
+  .service-module .flex.flex-wrap.gap-3 {
+    flex-direction: row;
+  }
+  
+  .service-module .flex.flex-wrap.gap-3 button {
+    width: auto;
+  }
+}

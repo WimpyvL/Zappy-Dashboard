@@ -10,7 +10,7 @@ export default defineConfig({
   ],
   server: {
     // @ts-ignore
-    allowedHosts: process.env.TEMPO === 'true' ? true : undefined,
+    allowedHosts: true, // Allow all hosts for ngrok access
     host: '0.0.0.0',
     port: 3000,
   },

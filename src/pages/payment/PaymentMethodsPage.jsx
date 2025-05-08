@@ -4,7 +4,6 @@ import {
   CreditCard, Plus, Trash2, Edit, ChevronRight, 
   Shield // Removed unused Check, X, AlertCircle, ArrowRight
 } from 'lucide-react';
-import ChildishDrawingElement from '../../components/ui/ChildishDrawingElement';
 
 // Mock data for payment methods
 const mockPaymentMethods = [
@@ -290,10 +289,6 @@ const PaymentMethodsPage = () => {
 
   return (
     <div className="container mx-auto px-4 py-6 relative overflow-hidden pb-10">
-      {/* Decorative elements */}
-      <ChildishDrawingElement type="doodle" color="accent1" position="top-right" size={150} rotation={-15} opacity={0.15} />
-      <ChildishDrawingElement type="scribble" color="primary" position="bottom-left" size={120} rotation={10} opacity={0.1} />
-      
       {/* Page Header */}
       <div className="border-b border-gray-200 pb-4 mb-6">
         <h1 className="text-2xl font-bold text-gray-900">Payment Methods</h1>

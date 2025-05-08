@@ -7,11 +7,8 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../../lib/supabase';
 import { toast } from 'react-toastify';
 
-// Display deprecation warning in console
-console.warn(
-  'The standalone Products management is deprecated. ' +
-  'Please use the unified Products & Subscriptions management system instead.'
-);
+// Removed console warning as it's now documented in the hook comments
+// and was causing unnecessary console noise for legitimate uses of the API
 
 // Define query keys
 const queryKeys = {

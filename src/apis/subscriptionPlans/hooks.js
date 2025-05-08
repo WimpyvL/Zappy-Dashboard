@@ -1,3 +1,4 @@
+import React from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../../lib/supabase';
 import { toast } from 'react-toastify';
@@ -197,11 +198,24 @@ export const usePauseSubscription = (options = {}) => {
     mutationFn: async ({ subscriptionId, patientId }) => {
       if (!subscriptionId) throw new Error("Subscription ID is required to pause.");
       
-      // Mock implementation - in a real app, this would call a Supabase function
-      console.log(`Pausing subscription ${subscriptionId} for patient ${patientId}`);
+      // Update the subscription status in the database
+      const { data, error } = await supabase
+        .from('patient_subscriptions')
+        .update({ status: 'paused', updated_at: new Date().toISOString() })
+        .eq('id', subscriptionId)
+        .eq('patient_id', patientId)
+        .select()
+        .single();
       
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 500));
+      if (error) {
+        console.error(`Error pausing subscription ${subscriptionId}:`, error);
+        throw new Error(error.message);
+      }
+      
+      // If this is connected to Stripe, we would also call a Supabase function to pause the Stripe subscription
+      // const { data: stripeData, error: stripeError } = await supabase.functions.invoke('pause-subscription', {
+      //   body: { subscriptionId: data.stripe_subscription_id }
+      // });
       
       return { success: true, subscriptionId, status: 'paused' };
     },
@@ -225,11 +239,28 @@ export const useCancelSubscription = (options = {}) => {
     mutationFn: async ({ subscriptionId, patientId }) => {
       if (!subscriptionId) throw new Error("Subscription ID is required to cancel.");
 
-      // Mock implementation - in a real app, this would call a Supabase function
-      console.log(`Cancelling subscription ${subscriptionId} for patient ${patientId}`);
+      // Update the subscription status in the database
+      const { data, error } = await supabase
+        .from('patient_subscriptions')
+        .update({ 
+          status: 'cancelled', 
+          updated_at: new Date().toISOString(),
+          cancelled_at: new Date().toISOString()
+        })
+        .eq('id', subscriptionId)
+        .eq('patient_id', patientId)
+        .select()
+        .single();
       
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 500));
+      if (error) {
+        console.error(`Error cancelling subscription ${subscriptionId}:`, error);
+        throw new Error(error.message);
+      }
+      
+      // If this is connected to Stripe, we would also call a Supabase function to cancel the Stripe subscription
+      // const { data: stripeData, error: stripeError } = await supabase.functions.invoke('cancel-subscription', {
+      //   body: { subscriptionId: data.stripe_subscription_id }
+      // });
       
       return { success: true, subscriptionId, status: 'cancelled' };
     },
@@ -249,19 +280,32 @@ export const useCancelSubscription = (options = {}) => {
 // Hook to fetch a customer portal session URL
 export const useCreateCustomerPortalSession = (options = {}) => {
   return useMutation({
-    mutationFn: async () => {
-      // Mock implementation - in a real app, this would call a Supabase function
-      console.log('Creating customer portal session');
+    mutationFn: async ({ customerId, returnUrl }) => {
+      if (!customerId) throw new Error("Customer ID is required to create a portal session.");
       
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 500));
+      // Call the Supabase Edge Function to create a Stripe customer portal session
+      const { data, error } = await supabase.functions.invoke('create-customer-portal-session', {
+        body: { 
+          customerId,
+          returnUrl: returnUrl || window.location.origin + '/subscription-details'
+        }
+      });
       
-      return { url: 'https://example.com/customer-portal' };
+      if (error) {
+        console.error('Error creating customer portal session:', error);
+        throw new Error(error.message || 'Failed to create customer portal session');
+      }
+      
+      if (!data?.url) {
+        throw new Error('No portal URL returned from the server');
+      }
+      
+      return data;
     },
     onSuccess: (data, variables, context) => {
       if (data?.url) {
-        // In a real app, this would redirect to the portal URL
-        console.log(`Redirecting to ${data.url}`);
+        // Redirect to the Stripe Customer Portal
+        window.location.href = data.url;
       } else {
         toast.error('Could not retrieve subscription management link.');
       }
@@ -282,30 +326,76 @@ export const useMySubscription = (patientId, options = {}) => {
     queryFn: async () => {
       if (!patientId) return null;
       
-      // Mock implementation - in a real app, this would query the subscriptions table
-      console.log(`Fetching subscription for patient ${patientId}`);
+      // Fetch the patient's active subscription from the database
+      const { data, error } = await supabase
+        .from('patient_subscriptions')
+        .select(`
+          id,
+          status,
+          current_period_end,
+          current_period_start,
+          stripe_subscription_id,
+          discount_percent,
+          amount,
+          subscription_plan_id,
+          subscription_plans:subscription_plan_id (
+            id,
+            name,
+            price,
+            category,
+            billing_cycle
+          )
+        `)
+        .eq('patient_id', patientId)
+        .eq('status', 'active')
+        .single();
       
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 500));
+      if (error) {
+        if (error.code === 'PGRST116') return null; // No subscription found
+        console.error('Error fetching subscription:', error);
+        throw new Error(error.message);
+      }
       
-      // Return mock data
-      return {
-        id: 'sub_123456',
-        status: 'active',
-        current_period_end: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-        subscription_plans: {
-          name: 'Premium Plan',
-          price: 39.99,
-          billing_cycle: 'monthly'
-        },
-        planName: 'Premium Plan',
-        amount: 39.99
-      };
+      return data;
     },
     enabled: !!patientId,
     staleTime: 5 * 60 * 1000, // Cache for 5 minutes
     ...options,
   });
+};
+
+// Hook for fetching patient subscription details formatted for the PatientSubscriptionDetails component
+// This hook replaces usePatientSubscription from treatmentPackages/hooks.js
+export const useMySubscriptionDetails = (patientId, options = {}) => {
+  const subscriptionQuery = useMySubscription(patientId, options);
+  
+  // Transform the data to match the format expected by PatientSubscriptionDetails
+  const transformedData = React.useMemo(() => {
+    const subscription = subscriptionQuery.data;
+    if (!subscription) return null;
+    
+    return {
+      id: subscription.id,
+      status: subscription.status,
+      stripeSubscriptionId: subscription.stripe_subscription_id,
+      currentPeriodStart: subscription.current_period_start,
+      currentPeriodEnd: subscription.current_period_end,
+      packageName: subscription.subscription_plans?.name || 'Premium Plan',
+      packageCondition: subscription.subscription_plans?.category || 'General Health',
+      basePrice: subscription.amount || 39.99,
+      durationName: subscription.subscription_plans?.billing_cycle === 'monthly' ? 'Monthly' : 'Annual',
+      durationMonths: subscription.subscription_plans?.billing_cycle === 'monthly' ? 1 : 12,
+      discountPercent: subscription.discount_percent || 0,
+      price: subscription.amount,
+      totalPrice: subscription.amount,
+      nextBillingDate: subscription.current_period_end
+    };
+  }, [subscriptionQuery.data]);
+  
+  return {
+    ...subscriptionQuery,
+    data: transformedData
+  };
 };
 
 // Hook for fetching the current user's/patient's invoices
@@ -315,31 +405,40 @@ export const useMyInvoices = (patientId, options = {}) => {
     queryFn: async () => {
       if (!patientId) return [];
 
-      // Mock implementation - in a real app, this would query the invoices table
-      console.log(`Fetching invoices for patient ${patientId}`);
+      // Fetch invoices from the database
+      const { data, error } = await supabase
+        .from('patient_invoices')
+        .select(`
+          id,
+          invoice_id,
+          amount,
+          created_at,
+          status,
+          stripe_invoice_id,
+          subscription_id,
+          patient_id
+        `)
+        .eq('patient_id', patientId)
+        .order('created_at', { ascending: false });
       
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 500));
+      if (error) {
+        console.error('Error fetching patient invoices:', error);
+        throw new Error(error.message);
+      }
       
-      // Return mock data
-      return [
-        {
-          id: 'inv_001',
-          invoiceId: 'INV-001',
-          invoiceAmount: 39.99,
-          createdAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
-          status: 'paid'
-        },
-        {
-          id: 'inv_002',
-          invoiceId: 'INV-002',
-          invoiceAmount: 39.99,
-          createdAt: new Date().toISOString(),
-          status: 'pending'
-        }
-      ];
+      // Transform the data to match the expected format
+      return (data || []).map(invoice => ({
+        id: invoice.id,
+        invoiceId: invoice.invoice_id,
+        invoiceAmount: invoice.amount,
+        createdAt: invoice.created_at,
+        status: invoice.status,
+        stripeInvoiceId: invoice.stripe_invoice_id,
+        subscriptionId: invoice.subscription_id
+      }));
     },
     enabled: !!patientId,
+    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
     ...options,
   });
 };

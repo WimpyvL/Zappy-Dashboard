@@ -1,18 +1,18 @@
-import React, { useState, useMemo } from 'react'; // Removed unused useEffect, Added useMemo
-import { Link } from 'react-router-dom';
-import { Select } from 'antd'; // Import Ant Design Select
-import { debounce } from 'lodash'; // Import debounce
-import { toast } from 'react-toastify'; // Import toast
+import React, { useState, useMemo, useEffect } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
+import { toast } from 'react-toastify';
+import { debounce } from 'lodash';
 import {
   useOrders,
   useUpdateOrderStatus,
-  useCreateOrder, // Import create hook
-  useCreateOrderItem, // Import order item hook
+  useCreateOrder,
+  useCreateOrderItem,
 } from '../../apis/orders/hooks';
 import { useSessions } from '../../apis/sessions/hooks';
-import { usePatients } from '../../apis/patients/hooks'; // Import patient hook
-import { useProducts } from '../../apis/products/hooks'; // Import product hook
-import { usePharmacies } from '../../apis/pharmacies/hooks'; // Import pharmacy hook
+import { usePatients } from '../../apis/patients/hooks';
+import { useProducts } from '../../apis/products/hooks';
+import { usePharmacies } from '../../apis/pharmacies/hooks';
+import CreateOrderModal from '../../components/orders/CreateOrderModal';
 import {
   Search,
   Filter,
@@ -25,7 +25,6 @@ import {
   Calendar,
   Loader2,
 } from 'lucide-react';
-import ChildishDrawingElement from '../../components/ui/ChildishDrawingElement';
 
 // Custom Spinner component using primary color
 const Spinner = () => (
@@ -99,7 +98,18 @@ const Orders = () => {
   const [debouncedPatientSearchTerm, setDebouncedPatientSearchTerm] = useState('');
   // const [_productSearchInput, setProductSearchInput] = useState(''); // Removed unused var
   const [debouncedProductSearchTerm, setDebouncedProductSearchTerm] = useState('');
-
+  
+  // Get search params from URL
+  const [searchParams] = useSearchParams();
+  
+  // Check for patientId in URL and open modal if present
+  useEffect(() => {
+    const patientId = searchParams.get('patientId');
+    if (patientId) {
+      setNewOrderData(prev => ({ ...prev, patientId }));
+      setShowCreateModal(true);
+    }
+  }, [searchParams]);
 
   // Debounce handlers
   const debouncePatientSearch = useMemo(() => debounce(setDebouncedPatientSearchTerm, 500), []);
@@ -295,9 +305,6 @@ const Orders = () => {
 
   return (
     <div className="relative overflow-hidden pb-10">
-      <ChildishDrawingElement type="doodle" color="accent2" position="top-right" size={100} rotation={10} opacity={0.1} />
-      <ChildishDrawingElement type="scribble" color="accent4" position="bottom-left" size={120} rotation={-5} opacity={0.1} />
-
       <div className="flex justify-between items-center mb-6 relative z-10">
         <h1 className="text-2xl font-bold text-gray-800">Orders</h1>
         <button
@@ -535,142 +542,12 @@ const Orders = () => {
 
 
       {/* Create Order Modal */}
-      {showCreateModal && (
-        <div className="fixed inset-0 bg-[#00000066] bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg shadow-xl max-w-lg w-full">
-            <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
-              <h3 className="text-lg font-medium text-gray-900">
-                Create New Order
-              </h3>
-              <button
-                className="text-gray-400 hover:text-gray-500"
-                onClick={() => setShowCreateModal(false)}
-              >
-                <XCircle className="h-5 w-5" />
-              </button>
-            </div>
-
-            <div className="p-6 space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Patient *
-                </label>
-                <Select
-                  showSearch
-                  style={{ width: '100%' }}
-                  placeholder="Search or Select Patient"
-                  value={newOrderData.patientId}
-                  onChange={handleModalPatientSelect}
-                  onSearch={handlePatientSearchInputChange}
-                  filterOption={false}
-                  loading={isLoadingPatients}
-                  options={patientOptions.map(p => ({
-                    value: p.id,
-                    label: `${p.first_name || ''} ${p.last_name || ''}`.trim() || `ID: ${p.id}`
-                  }))}
-                  notFoundContent={isLoadingPatients ? <Spinner /> : null}
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Medication/Product *
-                </label>
-                <Select
-                  showSearch
-                  style={{ width: '100%' }}
-                  placeholder="Search or Select Product"
-                  value={newOrderData.productId}
-                  onChange={handleModalProductSelect}
-                  onSearch={handleProductSearchInputChange}
-                  filterOption={false}
-                  loading={isLoadingProducts}
-                  options={productOptions.map(p => ({
-                    value: p.id,
-                    label: p.name || p.title || p.product_name || `ID: ${p.id}`
-                  }))}
-                  notFoundContent={isLoadingProducts ? <Spinner /> : null}
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Pharmacy *
-                </label>
-                <Select
-                  showSearch
-                  style={{ width: '100%' }}
-                  placeholder="Select a pharmacy"
-                  value={newOrderData.pharmacyId}
-                  onChange={handleModalPharmacySelect}
-                  filterOption={(input, option) =>
-                    (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
-                  }
-                  loading={isLoadingPharmacies}
-                  options={pharmacyOptions.map(ph => ({
-                    value: ph.id,
-                    label: ph.name || ph.pharmacy_name || `ID: ${ph.id}`
-                  }))}
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Linked Session (Optional)
-                </label>
-                <Select
-                  allowClear // Allow unselecting
-                  style={{ width: '100%' }}
-                  placeholder="Select a session (optional)"
-                  value={newOrderData.linkedSessionId}
-                  onChange={handleModalSessionSelect}
-                  loading={isLoadingSessions}
-                  options={sessionOptions.map(s => ({
-                    value: s.id,
-                    // Create a meaningful label for the session
-                    label: `Session on ${new Date(s.scheduled_date).toLocaleDateString()} with ${s.patients?.first_name || 'Patient'} (${s.status})`
-                  }))}
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Notes
-                </label>
-                <textarea
-                  name="notes" // Added name attribute
-                  rows="3"
-                  className="block w-full pl-3 pr-3 py-2 text-base border-gray-300 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm rounded-md"
-                  placeholder="Add any notes about this order..."
-                  value={newOrderData.notes}
-                  onChange={(e) => handleModalInputChange('notes', e.target.value)}
-                ></textarea>
-              </div>
-            </div>
-
-            <div className="px-6 py-4 border-t border-gray-200 flex justify-end space-x-3">
-              <button
-                type="button"
-                className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
-                onClick={() => setShowCreateModal(false)}
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                className="px-4 py-2 bg-primary rounded-md text-sm font-medium text-white hover:bg-primary/90 disabled:opacity-50"
-                onClick={handleCreateOrder} // Use the correct handler
-                disabled={createOrderMutation.isLoading} // Disable while creating
-              >
-                {createOrderMutation.isLoading ? <Spinner /> : 'Create Order'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <CreateOrderModal
+        isOpen={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        initialPatientId={newOrderData.patientId}
+        onOrderCreated={() => refetchOrders()}
+      />
     </div>
   );
 };

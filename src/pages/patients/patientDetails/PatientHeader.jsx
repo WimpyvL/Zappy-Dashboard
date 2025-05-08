@@ -64,23 +64,7 @@ const PatientHeader = ({ patient, patientId }) => {
           </span>
         </h1>
       </div>
-      <div className="flex space-x-2">
-        <button
-          className="px-3 py-1 text-sm bg-white border border-gray-300 rounded-md hover:bg-gray-50 flex items-center"
-          // onClick={() => setShowAddModal(true)} // TODO: Re-wire this onClick
-          onClick={() => alert('Edit functionality needs to be re-implemented in the parent component.')} // Placeholder action
-        >
-          <Edit className="h-4 w-4 mr-1" />
-          Edit {/* TODO: Re-wire this button's onClick if edit is needed from header */}
-        </button>
-        <button
-          className="px-3 py-1 text-sm bg-indigo-600 text-white rounded-md hover:bg-indigo-700 flex items-center"
-          onClick={() => navigate(`/sessions?patientId=${patientId}`)}
-        >
-          <Calendar className="h-4 w-4 mr-1" />
-          Schedule Session
-        </button>
-      </div>
+      {/* Buttons removed as requested */}
       {/* Removed old modal instance */}
     </div>
   );

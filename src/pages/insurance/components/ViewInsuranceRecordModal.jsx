@@ -309,8 +309,62 @@ const ViewInsuranceRecordModal = ({ isOpen, onClose, recordId }) => {
                    <div>
                       <h4 className="text-sm font-medium text-gray-500 mb-3">Prior Authorization</h4>
                       <div className="bg-gray-50 p-4 rounded border border-gray-200 mb-6">
-                        {/* ... Display prior auth details ... */}
-                         <p className="text-sm text-gray-500">(Prior Auth details not fully implemented)</p>
+                        {displayRecord.prior_auth_status ? (
+                          <div className="space-y-3">
+                            <div className="flex justify-between items-center">
+                              <span className="text-sm font-medium">Status:</span>
+                              <StatusBadge status={`prior_auth_${displayRecord.prior_auth_status}`} />
+                            </div>
+                            
+                            {displayRecord.prior_auth_expiry_date && (
+                              <div className="flex justify-between items-center">
+                                <span className="text-sm font-medium">Expires:</span>
+                                <span className={`text-sm ${
+                                  new Date(displayRecord.prior_auth_expiry_date) < new Date() 
+                                    ? 'text-red-600 font-bold' 
+                                    : 'text-gray-700'
+                                }`}>
+                                  {formatDate(displayRecord.prior_auth_expiry_date)}
+                                  {new Date(displayRecord.prior_auth_expiry_date) < new Date() && 
+                                    ' (Expired)'}
+                                </span>
+                              </div>
+                            )}
+                            
+                            {displayRecord.prior_auth_reference && (
+                              <div className="flex justify-between items-center">
+                                <span className="text-sm font-medium">Reference #:</span>
+                                <span className="text-sm text-gray-700">{displayRecord.prior_auth_reference}</span>
+                              </div>
+                            )}
+                            
+                            <div className="mt-2 pt-2 border-t border-gray-200">
+                              <button 
+                                className="text-sm text-indigo-600 hover:text-indigo-800 flex items-center"
+                                onClick={() => setActiveTab('logs')}
+                              >
+                                View authorization history
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="text-center py-2">
+                            <p className="text-sm text-gray-500 mb-2">No prior authorization required</p>
+                            <button 
+                              className="text-sm text-indigo-600 hover:text-indigo-800"
+                              onClick={() => {
+                                updateRecordMutation.mutate({
+                                  id: recordId,
+                                  recordData: {
+                                    prior_auth_status: 'pending'
+                                  }
+                                });
+                              }}
+                            >
+                              Request Prior Authorization
+                            </button>
+                          </div>
+                        )}
                       </div>
                       <h4 className="text-sm font-medium text-gray-500 mb-3">Notes</h4>
                       <div className="bg-gray-50 p-4 rounded border border-gray-200 mb-6">
@@ -374,7 +428,11 @@ const ViewInsuranceRecordModal = ({ isOpen, onClose, recordId }) => {
                             <option value="pending">Pending Verification</option>
                             <option value="verified">Verified</option>
                             <option value="denied">Denied</option>
-                            {/* TODO: Add prior auth statuses based on schema */}
+                            <option value="prior_auth_initiated">Prior Auth Initiated</option>
+                            <option value="prior_auth_pending">Prior Auth Pending</option>
+                            <option value="prior_auth_approved">Prior Auth Approved</option>
+                            <option value="prior_auth_denied">Prior Auth Denied</option>
+                            <option value="prior_auth_expired">Prior Auth Expired</option>
                           </select>
                         </div>
                       </div>

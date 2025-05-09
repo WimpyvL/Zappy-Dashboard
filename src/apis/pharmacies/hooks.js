@@ -38,7 +38,15 @@ export const usePharmacies = (filters = {}) => {
         console.error('Error fetching pharmacies:', error);
         throw new Error(error.message);
       }
-      return data || []; // Return data array
+      
+      // Map is_active to active and supported_states to served_state_codes for UI consistency
+      const mappedData = (data || []).map(pharmacy => ({
+        ...pharmacy,
+        active: pharmacy.is_active,
+        served_state_codes: pharmacy.supported_states
+      }));
+      
+      return mappedData; // Return mapped data array
     },
   });
 };
@@ -61,6 +69,16 @@ export const usePharmacyById = (id, options = {}) => {
         if (error.code === 'PGRST116') return null; // Not found
         throw new Error(error.message);
       }
+      
+      // Map is_active to active and supported_states to served_state_codes for UI consistency
+      if (data) {
+        return {
+          ...data,
+          active: data.is_active,
+          served_state_codes: data.supported_states
+        };
+      }
+      
       return data;
     },
     enabled: !!id,
@@ -102,6 +120,16 @@ export const useCreatePharmacy = (options = {}) => {
         console.error('Error creating pharmacy:', error);
         throw new Error(error.message);
       }
+      
+      // Map is_active to active and supported_states to served_state_codes for UI consistency
+      if (data) {
+        return {
+          ...data,
+          active: data.is_active,
+          served_state_codes: data.supported_states
+        };
+      }
+      
       return data;
     },
     onSuccess: (data, variables, context) => {
@@ -152,6 +180,16 @@ export const useUpdatePharmacy = (options = {}) => {
         console.error(`Error updating pharmacy ${id}:`, error);
         throw new Error(error.message);
       }
+      
+      // Map is_active to active and supported_states to served_state_codes for UI consistency
+      if (data) {
+        return {
+          ...data,
+          active: data.is_active,
+          served_state_codes: data.supported_states
+        };
+      }
+      
       return data;
     },
     onSuccess: (data, variables, context) => {
@@ -222,6 +260,16 @@ export const useTogglePharmacyActive = (options = {}) => {
          console.error(`Error toggling pharmacy ${id} status:`, error);
          throw new Error(error.message);
        }
+       
+       // Map is_active to active and supported_states to served_state_codes for UI consistency
+       if (data) {
+         return {
+           ...data,
+           active: data.is_active,
+           served_state_codes: data.supported_states
+         };
+       }
+       
        return data;
     },
     onSuccess: (data, variables, context) => {

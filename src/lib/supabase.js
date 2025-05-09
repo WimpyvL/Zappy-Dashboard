@@ -21,6 +21,15 @@ if (supabaseUrl && supabaseAnonKey) {
         autoRefreshToken: true,
         detectSessionInUrl: true,
       },
+      global: {
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+        },
+      },
+      db: {
+        schema: 'public',
+      },
       storage: {
         // Configure custom S3 storage
         customStorage: {

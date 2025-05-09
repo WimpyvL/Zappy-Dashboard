@@ -98,6 +98,11 @@ export const useCreateInsuranceRecord = (options = {}) => {
         subscriber_dob: recordData.subscriber_dob,
         status: recordData.status || 'Pending',
         notes: recordData.notes,
+        coverage_type: recordData.coverage_type,
+        coverage_details: recordData.coverage_details,
+        prior_auth_status: recordData.prior_auth_status,
+        prior_auth_expiry_date: recordData.prior_auth_expiry_date,
+        prior_auth_reference: recordData.prior_auth_reference,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       };
@@ -147,6 +152,11 @@ export const useUpdateInsuranceRecord = (options = {}) => {
         subscriber_dob: recordData.subscriber_dob,
         status: recordData.status,
         notes: recordData.notes,
+        coverage_type: recordData.coverage_type,
+        coverage_details: recordData.coverage_details,
+        prior_auth_status: recordData.prior_auth_status,
+        prior_auth_expiry_date: recordData.prior_auth_expiry_date,
+        prior_auth_reference: recordData.prior_auth_reference,
         updated_at: new Date().toISOString(),
       };
 

@@ -80,6 +80,8 @@ export const createInvoice = async (invoiceData) => {
     invoice_amount: parseFloat(amount) || 0,
     amount_paid: 0,
     due_amount: parseFloat(amount) || 0,
+    discount_amount: parseFloat(discount_amount) || 0,
+    tax_rate: parseFloat(tax_rate) || 0,
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString()
   };

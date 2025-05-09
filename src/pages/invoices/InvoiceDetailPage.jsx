@@ -88,15 +88,46 @@ const InvoiceDetailPage = () => {
     status,
     amount,
     amount_paid = 0,
+    discount_amount = 0,
+    tax_rate = 0,
     pb_invoice_metadata
   } = invoice;
   
   const patientName = invoice.patientName || pb_invoice_metadata?.patient_name || 'Unknown';
   const items = pb_invoice_metadata?.items || [];
   const invoiceNumber = pb_invoice_metadata?.invoice_id || invoice.id?.substring(0, 8);
-  const dueAmount = typeof amount === 'number' && typeof amount_paid === 'number' 
-    ? (amount - amount_paid) 
-    : 0;
+  
+  // Get discount amount from either direct field or metadata
+  const discountAmount = typeof discount_amount === 'number' ? discount_amount : 
+                       (typeof pb_invoice_metadata?.discount_amount === 'number' ? 
+                        pb_invoice_metadata.discount_amount : 0);
+  
+  // Get tax rate from either direct field or metadata
+  const taxRateValue = typeof tax_rate === 'number' ? tax_rate : 
+                     (typeof pb_invoice_metadata?.tax_rate === 'number' ? 
+                      pb_invoice_metadata.tax_rate : 0);
+  
+  // Calculate subtotal from line items
+  const lineItemsTotal = items.reduce((sum, item) => {
+    const quantity = parseFloat(item.quantity) || 0;
+    const price = parseFloat(item.price) || 0;
+    return sum + (quantity * price);
+  }, 0);
+  
+  // Use the calculated total from line items, not the amount from the database
+  const subtotal = lineItemsTotal;
+  
+  // Calculate amount after discount
+  const afterDiscount = Math.max(0, subtotal - discountAmount);
+  
+  // Calculate tax amount
+  const taxAmount = afterDiscount * (taxRateValue / 100);
+  
+  // Calculate total
+  const total = afterDiscount + taxAmount;
+  
+  // Calculate due amount
+  const dueAmount = total - (typeof amount_paid === 'number' ? amount_paid : 0);
   
   return (
     <div className="relative pb-10">
@@ -266,26 +297,21 @@ const InvoiceDetailPage = () => {
         {/* Summary */}
         <div className="flex justify-end">
           <div className="w-64">
-            <div className="flex justify-between py-2 border-b">
-              <span className="font-medium">Subtotal:</span>
-              <span>${amount.toFixed(2)}</span>
-            </div>
-            
             <div className="flex justify-between py-2 border-b text-green-600">
               <span>Discount:</span>
-              <span>-${parseFloat(pb_invoice_metadata?.discount_amount || 0).toFixed(2)}</span>
+              <span>-${discountAmount.toFixed(2)}</span>
             </div>
             
-            {pb_invoice_metadata?.tax_rate > 0 && (
+            {taxRateValue > 0 && (
               <div className="flex justify-between py-2 border-b">
-                <span>Tax ({pb_invoice_metadata.tax_rate}%):</span>
-                <span>${((amount - (pb_invoice_metadata?.discount_amount || 0)) * (parseFloat(pb_invoice_metadata.tax_rate) / 100)).toFixed(2)}</span>
+                <span>Tax ({taxRateValue}%):</span>
+                <span>${taxAmount.toFixed(2)}</span>
               </div>
             )}
             
             <div className="flex justify-between py-2 border-b font-bold">
               <span>Total:</span>
-              <span>${amount.toFixed(2)}</span>
+              <span>${total.toFixed(2)}</span>
             </div>
             
             {amount_paid > 0 && (

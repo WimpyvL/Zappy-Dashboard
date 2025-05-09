@@ -308,6 +308,9 @@ const CreateInvoiceModal = ({ isOpen, onClose, onSuccess }) => {
         })),
       amount: invoiceTotal,
       dueDate: formData.dueDate || null,
+      // Include discount and tax information
+      discount_amount: parseFloat(formData.discountAmount) || 0,
+      tax_rate: parseFloat(formData.taxRate) || 0,
       // Store subscription plan ID in metadata instead of direct column
       subscription_plan_id: formData.subscriptionPlanId
     };

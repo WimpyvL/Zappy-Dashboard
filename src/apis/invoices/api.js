@@ -66,6 +66,9 @@ export const createInvoice = async (invoiceData) => {
       patient_email: patientData.email || '',
       // Store subscription plan ID in metadata instead of direct column
       subscription_plan_id: subscription_plan_id || null,
+      // Include discount and tax information in metadata
+      discount_amount: discount_amount || 0,
+      tax_rate: tax_rate || 0,
       // Generate a readable invoice ID based on subscription or first item
       invoice_id: subscription_plan_id ? 
         `SUB-${Math.floor(Math.random() * 10000)}-${new Date().getFullYear()}` : 

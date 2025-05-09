@@ -16,16 +16,37 @@ const queryKeys = {
 };
 
 export const useInvoices = (params = {}) => {
+  const queryClient = useQueryClient();
+
   return useQuery({
     queryKey: queryKeys.lists(params),
     queryFn: async () => {
       try {
         const data = await fetchInvoices();
-        return { data };
+        
+        // Process the data to ensure patient names are properly displayed
+        const processedData = data.map(invoice => {
+          // Add a patientName field for easier access in the UI
+          // Set default values for amount and amount_paid to prevent NaN
+          const amount = typeof invoice.invoice_amount === 'number' ? invoice.invoice_amount : 0;
+          const amountPaid = typeof invoice.amount_paid === 'number' ? invoice.amount_paid : 0;
+          
+          return {
+            ...invoice,
+            patientName: invoice.pb_invoice_metadata?.patient_name || 'Unknown',
+            amount: amount,
+            amount_paid: amountPaid
+          };
+        });
+        
+        return { data: processedData };
       } catch (error) {
         throw new Error(error.message);
       }
-    }
+    },
+    refetchOnWindowFocus: true,
+    refetchOnMount: true,
+    staleTime: 10000 // Consider data stale after 10 seconds
   });
 };
 
@@ -35,7 +56,25 @@ export const useInvoiceById = (id) => {
     queryFn: async () => {
       if (!id) return null;
       try {
-        return await fetchInvoiceById(id);
+        const invoice = await fetchInvoiceById(id);
+        
+        // Process the data to ensure patient names are properly displayed
+        if (invoice) {
+          // Add a patientName field for easier access in the UI
+          // Set default values for amount and amount_paid to prevent NaN
+          const amount = typeof invoice.invoice_amount === 'number' ? invoice.invoice_amount : 0;
+          const amountPaid = typeof invoice.amount_paid === 'number' ? invoice.amount_paid : 0;
+          
+          return {
+            data: {
+              ...invoice,
+              patientName: invoice.pb_invoice_metadata?.patient_name || 'Unknown',
+              amount: amount,
+              amount_paid: amountPaid
+            }
+          };
+        }
+        return { data: null };
       } catch (error) {
         throw new Error(error.message);
       }

@@ -165,20 +165,18 @@ export const logoutItem = {
 };
 
 // Define patient sidebar items (Further Simplified View)
-// Combine Shop and Programs into single Marketplace entry
 export const patientSidebarItems = [
-  { title: 'New Home', path: '/patient-home-v2', icon: Home, color: 'accent4' }, // New Vibrant Home Page
+  { title: 'New Home', path: '/patient-home-v2', icon: Home, color: 'primary' }, // New Vibrant Home Page
   { title: 'My Services', path: '/my-services', icon: Layers, color: 'primary' }, // Modular Services Interface
-  { title: 'Records', path: '/records', icon: PatientRecordsIcon, color: 'accent3' },
-  { title: 'Marketplace', path: '/marketplace', icon: ShoppingBag, color: 'accent2' }, // Unified marketplace replacing Shop and Programs
-  { title: 'Resources', path: '/resources', icon: BookOpen, color: 'accent1' }, // Educational resources
+  { title: 'Shop', path: '/shop', icon: ShoppingBag, color: 'primary' }, // Shop page replacing Marketplace
+  { title: 'Programs', path: '/programs', icon: PatientProgramIcon, color: 'primary' }, // Patient programs
 ];
 
 // Define profile dropdown menu items (Simplified)
 export const profileMenuItems = [
-  { title: 'My Account', path: '/profile', icon: UserCog, color: 'accent4' }, // Central hub for profile, payment, plan
-  { title: 'My Orders', path: '/my-orders', icon: PatientOrdersIcon, color: 'accent1' }, // Keep orders separate
-  { title: 'Help Center', path: '/support', icon: Headphones, color: 'accent2' }, // Central support link
+  { title: 'My Account', path: '/profile', icon: UserCog, color: 'primary' }, // Central hub for profile, payment, plan
+  { title: 'My Orders', path: '/my-orders', icon: PatientOrdersIcon, color: 'primary' }, // Keep orders separate
+  { title: 'Help Center', path: '/support', icon: Headphones, color: 'primary' }, // Central support link
 ];
 
 // Note: Logout item is handled separately in Sidebar.js

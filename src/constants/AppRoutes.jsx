@@ -21,6 +21,7 @@ import OrderDetail from '../pages/orders/OrderDetail.jsx'; // Import OrderDetail
 
 // Invoices components
 import Invoices from '../pages/invoices/InvoicePage';
+import InvoiceDetailPage from '../pages/invoices/InvoiceDetailPage';
 
 // Sessions
 import Sessions from '../pages/sessions/Sessions';
@@ -51,7 +52,7 @@ import ServiceManagement from '../pages/services/ServiceManagement';
 import DiscountManagement from '../pages/discounts/DiscountManagement';
 import TagManagement from '../pages/tags/TagManagement';
 import FormViewer from '../pages/settings/pages/forms/FormViewer.jsx';
-import ShopPage from '../pages/shop/ShopPage.jsx'; // Import the new ShopPage
+import ShopPage from '../pages/patients/ShopPage.jsx'; // Import the patient-focused ShopPage
 import MarketplacePage from '../pages/marketplace/MarketplacePage.jsx'; // Import the new MarketplacePage
 import MessagingPage from '../pages/messaging/MessagingPage.jsx'; // Import Messaging Page
 import AuditLogPage from '../pages/auditlog/AuditLogPage.jsx'; // Import Audit Log Page
@@ -61,7 +62,7 @@ import PatientDashboardPage from '../pages/patients/PatientDashboardPage.jsx'; /
 import PatientHomePage from '../pages/patients/PatientHomePage.jsx'; // Import Patient Home Page
 // DirectPatientHomePage import removed - no longer needed
 // TestPage import removed - no longer needed
-// PatientProgramPage import removed - no longer needed
+import ProgramsPage from '../pages/patients/ProgramsPage.jsx'; // Import Programs Page
 import PatientRecordsPage from '../pages/records/PatientRecordsPage.jsx'; // Import Patient Records Page
 import PatientFormsPage from '../pages/forms/PatientFormsPage.jsx'; // Import Patient Forms Page
 import PatientOrderHistoryPage from '../pages/orders/PatientOrderHistoryPage.jsx'; // Import Patient Order History Page
@@ -158,6 +159,16 @@ const AppRoutes = () => {
         element={
           <MainLayout>
             <Invoices />
+          </MainLayout>
+        }
+      />
+
+      {/* Invoice Detail Route */}
+      <Route
+        path={`${paths.invoices}/:id`}
+        element={
+          <MainLayout>
+            <InvoiceDetailPage />
           </MainLayout>
         }
       />
@@ -277,14 +288,10 @@ const AppRoutes = () => {
         }
       />
 
-      {/* Marketplace Page Route - Unified shop, programs, and subscriptions */}
+      {/* Marketplace Page Route - Redirect to Shop page */}
       <Route
         path="/marketplace" 
-        element={
-          <MainLayout>
-            <MarketplacePage />
-          </MainLayout>
-        }
+        element={<Navigate to="/shop" replace />}
       />
 
       {/* Messaging Page Route */}
@@ -451,42 +458,14 @@ const AppRoutes = () => {
         }
       />
 
-      {/* Patient Records Page Route */}
-      <Route
-        path="/records" // Define the path for the patient records page
-        element={
-          <MainLayout>
-            <PatientRecordsPage />
-          </MainLayout>
-        }
-      />
+      {/* Patient Records Page Routes - Removed */}
       
-      {/* Patient Records All History Page Route */}
+      {/* Programs Page Route */}
       <Route
-        path="/records/all" // Define the path for the complete records history
+        path="/programs"
         element={
           <MainLayout>
-            <PatientRecordsPage showAllHistory={true} />
-          </MainLayout>
-        }
-      />
-      
-      {/* Resources Page Route */}
-      <Route
-        path="/resources"
-        element={
-          <MainLayout>
-            <ResourcesPage />
-          </MainLayout>
-        }
-      />
-      
-      {/* Resource Detail Page Route */}
-      <Route
-        path="/resources/:id"
-        element={
-          <MainLayout>
-            <ResourceDetailPage />
+            <ProgramsPage />
           </MainLayout>
         }
       />

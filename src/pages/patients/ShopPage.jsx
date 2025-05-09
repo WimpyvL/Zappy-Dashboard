@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { useAuth } from '../../context/AuthContext';
+import Button from '../../components/ui/redesign/Button';
 
 const ShopPage = () => {
   const { user } = useAuth();
@@ -55,6 +56,14 @@ const ShopPage = () => {
       -ms-overflow-style: none;
       scrollbar-width: none;
     }
+    .card-hover {
+      transition-property: all;
+      transition-duration: 300ms;
+    }
+    .card-hover:hover {
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+      transform: translateY(-2px);
+    }
   `;
 
   return (
@@ -93,12 +102,14 @@ const ShopPage = () => {
               <h3 className="text-sm font-bold text-white">Give $30, Get $30</h3>
               <p className="text-xs text-white">Refer friends and you both get rewards!</p>
             </div>
-            <button 
-              className="bg-white text-yellow-600 text-xs font-bold py-1.5 px-3 rounded-lg shadow-sm"
+            <Button 
+              variant="secondary"
+              size="small"
+              className="bg-white"
               onClick={handleReferral}
             >
               Invite
-            </button>
+            </Button>
           </div>
         </div>
       </div>
@@ -163,18 +174,20 @@ const ShopPage = () => {
             </div>
             
             <div className="flex">
-              <button 
-                className="bg-yellow-400 text-teal-800 rounded-lg py-2 px-4 font-bold text-sm flex-1 mr-2 shadow-lg"
+              <Button 
+                variant="primary"
+                className="flex-1 mr-2"
                 onClick={handleViewBundle}
               >
                 View Bundle
-              </button>
-              <button 
-                className="bg-white bg-opacity-20 text-white rounded-lg py-2 px-4 font-bold text-sm flex items-center justify-center"
+              </Button>
+              <Button 
+                variant="secondary"
+                className="bg-white bg-opacity-20 text-white"
                 onClick={handleSkip}
               >
                 Skip
-              </button>
+              </Button>
             </div>
           </div>
         </div>
@@ -182,7 +195,7 @@ const ShopPage = () => {
       
       {/* Featured Product */}
       <div className="px-4 py-4">
-        <div className="bg-gradient-to-r from-[#f0e6d6] to-[#e6ca9a] rounded-xl overflow-hidden big-shadow relative">
+        <div className="bg-gradient-to-r from-[#f0e6d6] to-[#e6ca9a] rounded-xl overflow-hidden big-shadow relative card-hover border-l-4 border-amber-500">
           {/* Product image */}
           <img 
             src="https://via.placeholder.com/800x300"
@@ -217,15 +230,18 @@ const ShopPage = () => {
                 <div className="text-xs text-teal-800 font-medium mb-1">Starter plan</div>
                 <div className="text-2xl font-bold text-teal-900">$149<span className="text-sm">/mo</span></div>
               </div>
-              <button 
-                className="bg-teal-600 text-white py-2 px-5 rounded-lg font-bold shadow-lg flex items-center"
+              <Button 
+                variant="primary"
                 onClick={() => handleViewDetails('weight-system')}
+                icon={
+                  <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <polyline points="9 18 15 12 9 6"></polyline>
+                  </svg>
+                }
+                iconPosition="right"
               >
                 Learn More
-                <svg className="h-4 w-4 ml-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <polyline points="9 18 15 12 9 6"></polyline>
-                </svg>
-              </button>
+              </Button>
             </div>
           </div>
         </div>
@@ -233,7 +249,7 @@ const ShopPage = () => {
 
       {/* Referral Discounts Section */}
       <div className="px-4 py-2">
-        <div className="bg-white rounded-xl shadow-md p-4">
+        <div className="bg-white rounded-xl shadow-md p-4 card-hover border-l-4 border-amber-500">
           <div className="flex items-center mb-3">
             <div className="w-10 h-10 rounded-full bg-yellow-100 flex items-center justify-center mr-3">
               <svg className="h-5 w-5 text-yellow-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -248,16 +264,16 @@ const ShopPage = () => {
           </div>
           
           <div className="space-y-3">
-            <div className="flex items-center bg-yellow-50 rounded-lg p-3">
+            <div className="flex items-center bg-amber-50 rounded-lg p-3 card-hover">
               {/* Person avatar */}
-              <img src="https://via.placeholder.com/32x32" alt="John D." className="w-8 h-8 rounded-full object-cover mr-2 border-2 border-yellow-400" />
+              <img src="https://via.placeholder.com/32x32" alt="John D." className="w-8 h-8 rounded-full object-cover mr-2 border-2 border-amber-400" />
               <div className="flex-1 mr-3">
                 <h4 className="text-sm font-bold text-gray-800">John D.</h4>
                 <div className="flex items-center">
-                  <span className="text-xs text-gray-500">Joined 2 weeks ago</span>
+                  <span className="text-xs text-gray-600">Joined 2 weeks ago</span>
                 </div>
               </div>
-              <div className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-bold flex items-center">
+              <div className="bg-green-100 text-green-600 px-3 py-1 rounded-full text-xs font-bold flex items-center">
                 <svg className="h-3 w-3 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path>
                   <line x1="7" y1="7" x2="7.01" y2="7"></line>
@@ -271,17 +287,20 @@ const ShopPage = () => {
             <div className="flex-1">
               <span className="text-sm font-medium text-teal-600">Total savings: $60</span>
             </div>
-            <button 
-              className="bg-yellow-400 text-teal-800 py-1.5 px-3 rounded-lg shadow-sm text-xs font-bold flex items-center"
+            <Button 
+              variant="primary"
+              size="small"
               onClick={handleInviteMore}
+              icon={
+                <svg className="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path>
+                  <polyline points="16 6 12 2 8 6"></polyline>
+                  <line x1="12" y1="2" x2="12" y2="15"></line>
+                </svg>
+              }
             >
-              <svg className="h-3 w-3 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path>
-                <polyline points="16 6 12 2 8 6"></polyline>
-                <line x1="12" y1="2" x2="12" y2="15"></line>
-              </svg>
               Invite More
-            </button>
+            </Button>
           </div>
         </div>
       </div>
@@ -303,7 +322,7 @@ const ShopPage = () => {
         
         <div className="flex space-x-4 overflow-x-auto pb-4 horizontal-scroll-container">
           {/* Weight Category */}
-          <div className="w-60 flex-shrink-0 bg-gradient-to-br from-teal-100 to-teal-200 rounded-xl overflow-hidden shadow-md relative">
+          <div className="w-60 flex-shrink-0 bg-white rounded-xl overflow-hidden shadow-md relative card-hover border-l-4 border-teal-500">
             <img src="https://via.placeholder.com/240x160" alt="Weight management" className="w-full h-40 object-cover mix-blend-multiply opacity-40" />
             <div className="absolute inset-0 p-4 flex flex-col justify-between">
               <div className="flex justify-between items-start">
@@ -369,12 +388,13 @@ const ShopPage = () => {
                 <h3 className="font-bold text-gray-800">Protein Power</h3>
                 <p className="text-xs text-gray-500">Boost results by 35%</p>
               </div>
-              <button 
-                className="bg-teal-600 text-white text-xs font-bold px-3 py-1.5 rounded-lg shadow-sm"
+              <Button 
+                variant="primary"
+                size="small"
                 onClick={() => handleAddProduct('Protein Power')}
               >
                 Add
-              </button>
+              </Button>
             </div>
           </div>
         </div>

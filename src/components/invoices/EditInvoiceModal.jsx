@@ -278,7 +278,9 @@ const EditInvoiceModal = ({ isOpen, onClose, onSuccess, invoice }) => {
               price: item.unitPrice,
               product_id: item.productId || null
             })),
-          subscription_plan_id: formData.subscriptionPlanId
+          subscription_plan_id: formData.subscriptionPlanId,
+          discount_amount: parseFloat(formData.discountAmount) || 0,
+          tax_rate: parseFloat(formData.taxRate) || 0
         },
         invoice_amount: invoiceTotal,
         due_amount: invoiceTotal - (invoice.amount_paid || 0),

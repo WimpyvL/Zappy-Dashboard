@@ -17,9 +17,28 @@ export const usePatients = (currentPage = 1, filters = {}, pageSize = 10) => {
         .range(rangeFrom, rangeTo);
 
       if (filters.search) {
-        query = query.or(
-          `first_name.ilike.%${filters.search}%,last_name.ilike.%${filters.search}%,email.ilike.%${filters.search}%`
-        );
+        // Split search term into words to search for partial matches
+        const searchTerms = filters.search.trim().split(/\s+/);
+        
+        if (searchTerms.length === 1) {
+          // Single word search - search in first name, last name, or email
+          query = query.or(
+            `first_name.ilike.%${filters.search}%,last_name.ilike.%${filters.search}%,email.ilike.%${filters.search}%`
+          );
+        } else {
+          // Multi-word search - try to match first name and last name combinations
+          const firstTerm = searchTerms[0];
+          const remainingTerms = searchTerms.slice(1).join(' ');
+          
+          // Try different combinations of the search terms
+          query = query.or(
+            `first_name.ilike.%${firstTerm}%,last_name.ilike.%${remainingTerms}%`,
+            `first_name.ilike.%${remainingTerms}%,last_name.ilike.%${firstTerm}%`,
+            `first_name.ilike.%${filters.search}%`,
+            `last_name.ilike.%${filters.search}%`,
+            `email.ilike.%${filters.search}%`
+          );
+        }
       }
 
       const { data, error, count } = await query;

@@ -24,6 +24,56 @@ export const useProviders = () => {
   });
 };
 
+// Fetch a single provider by ID
+export const useProvider = (id) => {
+  return useQuery({
+    queryKey: ['providers', id],
+    queryFn: async () => {
+      if (!id) return null;
+      const { data, error } = await supabase
+        .from('providers')
+        .select('*')
+        .eq('id', id)
+        .single();
+      if (error) throw error;
+      // Normalize authorizedStates
+      return {
+        ...data,
+        authorizedStates: Array.isArray(data.authorizedStates)
+          ? data.authorizedStates
+          : (typeof data.authorizedStates === 'string' && data.authorizedStates.length > 0
+              ? data.authorizedStates.split(',').map(s => s.trim()).filter(Boolean)
+              : [])
+      };
+    },
+    enabled: !!id
+  });
+};
+
+// Fetch providers by role
+export const useProvidersByRole = (role = 'provider') => {
+  return useQuery({
+    queryKey: ['providers', 'role', role],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('providers')
+        .select('*')
+        .eq('role', role)
+        .order('name', { ascending: true });
+      if (error) throw error;
+      // Normalize authorizedStates
+      return (data || []).map(provider => ({
+        ...provider,
+        authorizedStates: Array.isArray(provider.authorizedStates)
+          ? provider.authorizedStates
+          : (typeof provider.authorizedStates === 'string' && provider.authorizedStates.length > 0
+              ? provider.authorizedStates.split(',').map(s => s.trim()).filter(Boolean)
+              : [])
+      }));
+    }
+  });
+};
+
 // Add a provider
 export const useAddProvider = () => {
   const queryClient = useQueryClient();
@@ -55,7 +105,31 @@ export const useUpdateProvider = () => {
       if (error) throw error;
       return data;
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['providers'] })
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['providers'] });
+      queryClient.invalidateQueries({ queryKey: ['providers', data.id] });
+    }
+  });
+};
+
+// Update provider availability
+export const useUpdateProviderAvailability = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, availabilityStatus, availabilityStart, availabilityEnd }) => {
+      const { data, error } = await supabase
+        .from('providers')
+        .update({ availabilityStatus, availabilityStart, availabilityEnd })
+        .eq('id', id)
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['providers'] });
+      queryClient.invalidateQueries({ queryKey: ['providers', data.id] });
+    }
   });
 };
 
@@ -71,6 +145,9 @@ export const useDeleteProvider = () => {
       if (error) throw error;
       return id;
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['providers'] })
+    onSuccess: (id) => {
+      queryClient.invalidateQueries({ queryKey: ['providers'] });
+      queryClient.invalidateQueries({ queryKey: ['providers', id] });
+    }
   });
 };

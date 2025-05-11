@@ -88,11 +88,13 @@ export const AuthProvider = ({ children }) => {
                 .from('profiles')
                 .select('role')
                 .eq('id', user.id)
-                .single();
+                .single()
+                .throwOnError();
 
-              if (profileError && profileError.code !== 'PGRST116') {
-                // Ignore 'No rows found' error initially
-                throw profileError;
+              if (profileError) {
+                // Log the error but don't throw it to prevent authentication failures
+                console.error('Error fetching profile role:', profileError.message);
+                // Continue with default role
               }
 
               const role = profile?.role || 'patient'; // Default to 'patient' if profile exists but role is null/undefined or profile doesn't exist yet
@@ -165,11 +167,13 @@ export const AuthProvider = ({ children }) => {
                   .from('profiles')
                   .select('role')
                   .eq('id', user.id)
-                  .single();
+                  .single()
+                  .throwOnError();
 
-                // Ignore 'No rows found' error as profile might be created slightly after auth event
-                if (profileError && profileError.code !== 'PGRST116') {
-                  throw profileError;
+                // Log error but don't throw to prevent authentication failures
+                if (profileError) {
+                  console.error('Error fetching profile role:', profileError.message);
+                  // Continue with default role
                 }
 
                 const role = profile?.role || 'patient'; // Default to 'patient'

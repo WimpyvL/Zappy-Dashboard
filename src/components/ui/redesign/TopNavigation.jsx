@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { 
-  Heart, Layers, Award, ShoppingBag, BookOpen
+  Heart, Layers, Award, ShoppingBag
 } from 'lucide-react';
 
 const TopNavigation = ({ activePage }) => {

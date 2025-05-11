@@ -1,13 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import {
   Search,
-  Filter,
   Plus,
   CheckCircle,
   Clock,
   X,
-  ChevronDown,
-  ChevronUp,
+  User,
+  Users,
   AlertTriangle,
 } from 'lucide-react';
 import TaskModal from './TaskModal';
@@ -15,28 +14,27 @@ import { format, parseISO, isAfter } from 'date-fns';
 import { toast } from 'react-toastify';
 // Import the React Query hooks
 import {
-  useTasks,
+  useMyTasks,
+  useTasksAssignedByMe,
   useMarkTaskCompleted,
   useCreateTask,
   useUpdateTask,
   useDeleteTask,
   useAssignees,
-  useTaskablePatients,
+  useCurrentUserId,
 } from '../../apis/tasks/hooks';
 
 const TaskManagement = () => {
-  // State for filters
+  // State for view mode
+  const [viewMode, setViewMode] = useState('my-tasks'); // 'my-tasks' or 'assigned-by-me'
+  
+  // State for simple filters
   const [nameFilter, setNameFilter] = useState('');
-  const [taskableFilter, setTaskableFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
-  const [assigneeFilter, setAssigneeFilter] = useState('');
-  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
-  const [dueDateFilter, setDueDateFilter] = useState('');
-  const [priorityFilter, setPriorityFilter] = useState('');
-
-  // State for sorting
-  const [sortField, setSortField] = useState('created_at');
-  const [sortDirection, setSortDirection] = useState('desc');
+  
+  // State for sorting - simplified
+  const [sortField] = useState('due_date');
+  const [sortDirection] = useState('asc');
 
   // State for selected tasks
   const [selectedTasks, setSelectedTasks] = useState([]);
@@ -54,28 +52,48 @@ const TaskManagement = () => {
   const statusOptions = ['pending', 'in_progress', 'completed', 'cancelled'];
   const priorityOptions = ['low', 'medium', 'high'];
 
+  // Get current user ID
+  const { data: currentUserId, isLoading: userLoading } = useCurrentUserId();
+  
   // Combined filters and sorting for React Query
   const filtersAndSorting = {
     search: nameFilter || undefined,
-    patientId: taskableFilter || undefined,
     status: statusFilter || undefined,
-    assigneeId: assigneeFilter || undefined,
-    due_date: dueDateFilter || undefined,
-    priority: priorityFilter || undefined,
   };
-
+  // Function to clear search
+  const clearSearch = () => {
+    setNameFilter('');
+    setCurrentPage(1);
+    refetchTasks();
+  };
   const sortingDetails = {
     column: sortField,
     ascending: sortDirection === 'asc',
   };
 
-  // Use the tasks query hook
+  // Use both hooks but only use the data from the appropriate one based on view mode
   const {
-    data: tasksData,
-    isLoading: loading,
-    error: queryError,
-    refetch: refetchTasks,
-  } = useTasks(currentPage, filtersAndSorting, sortingDetails, itemsPerPage);
+    data: myTasksData,
+    isLoading: myTasksLoading,
+    error: myTasksError,
+    refetch: refetchMyTasks,
+  } = useMyTasks(currentUserId, currentPage, filtersAndSorting, sortingDetails, itemsPerPage);
+  
+  const {
+    data: assignedByMeData,
+    isLoading: assignedByMeLoading,
+    error: assignedByMeError,
+    refetch: refetchAssignedByMe,
+  } = useTasksAssignedByMe(currentUserId, currentPage, filtersAndSorting, sortingDetails, itemsPerPage);
+  
+  // Select the appropriate data based on view mode
+  const tasksData = viewMode === 'my-tasks' ? myTasksData : assignedByMeData;
+  const loading = viewMode === 'my-tasks' ? myTasksLoading : assignedByMeLoading;
+  const queryError = viewMode === 'my-tasks' ? myTasksError : assignedByMeError;
+  const refetchTasks = () => {
+    refetchMyTasks();
+    refetchAssignedByMe();
+  };
 
   // Extract tasks and total count from the response
   const tasks = tasksData?.data || [];
@@ -87,11 +105,6 @@ const TaskManagement = () => {
     isLoading: assigneesLoading 
   } = useAssignees();
 
-  // Use the patients query hook
-  const { 
-    data: patients = [], 
-    isLoading: patientsLoading 
-  } = useTaskablePatients();
 
   // Use mutation hooks
   const markTaskCompleted = useMarkTaskCompleted({
@@ -129,32 +142,6 @@ const TaskManagement = () => {
     setShowBulkActions(selectedTasks.length > 0);
   }, [selectedTasks]);
 
-  // Function to handle sorting
-  const handleSort = (field) => {
-    if (field === sortField) {
-      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
-    } else {
-      setSortField(field);
-      setSortDirection('asc');
-    }
-  };
-
-  // Function to handle filtering
-  const applyFilters = () => {
-    setCurrentPage(1); // Reset to first page when applying filters
-    refetchTasks();
-  };
-
-  // Function to clear filters
-  const clearFilters = () => {
-    setNameFilter('');
-    setTaskableFilter('');
-    setStatusFilter('');
-    setAssigneeFilter('');
-    setDueDateFilter('');
-    setPriorityFilter('');
-    setCurrentPage(1);
-  };
 
   // Handle task selection for bulk actions
   const handleTaskSelection = (taskId) => {
@@ -242,17 +229,6 @@ const TaskManagement = () => {
     }
   };
 
-  // Render sort indicator
-  const renderSortIndicator = (field) => {
-    if (sortField === field) {
-      return sortDirection === 'asc' ? (
-        <ChevronUp className="inline h-4 w-4" />
-      ) : (
-        <ChevronDown className="inline h-4 w-4" />
-      );
-    }
-    return null;
-  };
 
   // Format date for display
   const formatDate = (dateString) => {
@@ -288,31 +264,10 @@ const TaskManagement = () => {
 
   return (
     <div>
-      {/* Header with title and action buttons */}
-      <div className="flex justify-between items-center mb-4">
-        <h1 className="text-xl font-bold text-gray-800">Tasks</h1>
-        <div className="flex space-x-3">
-          {showBulkActions && (
-            <div className="bg-white rounded-md shadow px-3 py-2 flex items-center">
-              <span className="text-sm font-medium text-gray-600 mr-3">
-                {selectedTasks.length} selected
-              </span>
-              <button
-                className="text-indigo-600 hover:text-indigo-900 text-sm font-medium mx-2 flex items-center"
-                onClick={handleMarkComplete}
-                disabled={markTaskCompleted.isLoading}
-              >
-                <CheckCircle className="h-4 w-4 mr-1" />
-                Mark Complete
-              </button>
-              <button
-                className="text-gray-400 hover:text-gray-600"
-                onClick={() => setSelectedTasks([])}
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-          )}
+      {/* Header with title, tabs, and action button */}
+      <div className="mb-6">
+        <div className="flex justify-between items-center mb-4">
+          <h1 className="text-xl font-bold text-gray-800">Tasks</h1>
           <button
             className="px-3 py-2 bg-indigo-600 text-white rounded-md flex items-center hover:bg-indigo-700"
             onClick={openAddTaskModal}
@@ -321,6 +276,54 @@ const TaskManagement = () => {
             Add Task
           </button>
         </div>
+        
+        {/* Task View Tabs */}
+        <div className="flex border-b border-gray-200 mb-4">
+          <button
+            className={`py-2 px-4 font-medium text-sm flex items-center ${
+              viewMode === 'my-tasks'
+                ? 'text-indigo-600 border-b-2 border-indigo-600'
+                : 'text-gray-500 hover:text-gray-700'
+            }`}
+            onClick={() => setViewMode('my-tasks')}
+          >
+            <User className="h-4 w-4 mr-2" />
+            My Tasks
+          </button>
+          <button
+            className={`py-2 px-4 font-medium text-sm flex items-center ${
+              viewMode === 'assigned-by-me'
+                ? 'text-indigo-600 border-b-2 border-indigo-600'
+                : 'text-gray-500 hover:text-gray-700'
+            }`}
+            onClick={() => setViewMode('assigned-by-me')}
+          >
+            <Users className="h-4 w-4 mr-2" />
+            Assigned by Me
+          </button>
+        </div>
+        
+        {showBulkActions && (
+          <div className="bg-white rounded-md shadow px-3 py-2 flex items-center mb-4">
+            <span className="text-sm font-medium text-gray-600 mr-3">
+              {selectedTasks.length} selected
+            </span>
+            <button
+              className="text-indigo-600 hover:text-indigo-900 text-sm font-medium mx-2 flex items-center"
+              onClick={handleMarkComplete}
+              disabled={markTaskCompleted.isLoading}
+            >
+              <CheckCircle className="h-4 w-4 mr-1" />
+              Mark Complete
+            </button>
+            <button
+              className="text-gray-400 hover:text-gray-600"
+              onClick={() => setSelectedTasks([])}
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Error message if any */}
@@ -337,44 +340,32 @@ const TaskManagement = () => {
         </div>
       )}
 
-      {/* Filters and Search */}
+      {/* Simple Search */}
       <div className="bg-white p-4 rounded-lg shadow mb-4">
-        <div className="flex flex-col md:flex-row md:items-center space-y-2 md:space-y-0 md:space-x-4 mb-2">
+        <div className="flex items-center space-x-4">
           <div className="flex-1 relative">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
               <Search className="h-5 w-5 text-gray-400" />
             </div>
             <input
               type="text"
-              placeholder="Search by title..."
+              placeholder="Search tasks..."
               className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
               value={nameFilter}
               onChange={(e) => setNameFilter(e.target.value)}
+              onKeyPress={(e) => e.key === 'Enter' && refetchTasks()}
             />
           </div>
 
-          <div className="flex items-center space-x-2">
-            <Filter className="h-5 w-5 text-gray-400" />
-            <select
-              className="block pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
-              value={taskableFilter}
-              onChange={(e) => setTaskableFilter(e.target.value)}
-            >
-              <option value="">All Patients</option>
-              {patients.map((patient) => (
-                <option key={patient.id} value={patient.id}>
-                  {patient.first_name} {patient.last_name}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="flex items-center space-x-2">
-            <Filter className="h-5 w-5 text-gray-400" />
+          <div className="flex items-center">
             <select
               className="block pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
               value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
+              onChange={(e) => {
+                setStatusFilter(e.target.value);
+                setCurrentPage(1);
+                setTimeout(() => refetchTasks(), 0);
+              }}
             >
               <option value="">All Statuses</option>
               {statusOptions.map((status) => (
@@ -385,265 +376,131 @@ const TaskManagement = () => {
             </select>
           </div>
 
-          <button
-            className="text-indigo-600 hover:text-indigo-900 text-sm font-medium"
-            onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
-          >
-            {showAdvancedFilters ? 'Hide Filters' : 'Advanced Filters'}
-          </button>
+          {nameFilter && (
+            <button
+              className="px-3 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50"
+              onClick={clearSearch}
+            >
+              Clear
+            </button>
+          )}
         </div>
-
-        {showAdvancedFilters && (
-          <div className="flex flex-col md:flex-row md:items-center space-y-2 md:space-y-0 md:space-x-4 pt-2 border-t border-gray-200">
-            <div className="flex items-center space-x-2">
-              <span className="text-sm text-gray-500">Assignee:</span>
-              <select
-                className="block pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
-                value={assigneeFilter}
-                onChange={(e) => setAssigneeFilter(e.target.value)}
-              >
-                <option value="">All Assignees</option>
-                {assignees.map((assignee) => (
-                  <option key={assignee.id} value={assignee.id}>
-                    {assignee.first_name} {assignee.last_name}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="flex items-center space-x-2">
-              <span className="text-sm text-gray-500">Priority:</span>
-              <select
-                className="block pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
-                value={priorityFilter}
-                onChange={(e) => setPriorityFilter(e.target.value)}
-              >
-                <option value="">All Priorities</option>
-                {priorityOptions.map((priority) => (
-                  <option key={priority} value={priority}>
-                    {priority.charAt(0).toUpperCase() + priority.slice(1)}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="flex items-center space-x-2">
-              <span className="text-sm text-gray-500">Due Date:</span>
-              <input
-                type="date"
-                className="block pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
-                value={dueDateFilter}
-                onChange={(e) => setDueDateFilter(e.target.value)}
-              />
-            </div>
-
-            <div className="flex items-center space-x-2 ml-auto">
-              <button
-                className="px-3 py-1 border border-gray-300 text-gray-700 rounded text-sm hover:bg-gray-50"
-                onClick={clearFilters}
-              >
-                Reset Filters
-              </button>
-              <button
-                className="px-3 py-1 bg-indigo-600 text-white rounded text-sm hover:bg-indigo-700"
-                onClick={applyFilters}
-              >
-                Apply Filters
-              </button>
-            </div>
-          </div>
-        )}
       </div>
 
-      {/* Tasks Table with Horizontal Scrolling */}
+      {/* Tasks List */}
       <div className="bg-white shadow rounded-lg mb-4">
-        <div className="overflow-x-auto">
-          <table className="min-w-full" style={{ minWidth: '1200px' }}>
-            <thead className="bg-gray-50">
-              <tr>
-                <th
-                  scope="col"
-                  className="py-3 pl-4 pr-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-10"
-                >
-                  <div className="flex items-center">
-                    <input
-                      type="checkbox"
-                      className="h-4 w-4 text-indigo-600 border-gray-300 rounded"
-                      checked={allSelected}
-                      onChange={toggleSelectAll}
-                    />
-                  </div>
-                </th>
-                <th
-                  scope="col"
-                  onClick={() => handleSort('created_at')}
-                  className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer w-32"
-                >
-                  Created At {renderSortIndicator('created_at')}
-                </th>
-                <th
-                  scope="col"
-                  className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-48"
-                >
-                  Title
-                </th>
-                <th
-                  scope="col"
-                  className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-48"
-                >
-                  Patient
-                </th>
-                <th
-                  scope="col"
-                  className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-32"
-                >
-                  Assignee
-                </th>
-                <th
-                  scope="col"
-                  className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-28"
-                >
-                  Status
-                </th>
-                <th
-                  scope="col"
-                  className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-28"
-                >
-                  Priority
-                </th>
-                <th
-                  scope="col"
-                  onClick={() => handleSort('due_date')}
-                  className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer w-32"
-                >
-                  Due Date {renderSortIndicator('due_date')}
-                </th>
-                <th
-                  scope="col"
-                  onClick={() => handleSort('updated_at')}
-                  className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer w-32"
-                >
-                  Updated At {renderSortIndicator('updated_at')}
-                </th>
-                <th
-                  scope="col"
-                  className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider w-32"
-                >
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {loading ? (
-                <tr>
-                  <td
-                    colSpan="10"
-                    className="px-6 py-4 text-center text-gray-500"
-                  >
-                    Loading tasks...
-                  </td>
-                </tr>
-              ) : tasks.length === 0 ? (
-                <tr>
-                  <td
-                    colSpan="10"
-                    className="px-6 py-4 text-center text-gray-500"
-                  >
-                    No tasks found matching your search criteria.
-                  </td>
-                </tr>
-              ) : (
-                tasks.map((task) => (
-                  <tr key={task.id} className="hover:bg-gray-50">
-                    <td className="py-4 pl-4 pr-3 whitespace-nowrap">
+        <div className="overflow-hidden">
+          <div className="bg-gray-50 px-4 py-3 flex items-center">
+            <div className="flex-1 flex items-center">
+              <input
+                type="checkbox"
+                className="h-4 w-4 text-indigo-600 border-gray-300 rounded mr-3"
+                checked={allSelected}
+                onChange={toggleSelectAll}
+              />
+              <span className="text-xs font-medium text-gray-500 uppercase tracking-wider">
+                {viewMode === 'my-tasks' ? 'My Tasks' : 'Tasks I Assigned'}
+              </span>
+            </div>
+            <div className="text-xs font-medium text-gray-500 uppercase tracking-wider">
+              Due Date
+            </div>
+          </div>
+          
+          <div className="divide-y divide-gray-200">
+            {loading ? (
+              <div className="px-6 py-4 text-center text-gray-500">
+                Loading tasks...
+              </div>
+            ) : tasks.length === 0 ? (
+              <div className="px-6 py-4 text-center text-gray-500">
+                {viewMode === 'my-tasks' 
+                  ? 'You have no tasks assigned to you.' 
+                  : 'You haven\'t assigned any tasks yet.'}
+              </div>
+            ) : (
+              tasks.map((task) => (
+                <div key={task.id} className="hover:bg-gray-50">
+                  <div className="px-4 py-4 flex items-start">
+                    <div className="flex-shrink-0 pt-1">
                       <input
                         type="checkbox"
                         className="h-4 w-4 text-indigo-600 border-gray-300 rounded"
                         checked={selectedTasks.includes(task.id)}
                         onChange={() => handleTaskSelection(task.id)}
                       />
-                    </td>
-                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {formatDate(task.created_at)}
-                    </td>
-                    <td className="px-4 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">
-                        {task.title}
+                    </div>
+                    
+                    <div className="ml-3 flex-1">
+                      <div className="flex justify-between">
+                        <div className="text-sm font-medium text-gray-900">
+                          {task.title}
+                        </div>
+                        <div className="ml-2 flex-shrink-0">
+                          <span
+                            className={`px-2 py-1 text-xs font-medium rounded-full ${
+                              task.status === 'completed'
+                                ? 'bg-green-100 text-green-800'
+                                : task.status === 'in_progress'
+                                  ? 'bg-blue-100 text-blue-800'
+                                  : task.status === 'cancelled'
+                                    ? 'bg-gray-100 text-gray-800'
+                                    : 'bg-yellow-100 text-yellow-800'
+                            }`}
+                          >
+                            {formatStatus(task.status)}
+                          </span>
+                        </div>
                       </div>
-                    </td>
-                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {task.patientName || 'None'}
-                    </td>
-                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {task.assigneeName || 'Unassigned'}
-                    </td>
-                    <td className="px-4 py-4 whitespace-nowrap">
-                      <span
-                        className={`px-2 py-1 text-xs font-medium rounded-full ${
-                          task.status === 'completed'
-                            ? 'bg-green-100 text-green-800'
-                            : task.status === 'in_progress'
-                              ? 'bg-blue-100 text-blue-800'
-                              : task.status === 'cancelled'
-                                ? 'bg-gray-100 text-gray-800'
-                                : 'bg-yellow-100 text-yellow-800'
-                        }`}
-                      >
-                        {formatStatus(task.status)}
-                      </span>
-                    </td>
-                    <td className="px-4 py-4 whitespace-nowrap">
-                      <span
-                        className={`px-2 py-1 text-xs font-medium rounded-full ${
-                          task.priority === 'high'
-                            ? 'bg-red-100 text-red-800'
-                            : task.priority === 'medium'
-                              ? 'bg-orange-100 text-orange-800'
-                              : task.priority === 'urgent'
-                                ? 'bg-purple-100 text-purple-800'
-                                : 'bg-green-100 text-green-800'
-                        }`}
-                      >
-                        {task.priority.charAt(0).toUpperCase() +
-                          task.priority.slice(1)}
-                      </span>
-                    </td>
-                    <td className="px-4 py-4 whitespace-nowrap text-sm">
-                      <div
-                        className={`${isOverdue(task.due_date) && task.status !== 'completed' ? 'text-red-600 font-medium' : 'text-gray-900'}`}
-                      >
-                        {formatDate(task.due_date)}
-                        {isOverdue(task.due_date) &&
-                          task.status !== 'completed' && (
-                            <span className="ml-1">
-                              <Clock className="inline h-3 w-3" />
-                            </span>
-                          )}
+                      
+                      <div className="mt-1 flex justify-between">
+                        <div className="text-sm text-gray-500">
+                          {viewMode === 'my-tasks' 
+                            ? `Assigned by: ${task.createdByName || 'Unknown'}`
+                            : `Assigned to: ${task.assigneeName || 'Unassigned'}`}
+                        </div>
+                        <div
+                          className={`text-sm ${isOverdue(task.due_date) && task.status !== 'completed' ? 'text-red-600 font-medium' : 'text-gray-500'}`}
+                        >
+                          {task.due_date ? formatDate(task.due_date) : 'No due date'}
+                          {isOverdue(task.due_date) &&
+                            task.status !== 'completed' && (
+                              <span className="ml-1">
+                                <Clock className="inline h-3 w-3" />
+                              </span>
+                            )}
+                        </div>
                       </div>
-                    </td>
-                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {formatDate(task.updated_at)}
-                    </td>
-                    <td className="px-4 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <button
-                        className="text-indigo-600 hover:text-indigo-900 mr-2"
-                        onClick={() => openEditTaskModal(task.id)}
-                      >
-                        Edit
-                      </button>
-                      <button
-                        className="text-red-600 hover:text-red-900"
-                        onClick={() => handleDeleteTask(task.id)}
-                        disabled={deleteTask.isLoading}
-                      >
-                        Delete
-                      </button>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+                      
+                      <div className="mt-2 flex space-x-2">
+                        {task.status !== 'completed' && (
+                          <button
+                            className="text-xs bg-green-50 text-green-700 hover:bg-green-100 px-2 py-1 rounded"
+                            onClick={() => markTaskCompleted.mutate(task.id)}
+                          >
+                            Complete
+                          </button>
+                        )}
+                        <button
+                          className="text-xs bg-indigo-50 text-indigo-700 hover:bg-indigo-100 px-2 py-1 rounded"
+                          onClick={() => openEditTaskModal(task.id)}
+                        >
+                          Edit
+                        </button>
+                        <button
+                          className="text-xs bg-red-50 text-red-700 hover:bg-red-100 px-2 py-1 rounded"
+                          onClick={() => handleDeleteTask(task.id)}
+                          disabled={deleteTask.isLoading}
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
         </div>
       </div>
 
@@ -753,7 +610,6 @@ const TaskManagement = () => {
         task={editingTask}
         onSave={handleSaveTask}
         assignees={assignees}
-        patients={patients}
         statusOptions={statusOptions}
         priorityOptions={priorityOptions}
         isSubmitting={createTask.isLoading || updateTask.isLoading}

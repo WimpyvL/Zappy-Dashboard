@@ -108,14 +108,13 @@ const AccessibleModal = ({
       >
         <div className="flex justify-between items-center p-4 border-b border-border-gray">
           <h2 id="modal-title" className="text-lg font-bold text-text-dark">{title}</h2>
-          <Button
-            variant="ghost"
-            size="small"
-            icon={<X className="h-5 w-5" />}
+          <button
             onClick={onClose}
             aria-label="Close modal"
-            className="rounded-full w-8 h-8 p-0 flex items-center justify-center"
-          />
+            className="rounded-full w-8 h-8 p-0 flex items-center justify-center text-gray-500 hover:bg-gray-100"
+          >
+            <X className="h-5 w-5" />
+          </button>
         </div>
         <div className="p-4">
           {children}

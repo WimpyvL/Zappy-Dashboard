@@ -20,6 +20,14 @@ const STYLES = {
     .horizontal-scroll::-webkit-scrollbar {
       display: none;
     }
+    .card-hover {
+      transition-property: all;
+      transition-duration: 300ms;
+    }
+    .card-hover:hover {
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+      transform: translateY(-2px);
+    }
   `,
   cardShadow: 'shadow-sm',
   referralCard: 'shadow-md',
@@ -28,13 +36,13 @@ const STYLES = {
 
 // Smaller, focused components
 const PriorityActionCard = memo(({ icon: Icon, title, description, buttonText, buttonVariant, onClick }) => (
-  <div className={`p-3 border-l-4 border-${buttonVariant === 'warning' ? 'yellow' : 'teal'}-500 mx-3 mb-3 bg-${buttonVariant === 'warning' ? 'yellow' : 'teal'}-50 rounded-r-lg flex items-center`}>
+  <div className={`p-3 border-l-4 border-${buttonVariant === 'warning' ? 'yellow' : 'teal'}-500 mx-3 mb-3 bg-white rounded-r-lg flex items-center card-hover`}>
     <div className={`w-10 h-10 rounded-full bg-${buttonVariant === 'warning' ? 'yellow' : 'teal'}-100 flex items-center justify-center mr-3 flex-shrink-0`}>
       <Icon className={`h-5 w-5 text-${buttonVariant === 'warning' ? 'yellow' : 'teal'}-600`} />
     </div>
     <div className="flex-1">
-      <h3 className="text-sm font-bold text-text-dark">{title}</h3>
-      <p className="text-xs text-text-medium">{description}</p>
+      <h3 className="text-sm font-bold text-gray-800">{title}</h3>
+      <p className="text-xs text-gray-600">{description}</p>
     </div>
     <Button
       variant={buttonVariant}
@@ -56,28 +64,28 @@ const TreatmentCard = memo(({
   onPrimaryAction,
   onViewDetails
 }) => (
-  <div className="bg-white rounded-xl shadow-sm overflow-hidden mb-4">
+  <div className={`bg-white rounded-xl shadow-sm overflow-hidden mb-4 border-l-4 ${title.includes('Hair') ? 'border-purple-500' : 'border-teal-500'} card-hover`}>
     <div className="p-4 flex items-center">
-      <div className={`w-10 h-10 rounded-full ${title.includes('Hair') ? 'bg-hair-purple' : 'bg-teal-100'} flex items-center justify-center mr-3 flex-shrink-0`}>
-        <Icon className={`h-5 w-5 ${title.includes('Hair') ? 'text-zappy-blue' : 'text-teal-600'}`} />
+      <div className={`w-10 h-10 rounded-full ${title.includes('Hair') ? 'bg-purple-100' : 'bg-teal-100'} flex items-center justify-center mr-3 flex-shrink-0`}>
+        <Icon className={`h-5 w-5 ${title.includes('Hair') ? 'text-purple-500' : 'text-teal-600'}`} />
       </div>
       <div className="flex-1">
         <div className="flex items-center justify-between mb-1">
-          <h3 className="text-base font-bold text-text-dark">{title}</h3>
+          <h3 className="text-base font-bold text-gray-800">{title}</h3>
           <StatusBadge status={status} variant="success" />
         </div>
         <div className="flex justify-between items-center">
-          <p className="text-sm text-text-medium">
+          <p className="text-sm text-gray-600">
             {details}
           </p>
-          {progress && <p className={`text-sm font-semibold ${progress.includes('-') ? 'text-green-600' : 'text-text-medium'}`}>{progress}</p>}
+          {progress && <p className={`text-sm font-semibold ${progress.includes('-') ? 'text-green-600' : 'text-gray-600'}`}>{progress}</p>}
         </div>
       </div>
       <button
         className="ml-2 text-gray-400 hover:text-gray-600"
         onClick={onViewDetails}
       >
-        <ChevronRight className="h-6 w-6" />
+        <ChevronRight className="h-5 w-5" />
       </button>
     </div>
     
@@ -86,7 +94,6 @@ const TreatmentCard = memo(({
         <div className="flex-1 pr-2">
           <Button
             variant="primary"
-            className={title.includes('Hair') ? '' : 'bg-teal-500 hover:bg-teal-600 text-white'}
             fullWidth
             onClick={onPrimaryAction}
           >
@@ -108,18 +115,18 @@ const TreatmentCard = memo(({
 ));
 
 const MessageCard = memo(({ initials, name, time, message, onClick }) => (
-  <div className="bg-white rounded-xl shadow-sm overflow-hidden mb-4">
-    <div className="p-4 border-l-4 border-teal-500">
+  <div className="bg-white rounded-xl shadow-sm overflow-hidden mb-4 border-l-4 border-teal-500 card-hover">
+    <div className="p-4">
       <div className="flex items-start">
         <div className="w-10 h-10 rounded-full bg-teal-100 flex items-center justify-center mr-3 flex-shrink-0">
           <span className="text-teal-600 font-bold text-sm">{initials}</span>
         </div>
         <div className="flex-1">
           <div className="flex justify-between items-center mb-1">
-            <h3 className="text-sm font-bold text-text-dark">{name}</h3>
-            <span className="text-xs text-text-light">{time}</span>
+            <h3 className="text-sm font-bold text-gray-800">{name}</h3>
+            <span className="text-xs text-gray-400">{time}</span>
           </div>
-          <p className="text-sm text-text-medium line-clamp-2">{message}</p>
+          <p className="text-sm text-gray-600 line-clamp-2">{message}</p>
         </div>
         <button
           className="ml-3 w-8 h-8 rounded-full bg-teal-50 hover:bg-teal-100 flex items-center justify-center flex-shrink-0"
@@ -133,15 +140,15 @@ const MessageCard = memo(({ initials, name, time, message, onClick }) => (
 ));
 
 const LearningCard = memo(({ category, title, description, duration, bgColor }) => (
-  <div className="w-64 flex-shrink-0 bg-white rounded-xl shadow-sm overflow-hidden">
-    <div className={`h-32 ${bgColor} relative flex items-center justify-center`}>
-      <svg className={`h-16 w-16 ${category === 'Weight' ? 'text-teal-300' : 'text-zappy-blue opacity-30'}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1">
+  <div className={`w-64 flex-shrink-0 bg-white rounded-xl shadow-sm overflow-hidden border-l-4 ${category === 'Weight' ? 'border-teal-500' : 'border-purple-500'} card-hover`}>
+    <div className={`h-32 ${category === 'Weight' ? 'bg-teal-50' : 'bg-purple-50'} relative flex items-center justify-center`}>
+      <svg className={`h-16 w-16 ${category === 'Weight' ? 'text-teal-300' : 'text-purple-300 opacity-30'}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1">
         <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
         <circle cx="8.5" cy="8.5" r="1.5"></circle>
         <polyline points="21 15 16 10 5 21"></polyline>
       </svg>
-      <button className={`absolute w-12 h-12 rounded-full ${category === 'Weight' ? 'bg-teal-500 hover:bg-teal-600' : 'bg-zappy-blue hover:bg-zappy-blue'} flex items-center justify-center shadow-lg`}>
-        <svg className="h-5 w-5 text-white ml-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <button className={`absolute w-10 h-10 rounded-full ${category === 'Weight' ? 'bg-teal-600 hover:bg-teal-700' : 'bg-purple-500 hover:bg-purple-600'} flex items-center justify-center shadow-lg`}>
+        <svg className="h-4 w-4 text-white ml-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
           <polygon points="5 3 19 12 5 21 5 3"></polygon>
         </svg>
       </button>
@@ -150,9 +157,9 @@ const LearningCard = memo(({ category, title, description, duration, bgColor }) 
       </div>
     </div>
     <div className="p-3">
-      <span className={`text-xs ${category === 'Weight' ? 'text-teal-700 bg-teal-100' : 'text-zappy-blue bg-hair-purple'} px-2 py-0.5 rounded-full mb-1 inline-block font-medium`}>{category}</span>
-      <h3 className="font-semibold text-sm mb-1 text-text-dark">{title}</h3>
-      <p className="text-xs text-text-medium">{description}</p>
+      <span className={`text-xs ${category === 'Weight' ? 'text-teal-700 bg-teal-100' : 'text-purple-700 bg-purple-100'} px-2 py-0.5 rounded-full mb-1 inline-block font-medium`}>{category}</span>
+      <h3 className="font-semibold text-sm mb-1 text-gray-800">{title}</h3>
+      <p className="text-xs text-gray-600">{description}</p>
     </div>
   </div>
 ));
@@ -221,7 +228,7 @@ const PatientHomePage = () => {
       {/* Priority Actions Section */}
       <div className="px-4 -mt-2 relative z-10 mb-5">
         <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-          <h2 className="text-base font-bold text-text-dark p-4 pb-2">Priority Actions</h2>
+          <h2 className="text-base font-bold text-gray-800 p-4 pb-2">Priority Actions</h2>
           
           <PriorityActionCard
             icon={Camera}
@@ -245,7 +252,7 @@ const PatientHomePage = () => {
 
       {/* Treatment Section */}
       <div className="px-4 py-2">
-        <h2 className="text-lg font-bold text-text-dark mb-3">Your Treatments</h2>
+        <h2 className="text-lg font-bold text-gray-800 mb-3">Your Treatments</h2>
         
         <TreatmentCard
           icon={TrendingDown}
@@ -317,7 +324,7 @@ const PatientHomePage = () => {
               </div>
               <Button 
                 variant="secondary"
-                className="bg-white text-yellow-600 hover:bg-yellow-50"
+                className="bg-white"
                 onClick={handleReferral}
               >
                 Share Now
@@ -353,9 +360,9 @@ const PatientHomePage = () => {
                   </svg>
                 </div>
                 <div className="flex-1">
-                  <h4 className="text-sm font-bold text-text-dark">Premium Protein Formula</h4>
+                  <h4 className="text-sm font-bold text-gray-800">Premium Protein Formula</h4>
                   <div className="flex items-center justify-between">
-                    <p className="text-xs text-text-medium">Boost results by up to 35%</p>
+                    <p className="text-xs text-gray-600">Boost results by up to 35%</p>
                     <span className="text-xs font-medium bg-teal-100 text-teal-800 px-2 py-0.5 rounded-full">$29.99</span>
                   </div>
                 </div>
@@ -365,14 +372,14 @@ const PatientHomePage = () => {
             <div className="flex">
               <Button 
                 variant="secondary"
-                className="flex-1 mr-2 bg-white text-teal-600 hover:bg-teal-50"
+                className="flex-1 mr-2 bg-white"
                 onClick={() => navigate('/shop/protein')}
               >
                 Learn More
               </Button>
               <Button 
                 variant="primary"
-                className="flex-1 ml-2 bg-teal-800 hover:bg-teal-900 text-white"
+                className="flex-1 ml-2"
                 onClick={() => {
                   toast.success('Premium Protein Formula added to cart');
                 }}
@@ -387,7 +394,7 @@ const PatientHomePage = () => {
       {/* Messages Section */}
       <div className="px-4 py-2">
         <div className="flex justify-between items-center mb-3">
-          <h2 className="text-lg font-bold text-text-dark">Messages</h2>
+          <h2 className="text-lg font-bold text-gray-800">Messages</h2>
           <a href="#" className="text-sm font-medium text-teal-600" onClick={useCallback(() => navigate('/messaging'), [navigate])}>View All</a>
         </div>
         
@@ -400,11 +407,11 @@ const PatientHomePage = () => {
         />
       </div>
       
-      {/* Learn Section */}
+      {/* Programs Section */}
       <div className="px-4 py-2">
         <div className="flex justify-between items-center mb-2">
-          <h2 className="text-lg font-bold text-text-dark">Learn & Grow</h2>
-          <a href="#" className="text-sm font-medium text-teal-600" onClick={useCallback(() => navigate('/resources'), [navigate])}>See All</a>
+          <h2 className="text-lg font-bold text-gray-800">Programs</h2>
+          <a href="#" className="text-sm font-medium text-teal-600" onClick={useCallback(() => navigate('/programs'), [navigate])}>See All</a>
         </div>
         
         <div className="flex space-x-4 overflow-x-auto pb-4 horizontal-scroll">

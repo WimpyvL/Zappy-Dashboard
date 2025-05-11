@@ -6,6 +6,8 @@ import { toast } from 'react-toastify';
 const queryKeys = {
   all: ['tasks'],
   lists: (params = {}) => [...queryKeys.all, 'list', { params }],
+  myTasks: (params = {}) => [...queryKeys.all, 'myTasks', { params }],
+  assignedByMe: (params = {}) => [...queryKeys.all, 'assignedByMe', { params }],
   details: (id) => [...queryKeys.all, 'detail', id],
   assignees: ['assignees'],
   taskablePatients: ['taskablePatients'],
@@ -42,28 +44,23 @@ export const useTasks = (
 
       // Apply filters
       if (filters.status) {
-        if (filters.status === 'Completed') {
-          query = query.eq('completed', true);
-        } else if (filters.status === 'Pending') {
-          query = query.eq('completed', false);
-        }
-      } else {
-        if (filters.completed !== undefined) {
-          query = query.eq('completed', filters.completed);
+        if (filters.status === 'completed') {
+          query = query.eq('status', 'completed');
+        } else if (filters.status) {
+          query = query.eq('status', filters.status);
         }
       }
       
       if (filters.assigneeId) {
         query = query.eq('user_id', filters.assigneeId);
       }
-      if (filters.patientId) {
-        query = query.eq('patient_id', filters.patientId);
+      
+      if (filters.createdById) {
+        query = query.eq('created_by', filters.createdById);
       }
       
       if (filters.search) {
-        query = query.or(
-          `title.ilike.%${filters.search}%,notes.ilike.%${filters.search}%`
-        );
+        query = query.ilike('title', `%${filters.search}%`);
       }
 
       const { data, error, count } = await query;
@@ -73,13 +70,14 @@ export const useTasks = (
         throw new Error(error.message);
       }
 
-      // Get related user and patient data in separate queries if needed
-      const uniqueUserIds = [...new Set(data?.map(task => task.user_id).filter(Boolean))];
-      const uniquePatientIds = [...new Set(data?.map(task => task.patient_id).filter(Boolean))];
+      // Get related user data in separate queries
+      const uniqueUserIds = [...new Set([
+        ...data?.map(task => task.user_id).filter(Boolean),
+        ...data?.map(task => task.created_by).filter(Boolean)
+      ])];
       
       // Additional data fetching (optional)
       let users = [];
-      let patients = [];
       
       // Only fetch if we have IDs
       if (uniqueUserIds.length > 0) {
@@ -89,28 +87,19 @@ export const useTasks = (
           .in('id', uniqueUserIds);
         users = userData || [];
       }
-      
-      if (uniquePatientIds.length > 0) {
-        const { data: patientData } = await supabase
-          .from('patients')
-          .select('id, first_name, last_name')
-          .in('id', uniquePatientIds);
-        patients = patientData || [];
-      }
 
       // Map tasks with related data
       const mappedData = data?.map((task) => {
-        // Find related user and patient
-        const user = users.find(u => u.id === task.user_id);
-        const patient = patients.find(p => p.id === task.patient_id);
+        // Find related users
+        const assignee = users.find(u => u.id === task.user_id);
+        const creator = users.find(u => u.id === task.created_by);
         
         return {
           ...task,
-          assignee: user || null,
-          patient: patient || null,
-          assigneeName: user ? `${user.first_name || ''} ${user.last_name || ''}`.trim() || user.email : 'Unassigned',
-          patientName: patient ? `${patient.first_name || ''} ${patient.last_name || ''}`.trim() : 'N/A',
-          status: task.completed ? 'completed' : 'pending',
+          assignee: assignee || null,
+          creator: creator || null,
+          assigneeName: assignee ? `${assignee.first_name || ''} ${assignee.last_name || ''}`.trim() || assignee.email : 'Unassigned',
+          createdByName: creator ? `${creator.first_name || ''} ${creator.last_name || ''}`.trim() || creator.email : 'Unknown',
         };
       }) || [];
 
@@ -126,6 +115,44 @@ export const useTasks = (
     },
     keepPreviousData: true,
   });
+};
+
+// Get my tasks hook - tasks assigned to the current user
+export const useMyTasks = (
+  userId,
+  currentPage = 1,
+  filters = {},
+  sortingDetails = {},
+  pageSize = 10
+) => {
+  // Add the user ID to the filters
+  const myFilters = { ...filters, assigneeId: userId };
+  
+  return useTasks(
+    currentPage,
+    myFilters,
+    sortingDetails,
+    pageSize
+  );
+};
+
+// Get tasks assigned by me hook - tasks created by the current user
+export const useTasksAssignedByMe = (
+  userId,
+  currentPage = 1,
+  filters = {},
+  sortingDetails = {},
+  pageSize = 10
+) => {
+  // Add the user ID to the filters as creator
+  const createdFilters = { ...filters, createdById: userId };
+  
+  return useTasks(
+    currentPage,
+    createdFilters,
+    sortingDetails,
+    pageSize
+  );
 };
 
 // Get task by ID hook using Supabase
@@ -148,36 +175,32 @@ export const useTaskById = (id, options = {}) => {
         throw new Error(error.message);
       }
 
-      // If we have user_id and patient_id, get related data
-      let user = null;
-      let patient = null;
+      // If we have user_id and created_by, get related data
+      let assignee = null;
+      let creator = null;
 
-      if (data.user_id) {
+      // Get all unique user IDs
+      const userIds = [data.user_id, data.created_by].filter(Boolean);
+      
+      if (userIds.length > 0) {
         const { data: userData } = await supabase
           .from('profiles')
           .select('id, first_name, last_name, email')
-          .eq('id', data.user_id)
-          .single();
-        user = userData || null;
-      }
-
-      if (data.patient_id) {
-        const { data: patientData } = await supabase
-          .from('patients')
-          .select('id, first_name, last_name')
-          .eq('id', data.patient_id)
-          .single();
-        patient = patientData || null;
+          .in('id', userIds);
+        
+        if (userData) {
+          assignee = userData.find(u => u.id === data.user_id) || null;
+          creator = userData.find(u => u.id === data.created_by) || null;
+        }
       }
       
-      // Map data with proper assignee and patient info
+      // Map data with proper assignee and creator info
       const mappedData = {
         ...data,
-        assignee: user,
-        patient: patient,
-        assigneeName: user ? `${user.first_name || ''} ${user.last_name || ''}`.trim() || user.email : 'Unassigned',
-        patientName: patient ? `${patient.first_name || ''} ${patient.last_name || ''}`.trim() : 'N/A',
-        status: data.completed ? 'completed' : 'pending',
+        assignee: assignee,
+        creator: creator,
+        assigneeName: assignee ? `${assignee.first_name || ''} ${assignee.last_name || ''}`.trim() || assignee.email : 'Unassigned',
+        createdByName: creator ? `${creator.first_name || ''} ${creator.last_name || ''}`.trim() || creator.email : 'Unknown',
       };
       
       return mappedData;
@@ -193,18 +216,20 @@ export const useCreateTask = (options = {}) => {
 
   return useMutation({
     mutationFn: async (taskData) => {
+      // Get the current user ID from auth context or session
+      const { data: { user } } = await supabase.auth.getUser();
+      const currentUserId = user?.id;
+      
+      if (!currentUserId) {
+        throw new Error('User must be logged in to create a task');
+      }
+
       const dataToInsert = {
         title: taskData.title,
         status: taskData.status || 'pending',
-        priority: taskData.priority || 'medium',
         due_date: taskData.due_date || null,
-        reminder_date: taskData.reminder_date || null,
-        message: taskData.message || '',
-        duration: taskData.duration || 30,
-        notify_assignee: taskData.notify_assignee || false,
-        user_id: taskData.assignable_id || null, // Use user_id instead of assignable_id
-        patient_id: taskData.taskable_id || null, // Use patient_id instead of taskable_id
-        completed: taskData.status === 'completed',
+        user_id: taskData.assignable_id || null, // Assignee
+        created_by: currentUserId, // Creator
         // Ensure timestamps are set
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
@@ -223,7 +248,7 @@ export const useCreateTask = (options = {}) => {
       return data;
     },
     onSuccess: (data, variables, context) => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.all });
       toast.success('Task created successfully');
       options.onSuccess?.(data, variables, context);
     },
@@ -246,15 +271,8 @@ export const useUpdateTask = (options = {}) => {
       const dataToUpdate = {
         title: taskData.title,
         status: taskData.status || 'pending',
-        priority: taskData.priority || 'medium',
         due_date: taskData.due_date || null,
-        reminder_date: taskData.reminder_date || null,
-        message: taskData.message || '',
-        duration: taskData.duration || 30,
-        notify_assignee: taskData.notify_assignee || false,
-        user_id: taskData.assignable_id || null, // Use user_id instead of assignable_id
-        patient_id: taskData.taskable_id || null, // Use patient_id instead of taskable_id
-        completed: taskData.status === 'completed',
+        user_id: taskData.assignable_id || null, // Assignee
         updated_at: new Date().toISOString(),
       };
 
@@ -272,10 +290,7 @@ export const useUpdateTask = (options = {}) => {
       return data;
     },
     onSuccess: (data, variables, context) => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.lists() });
-      queryClient.invalidateQueries({
-        queryKey: queryKeys.details(variables.id),
-      });
+      queryClient.invalidateQueries({ queryKey: queryKeys.all });
       toast.success('Task updated successfully');
       options.onSuccess?.(data, variables, context);
     },
@@ -305,8 +320,7 @@ export const useDeleteTask = (options = {}) => {
     },
     onSuccess: (data, variables, context) => {
       // variables is the id
-      queryClient.invalidateQueries({ queryKey: queryKeys.lists() });
-      queryClient.removeQueries({ queryKey: queryKeys.details(variables) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.all });
       toast.success('Task deleted successfully');
       options.onSuccess?.(data, variables, context);
     },
@@ -329,7 +343,6 @@ export const useMarkTaskCompleted = (options = {}) => {
       const { data, error } = await supabase
         .from('pb_tasks')
         .update({
-          completed: true,
           status: 'completed',
           updated_at: new Date().toISOString(),
         })
@@ -345,8 +358,7 @@ export const useMarkTaskCompleted = (options = {}) => {
     },
     onSuccess: (data, variables, context) => {
       // variables is the id
-      queryClient.invalidateQueries({ queryKey: queryKeys.lists() });
-      queryClient.invalidateQueries({ queryKey: queryKeys.details(variables) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.all });
       toast.success('Task marked as completed');
       options.onSuccess?.(data, variables, context);
     },
@@ -389,30 +401,14 @@ export const useAssignees = (options = {}) => {
   });
 };
 
-// Get taskable patients hook using Supabase (queries the 'patients' table)
-export const useTaskablePatients = (options = {}) => {
+// Get current user ID hook
+export const useCurrentUserId = () => {
   return useQuery({
-    queryKey: queryKeys.taskablePatients,
+    queryKey: ['currentUser'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('patients')
-        .select('id, first_name, last_name')
-        .order('last_name', { ascending: true });
-
-      if (error) {
-        console.error('Error fetching taskable patients:', error);
-        throw new Error(error.message);
-      }
-      
-      // Format the data to include full_name
-      const formattedData = (data || []).map(patient => ({
-        ...patient,
-        full_name: `${patient.first_name || ''} ${patient.last_name || ''}`.trim() || `Patient #${patient.id}`,
-      }));
-      
-      return formattedData;
+      const { data: { user } } = await supabase.auth.getUser();
+      return user?.id || null;
     },
-    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
-    ...options,
+    staleTime: 30 * 60 * 1000, // Cache for 30 minutes
   });
 };

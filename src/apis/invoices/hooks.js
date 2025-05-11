@@ -16,16 +16,43 @@ const queryKeys = {
 };
 
 export const useInvoices = (params = {}) => {
+  const queryClient = useQueryClient();
+
   return useQuery({
     queryKey: queryKeys.lists(params),
     queryFn: async () => {
       try {
         const data = await fetchInvoices();
-        return { data };
+        
+        // Process the data to ensure patient names are properly displayed
+        const processedData = data.map(invoice => {
+          // Add a patientName field for easier access in the UI
+          // Set default values for amount and amount_paid to prevent NaN
+          const amount = typeof invoice.invoice_amount === 'number' ? invoice.invoice_amount : 0;
+          const amountPaid = typeof invoice.amount_paid === 'number' ? invoice.amount_paid : 0;
+          const discountAmount = typeof invoice.discount_amount === 'number' ? invoice.discount_amount : 
+                               (typeof invoice.pb_invoice_metadata?.discount_amount === 'number' ? invoice.pb_invoice_metadata.discount_amount : 0);
+          const taxRate = typeof invoice.tax_rate === 'number' ? invoice.tax_rate : 
+                        (typeof invoice.pb_invoice_metadata?.tax_rate === 'number' ? invoice.pb_invoice_metadata.tax_rate : 0);
+          
+          return {
+            ...invoice,
+            patientName: invoice.pb_invoice_metadata?.patient_name || 'Unknown',
+            amount: amount,
+            amount_paid: amountPaid,
+            discount_amount: discountAmount,
+            tax_rate: taxRate
+          };
+        });
+        
+        return { data: processedData };
       } catch (error) {
         throw new Error(error.message);
       }
-    }
+    },
+    refetchOnWindowFocus: true,
+    refetchOnMount: true,
+    staleTime: 10000 // Consider data stale after 10 seconds
   });
 };
 
@@ -35,7 +62,31 @@ export const useInvoiceById = (id) => {
     queryFn: async () => {
       if (!id) return null;
       try {
-        return await fetchInvoiceById(id);
+        const invoice = await fetchInvoiceById(id);
+        
+        // Process the data to ensure patient names are properly displayed
+        if (invoice) {
+          // Add a patientName field for easier access in the UI
+          // Set default values for amount and amount_paid to prevent NaN
+          const amount = typeof invoice.invoice_amount === 'number' ? invoice.invoice_amount : 0;
+          const amountPaid = typeof invoice.amount_paid === 'number' ? invoice.amount_paid : 0;
+          const discountAmount = typeof invoice.discount_amount === 'number' ? invoice.discount_amount : 
+                               (typeof invoice.pb_invoice_metadata?.discount_amount === 'number' ? invoice.pb_invoice_metadata.discount_amount : 0);
+          const taxRate = typeof invoice.tax_rate === 'number' ? invoice.tax_rate : 
+                        (typeof invoice.pb_invoice_metadata?.tax_rate === 'number' ? invoice.pb_invoice_metadata.tax_rate : 0);
+          
+          return {
+            data: {
+              ...invoice,
+              patientName: invoice.pb_invoice_metadata?.patient_name || 'Unknown',
+              amount: amount,
+              amount_paid: amountPaid,
+              discount_amount: discountAmount,
+              tax_rate: taxRate
+            }
+          };
+        }
+        return { data: null };
       } catch (error) {
         throw new Error(error.message);
       }

@@ -78,16 +78,27 @@ model Session {
 }
 
 model Provider {
-  id               String   @id @default(uuid())
-  name             String
-  specialty        String?
-  email            String? @unique
-  phone            String?
-  active           Boolean @default(true)
-  authorizedStates String[]
-  created_at       DateTime @default(now())
-  updated_at       DateTime @updatedAt
-  sessions         Session[]
+  id                 String   @id @default(uuid())
+  name               String
+  specialty          String?
+  email              String? @unique
+  phone              String?
+  active             Boolean @default(true)
+  authorizedStates   String[]
+  // Professional details
+  credentials        String?  // Degrees, certifications
+  licenseNumber      String?
+  biography          String?  // About section
+  profileImageUrl    String?
+  // Availability settings
+  availabilityStatus String? @default("available") // available, vacation, day_off
+  availabilityStart  DateTime?
+  availabilityEnd    DateTime?
+  // Role-based access
+  role               String @default("provider") // provider, admin
+  created_at         DateTime @default(now())
+  updated_at         DateTime @updatedAt
+  sessions           Session[]
 }
 
 model Note {

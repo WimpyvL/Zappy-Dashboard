@@ -87,14 +87,14 @@ const Patients = () => {
     refetch: fetchPatients,
   } = usePatients(currentPage, filtersForHook); // Pass only supported filters
 
-  const { data: tagsData } = useTags();
+  const { data: tagsData = [] } = useTags();
 
   // Extract data from hook responses
   const rawPatients = patientsData?.data || []; // Get raw data from hook
   // Corrected default meta structure and property names
   const paginationMeta = patientsData?.meta || { total: 0, total_pages: 1, current_page: 1, per_page: 10 };
   const paginationLinks = patientsData?.links || { first: null, last: null, next: null, prev: null };
-  const tags = tagsData?.data || [];
+  const tags = tagsData || [];
   // --- End Hook Usage ---
 
   // --- Client-side filtering for Subscription Plan ---
@@ -428,8 +428,15 @@ const Patients = () => {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex flex-wrap gap-1">
-                        {/* Use patient.related_tags based on schema */}
-                        {Array.isArray(patient.related_tags) && patient.related_tags.length > 0 ? (
+                        {/* Use patient.tags based on Prisma schema */}
+                        {Array.isArray(patient.tags) && patient.tags.length > 0 ? (
+                          patient.tags.map((patientTag) => {
+                             const tagId = patientTag.tag_id;
+                             const tag = tags.find(t => t.id === tagId);
+                             return tag ? (<span key={tag.id} className="px-2 py-0.5 text-xs font-medium rounded-full bg-blue-100 text-blue-800">{tag.name}</span>) : null;
+                           })
+                        ) : Array.isArray(patient.related_tags) && patient.related_tags.length > 0 ? (
+                          // Fallback to related_tags if available (for backward compatibility)
                           patient.related_tags.map((tagId) => {
                              const tag = tags.find(t => t.id === tagId);
                              return tag ? (<span key={tag.id} className="px-2 py-0.5 text-xs font-medium rounded-full bg-blue-100 text-blue-800">{tag.name}</span>) : null;

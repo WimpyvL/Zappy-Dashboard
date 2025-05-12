@@ -1,13 +1,12 @@
 import React, { useMemo, useState } from 'react';
-import { Plus, Edit, Trash2, Search, X, Loader } from 'lucide-react'; // Removed unused Info import
+import { Plus, Edit, Trash2, Search, X, Loader, Info } from 'lucide-react';
 import Tag from '../common/Tag';
 import {
   useTags,
-  // useTagById, // Removed unused hook
   useCreateTag,
   useUpdateTag,
   useDeleteTag,
-  // useTagUsage, // Removed non-existent hook import
+  useTagUsage
 } from '../../apis/tags/hooks';
 
 const TagManagement = () => {
@@ -29,9 +28,13 @@ const TagManagement = () => {
   const updateTagMutation = useUpdateTag();
   const deleteTagMutation = useDeleteTag();
 
-  // Removed usage of non-existent useTagUsage hook
-  const usageData = null; // Placeholder or remove if not needed elsewhere
-  const isLoadingUsage = false; // Placeholder or remove if not needed elsewhere
+  // Tag usage data
+  const { 
+    data: usageData, 
+    isLoading: isLoadingUsage 
+  } = useTagUsage(currentTag?.id, {
+    enabled: showUsageModal && !!currentTag
+  });
 
 
   const tags = useMemo(() => {
@@ -77,10 +80,10 @@ const TagManagement = () => {
   }; // Added missing closing brace
 
   // Handle opening tag usage modal
-  // const handleShowUsage = (tag) => { // Removed unused function
-  //   setCurrentTag(tag);
-  //   setShowUsageModal(true);
-  // };
+  const handleShowUsage = (tag) => {
+    setCurrentTag(tag);
+    setShowUsageModal(true);
+  };
 
   // Handle form input changes
   const handleInputChange = (e) => {
@@ -208,12 +211,12 @@ const TagManagement = () => {
               >
                 <div className="flex items-center">
                   <Tag id={tag.id} name={tag.name} color={tag.color} />
-                  {/* <button
+                  <button
                     className="ml-2 text-gray-400 hover:text-gray-600"
                     onClick={() => handleShowUsage(tag)}
                   >
                     <Info className="h-4 w-4" />
-                  </button> */}
+                  </button>
                 </div>
                 <div className="flex space-x-2">
                   <button

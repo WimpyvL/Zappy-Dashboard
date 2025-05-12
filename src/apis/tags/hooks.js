@@ -8,7 +8,7 @@ export const useTags = (params = {}) => {
     queryKey: ['tags', params],
     queryFn: async () => {
       let query = supabase
-        .from('tag') // Changed from 'tags' to 'tag'
+        .from('tag') // Using lowercase 'tag' as in the database
         .select('*')
         .order('name', { ascending: true }); // 'name' column exists in 'tag'
 
@@ -36,7 +36,7 @@ export const useTagById = (id, options = {}) => {
       if (!id) return null;
 
       const { data, error } = await supabase
-        .from('tag') // Changed from 'tags' to 'tag'
+        .from('tag') // Using lowercase 'tag' as in the database
         .select('*')
         .eq('id', id)
         .single();
@@ -75,7 +75,7 @@ export const useCreateTag = (options = {}) => {
       console.log('[useCreateTag] Inserting tag data:', dataToInsert); // Add logging
 
       const { data, error } = await supabase
-        .from('tag') // Changed from 'tags' to 'tag'
+        .from('tag') // Using lowercase 'tag' as in the database
         .insert(dataToInsert)
         .select()
         .single();
@@ -119,7 +119,7 @@ export const useUpdateTag = (options = {}) => {
 
 
       const { data, error } = await supabase
-        .from('tag') // Changed from 'tags' to 'tag'
+        .from('tag') // Using lowercase 'tag' as in the database
         .update(dataToUpdate)
         .eq('id', id)
         .select()
@@ -157,7 +157,7 @@ export const useDeleteTag = (options = {}) => {
       if (!id) throw new Error("Tag ID is required for deletion.");
 
       const { error } = await supabase
-        .from('tag') // Changed from 'tags' to 'tag'
+        .from('tag') // Using lowercase 'tag' as in the database
         .delete()
         .eq('id', id);
 
@@ -185,4 +185,41 @@ export const useDeleteTag = (options = {}) => {
   });
 };
 
-// Removed useTagUsage hook
+// Hook to fetch tag usage statistics
+export const useTagUsage = (tagId, options = {}) => {
+  return useQuery({
+    queryKey: ['tag-usage', tagId],
+    queryFn: async () => {
+      if (!tagId) return null;
+
+      // Get patient tags count
+      const { count: patientCount, error: patientError } = await supabase
+        .from('patient_tag')
+        .select('*', { count: 'exact', head: true })
+        .eq('tag_id', tagId);
+
+      if (patientError) {
+        console.error(`Error fetching patient tag usage for tag ${tagId}:`, patientError);
+        throw new Error(patientError.message);
+      }
+
+      // In a real implementation, you would add counts for other entity types here
+      // For example:
+      // const { count: orderCount, error: orderError } = await supabase
+      //   .from('OrderTag')
+      //   .select('*', { count: 'exact', head: true })
+      //   .eq('tag_id', tagId);
+
+      return {
+        usage: {
+          patients: patientCount || 0,
+          // orders: orderCount || 0,
+          // Add other entity types as they are implemented
+        },
+        total: (patientCount || 0) // + (orderCount || 0) + ...
+      };
+    },
+    enabled: !!tagId,
+    ...options,
+  });
+};

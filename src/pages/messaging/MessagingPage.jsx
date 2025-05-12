@@ -1,81 +1,154 @@
-import React, { useState } from 'react';
-import { Layout, Typography, Button, Avatar, Input } from 'antd'; // Removed unused Space, Badge
+import React, { useState, useEffect, useRef } from 'react';
+import { Layout, Typography, Button, Avatar, Input, Spin, Empty, Dropdown, Menu, Badge, Tabs, Tooltip, Popover } from 'antd';
 import { 
   QuestionCircleOutlined, 
   SendOutlined, 
   UserOutlined, 
   TeamOutlined,
   PlusOutlined,
-  MessageOutlined
-} from '@ant-design/icons'; // Added icons
-import NewConversationModal from './components/NewConversationModal'; // Import the modal
-// import ConversationList from './components/ConversationList';
-// import MessageView from './components/MessageView';
+  MessageOutlined,
+  SearchOutlined,
+  MoreOutlined,
+  FileOutlined,
+  PaperClipOutlined,
+  SmileOutlined,
+  DownloadOutlined,
+  FilterOutlined,
+  InboxOutlined,
+  SettingOutlined,
+  EllipsisOutlined
+} from '@ant-design/icons';
+import { format } from 'date-fns';
+import { useAuth } from '../../context/AuthContext';
+import { toast } from 'react-toastify';
+import NewConversationModal from './components/NewConversationModal';
+import MessageTemplateModal from './components/MessageTemplateModal';
+import MessageAttachmentModal from './components/MessageAttachmentModal';
+import ConversationList from './components/ConversationList';
+import MessageView from './components/MessageView';
+import { 
+  useConversations, 
+  useMessages, 
+  useSendMessage, 
+  useMarkAsRead,
+  useArchiveConversation,
+  useUnarchiveConversation,
+  useDraft,
+  useSaveDraft,
+  useMessageSubscription,
+  useConversationSubscription
+} from '../../apis/messaging/hooks';
+import { isEncryptionAvailable } from '../../utils/encryption';
 
 const { Content } = Layout;
 const { Title } = Typography;
+const { TabPane } = Tabs;
 
 const MessagingPage = () => {
+  const { user } = useAuth();
   const [selectedConversationId, setSelectedConversationId] = useState(null);
-  const [isModalVisible, setIsModalVisible] = useState(false); // State for modal visibility
-
-  // Mock data for now
-  const conversations = [
-    {
-      id: 'conv1',
-      participants: 'Patient Alice',
-      lastMessage: 'Okay, thank you!',
-      timestamp: '10:30 AM',
-    },
-    {
-      id: 'conv2',
-      participants: 'Dr. Bob (Team)',
-      lastMessage: 'Please review the chart.',
-      timestamp: 'Yesterday',
-    },
-    {
-      id: 'conv3',
-      participants: 'Patient Charlie',
-      lastMessage: 'I have a question about...',
-      timestamp: 'Tuesday',
-    },
-  ];
-
-  const messages = {
-    conv1: [
-      {
-        id: 'msg1',
-        sender: 'Provider',
-        text: 'Your prescription is ready.',
-        timestamp: '10:25 AM',
-      },
-      {
-        id: 'msg2',
-        sender: 'Patient Alice',
-        text: 'Okay, thank you!',
-        timestamp: '10:30 AM',
-      },
-    ],
-    conv2: [
-      {
-        id: 'msg3',
-        sender: 'Dr. Bob (Team)',
-        text: 'Please review the chart.',
-        timestamp: 'Yesterday',
-      },
-    ],
-    conv3: [
-      {
-        id: 'msg4',
-        sender: 'Patient Charlie',
-        text: 'I have a question about my side effects.',
-        timestamp: 'Tuesday',
-      },
-    ],
+  const [isModalVisible, setIsModalVisible] = useState(false);
+  const [isTemplateModalVisible, setIsTemplateModalVisible] = useState(false);
+  const [isAttachmentModalVisible, setIsAttachmentModalVisible] = useState(false);
+  const [messageText, setMessageText] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState(null);
+  const [includeArchived, setIncludeArchived] = useState(false);
+  const [attachments, setAttachments] = useState([]);
+  const [encryptMessages, setEncryptMessages] = useState(false);
+  const [showFilterOptions, setShowFilterOptions] = useState(false);
+  const messagesEndRef = useRef(null);
+  
+  // Fetch conversations
+  const { 
+    data: conversations = [], 
+    isLoading: isLoadingConversations,
+    refetch: refetchConversations
+  } = useConversations({
+    includeArchived,
+    category: categoryFilter,
+    searchTerm: searchTerm.length > 2 ? searchTerm : null
+  });
+  
+  // Fetch messages for selected conversation
+  const { 
+    data: messages = [], 
+    isLoading: isLoadingMessages,
+    refetch: refetchMessages
+  } = useMessages(selectedConversationId);
+  
+  // Fetch draft for selected conversation
+  const { data: draft } = useDraft(selectedConversationId);
+  
+  // Mutations
+  const sendMessage = useSendMessage(selectedConversationId);
+  const markAsRead = useMarkAsRead();
+  const archiveConversation = useArchiveConversation();
+  const unarchiveConversation = useUnarchiveConversation();
+  const saveDraft = useSaveDraft();
+  
+  // Subscribe to new messages
+  useMessageSubscription(selectedConversationId, (newMessage) => {
+    // Auto-scroll to bottom when new message arrives
+    scrollToBottom();
+    
+    // Play notification sound if message is from someone else
+    if (newMessage.sender_id !== user?.id) {
+      playNotificationSound();
+    }
+  });
+  
+  // Subscribe to conversation updates
+  useConversationSubscription();
+  
+  // Effect to mark conversation as read when selected
+  useEffect(() => {
+    if (selectedConversationId) {
+      markAsRead.mutate(selectedConversationId);
+    }
+  }, [selectedConversationId]);
+  
+  // Effect to load draft when conversation changes
+  useEffect(() => {
+    if (draft?.content) {
+      setMessageText(draft.content);
+    } else {
+      setMessageText('');
+    }
+  }, [draft]);
+  
+  // Effect to auto-save draft when typing
+  useEffect(() => {
+    const draftTimer = setTimeout(() => {
+      if (messageText && selectedConversationId) {
+        saveDraft.mutate({
+          conversationId: selectedConversationId,
+          content: messageText
+        });
+      }
+    }, 1000);
+    
+    return () => clearTimeout(draftTimer);
+  }, [messageText, selectedConversationId]);
+  
+  // Effect to scroll to bottom when messages change
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
+  
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+  
+  const playNotificationSound = () => {
+    // Play a notification sound
+    const audio = new Audio('/notification.mp3');
+    audio.play().catch(e => console.log('Error playing notification sound:', e));
   };
 
   const handleSelectConversation = (id) => {
     setSelectedConversationId(id);
+    setAttachments([]);
   };
 
   const showNewConversationModal = () => {
@@ -87,31 +160,232 @@ const MessagingPage = () => {
   };
 
   const handleMessageSent = () => {
-    // TODO: Refresh conversation list after a new message/conversation is created
-    console.log('New conversation started/message sent - Refresh list');
+    refetchConversations();
+    if (selectedConversationId) {
+      refetchMessages();
+    }
+  };
+  
+  const handleSendMessage = () => {
+    if (!selectedConversationId) {
+      toast.error('Please select a conversation first');
+      return;
+    }
+    
+    if (!messageText.trim() && attachments.length === 0) {
+      toast.error('Please enter a message or add an attachment');
+      return;
+    }
+    
+    sendMessage.mutate({
+      content: messageText.trim(),
+      encrypt: encryptMessages,
+      attachments,
+      mentions: [] // TODO: Implement @mentions
+    }, {
+      onSuccess: () => {
+        setMessageText('');
+        setAttachments([]);
+      }
+    });
+  };
+  
+  const handleKeyPress = (e) => {
+    if (e.key === 'Enter' && !e.shiftKey && selectedConversationId) {
+      e.preventDefault();
+      handleSendMessage();
+    }
+  };
+  
+  const handleArchiveConversation = () => {
+    if (!selectedConversationId) return;
+    
+    const conversation = conversations.find(c => c.id === selectedConversationId);
+    if (conversation?.is_archived) {
+      unarchiveConversation.mutate(selectedConversationId, {
+        onSuccess: () => {
+          toast.success('Conversation restored');
+        }
+      });
+    } else {
+      archiveConversation.mutate(selectedConversationId, {
+        onSuccess: () => {
+          toast.success('Conversation archived');
+        }
+      });
+    }
+  };
+  
+  const handleTemplateSelect = (templateContent) => {
+    setMessageText(templateContent);
+    setIsTemplateModalVisible(false);
+  };
+  
+  const handleAttachmentSelect = (selectedAttachments) => {
+    setAttachments([...attachments, ...selectedAttachments]);
+    setIsAttachmentModalVisible(false);
   };
 
+  const renderConversationHeader = () => {
+    if (!selectedConversationId || isLoadingConversations) return null;
+    
+    const conversation = conversations.find(c => c.id === selectedConversationId);
+    if (!conversation) return null;
+    
+    // Find the other participant (not the current user)
+    const otherParticipant = conversation.participants?.find(p => p.user_id !== user?.id);
+    
+    return (
+      <div className="p-4 border-b border-gray-200 bg-white shadow-sm flex justify-between items-center">
+        <div className="flex items-center">
+          <Avatar 
+            icon={otherParticipant?.participant_type === 'provider' ? <TeamOutlined /> : <UserOutlined />} 
+            className={otherParticipant?.participant_type === 'provider' ? "bg-blue-500" : "bg-green-500"}
+            size="large"
+          />
+          <div className="ml-3">
+            <div className="font-semibold text-gray-800 text-base">
+              {otherParticipant?.name || conversation.title || 'Conversation'}
+            </div>
+            <div className="text-xs text-gray-500 flex items-center">
+              <Badge status={conversation.is_archived ? "default" : "success"} />
+              <span className="ml-1">
+                {conversation.is_archived ? 'Archived' : 'Active'}
+                {conversation.category ? ` • ${conversation.category}` : ''}
+              </span>
+            </div>
+          </div>
+        </div>
+        
+        <div className="flex items-center">
+          <Dropdown
+            overlay={
+              <Menu>
+                <Menu.Item key="archive" icon={conversation.is_archived ? <InboxOutlined /> : <InboxOutlined />} onClick={handleArchiveConversation}>
+                  {conversation.is_archived ? 'Restore Conversation' : 'Archive Conversation'}
+                </Menu.Item>
+                <Menu.Item key="export" icon={<DownloadOutlined />}>
+                  Export Conversation
+                </Menu.Item>
+                <Menu.Divider />
+                <Menu.Item key="delete" danger>
+                  Delete Conversation
+                </Menu.Item>
+              </Menu>
+            }
+            trigger={['click']}
+            placement="bottomRight"
+          >
+            <Button type="text" icon={<EllipsisOutlined />} />
+          </Dropdown>
+        </div>
+      </div>
+    );
+  };
+
+  // Compose button content for the message input toolbar
+  const composeButtonContent = (
+    <div className="p-2">
+      <div className="mb-2 font-medium">Add to message</div>
+      <div className="grid grid-cols-3 gap-2">
+        <Button 
+          className="flex flex-col items-center justify-center h-16"
+          onClick={() => setIsAttachmentModalVisible(true)}
+        >
+          <PaperClipOutlined className="text-lg mb-1" />
+          <span className="text-xs">Attachment</span>
+        </Button>
+        <Button 
+          className="flex flex-col items-center justify-center h-16"
+          onClick={() => setIsTemplateModalVisible(true)}
+        >
+          <FileOutlined className="text-lg mb-1" />
+          <span className="text-xs">Template</span>
+        </Button>
+        <Button 
+          className="flex flex-col items-center justify-center h-16"
+          onClick={() => toast.info('Emoji picker coming soon')}
+        >
+          <SmileOutlined className="text-lg mb-1" />
+          <span className="text-xs">Emoji</span>
+        </Button>
+      </div>
+    </div>
+  );
+
+  // Filter options content
+  const filterOptionsContent = (
+    <div className="p-2 w-64">
+      <div className="mb-2 font-medium">Filter Conversations</div>
+      <div className="mb-3">
+        <div className="text-xs text-gray-500 mb-1">Category</div>
+        <div className="grid grid-cols-2 gap-2">
+          <Button 
+            size="small" 
+            type={categoryFilter === 'clinical' ? 'primary' : 'default'}
+            onClick={() => setCategoryFilter(categoryFilter === 'clinical' ? null : 'clinical')}
+            className="text-xs"
+          >
+            Clinical
+          </Button>
+          <Button 
+            size="small" 
+            type={categoryFilter === 'billing' ? 'primary' : 'default'}
+            onClick={() => setCategoryFilter(categoryFilter === 'billing' ? null : 'billing')}
+            className="text-xs"
+          >
+            Billing
+          </Button>
+          <Button 
+            size="small" 
+            type={categoryFilter === 'general' ? 'primary' : 'default'}
+            onClick={() => setCategoryFilter(categoryFilter === 'general' ? null : 'general')}
+            className="text-xs"
+          >
+            General
+          </Button>
+          <Button 
+            size="small" 
+            type={categoryFilter === 'support' ? 'primary' : 'default'}
+            onClick={() => setCategoryFilter(categoryFilter === 'support' ? null : 'support')}
+            className="text-xs"
+          >
+            Support
+          </Button>
+        </div>
+      </div>
+      <Button 
+        size="small" 
+        type="default" 
+        onClick={() => setCategoryFilter(null)}
+        block
+      >
+        Clear Filters
+      </Button>
+    </div>
+  );
+
   return (
-    <Layout className="min-h-screen">
-      <Content className="p-6">
-        <div className="flex justify-between items-center mb-6">
+    <Layout className="min-h-screen bg-gray-50">
+      <Content className="p-4 md:p-6">
+        <div className="flex justify-between items-center mb-4">
           <Title level={3} className="mb-0 text-gray-800">
             Messages
           </Title>
-           {/* Placeholder Customer Service Button */}
-           <Button 
-             type="default"
-             icon={<QuestionCircleOutlined />}
-             onClick={() => alert('Customer Service link/page not yet implemented.')}
-             className="border-indigo-500 text-indigo-600 hover:text-indigo-700 hover:border-indigo-700"
-           >
-             Help / Customer Service
-           </Button>
+          <Button 
+            type="default"
+            icon={<QuestionCircleOutlined />}
+            onClick={() => toast.info('Help feature coming soon')}
+            className="border-indigo-500 text-indigo-600 hover:text-indigo-700 hover:border-indigo-700"
+          >
+            Help
+          </Button>
         </div>
-        <div className="flex border border-gray-200 rounded-lg overflow-hidden shadow-sm h-[calc(100vh-14rem)]"> {/* Added shadow */}
-          {/* Left Pane: Conversation List */}
-          <div className="w-1/3 border-r border-gray-200 flex flex-col bg-gray-50"> {/* Changed background */}
-            <div className="p-4 border-b border-gray-200 bg-white shadow-sm"> {/* Added shadow */}
+        
+        <div className="flex border border-gray-200 rounded-lg overflow-hidden shadow-sm h-[calc(100vh-14rem)]">
+          {/* Left Pane: Conversation List - Adjusted to 2/5 width */}
+          <div className="w-2/5 border-r border-gray-200 flex flex-col bg-gray-50">
+            <div className="p-4 border-b border-gray-200 bg-white shadow-sm">
               <Button
                 type="primary"
                 icon={<PlusOutlined />}
@@ -120,110 +394,156 @@ const MessagingPage = () => {
               >
                 New Message
               </Button>
-            </div>
-            <div className="overflow-y-auto flex-grow">
-              {conversations.map((conv) => (
-                <div
-                  key={conv.id}
-                  className={`p-4 cursor-pointer hover:bg-gray-100 border-b border-gray-100 transition-colors ${
-                    selectedConversationId === conv.id ? 'bg-indigo-50 border-l-4 border-l-indigo-500' : ''
-                  }`}
-                  onClick={() => handleSelectConversation(conv.id)}
+              
+              <div className="mt-3 flex items-center">
+                <Input 
+                  prefix={<SearchOutlined className="text-gray-400" />}
+                  placeholder="Search messages..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="mr-2"
+                />
+                <Popover
+                  content={filterOptionsContent}
+                  title={null}
+                  trigger="click"
+                  visible={showFilterOptions}
+                  onVisibleChange={setShowFilterOptions}
+                  placement="bottomRight"
                 >
-                  <div className="flex items-start">
-                    <Avatar 
-                      icon={conv.participants.includes('Team') ? <TeamOutlined /> : <UserOutlined />} 
-                      className={conv.participants.includes('Team') ? "bg-blue-500" : "bg-green-500"}
-                    />
-                    <div className="ml-3 flex-grow">
-                      <div className="flex justify-between">
-                        <span className="font-medium text-sm text-gray-800">{conv.participants}</span>
-                        <span className="text-xs text-gray-400">{conv.timestamp}</span>
-                      </div>
-                      <div className="text-xs text-gray-500 truncate mt-1">
-                        {conv.lastMessage}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))}
+                  <Button 
+                    icon={<FilterOutlined />} 
+                    type={categoryFilter ? "primary" : "default"}
+                  />
+                </Popover>
+              </div>
             </div>
-            {/* <ConversationList onSelectConversation={handleSelectConversation} selectedId={selectedConversationId} /> */}
+            
+            <Tabs defaultActiveKey="active" className="px-2 pt-2" onChange={(key) => setIncludeArchived(key === 'archived')}>
+              <TabPane tab="Active" key="active" />
+              <TabPane tab="Archived" key="archived" />
+            </Tabs>
+            
+            <div className="overflow-y-auto flex-grow">
+              {isLoadingConversations ? (
+                <div className="flex justify-center items-center h-full">
+                  <Spin />
+                </div>
+              ) : conversations.length === 0 ? (
+                <Empty 
+                  description={
+                    <span>
+                      {searchTerm 
+                        ? 'No conversations match your search' 
+                        : includeArchived 
+                          ? 'No archived conversations' 
+                          : 'No active conversations'}
+                    </span>
+                  }
+                  className="mt-8"
+                />
+              ) : (
+                <ConversationList 
+                  conversations={conversations}
+                  selectedId={selectedConversationId}
+                  onSelectConversation={handleSelectConversation}
+                  currentUserId={user?.id}
+                />
+              )}
+            </div>
           </div>
-          {/* Right Pane: Message View */}
-          <div className="w-2/3 flex flex-col bg-white">
+          
+          {/* Right Pane: Message View - Adjusted to 3/5 width */}
+          <div className="w-3/5 flex flex-col bg-white">
             {selectedConversationId ? (
               <>
                 {/* Chat Header */}
-                <div className="p-4 border-b border-gray-200 bg-white shadow-sm">
-                  <div className="flex items-center">
-                    <Avatar 
-                      icon={messages[selectedConversationId][0].sender.includes('Team') ? <TeamOutlined /> : <UserOutlined />} 
-                      className={messages[selectedConversationId][0].sender.includes('Team') ? "bg-blue-500" : "bg-green-500"}
-                    />
-                    <div className="ml-3">
-                      <div className="font-medium text-gray-800">
-                        {conversations.find(c => c.id === selectedConversationId)?.participants}
-                      </div>
-                      <div className="text-xs text-gray-500">
-                        {messages[selectedConversationId].length} messages
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                {renderConversationHeader()}
                 
                 {/* Messages Area */}
-                <div className="flex-grow overflow-y-auto p-6 space-y-4 bg-gray-50">
-                  {(messages[selectedConversationId] || []).map((msg) => (
-                    <div
-                      key={msg.id}
-                      className={`flex ${msg.sender === 'Provider' ? 'justify-end' : 'justify-start'}`}
-                    >
-                      {msg.sender !== 'Provider' && (
-                        <Avatar 
-                          size="small"
-                          icon={<UserOutlined />} 
-                          className="mr-2 mt-1 bg-green-500"
-                        />
-                      )}
-                      <div
-                        className={`p-3 rounded-lg max-w-[70%] shadow-sm ${
-                          msg.sender === 'Provider' 
-                            ? 'bg-indigo-500 text-white rounded-tr-none' 
-                            : 'bg-white border border-gray-200 rounded-tl-none'
-                        }`}
-                      >
-                        <p className={`text-sm ${msg.sender === 'Provider' ? 'text-white' : 'text-gray-800'}`}>
-                          {msg.text}
-                        </p>
-                        <p className={`text-xs mt-1 text-right ${msg.sender === 'Provider' ? 'text-indigo-100' : 'text-gray-500'}`}>
-                          {msg.timestamp}
-                        </p>
-                      </div>
-                      {msg.sender === 'Provider' && (
-                        <Avatar 
-                          size="small"
-                          icon={<TeamOutlined />} 
-                          className="ml-2 mt-1 bg-blue-500"
-                        />
-                      )}
-                    </div>
-                  ))}
-                </div>
+                {isLoadingMessages ? (
+                  <div className="flex-grow flex justify-center items-center">
+                    <Spin />
+                  </div>
+                ) : (
+                  <MessageView 
+                    messages={messages}
+                    currentUserId={user?.id}
+                    messagesEndRef={messagesEndRef}
+                  />
+                )}
                 
-                {/* Input Area */}
+                {/* Input Area - Simplified */}
                 <div className="p-4 border-t border-gray-200 bg-white">
+                  {attachments.length > 0 && (
+                    <div className="mb-2 flex flex-wrap gap-2">
+                      {attachments.map((attachment, index) => (
+                        <Badge 
+                          key={index}
+                          count="×"
+                          onClick={() => setAttachments(attachments.filter((_, i) => i !== index))}
+                        >
+                          <div className="bg-gray-100 px-2 py-1 rounded text-xs flex items-center">
+                            <FileOutlined className="mr-1" />
+                            {attachment.fileName}
+                          </div>
+                        </Badge>
+                      ))}
+                    </div>
+                  )}
+                  
                   <div className="flex">
+                    <Popover
+                      content={composeButtonContent}
+                      title={null}
+                      trigger="click"
+                      placement="topLeft"
+                    >
+                      <Button
+                        type="default"
+                        icon={<PlusOutlined />}
+                        className="rounded-r-none border-r-0"
+                      />
+                    </Popover>
                     <Input.TextArea
-                      className="flex-grow border border-gray-300 rounded-l-md p-2 text-sm focus:border-indigo-500 focus:outline-none"
+                      className="flex-grow border border-gray-300 rounded-none p-2 text-sm focus:border-indigo-500 focus:outline-none"
                       rows={2}
                       placeholder="Type your message..."
                       autoSize={{ minRows: 1, maxRows: 4 }}
+                      value={messageText}
+                      onChange={(e) => setMessageText(e.target.value)}
+                      onKeyPress={handleKeyPress}
                     />
+                    <Dropdown
+                      overlay={
+                        <Menu>
+                          {isEncryptionAvailable() && (
+                            <Menu.Item 
+                              key="encrypt" 
+                              onClick={() => setEncryptMessages(!encryptMessages)}
+                              icon={encryptMessages ? <SettingOutlined className="text-green-500" /> : <SettingOutlined />}
+                            >
+                              {encryptMessages ? "Encryption Enabled" : "Enable Encryption"}
+                            </Menu.Item>
+                          )}
+                        </Menu>
+                      }
+                      trigger={['click']}
+                      placement="topRight"
+                    >
+                      <Button
+                        type="default"
+                        icon={<SettingOutlined />}
+                        className="rounded-l-none border-l-0 border-r-0"
+                      />
+                    </Dropdown>
                     <Button
                       type="primary"
                       icon={<SendOutlined />}
                       className="bg-indigo-600 hover:bg-indigo-700 rounded-l-none"
+                      onClick={handleSendMessage}
+                      loading={sendMessage.isLoading}
+                      disabled={!selectedConversationId}
                     >
                       Send
                     </Button>
@@ -233,25 +553,39 @@ const MessagingPage = () => {
             ) : (
               <div className="flex-grow flex flex-col items-center justify-center text-gray-500 bg-gray-50">
                 <Avatar size={64} icon={<MessageOutlined />} className="bg-gray-200 text-gray-400 mb-4" />
-                <p>Select a conversation to view messages</p>
+                <p className="text-lg mb-2">No conversation selected</p>
+                <p className="text-sm text-gray-400 mb-4">Select a conversation from the list or start a new one</p>
                 <Button 
-                  type="default" 
-                  className="mt-4 border-indigo-500 text-indigo-600"
+                  type="primary" 
+                  className="bg-indigo-600 hover:bg-indigo-700"
                   onClick={showNewConversationModal}
+                  icon={<PlusOutlined />}
                 >
                   Start a new conversation
                 </Button>
               </div>
             )}
-            {/* <MessageView conversationId={selectedConversationId} /> */}
           </div>
         </div>
       </Content>
-      {/* Render the modal */}
+      
+      {/* Modals */}
       <NewConversationModal
         visible={isModalVisible}
         onClose={handleModalClose}
         onSubmitSuccess={handleMessageSent}
+      />
+      
+      <MessageTemplateModal
+        visible={isTemplateModalVisible}
+        onClose={() => setIsTemplateModalVisible(false)}
+        onSelect={handleTemplateSelect}
+      />
+      
+      <MessageAttachmentModal
+        visible={isAttachmentModalVisible}
+        onClose={() => setIsAttachmentModalVisible(false)}
+        onSelect={handleAttachmentSelect}
       />
     </Layout>
   );

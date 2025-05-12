@@ -22,12 +22,12 @@ const CategoryModal = ({
   const initialFormData = {
     name: '',
     description: '',
-    categoryId: '',
+    category_id: '',
     status: 'active',
-    displayOrder: 0,
+    display_order: 0,
     icon: '',
-    showInMarketplace: true,
-    showInAdmin: true
+    show_in_marketplace: true,
+    show_in_admin: true
   };
 
   const [formData, setFormData] = useState(initialFormData);
@@ -49,7 +49,7 @@ const CategoryModal = ({
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
     const newValue = type === 'checkbox' ? checked : 
-                    (type === 'number' || name === 'displayOrder') 
+                    (type === 'number' || name === 'display_order') 
                       ? parseFloat(value) || 0 
                       : value;
     
@@ -65,20 +65,20 @@ const CategoryModal = ({
     }
   };
 
-  // Auto-generate categoryId from name
+  // Auto-generate category_id from name
   const handleNameChange = (e) => {
     const name = e.target.value;
     handleInputChange(e);
     
-    // Only auto-generate if not in edit mode and categoryId hasn't been manually set
-    if (!isEditMode && !formData.categoryId) {
-      const categoryId = name.toLowerCase()
+    // Only auto-generate if not in edit mode and category_id hasn't been manually set
+    if (!isEditMode && !formData.category_id) {
+      const category_id = name.toLowerCase()
         .replace(/\s+/g, '-')        // Replace spaces with hyphens
         .replace(/[^a-z0-9-]/g, '')  // Remove non-alphanumeric characters except hyphens
         .replace(/-+/g, '-')         // Replace multiple hyphens with a single hyphen
         .replace(/^-|-$/g, '');      // Remove leading and trailing hyphens
       
-      setFormData(prev => ({ ...prev, categoryId }));
+      setFormData(prev => ({ ...prev, category_id }));
     }
   };
 
@@ -90,10 +90,10 @@ const CategoryModal = ({
       newErrors.name = 'Category name is required';
     }
     
-    if (!formData.categoryId.trim()) {
-      newErrors.categoryId = 'Category ID is required';
-    } else if (!/^[a-z0-9-]+$/.test(formData.categoryId)) {
-      newErrors.categoryId = 'Category ID must contain only lowercase letters, numbers, and hyphens';
+    if (!formData.category_id.trim()) {
+      newErrors.category_id = 'Category ID is required';
+    } else if (!/^[a-z0-9-]+$/.test(formData.category_id)) {
+      newErrors.category_id = 'Category ID must contain only lowercase letters, numbers, and hyphens';
     }
     
     setErrors(newErrors);
@@ -146,12 +146,12 @@ const CategoryModal = ({
         
         <FormInput
           label="Category ID"
-          name="categoryId"
-          value={formData.categoryId}
+          name="category_id"
+          value={formData.category_id}
           onChange={handleInputChange}
           placeholder="e.g. hair-loss"
           required
-          error={errors.categoryId}
+          error={errors.category_id}
           helpText="Unique identifier for the category. Use lowercase with hyphens."
         />
         
@@ -184,11 +184,11 @@ const CategoryModal = ({
         
         <FormInput
           label="Display Order"
-          name="displayOrder"
+          name="display_order"
           type="number"
           min="0"
           step="1"
-          value={formData.displayOrder}
+          value={formData.display_order}
           onChange={handleInputChange}
           helpText="Lower numbers appear first in lists"
         />
@@ -198,15 +198,15 @@ const CategoryModal = ({
         <div className="flex space-x-6">
           <FormCheckbox
             label="Show in Marketplace"
-            name="showInMarketplace"
-            checked={formData.showInMarketplace}
+            name="show_in_marketplace"
+            checked={formData.show_in_marketplace}
             onChange={handleInputChange}
           />
           
           <FormCheckbox
             label="Show in Admin"
-            name="showInAdmin"
-            checked={formData.showInAdmin}
+            name="show_in_admin"
+            checked={formData.show_in_admin}
             onChange={handleInputChange}
           />
         </div>

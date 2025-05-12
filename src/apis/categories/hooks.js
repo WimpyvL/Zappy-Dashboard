@@ -22,7 +22,7 @@ export const useCategories = (params = {}, pageSize = 20) => {
         let query = supabase
           .from('categories')
           .select('*', { count: 'exact' })
-          .order('displayOrder', { ascending: true })
+          .order('display_order', { ascending: true })
           .order('name', { ascending: true });
 
         // Apply filters
@@ -31,7 +31,7 @@ export const useCategories = (params = {}, pageSize = 20) => {
         }
         
         if (search) {
-          query = query.or(`name.ilike.%${search}%,description.ilike.%${search}%,categoryId.ilike.%${search}%`);
+          query = query.or(`name.ilike.%${search}%,description.ilike.%${search}%,category_id.ilike.%${search}%`);
         }
 
         // Apply pagination
@@ -48,7 +48,7 @@ export const useCategories = (params = {}, pageSize = 20) => {
         }
 
         // Get product counts for each category
-        const categoryIds = data.map(category => category.categoryId);
+        const categoryIds = data.map(category => category.category_id);
         const { data: productCounts, error: productCountError } = await supabase
           .from('products')
           .select('category, count')
@@ -61,7 +61,7 @@ export const useCategories = (params = {}, pageSize = 20) => {
 
         // Map product counts to categories
         const categoriesWithCounts = data.map(category => {
-          const countObj = productCounts?.find(pc => pc.category === category.categoryId);
+          const countObj = productCounts?.find(pc => pc.category === category.category_id);
           return {
             ...category,
             productCount: countObj ? parseInt(countObj.count) : 0
@@ -110,7 +110,7 @@ export const useCategoryById = (id, options = {}) => {
       const { count, error: countError } = await supabase
         .from('products')
         .select('*', { count: 'exact', head: true })
-        .eq('category', data.categoryId);
+        .eq('category', data.category_id);
 
       if (countError) {
         console.error(`Error fetching product count for category ${id}:`, countError);
@@ -135,8 +135,8 @@ export const useCreateCategory = (options = {}) => {
       // Check if categoryId already exists
       const { data: existingCategory, error: checkError } = await supabase
         .from('categories')
-        .select('categoryId')
-        .eq('categoryId', categoryData.categoryId)
+        .select('category_id')
+        .eq('category_id', categoryData.categoryId)
         .maybeSingle();
 
       if (checkError) {
@@ -153,12 +153,12 @@ export const useCreateCategory = (options = {}) => {
         .insert({
           name: categoryData.name,
           description: categoryData.description || '',
-          categoryId: categoryData.categoryId,
+          category_id: categoryData.categoryId,
           status: categoryData.status || 'active',
-          displayOrder: categoryData.displayOrder || 0,
+          display_order: categoryData.displayOrder || 0,
           icon: categoryData.icon || '',
-          showInMarketplace: categoryData.showInMarketplace !== false,
-          showInAdmin: categoryData.showInAdmin !== false,
+          show_in_marketplace: categoryData.showInMarketplace !== false,
+          show_in_admin: categoryData.showInAdmin !== false,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
         })
@@ -195,8 +195,8 @@ export const useUpdateCategory = (options = {}) => {
       if (categoryData.originalCategoryId !== categoryData.categoryId) {
         const { data: existingCategory, error: checkError } = await supabase
           .from('categories')
-          .select('categoryId')
-          .eq('categoryId', categoryData.categoryId)
+          .select('category_id')
+          .eq('category_id', categoryData.categoryId)
           .neq('id', id)
           .maybeSingle();
 

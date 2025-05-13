@@ -1,24 +1,25 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import Modal from '../ui/Modal';
-import { 
-  FormInput, 
-  FormSelect, 
-  FormTextarea, 
-  FormCheckbox, 
+import useCategoryForm from '../../hooks/useCategoryForm';
+import {
+  FormInput,
+  FormSelect,
+  FormTextarea,
+  FormCheckbox,
   FormSection
 } from '../ui/FormComponents';
 
-const CategoryModal = ({ 
-  isOpen, 
-  onClose, 
-  onSubmit, 
-  category = null, 
+const CategoryModal = ({
+  isOpen,
+  onClose,
+  onSubmit,
+  category = null,
   isSubmitting = false,
   productCount = 0
 }) => {
   const isEditMode = !!category;
-  
-  // Initial form state
+
+  // Initial form state definition (can be kept here or moved to hook)
   const initialFormData = {
     name: '',
     description: '',
@@ -30,75 +31,13 @@ const CategoryModal = ({
     show_in_admin: true
   };
 
-  const [formData, setFormData] = useState(initialFormData);
-  const [errors, setErrors] = useState({});
-
-  // Load category data if in edit mode
-  useEffect(() => {
-    if (isEditMode && category) {
-      setFormData({
-        ...initialFormData,
-        ...category
-      });
-    } else {
-      setFormData(initialFormData);
-    }
-  }, [isEditMode, category]);
-
-  // Handle input changes
-  const handleInputChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    const newValue = type === 'checkbox' ? checked : 
-                    (type === 'number' || name === 'display_order') 
-                      ? parseFloat(value) || 0 
-                      : value;
-    
-    setFormData(prev => ({ ...prev, [name]: newValue }));
-    
-    // Clear error for this field if it exists
-    if (errors[name]) {
-      setErrors(prev => {
-        const newErrors = { ...prev };
-        delete newErrors[name];
-        return newErrors;
-      });
-    }
-  };
-
-  // Auto-generate category_id from name
-  const handleNameChange = (e) => {
-    const name = e.target.value;
-    handleInputChange(e);
-    
-    // Only auto-generate if not in edit mode and category_id hasn't been manually set
-    if (!isEditMode && !formData.category_id) {
-      const category_id = name.toLowerCase()
-        .replace(/\s+/g, '-')        // Replace spaces with hyphens
-        .replace(/[^a-z0-9-]/g, '')  // Remove non-alphanumeric characters except hyphens
-        .replace(/-+/g, '-')         // Replace multiple hyphens with a single hyphen
-        .replace(/^-|-$/g, '');      // Remove leading and trailing hyphens
-      
-      setFormData(prev => ({ ...prev, category_id }));
-    }
-  };
-
-  // Validate form before submission
-  const validateForm = () => {
-    const newErrors = {};
-    
-    if (!formData.name.trim()) {
-      newErrors.name = 'Category name is required';
-    }
-    
-    if (!formData.category_id.trim()) {
-      newErrors.category_id = 'Category ID is required';
-    } else if (!/^[a-z0-9-]+$/.test(formData.category_id)) {
-      newErrors.category_id = 'Category ID must contain only lowercase letters, numbers, and hyphens';
-    }
-    
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
+  const {
+    formData,
+    errors,
+    handleInputChange,
+    handleNameChange,
+    validateForm,
+  } = useCategoryForm(category, initialFormData);
 
   // Handle form submission
   const handleSubmit = () => {
@@ -143,7 +82,7 @@ const CategoryModal = ({
           required
           error={errors.name}
         />
-        
+
         <FormInput
           label="Category ID"
           name="category_id"
@@ -154,7 +93,7 @@ const CategoryModal = ({
           error={errors.category_id}
           helpText="Unique identifier for the category. Use lowercase with hyphens."
         />
-        
+
         <FormTextarea
           label="Description"
           name="description"
@@ -163,7 +102,7 @@ const CategoryModal = ({
           rows={3}
           placeholder="Briefly describe what products and services fall under this category"
         />
-        
+
         <div className="grid grid-cols-2 gap-4">
           <FormSelect
             label="Status"
@@ -172,7 +111,7 @@ const CategoryModal = ({
             onChange={handleInputChange}
             options={statusOptions}
           />
-          
+
           <FormSelect
             label="Icon"
             name="icon"
@@ -181,7 +120,7 @@ const CategoryModal = ({
             options={iconOptions}
           />
         </div>
-        
+
         <FormInput
           label="Display Order"
           name="display_order"
@@ -193,7 +132,7 @@ const CategoryModal = ({
           helpText="Lower numbers appear first in lists"
         />
       </FormSection>
-      
+
       <FormSection title="Display Options">
         <div className="flex space-x-6">
           <FormCheckbox
@@ -202,7 +141,7 @@ const CategoryModal = ({
             checked={formData.show_in_marketplace}
             onChange={handleInputChange}
           />
-          
+
           <FormCheckbox
             label="Show in Admin"
             name="show_in_admin"
@@ -211,7 +150,7 @@ const CategoryModal = ({
           />
         </div>
       </FormSection>
-      
+
       {isEditMode && (
         <div className="mt-4 p-3 bg-gray-50 rounded-md">
           <p className="text-sm text-gray-600">

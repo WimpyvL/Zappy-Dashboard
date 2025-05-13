@@ -2,11 +2,10 @@
 import React, { useState } from 'react';
 import { X, Save, CheckCircle, Clock, AlertTriangle } from 'lucide-react';
 import { toast } from 'react-toastify';
-import apiService from '../../../services/apiService';
 import LoadingSpinner from '../../common/LoadingSpinner';
+import usePatientFollowUpNotes from '../../../hooks/usePatientFollowUpNotes';
 
 const PatientFollowUpNotes = ({ patient, selectedSession, onClose }) => {
-  const [loading, setLoading] = useState(false);
   const [noteTitle, setNoteTitle] = useState(
     selectedSession ? `Follow-up for ${selectedSession.type} session on ${new Date(selectedSession.scheduledDate).toLocaleDateString()}` : ''
   );
@@ -14,58 +13,9 @@ const PatientFollowUpNotes = ({ patient, selectedSession, onClose }) => {
   const [followUpDate, setFollowUpDate] = useState('');
   const [followUpType, setFollowUpType] = useState('medical');
   const [needsFollowUp, setNeedsFollowUp] = useState(true);
-  
-  // Handle form submission
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    
-    if (!noteContent.trim()) {
-      toast.error('Please enter note content');
-      return;
-    }
-    
-    try {
-      setLoading(true);
-      
-      // Prepare note data
-      const noteData = {
-        title: noteTitle,
-        content: noteContent,
-        category: 'follow-up',
-        patientId: patient.id,
-        sessionId: selectedSession?.id,
-        followUpNeeded: needsFollowUp,
-        followUpDate: needsFollowUp ? followUpDate : null,
-        followUpType: needsFollowUp ? followUpType : null
-      };
-      
-      // Send to API
-      await apiService.post(`/api/v1/admin/patients/${patient.id}/notes`, noteData);
-      
-      // If follow-up is needed and date is set, also schedule a session
-      if (needsFollowUp && followUpDate) {
-        const sessionData = {
-          patientId: patient.id,
-          type: followUpType,
-          scheduledDate: followUpDate,
-          status: 'scheduled',
-          notes: `Follow-up session scheduled based on ${selectedSession ? selectedSession.type : 'previous'} session notes.`
-        };
-        
-        await apiService.post('/api/v1/admin/sessions', sessionData);
-        toast.success('Follow-up session scheduled successfully');
-      }
-      
-      toast.success('Follow-up note saved successfully');
-      onClose();
-    } catch (error) {
-      console.error('Failed to save follow-up note:', error);
-      toast.error('Failed to save follow-up note');
-    } finally {
-      setLoading(false);
-    }
-  };
-  
+
+  const { handleSubmit, loading } = usePatientFollowUpNotes(patient.id, selectedSession?.id, onClose);
+
   // Format date for inputs
   const formatDateForInput = (dateString) => {
     if (!dateString) return '';
@@ -222,6 +172,20 @@ const PatientFollowUpNotes = ({ patient, selectedSession, onClose }) => {
             type="submit"
             className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 flex items-center"
             disabled={loading}
+            onClick={(e) => {
+              e.preventDefault();
+              if (!noteContent.trim()) {
+                toast.error('Please enter note content');
+                return;
+              }
+              handleSubmit({
+                title: noteTitle,
+                content: noteContent,
+                followUpNeeded: needsFollowUp,
+                followUpDate: needsFollowUp ? followUpDate : null,
+                followUpType: needsFollowUp ? followUpType : null
+              });
+            }}
           >
             {loading ? (
               <>

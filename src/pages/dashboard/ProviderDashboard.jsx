@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { usePatients } from '../../apis/patients/hooks'; 
+import { usePatients } from '../../apis/patients/hooks';
 import { useSessions } from '../../apis/sessions/hooks';
-import { useOrders } from '../../apis/orders/hooks'; 
+import { useOrders } from '../../apis/orders/hooks';
 import { useConsultations, useUpdateConsultationStatus } from '../../apis/consultations/hooks';
 import { useTasks } from '../../apis/tasks/hooks';
 import { useForms } from '../../apis/forms/hooks';
@@ -19,7 +19,6 @@ import {
   Package,
   MessageSquare,
 } from 'lucide-react';
-import ChildishDrawingElement from '../../components/ui/ChildishDrawingElement';
 import InitialConsultationNotes from '../consultations/InitialConsultationNotes';
 
 // Simple status badge for consultations
@@ -89,7 +88,7 @@ const useDashboardData = () => {
     tasksQuery.error,
     formsQuery.error,
   ].filter(Boolean);
-  
+
   const hasError = errors.length > 0;
 
   // Return organized data with loading/error states
@@ -109,15 +108,15 @@ const useDashboardData = () => {
 
 const ProviderDashboard = () => {
   const navigate = useNavigate();
-  
+
   // Add state for review modal
   const [showConsultationModal, setShowConsultationModal] = useState(false);
   const [selectedConsultation, setSelectedConsultation] = useState(null);
-  
+
   // Add state for session refreshing
   const [refreshing, setRefreshing] = useState(false);
   const [lastRefresh, setLastRefresh] = useState(new Date());
-  
+
   // Use our optimized custom hook to fetch all data in parallel
   const {
     patients,
@@ -131,14 +130,14 @@ const ProviderDashboard = () => {
     errors,
     refetchSessions
   } = useDashboardData();
-  
+
   // Consultation status update mutation
   const updateStatusMutation = useUpdateConsultationStatus({
     onSuccess: () => {
       // Refresh consultation data would go here if needed
     }
   });
-  
+
   // Now that refetchSessions is defined, we can use it in our callback
   const handleRefreshSessions = useCallback(async () => {
     setRefreshing(true);
@@ -156,14 +155,14 @@ const ProviderDashboard = () => {
   useEffect(() => {
     // Refresh on component mount
     handleRefreshSessions();
-    
+
     // Set up interval for automatic refresh (every 2 minutes)
     const refreshInterval = setInterval(handleRefreshSessions, 120000);
-    
+
     // Clean up interval on unmount
     return () => clearInterval(refreshInterval);
   }, [handleRefreshSessions]);
-  
+
   // Handle opening the consultation review modal
   const handleReviewConsultation = (consultation) => {
     const patientData = {
@@ -201,24 +200,24 @@ const ProviderDashboard = () => {
     const d = new Date(date);
     return `${d.getFullYear()}-${(d.getMonth() + 1).toString().padStart(2, '0')}-${d.getDate().toString().padStart(2, '0')}`;
   };
-  
+
   // Get the current date - for comparison only
   const currentDate = new Date();
   const todayFormatted = getFormattedDate(currentDate);
-  
+
   const todaySessions = sessions.filter(s => {
     // Check for valid scheduledDate
     if (!s.scheduledDate) return false;
-    
+
     // Convert and format the session date
     const sessionDate = new Date(s.scheduledDate);
     const sessionFormatted = getFormattedDate(sessionDate);
-    
+
     // Consider status and date - ignore time portion for more reliable comparison
     return s.status === 'scheduled' && sessionFormatted === todayFormatted;
   });
 
-  // Handle error state 
+  // Handle error state
   if (hasError) {
     return (
       <div className="text-center py-10 text-red-600">
@@ -240,10 +239,7 @@ const ProviderDashboard = () => {
 
   return (
     <div className="dashboard-container relative overflow-hidden pb-10">
-      {/* Add childish drawing elements with lower opacity for subtle effect */}
-      <ChildishDrawingElement type="watercolor" color="accent2" position="top-right" size={180} rotation={-10} opacity={0.1} />
-      <ChildishDrawingElement type="doodle" color="accent4" position="bottom-left" size={150} rotation={15} opacity={0.1} />
-      
+
       <div className="border-b border-gray-200 pb-4 mb-6">
         <h1 className="text-2xl font-bold text-gray-900">Provider Dashboard</h1>
         <p className="text-sm font-handwritten text-accent3 mt-1"></p>
@@ -332,7 +328,7 @@ const ProviderDashboard = () => {
               Today's Sessions
             </h2>
             <div className="flex items-center space-x-2">
-              <button 
+              <button
                 onClick={handleRefreshSessions}
                 disabled={refreshing}
                 className="flex items-center text-accent3 hover:text-accent3/80 disabled:opacity-50"
@@ -569,7 +565,7 @@ const ProviderDashboard = () => {
           </div>
         </div>
       </div>
-      
+
       {/* Consultation Review Modal */}
       {showConsultationModal && selectedConsultation && (
         <div className="fixed inset-0 bg-gray-600 bg-opacity-75 flex justify-center z-50">

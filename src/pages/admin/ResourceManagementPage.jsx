@@ -1,46 +1,53 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { 
-  useEducationalResources, 
-  useDeleteEducationalResource 
+import {
+  useEducationalResources,
+  useDeleteEducationalResource
 } from '../../apis/educationalResources/hooks';
 import { useCategories } from '../../apis/categories/hooks';
 import PageHeader from '../../components/ui/PageHeader';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
 import ResourceModal from '../../components/admin/ResourceModal';
-import { 
-  Search, 
-  Filter, 
-  Clock, 
-  FileText, 
-  BookOpen, 
-  AlertTriangle 
+import {
+  Search,
+  Filter,
+  Clock,
+  Calendar,
+  Tag,
+  CheckCircle,
+  User,
+  Globe,
+  FileText,
+  BookOpen,
+  AlertTriangle
 } from 'lucide-react';
 import { toast } from 'react-toastify';
+import useResourceFilters from '../../hooks/useResourceFilters';
 
 const ResourceManagementPage = () => {
   const navigate = useNavigate();
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [currentResource, setCurrentResource] = useState(null);
-  const [activeTab, setActiveTab] = useState('product_information');
-  const [activeCategory, setActiveCategory] = useState('all');
-  const [activeStatus, setActiveStatus] = useState('all');
-  const [searchTerm, setSearchTerm] = useState('');
+
+  const {
+    activeTab,
+    setActiveTab,
+    activeCategory,
+    setActiveCategory,
+    activeStatus,
+    setActiveStatus,
+    searchTerm,
+    setSearchTerm,
+    filters,
+  } = useResourceFilters();
 
   // Fetch resources with filters
-  const filters = {
-    contentType: activeTab,
-    category: activeCategory !== 'all' ? activeCategory : undefined,
-    status: activeStatus !== 'all' ? activeStatus : undefined,
-    searchTerm: searchTerm || undefined,
-  };
-
-  const { 
-    data: resources, 
-    isLoading, 
+  const {
+    data: resources,
+    isLoading,
     error,
-    refetch 
+    refetch
   } = useEducationalResources(filters);
 
   // Fetch categories for filters
@@ -139,10 +146,10 @@ const ResourceManagementPage = () => {
   return (
     <div className="container mx-auto px-4 py-6">
       <PageHeader title="Product & Treatment Education" />
-      
+
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold text-gray-800">Educational Resources</h1>
-        <button 
+        <button
           className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
           onClick={() => setIsCreateModalOpen(true)}
         >
@@ -171,23 +178,23 @@ const ResourceManagementPage = () => {
 
         {/* Category and Status Filters */}
         <div className="p-4 border-b border-gray-200 flex flex-wrap gap-2">
-          <button 
+          <button
             className={`px-3 py-1.5 rounded-md text-sm font-medium ${
-              activeCategory === 'all' 
-                ? 'bg-blue-600 text-white' 
+              activeCategory === 'all'
+                ? 'bg-blue-600 text-white'
                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
             }`}
             onClick={() => setActiveCategory('all')}
           >
             All Categories
           </button>
-          
+
           {categories?.data?.map((category) => (
-            <button 
+            <button
               key={category.id}
               className={`px-3 py-1.5 rounded-md text-sm font-medium ${
-                activeCategory === category.categoryId 
-                  ? 'bg-blue-600 text-white' 
+                activeCategory === category.categoryId
+                  ? 'bg-blue-600 text-white'
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               }`}
               onClick={() => setActiveCategory(category.categoryId)}
@@ -195,53 +202,53 @@ const ResourceManagementPage = () => {
               {category.name}
             </button>
           ))}
-          
+
           <div className="flex-1"></div>
-          
-          <button 
+
+          <button
             className={`px-3 py-1.5 rounded-md text-sm font-medium ${
-              activeStatus === 'all' 
-                ? 'bg-blue-600 text-white' 
+              activeStatus === 'all'
+                ? 'bg-blue-600 text-white'
                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
             }`}
             onClick={() => setActiveStatus('all')}
           >
             All Status
           </button>
-          <button 
+          <button
             className={`px-3 py-1.5 rounded-md text-sm font-medium ${
-              activeStatus === 'active' 
-                ? 'bg-blue-600 text-white' 
+              activeStatus === 'active'
+                ? 'bg-blue-600 text-white'
                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
             }`}
             onClick={() => setActiveStatus('active')}
           >
             Active
           </button>
-          <button 
+          <button
             className={`px-3 py-1.5 rounded-md text-sm font-medium ${
-              activeStatus === 'draft' 
-                ? 'bg-blue-600 text-white' 
+              activeStatus === 'draft'
+                ? 'bg-blue-600 text-white'
                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
             }`}
             onClick={() => setActiveStatus('draft')}
           >
             Draft
           </button>
-          <button 
+          <button
             className={`px-3 py-1.5 rounded-md text-sm font-medium ${
-              activeStatus === 'review' 
-                ? 'bg-blue-600 text-white' 
+              activeStatus === 'review'
+                ? 'bg-blue-600 text-white'
                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
             }`}
             onClick={() => setActiveStatus('review')}
           >
             In Review
           </button>
-          <button 
+          <button
             className={`px-3 py-1.5 rounded-md text-sm font-medium ${
-              activeStatus === 'archived' 
-                ? 'bg-blue-600 text-white' 
+              activeStatus === 'archived'
+                ? 'bg-blue-600 text-white'
                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
             }`}
             onClick={() => setActiveStatus('archived')}
@@ -252,10 +259,10 @@ const ResourceManagementPage = () => {
 
         {/* Content Type Tabs */}
         <div className="flex border-b border-gray-200 overflow-x-auto">
-          <button 
+          <button
             className={`flex items-center whitespace-nowrap px-4 py-3 font-medium text-sm ${
-              activeTab === 'product_information' 
-                ? 'text-blue-600 border-b-2 border-blue-600' 
+              activeTab === 'product_information'
+                ? 'text-blue-600 border-b-2 border-blue-600'
                 : 'text-gray-500 hover:text-gray-700'
             }`}
             onClick={() => setActiveTab('product_information')}
@@ -263,10 +270,10 @@ const ResourceManagementPage = () => {
             <FileText className="h-5 w-5 mr-2" />
             Product Information
           </button>
-          <button 
+          <button
             className={`flex items-center whitespace-nowrap px-4 py-3 font-medium text-sm ${
-              activeTab === 'treatment_guide' 
-                ? 'text-blue-600 border-b-2 border-blue-600' 
+              activeTab === 'treatment_guide'
+                ? 'text-blue-600 border-b-2 border-blue-600'
                 : 'text-gray-500 hover:text-gray-700'
             }`}
             onClick={() => setActiveTab('treatment_guide')}
@@ -274,10 +281,10 @@ const ResourceManagementPage = () => {
             <BookOpen className="h-5 w-5 mr-2" />
             Treatment Guides
           </button>
-          <button 
+          <button
             className={`flex items-center whitespace-nowrap px-4 py-3 font-medium text-sm ${
-              activeTab === 'side_effect' 
-                ? 'text-blue-600 border-b-2 border-blue-600' 
+              activeTab === 'side_effect'
+                ? 'text-blue-600 border-b-2 border-blue-600'
                 : 'text-gray-500 hover:text-gray-700'
             }`}
             onClick={() => setActiveTab('side_effect')}
@@ -285,10 +292,10 @@ const ResourceManagementPage = () => {
             <AlertTriangle className="h-5 w-5 mr-2" />
             Side Effect Management
           </button>
-          <button 
+          <button
             className={`flex items-center whitespace-nowrap px-4 py-3 font-medium text-sm ${
-              activeTab === 'condition_info' 
-                ? 'text-blue-600 border-b-2 border-blue-600' 
+              activeTab === 'condition_info'
+                ? 'text-blue-600 border-b-2 border-blue-600'
                 : 'text-gray-500 hover:text-gray-700'
             }`}
             onClick={() => setActiveTab('condition_info')}
@@ -320,8 +327,8 @@ const ResourceManagementPage = () => {
                     Title
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    {activeTab === 'product_information' ? 'Associated Product' : 
-                     activeTab === 'condition_info' ? 'Condition' : 
+                    {activeTab === 'product_information' ? 'Associated Product' :
+                     activeTab === 'condition_info' ? 'Condition' :
                      activeTab === 'side_effect' ? 'Related Product' : 'Related Condition'}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">

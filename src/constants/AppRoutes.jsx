@@ -3,10 +3,11 @@ import { Routes, Route, Navigate } from 'react-router-dom'; // Removed unused Li
 
 // Layout wrapper
 import MainLayout from '../layouts/MainLayout.jsx';
-// import ProtectedRoute from "../appGuards/ProtectedRoute.jsx"; // Temporarily commented out
+import ProtectedRoute from "../appGuards/ProtectedRoute.jsx"; // Temporarily commented out
 
 // Authentication pages
 import Login from '../pages/auth/Login.jsx';
+import ProviderDashboard from '../pages/dashboard/ProviderDashboard.jsx'; // Import ProviderDashboard
 import Signup from '../pages/auth/Signup';
 
 // Dashboard import removed - no longer needed
@@ -112,35 +113,42 @@ const AppRoutes = () => {
       <Route path={paths.signup} element={<Signup />} />
       <Route path={`${paths.forms}/:formId`} element={<FormViewer />} />
       {/* Redirect dashboard to patient home */}
+      {/* Redirect dashboard to admin dashboard */}
       <Route
         path="/dashboard"
-        element={<Navigate to="/patient-home-v2" replace />}
+        element={<Navigate to="/admin/dashboard" replace />}
       />
 
       <Route
         path={paths.patients}
         element={
-          <MainLayout>
-            <Patients />
-          </MainLayout>
+          <ProtectedRoute>
+            <MainLayout>
+              <Patients />
+            </MainLayout>
+          </ProtectedRoute>
         }
       />
 
       <Route
         path={`${paths.patients}/:patientId`}
         element={
-          <MainLayout>
-            <PatientDetail />
-          </MainLayout>
+          <ProtectedRoute>
+            <MainLayout>
+              <PatientDetail />
+            </MainLayout>
+          </ProtectedRoute>
         }
       />
 
       <Route
         path={paths.orders}
         element={
-          <MainLayout>
-            <Orders />
-          </MainLayout>
+          <ProtectedRoute>
+            <MainLayout>
+              <Orders />
+            </MainLayout>
+          </ProtectedRoute>
         }
       />
 
@@ -148,18 +156,22 @@ const AppRoutes = () => {
       <Route
         path={`${paths.orders}/:orderId`}
         element={
-          <MainLayout>
-            <OrderDetail />
-          </MainLayout>
+          <ProtectedRoute>
+            <MainLayout>
+              <OrderDetail />
+            </MainLayout>
+          </ProtectedRoute>
         }
       />
 
       <Route
         path={paths.invoices}
         element={
-          <MainLayout>
-            <Invoices />
-          </MainLayout>
+          <ProtectedRoute>
+            <MainLayout>
+              <Invoices />
+            </MainLayout>
+          </ProtectedRoute>
         }
       />
 
@@ -167,54 +179,66 @@ const AppRoutes = () => {
       <Route
         path={`${paths.invoices}/:id`}
         element={
-          <MainLayout>
-            <InvoiceDetailPage />
-          </MainLayout>
+          <ProtectedRoute>
+            <MainLayout>
+              <InvoiceDetailPage />
+            </MainLayout>
+          </ProtectedRoute>
         }
       />
 
       <Route
         path={paths.sessions}
         element={
-          <MainLayout>
-            <Sessions />
-          </MainLayout>
+          <ProtectedRoute>
+            <MainLayout>
+              <Sessions />
+            </MainLayout>
+          </ProtectedRoute>
         }
       />
 
       <Route
         path={paths.consultations}
         element={
-          <MainLayout>
-            <InitialConsultations />
-          </MainLayout>
+          <ProtectedRoute>
+            <MainLayout>
+              <InitialConsultations />
+            </MainLayout>
+          </ProtectedRoute>
         }
       />
 
       <Route
         path={paths.tasks}
         element={
-          <MainLayout>
-            <TaskManagement />
-          </MainLayout>
+          <ProtectedRoute>
+            <MainLayout>
+              <TaskManagement />
+            </MainLayout>
+          </ProtectedRoute>
         }
       />
 
       <Route
         path={paths.insurance}
         element={
-          <MainLayout>
-            <InsuranceDocumentation />
-          </MainLayout>
+          <ProtectedRoute>
+            <MainLayout>
+              <InsuranceDocumentation />
+            </MainLayout>
+          </ProtectedRoute>
         }
       />
 
       <Route
         path={paths.pharmacies}
         element={
-          <MainLayout>
-            <PharmacyManagement />
-          </MainLayout>
+          <ProtectedRoute>
+            <MainLayout>
+              <PharmacyManagement />
+            </MainLayout>
+          </ProtectedRoute>
         }
       />
 
@@ -227,11 +251,13 @@ const AppRoutes = () => {
       {/* Route for ProductServiceAssociation already removed */}
 
       <Route
-        path={paths.providers}
+        path="/admin/subscription-durations"
         element={
-          <MainLayout>
-            <ProviderManagement />
-          </MainLayout>
+          <ProtectedRoute>
+            <MainLayout>
+              <SubscriptionDurationsPage />
+            </MainLayout>
+          </ProtectedRoute>
         }
       />
 
@@ -242,20 +268,35 @@ const AppRoutes = () => {
       />
 
       <Route
-        path={paths.discounts}
+        path={paths.providers}
         element={
-          <MainLayout>
-            <DiscountManagement />
-          </MainLayout>
+          <ProtectedRoute>
+            <MainLayout>
+              <ProviderManagement />
+            </MainLayout>
+          </ProtectedRoute>
         }
       />
 
       <Route
-        path={paths.tags}
+        path={paths.discounts}
         element={
-          <MainLayout>
-            <TagManagement />
-          </MainLayout>
+          <ProtectedRoute>
+            <MainLayout>
+              <DiscountManagement />
+            </MainLayout>
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/admin/product-subscription"
+        element={
+          <ProtectedRoute>
+            <MainLayout>
+              <ProductSubscriptionManagement />
+            </MainLayout>
+          </ProtectedRoute>
         }
       />
 
@@ -263,18 +304,22 @@ const AppRoutes = () => {
       <Route
         path={`${paths.settings}/*`}
         element={
-          <MainLayout>
-            <Settings />
-          </MainLayout>
+          <ProtectedRoute>
+            <MainLayout>
+              <Settings />
+            </MainLayout>
+          </ProtectedRoute>
         }
       />
 
       <Route
         path={paths.reports}
         element={
-          <MainLayout>
-            <div>Reports - Coming Soon</div>
-          </MainLayout>
+          <ProtectedRoute>
+            <MainLayout>
+              <div>Reports - Coming Soon</div>
+            </MainLayout>
+          </ProtectedRoute>
         }
       />
 
@@ -282,15 +327,17 @@ const AppRoutes = () => {
       <Route
         path="/shop" // Define the path for the shop page
         element={
-          <MainLayout>
-            <ShopPage />
-          </MainLayout>
+          <ProtectedRoute>
+            <MainLayout>
+              <ShopPage />
+            </MainLayout>
+          </ProtectedRoute>
         }
       />
 
       {/* Marketplace Page Route - Redirect to Shop page */}
       <Route
-        path="/marketplace" 
+        path="/marketplace"
         element={<Navigate to="/shop" replace />}
       />
 
@@ -298,9 +345,11 @@ const AppRoutes = () => {
       <Route
         path={paths.messages} // Assuming '/messages' is added to paths.js
         element={
-          <MainLayout>
-            <MessagingPage /> {/* Use actual component */}
-          </MainLayout>
+          <ProtectedRoute>
+            <MainLayout>
+              <MessagingPage /> {/* Use actual component */}
+            </MainLayout>
+          </ProtectedRoute>
         }
       />
 
@@ -308,9 +357,11 @@ const AppRoutes = () => {
       <Route
         path={paths.auditlog}
         element={
-          <MainLayout>
-            <AuditLogPage />
-          </MainLayout>
+          <ProtectedRoute>
+            <MainLayout>
+              <AuditLogPage />
+            </MainLayout>
+          </ProtectedRoute>
         }
       />
 
@@ -318,9 +369,23 @@ const AppRoutes = () => {
       <Route
         path="/notes" // Define the path for the patient notes page
         element={
-          <MainLayout>
-            <PatientNotesPage />
-          </MainLayout>
+          <ProtectedRoute>
+            <MainLayout>
+              <PatientNotesPage />
+            </MainLayout>
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Admin Dashboard Route */}
+      <Route
+        path="/admin/dashboard"
+        element={
+          <ProtectedRoute>
+            <MainLayout>
+              <ProviderDashboard />
+            </MainLayout>
+          </ProtectedRoute>
         }
       />
 
@@ -344,7 +409,7 @@ const AppRoutes = () => {
 
        {/* Placeholder Refill Page Route */}
        <Route
-         path="/request-refill" 
+         path="/request-refill"
          element={
            <MainLayout>
              <div className="p-6">
@@ -355,36 +420,66 @@ const AppRoutes = () => {
          }
        />
 
-      {/* Placeholder Booking Page Route */}
+      {/* Placeholder Refill Page Route */}
        <Route
-         path="/book-appointment" 
+         path="/request-refill"
          element={
-           <MainLayout>
-             <div className="p-6">
-               <h2 className="text-xl font-semibold">Book Appointment</h2>
-               <p className="mt-4 text-gray-600">(Appointment booking/scheduling interface coming soon...)</p>
-             </div>
-           </MainLayout>
+           <ProtectedRoute>
+             <MainLayout>
+               <div className="p-6">
+                 <h2 className="text-xl font-semibold">Request Refill</h2>
+                 <p className="mt-4 text-gray-600">(Medication selection and refill request form coming soon...)</p>
+               </div>
+             </MainLayout>
+           </ProtectedRoute>
+         }
+       />
+
+      {/* Patient Home Page Route - New vibrant UI */}
+      <Route
+        path="/patient-home-v2" // Define the path for the patient home page
+        element={
+          <ProtectedRoute>
+            <MainLayout>
+              <PatientHomePage />
+            </MainLayout>
+          </ProtectedRoute>
         }
       />
 
+      {/* Patient Home Page Route - New vibrant UI */}
+      <Route
+        path="/patient-home-v2" // Define the path for the patient home page
+        element={
+          <ProtectedRoute>
+            <MainLayout>
+              <PatientHomePage />
+            </MainLayout>
+          </ProtectedRoute>
+        }
+       />
+
        {/* Placeholder Change Password Page Route */}
        <Route
-         path="/profile/change-password" 
+         path="/profile/change-password"
          element={
-           <MainLayout>
-             <ChangePasswordPage />
-           </MainLayout>
+           <ProtectedRoute>
+             <MainLayout>
+               <ChangePasswordPage />
+             </MainLayout>
+           </ProtectedRoute>
          }
        />
 
        {/* Placeholder Edit Profile Page Route */}
        <Route
-         path="/profile/edit" 
+         path="/profile/edit"
          element={
-           <MainLayout>
-             <EditProfilePage />
-           </MainLayout>
+           <ProtectedRoute>
+             <MainLayout>
+               <EditProfilePage />
+             </MainLayout>
+           </ProtectedRoute>
          }
        />
 
@@ -392,39 +487,23 @@ const AppRoutes = () => {
       <Route
         path="/profile" // Define the path for the patient profile page
         element={
-          <MainLayout>
-            <PatientProfilePage />
-          </MainLayout>
+          <ProtectedRoute>
+            <MainLayout>
+              <PatientProfilePage />
+            </MainLayout>
+          </ProtectedRoute>
         }
-      />
+       />
 
       {/* Patient Billing Page Route */}
       <Route
         path="/billing" // Define the path for the patient billing page
         element={
-          <MainLayout>
-            <PatientBillingPage />
-          </MainLayout>
-        }
-      />
-
-       {/* Patient Order History Page Route */}
-       <Route
-         path="/my-orders" // Define the path for the patient order history page
-         element={
-           <MainLayout>
-             <PatientOrderHistoryPage />
-           </MainLayout>
-         }
-       />
-
-      {/* Patient Forms Page Route */}
-      <Route
-        path="/forms" // Define the path for the patient forms list page
-        element={
-          <MainLayout>
-            <PatientFormsPage />
-          </MainLayout>
+          <ProtectedRoute>
+            <MainLayout>
+              <PatientBillingPage />
+            </MainLayout>
+          </ProtectedRoute>
         }
       />
 
@@ -432,34 +511,40 @@ const AppRoutes = () => {
       <Route
         path="/system-map" // Define the path for the system map page
         element={
-          <MainLayout>
-            <SystemMapPage />
-          </MainLayout>
+          <ProtectedRoute>
+            <MainLayout>
+              <SystemMapPage />
+            </MainLayout>
+          </ProtectedRoute>
         }
-      />
+       />
 
-      {/* Forms V2 Route */}
-      <Route
-        path="/settings/forms-v2" // Define the path for the forms v2 page
-        element={
-          <MainLayout>
-            <FormsManagementV2 />
-          </MainLayout>
-        }
-      />
+       {/* Patient Order History Page Route */}
+       <Route
+         path="/my-orders" // Define the path for the patient order history page
+         element={
+           <ProtectedRoute>
+             <MainLayout>
+               <PatientOrderHistoryPage />
+             </MainLayout>
+           </ProtectedRoute>
+         }
+       />
 
-      {/* Patient Services Page Route */}
+      {/* Patient Forms Page Route */}
       <Route
-        path="/my-services" // Define the path for the patient services page
+        path="/forms" // Define the path for the patient forms list page
         element={
-          <MainLayout>
-            <PatientServicesPage />
-          </MainLayout>
+          <ProtectedRoute>
+            <MainLayout>
+              <PatientFormsPage />
+            </MainLayout>
+          </ProtectedRoute>
         }
       />
 
       {/* Patient Records Page Routes - Removed */}
-      
+
       {/* Programs Page Route */}
       <Route
         path="/programs"
@@ -469,7 +554,7 @@ const AppRoutes = () => {
           </MainLayout>
         }
       />
-      
+
       {/* Records Export Page Route - REMOVED */}
 
       {/* Notifications Page Route */}
@@ -480,51 +565,59 @@ const AppRoutes = () => {
             <NotificationsPage />
           </MainLayout>
         }
-      />
+       />
+
+      {/* Placeholder Booking Page Route */}
+       <Route
+         path="/book-appointment"
+         element={
+           <ProtectedRoute>
+             <MainLayout>
+               <div className="p-6">
+                 <h2 className="text-xl font-semibold">Book Appointment</h2>
+                 <p className="mt-4 text-gray-600">(Appointment booking/scheduling interface coming soon...)</p>
+               </div>
+             </MainLayout>
+           </ProtectedRoute>
+        }
+       />
 
       {/* Customer Support Page Route */}
       <Route
         path="/support" // Define the path for customer support
         element={
-          <MainLayout>
-            <div className="p-6">
-              <h2 className="text-xl font-semibold">Customer Support</h2>
-              <p className="mt-4 text-gray-600">(Customer support interface coming soon...)</p>
-            </div>
-          </MainLayout>
+          <ProtectedRoute>
+            <MainLayout>
+              <div className="p-6">
+                <h2 className="text-xl font-semibold">Customer Support</h2>
+                <p className="mt-4 text-gray-600">(Customer support interface coming soon...)</p>
+              </div>
+            </MainLayout>
+          </ProtectedRoute>
         }
       />
 
-      {/* My Assistant Page Route */}
+      {/* Patient Forms Page Route */}
       <Route
-        path="/assistant" // Define the path for my assistant
+        path="/forms" // Define the path for the patient forms list page
         element={
-          <MainLayout>
-            <div className="p-6">
-              <h2 className="text-xl font-semibold">My Assistant</h2>
-              <p className="mt-4 text-gray-600">(AI assistant interface coming soon...)</p>
-            </div>
-          </MainLayout>
+          <ProtectedRoute>
+            <MainLayout>
+              <PatientFormsPage />
+            </MainLayout>
+          </ProtectedRoute>
         }
-      />
+       />
 
-      {/* Payment Methods Page Route */}
+      {/* Patient Services Page Route */}
       <Route
-        path="/payment-methods" // Define the path for payment methods
+        path="/my-services" // Define the path for the patient services page
         element={
-          <MainLayout>
-            <PaymentMethodsPage />
-          </MainLayout>
-        }
-      />
-
-      {/* Admin Dashboard for Products & Subscriptions */}
-      <Route
-        path="/admin/product-subscription"
-        element={
-          <MainLayout>
-            <ProductSubscriptionManagement />
-          </MainLayout>
+          <ProtectedRoute>
+            <MainLayout>
+              <PatientServicesPage />
+            </MainLayout>
+          </ProtectedRoute>
         }
       />
 
@@ -533,27 +626,31 @@ const AppRoutes = () => {
         path="/admin/packages"
         element={<Navigate to="/admin/product-subscription" replace />}
       />
-      
+
+      {/* Programs Page Route */}
       <Route
-        path="/admin/packages/create"
-        element={<Navigate to="/admin/product-subscription" replace />}
-      />
-      
-      <Route
-        path="/admin/packages/edit/:id"
-        element={<Navigate to="/admin/product-subscription" replace />}
-      />
-      
-      {/* Subscription Durations Management Route */}
-      <Route
-        path="/admin/subscription-durations"
+        path="/programs"
         element={
-          <MainLayout>
-            <SubscriptionDurationsPage />
-          </MainLayout>
+          <ProtectedRoute>
+            <MainLayout>
+              <ProgramsPage />
+            </MainLayout>
+          </ProtectedRoute>
         }
-      />
-      
+       />
+
+      {/* Notifications Page Route */}
+      <Route
+        path="/notifications" // Define the path for notifications
+        element={
+          <ProtectedRoute>
+            <MainLayout>
+              <NotificationsPage />
+            </MainLayout>
+          </ProtectedRoute>
+        }
+       />
+
       {/* Subscription Plans Management Route */}
       <Route
         path="/admin/subscription-plans"
@@ -563,7 +660,7 @@ const AppRoutes = () => {
           </MainLayout>
         }
       />
-      
+
       {/* Educational Resources Management Route */}
       <Route
         path="/admin/resources"
@@ -573,9 +670,9 @@ const AppRoutes = () => {
           </MainLayout>
         }
       />
-      
+
       {/* Patient Subscription Management Route - Removed */}
-      
+
       {/* Redirect /my-subscription to /patient-dashboard - Removed */}
 
       {/* Redirect any unknown routes to login page */}

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { 
+import {
   Package, Tag, Box, Briefcase, Plus, Edit, Trash2, Search, Loader2, Layers
 } from 'lucide-react';
 
@@ -7,17 +7,17 @@ import {
 import { useTreatmentPackages } from '../../apis/treatmentPackages/hooks';
 import { useSubscriptionDurations } from '../../apis/subscriptionDurations/hooks';
 import { useServices } from '../../apis/services/hooks';
-import { 
-  useProducts, 
-  useCreateProduct, 
-  useUpdateProduct, 
-  useDeleteProduct 
+import {
+  useProducts,
+  useCreateProduct,
+  useUpdateProduct,
+  useDeleteProduct
 } from '../../apis/products/hooks';
-import { 
-  useSubscriptionPlans, 
-  useCreateSubscriptionPlan, 
-  useUpdateSubscriptionPlan, 
-  useDeleteSubscriptionPlan 
+import {
+  useSubscriptionPlans,
+  useCreateSubscriptionPlan,
+  useUpdateSubscriptionPlan,
+  useDeleteSubscriptionPlan
 } from '../../apis/subscriptionPlans/hooks';
 import {
   useCategories,
@@ -36,6 +36,7 @@ import BundleModal from '../../components/admin/BundleModal';
 import ServiceModal from '../../components/admin/ServiceModal';
 import CategoryModal from '../../components/admin/CategoryModal';
 import { toast } from 'react-toastify';
+import { applyFilters } from '../../utils/filterUtils';
 
 const ProductSubscriptionManagement = () => {
   const [activeTab, setActiveTab] = useState('products');
@@ -43,7 +44,7 @@ const ProductSubscriptionManagement = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
-  
+
   // Modal states
   const [showProductModal, setShowProductModal] = useState(false);
   const [showPlanModal, setShowPlanModal] = useState(false);
@@ -66,7 +67,7 @@ const ProductSubscriptionManagement = () => {
   const products = productsData?.data || productsData || [];
   const subscriptionPlans = plansData?.data || plansData || [];
   const categories = categoriesData?.data || categoriesData || [];
-  
+
   // Sample data for bundles (since we don't have a real API for them yet)
   const bundles = [
     {
@@ -197,47 +198,24 @@ const ProductSubscriptionManagement = () => {
 
   // Set loading state
   useEffect(() => {
-    if (!isLoadingServices && !isLoadingPackages && !isLoadingDurations && 
+    if (!isLoadingServices && !isLoadingPackages && !isLoadingDurations &&
         !isLoadingProducts && !isLoadingPlans && !isLoadingCategories) {
       setIsLoading(false);
     }
   }, [isLoadingServices, isLoadingPackages, isLoadingDurations, isLoadingProducts, isLoadingPlans, isLoadingCategories]);
 
-  // Filter functions
-  const filterByCategory = (items, category) => {
-    if (category === 'all') return items;
-    return items.filter(item => item.category?.toLowerCase() === category.toLowerCase());
-  };
-
-  const filterByStatus = (items, status) => {
-    if (status === 'all') return items;
-    return items.filter(item => item.status?.toLowerCase() === status.toLowerCase());
-  };
-
-  const filterBySearch = (items, search) => {
-    if (!search) return items;
-    const lowerSearch = search.toLowerCase();
-    return items.filter(item => 
-      (item.name && item.name.toLowerCase().includes(lowerSearch)) || 
-      (item.sku && item.sku.toLowerCase().includes(lowerSearch)) ||
-      (item.planId && item.planId.toLowerCase().includes(lowerSearch)) ||
-      (item.bundleId && item.bundleId.toLowerCase().includes(lowerSearch)) ||
-      (item.serviceId && item.serviceId.toLowerCase().includes(lowerSearch))
-    );
-  };
-
   // Apply all filters
-  const filteredProducts = filterBySearch(filterByStatus(filterByCategory(products, categoryFilter), statusFilter), searchTerm);
-  const filteredPlans = filterBySearch(filterByStatus(filterByCategory(subscriptionPlans, categoryFilter), statusFilter), searchTerm);
-  const filteredBundles = filterBySearch(filterByStatus(filterByCategory(bundles, categoryFilter), statusFilter), searchTerm);
-  const filteredServices = filterBySearch(filterByStatus(filterByCategory(services, categoryFilter), statusFilter), searchTerm);
-  const filteredCategories = filterBySearch(filterByStatus(categories, statusFilter), searchTerm);
+  const filteredProducts = applyFilters(products, searchTerm, categoryFilter, statusFilter);
+  const filteredPlans = applyFilters(subscriptionPlans, searchTerm, categoryFilter, statusFilter);
+  const filteredBundles = applyFilters(bundles, searchTerm, categoryFilter, statusFilter);
+  const filteredServices = applyFilters(services, searchTerm, categoryFilter, statusFilter);
+  const filteredCategories = applyFilters(categories, searchTerm, categoryFilter, statusFilter);
 
   // Handle actions
   const handleAddNew = () => {
     setIsEditMode(false);
     setCurrentItem(null);
-    
+
     switch (activeTab) {
       case 'products':
         setShowProductModal(true);
@@ -262,7 +240,7 @@ const ProductSubscriptionManagement = () => {
   const handleEdit = (item) => {
     setIsEditMode(true);
     setCurrentItem(item);
-    
+
     switch (activeTab) {
       case 'products':
         setShowProductModal(true);
@@ -288,7 +266,7 @@ const ProductSubscriptionManagement = () => {
     if (!window.confirm(`Are you sure you want to delete this ${activeTab.slice(0, -1)}?`)) {
       return;
     }
-    
+
     switch (activeTab) {
       case 'products':
         deleteProductMutation.mutate(item.id);
@@ -384,7 +362,7 @@ const ProductSubscriptionManagement = () => {
       {/* Page Header */}
       <div className="flex justify-between items-center mb-6">
         <PageHeader title="Products & Subscriptions" />
-        <button 
+        <button
           className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md flex items-center"
           onClick={handleAddNew}
         >
@@ -401,35 +379,35 @@ const ProductSubscriptionManagement = () => {
       <div className="bg-white shadow-md rounded-lg overflow-hidden mb-6">
         {/* Tabs */}
         <div className="tabs flex border-b border-gray-200">
-          <button 
+          <button
             className={`tab px-6 py-3 font-medium ${activeTab === 'products' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
             onClick={() => setActiveTab('products')}
           >
             <Package className="h-4 w-4 inline-block mr-1" />
             Products
           </button>
-          <button 
+          <button
             className={`tab px-6 py-3 font-medium ${activeTab === 'subscriptionPlans' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
             onClick={() => setActiveTab('subscriptionPlans')}
           >
             <Tag className="h-4 w-4 inline-block mr-1" />
             Subscription Plans
           </button>
-          <button 
+          <button
             className={`tab px-6 py-3 font-medium ${activeTab === 'bundles' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
             onClick={() => setActiveTab('bundles')}
           >
             <Box className="h-4 w-4 inline-block mr-1" />
             Bundles
           </button>
-          <button 
+          <button
             className={`tab px-6 py-3 font-medium ${activeTab === 'services' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
             onClick={() => setActiveTab('services')}
           >
             <Briefcase className="h-4 w-4 inline-block mr-1" />
             Services
           </button>
-          <button 
+          <button
             className={`tab px-6 py-3 font-medium ${activeTab === 'categories' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
             onClick={() => setActiveTab('categories')}
           >

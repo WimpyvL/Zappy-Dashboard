@@ -1,0 +1,25 @@
+.status-badge {
+  display: inline-block;
+  padding: 0.125rem 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  border-radius: 9999px;
+  text-transform: capitalize;
+}
+.status-active {
+  background-color: #DCFCE7;
+  color: #166534;
+}
+.card-shadow {
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+}
+.scroll-snap-x {
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+}
+.scroll-snap-x > div {
+  scroll-snap-align: start;
+}
+.tabs-wrapper::-webkit-scrollbar {
+  display: none;
+}

@@ -1,63 +1,15 @@
 // components/patients/components/PatientSessions.jsx
 import React from 'react';
-import { Plus, Clock, CheckCircle, XCircle } from 'lucide-react'; // Removed unused Loader2
-import { useSessions } from '../../../apis/sessions/hooks'; // Import the hook
-import LoadingSpinner from './common/LoadingSpinner';
-import { useNavigate } from 'react-router-dom'; // Add React Router navigation
+import { Plus } from 'lucide-react';
+import { useSessions } from '../../../apis/sessions/hooks';
+import LoadingSpinner from '../../../components/ui/LoadingSpinner';
+import { useNavigate } from 'react-router-dom';
+import SessionTypeTag from '../../../components/patient/sessions/SessionTypeTag';
+import SessionStatusBadge from '../../../components/patient/sessions/SessionStatusBadge';
+import formatDate from '../../../utils/formatDate';
 
-const SessionTypeTag = ({ type }) => {
-  return (
-    <span
-      className={`px-2 py-1 text-xs font-medium rounded-full ${
-        type === 'medical'
-          ? 'bg-blue-100 text-blue-800'
-          : 'bg-purple-100 text-purple-800'
-      }`}
-    >
-      {type === 'medical' ? 'Medical' : 'Psych'}
-    </span>
-  );
-};
-
-const SessionStatusBadge = ({ status }) => {
-  return (
-    <span
-      className={`flex items-center px-2 py-1 text-xs font-medium rounded-full ${
-        status === 'completed'
-          ? 'bg-green-100 text-green-800'
-          : status === 'scheduled'
-            ? 'bg-blue-100 text-blue-800'
-            : status === 'missed'
-              ? 'bg-red-100 text-red-800'
-              : 'bg-gray-100 text-gray-800'
-      }`}
-    >
-      {status === 'completed' ? (
-        <CheckCircle className="h-3 w-3 mr-1" />
-      ) : status === 'scheduled' ? (
-        <Clock className="h-3 w-3 mr-1" />
-      ) : (
-        <XCircle className="h-3 w-3 mr-1" />
-      )}
-      {status.charAt(0).toUpperCase() + status.slice(1)}
-    </span>
-  );
-};
-
-// Helper function to format dates safely
-const formatDate = (dateString) => {
-  if (!dateString) return 'N/A';
-  try {
-    const date = new Date(dateString);
-    if (isNaN(date.getTime())) return 'Invalid Date';
-    return date.toLocaleDateString();
-  } catch (e) {
-    return 'Invalid Date';
-  }
-};
-
-const PatientSessions = ({ patientId, onOpenFollowupNotes }) => { // Removed sessions and loading props
-  const navigate = useNavigate(); // Add navigate function
+const PatientSessions = ({ patientId, onOpenFollowupNotes }) => {
+  const navigate = useNavigate();
   // Fetch sessions using the hook, filtering by patientId
   const { data: sessionsData, isLoading: loading /*, error: _error */ } = useSessions({ patientId: patientId }); // Removed unused error
   const sessions = sessionsData?.data || []; // Use fetched data or default to empty array

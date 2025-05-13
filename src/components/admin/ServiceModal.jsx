@@ -1,25 +1,26 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import Modal from '../ui/Modal';
-import { 
-  FormInput, 
-  FormSelect, 
-  FormTextarea, 
-  FormCheckbox, 
+import useServiceForm from '../../hooks/useServiceForm';
+import {
+  FormInput,
+  FormSelect,
+  FormTextarea,
+  FormCheckbox,
   FormSection,
   TagInput
 } from '../ui/FormComponents';
 
-const ServiceModal = ({ 
-  isOpen, 
-  onClose, 
-  onSubmit, 
-  service = null, 
+const ServiceModal = ({
+  isOpen,
+  onClose,
+  onSubmit,
+  service = null,
   isSubmitting = false,
   providers = []
 }) => {
   const isEditMode = !!service;
-  
-  // Initial form state
+
+  // Initial form state definition (can be kept here or moved to hook)
   const initialFormData = {
     name: '',
     description: '',
@@ -39,116 +40,18 @@ const ServiceModal = ({
     availableTimeSlots: []
   };
 
-  const [formData, setFormData] = useState(initialFormData);
-  const [errors, setErrors] = useState({});
-
-  // Load service data if in edit mode
-  useEffect(() => {
-    if (isEditMode && service) {
-      setFormData({
-        ...initialFormData,
-        ...service,
-        // Ensure arrays are properly initialized
-        providerIds: Array.isArray(service.providerIds) ? [...service.providerIds] : [],
-        tags: Array.isArray(service.tags) ? [...service.tags] : [],
-        availableTimeSlots: Array.isArray(service.availableTimeSlots) ? [...service.availableTimeSlots] : []
-      });
-    } else {
-      setFormData(initialFormData);
-    }
-  }, [isEditMode, service]);
-
-  // Handle input changes
-  const handleInputChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    const newValue = type === 'checkbox' ? checked : 
-                    (type === 'number' || name === 'price' || name === 'duration') 
-                      ? parseFloat(value) || 0 
-                      : value;
-    
-    setFormData(prev => ({ ...prev, [name]: newValue }));
-    
-    // Clear error for this field if it exists
-    if (errors[name]) {
-      setErrors(prev => {
-        const newErrors = { ...prev };
-        delete newErrors[name];
-        return newErrors;
-      });
-    }
-  };
-
-  // Handle provider selection
-  const handleProviderSelectionChange = (providerId) => {
-    setFormData(prev => {
-      const currentIds = prev.providerIds || [];
-      const newIds = currentIds.includes(providerId)
-        ? currentIds.filter(id => id !== providerId)
-        : [...currentIds, providerId];
-      return { ...prev, providerIds: newIds };
-    });
-  };
-
-  // Handle tag inputs
-  const handleTagsChange = (tags) => {
-    setFormData(prev => ({ ...prev, tags }));
-  };
-
-  // Handle time slot addition
-  const handleAddTimeSlot = (day, startTime, endTime) => {
-    if (!day || !startTime || !endTime) return;
-    
-    setFormData(prev => {
-      const newSlot = { day, startTime, endTime };
-      return {
-        ...prev,
-        availableTimeSlots: [...prev.availableTimeSlots, newSlot]
-      };
-    });
-    
-    // Reset time slot form
-    setNewTimeSlot({
-      day: '',
-      startTime: '',
-      endTime: ''
-    });
-  };
-
-  // Handle time slot removal
-  const handleRemoveTimeSlot = (index) => {
-    setFormData(prev => ({
-      ...prev,
-      availableTimeSlots: prev.availableTimeSlots.filter((_, i) => i !== index)
-    }));
-  };
-
-  // New time slot state
-  const [newTimeSlot, setNewTimeSlot] = useState({
-    day: '',
-    startTime: '',
-    endTime: ''
-  });
-
-  // Handle new time slot input changes
-  const handleTimeSlotChange = (e) => {
-    const { name, value } = e.target;
-    setNewTimeSlot(prev => ({
-      ...prev,
-      [name]: value
-    }));
-  };
-
-  // Validate form before submission
-  const validateForm = () => {
-    const newErrors = {};
-    
-    if (!formData.name.trim()) {
-      newErrors.name = 'Service name is required';
-    }
-    
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
+  const {
+    formData,
+    errors,
+    handleInputChange,
+    handleProviderSelectionChange,
+    handleTagsChange,
+    handleAddTimeSlot,
+    handleRemoveTimeSlot,
+    newTimeSlot,
+    handleTimeSlotChange,
+    validateForm,
+  } = useServiceForm(service, providers, initialFormData);
 
   // Handle form submission
   const handleSubmit = () => {
@@ -189,7 +92,7 @@ const ServiceModal = ({
   // Format time for display
   const formatTime = (timeString) => {
     if (!timeString) return '';
-    
+
     try {
       const [hours, minutes] = timeString.split(':');
       const hour = parseInt(hours, 10);
@@ -223,7 +126,7 @@ const ServiceModal = ({
               required
               error={errors.name}
             />
-            
+
             <FormInput
               label="Service ID"
               name="serviceId"
@@ -231,7 +134,7 @@ const ServiceModal = ({
               onChange={handleInputChange}
               placeholder="SV-HAIR-001"
             />
-            
+
             <FormTextarea
               label="Description"
               name="description"
@@ -239,7 +142,7 @@ const ServiceModal = ({
               onChange={handleInputChange}
               rows={3}
             />
-            
+
             <div className="grid grid-cols-2 gap-4">
               <FormSelect
                 label="Category"
@@ -248,7 +151,7 @@ const ServiceModal = ({
                 onChange={handleInputChange}
                 options={categoryOptions}
               />
-              
+
               <FormSelect
                 label="Service Type"
                 name="type"
@@ -257,7 +160,7 @@ const ServiceModal = ({
                 options={serviceTypeOptions}
               />
             </div>
-            
+
             <FormInput
               label="Price"
               name="price"
@@ -268,7 +171,7 @@ const ServiceModal = ({
               onChange={handleInputChange}
               prefix="$"
             />
-            
+
             <FormInput
               label="Stripe Price ID"
               name="stripePriceId"
@@ -276,7 +179,7 @@ const ServiceModal = ({
               onChange={handleInputChange}
               placeholder="price_..."
             />
-            
+
             <TagInput
               label="Tags"
               value={formData.tags}
@@ -284,7 +187,7 @@ const ServiceModal = ({
               placeholder="Add tag..."
             />
           </FormSection>
-          
+
           <FormSection title="Service Options">
             <div className="space-y-3">
               <FormCheckbox
@@ -293,7 +196,7 @@ const ServiceModal = ({
                 checked={formData.requiresConsultation}
                 onChange={handleInputChange}
               />
-              
+
               <FormCheckbox
                 label="Follow-up Required"
                 name="followUpRequired"
@@ -302,7 +205,7 @@ const ServiceModal = ({
               />
             </div>
           </FormSection>
-          
+
           <FormSection title="Status">
             <FormCheckbox
               label="Active"
@@ -312,7 +215,7 @@ const ServiceModal = ({
             />
           </FormSection>
         </div>
-        
+
         {/* Right Column */}
         <div>
           <FormSection title="Providers">
@@ -331,13 +234,10 @@ const ServiceModal = ({
                         onChange={() => {
                           if (formData.providerIds?.length === providers.length) {
                             // Deselect all providers
-                            setFormData(prev => ({ ...prev, providerIds: [] }));
+                            handleProviderSelectionChange([]);
                           } else {
                             // Select all providers
-                            setFormData(prev => ({ 
-                              ...prev, 
-                              providerIds: providers.map(p => p.id) 
-                            }));
+                            handleProviderSelectionChange(providers.map(p => p.id));
                           }
                         }}
                         className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
@@ -349,7 +249,7 @@ const ServiceModal = ({
                         All providers
                       </label>
                     </div>
-                    
+
                     {providers.map(provider => (
                       <div key={provider.id} className="flex items-center">
                         <input
@@ -380,7 +280,7 @@ const ServiceModal = ({
               </p>
             </div>
           </FormSection>
-          
+
           <FormSection title="Service Availability">
             <div className="mb-4">
               <div className="bg-blue-50 border-l-4 border-blue-500 text-blue-700 p-4 mb-4">
@@ -391,7 +291,7 @@ const ServiceModal = ({
               </div>
             </div>
           </FormSection>
-          
+
           <FormSection title="Associated Form">
             <div className="mb-4">
               <FormSelect

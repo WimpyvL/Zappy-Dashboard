@@ -58,7 +58,10 @@ const ProductCard = ({
   
   // Format price as currency
   const formatPrice = (price) => {
-    return `$${price.toFixed(2)}`;
+    if (typeof price === 'number') {
+      return `$${price.toFixed(2)}`;
+    }
+    return '$0.00'; // Or handle the undefined case as needed
   };
   
   // Calculate discount percentage if original price is provided

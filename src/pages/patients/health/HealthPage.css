@@ -1,0 +1,190 @@
+/* Base styles */
+.card-shadow {
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+}
+.big-shadow {
+  box-shadow: 0 10px 25px -5px rgba(20, 184, 166, 0.1), 0 8px 10px -6px rgba(20, 184, 166, 0.05);
+}
+.horizontal-scroll-container::-webkit-scrollbar {
+  display: none;
+}
+.horizontal-scroll-container {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Header gradient - blue version */
+.header-gradient {
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  border-bottom-left-radius: 24px;
+  border-bottom-right-radius: 24px;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.15);
+}
+
+/* Section titles */
+.section-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #1f2937;
+  margin-bottom: 0.25rem;
+}
+
+.section-subtitle {
+  font-size: 0.875rem;
+  color: #6b7280;
+  margin-bottom: 1rem;
+}
+
+/* Category titles */
+.category-title {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #4b5563;
+  margin: 1.5rem 0 0.75rem;
+  padding-top: 0.5rem;
+}
+
+/* Program cards grid */
+.program-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 12px;
+  padding-bottom: 8px;
+}
+
+@media (min-width: 640px) {
+  .program-grid {
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 16px;
+  }
+}
+
+/* Program cards */
+.program-card-small {
+  background: white;
+  border-radius: 12px;
+  padding: 12px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  position: relative;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  border: 1px solid rgba(0,0,0,0.03);
+}
+
+.program-card-small h4 {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color, #1f2937);
+  margin-bottom: 4px;
+}
+
+.program-card-small p {
+  font-size: 0.75rem;
+  color: #6b7280;
+}
+
+.program-card-small:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+/* Program-specific color variables */
+.program-weight { 
+  --color: #0891b2; 
+  --bg: #ecfeff; 
+  --gradient: linear-gradient(135deg, #0891b2 0%, #06b6d4 100%);
+}
+.program-hair { 
+  --color: #7c3aed; 
+  --bg: #f3f4f6; 
+  --gradient: linear-gradient(135deg, #7c3aed 0%, #a855f7 100%);
+}
+.program-aging { 
+  --color: #ea580c; 
+  --bg: #fef3c7; 
+  --gradient: linear-gradient(135deg, #ea580c 0%, #fb923c 100%);
+}
+.program-peptides { 
+  --color: #059669; 
+  --bg: #ecfdf5; 
+  --gradient: linear-gradient(135deg, #059669 0%, #10b981 100%);
+}
+.program-ed { 
+  --color: #dc2626; 
+  --bg: #fef2f2; 
+  --gradient: linear-gradient(135deg, #dc2626 0%, #ef4444 100%);
+}
+.program-women { 
+  --color: #ec4899; 
+  --bg: #fdf2f8; 
+  --gradient: linear-gradient(135deg, #ec4899 0%, #f472b6 100%);
+}
+.program-sleep { 
+  --color: #7c2d12; 
+  --bg: #fef7ed; 
+  --gradient: linear-gradient(135deg, #7c2d12 0%, #9a3412 100%);
+}
+
+/* Tags - mobile optimized */
+.tag-popular, .tag-new {
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 0.65rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: white;
+}
+
+.tag-popular {
+  background: linear-gradient(135deg, #ec4899, #dc2626);
+}
+
+.tag-new {
+  background: linear-gradient(135deg, #06b6d4, #0891b2);
+}
+
+@media (min-width: 768px) {
+  .tag-popular, .tag-new {
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+  }
+}
+
+/* Border-left utility classes */
+.border-l-3 {
+  border-left-width: 3px;
+  border-left-style: solid;
+}
+
+/* Card styles */
+.care-card {
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+  overflow: hidden;
+  margin-bottom: 16px;
+  border: 1px solid rgba(0,0,0,0.03);
+}
+
+.message-card {
+  background: white;
+  border-radius: 12px;
+  border: 1px solid rgba(0,0,0,0.03);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.message-card:active {
+  transform: scale(0.98);
+  background-color: #f9fafb;
+}
+
+@media (min-width: 768px) {
+  .message-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
+  }
+}

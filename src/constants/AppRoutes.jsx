@@ -69,12 +69,13 @@ import PatientFormsPage from '../pages/forms/PatientFormsPage.jsx'; // Import Pa
 import PatientOrderHistoryPage from '../pages/orders/PatientOrderHistoryPage.jsx'; // Import Patient Order History Page
 import PatientBillingPage from '../pages/billing/PatientBillingPage.jsx'; // Import Patient Billing Page
 import PatientProfilePage from '../pages/profile/PatientProfilePage.jsx'; // Import Patient Profile Page
-import PatientServicesPage from '../pages/patients/PatientServicesPage.jsx'; // Import Patient Services Page
 import EditProfilePage from '../pages/profile/EditProfilePage.jsx'; // Import Edit Profile Page
 import FormsManagementV2 from '../pages/settings/pages/forms-v2/FormsManagementV2.jsx'; // Import Forms V2
 import PaymentMethodsPage from '../pages/payment/PaymentMethodsPage.jsx'; // Import Payment Methods Page
 import NotificationsPage from '../pages/notifications/NotificationsPage.jsx'; // Import Notifications Page
 import LandingPage from '../pages/LandingPage.jsx'; // Import Landing Page
+import HealthPage from '../pages/patients/HealthPage.jsx'; // Import HealthPage
+// import PatientServicesPage from '../pages/patients/PatientServicesPage.jsx'; // Removed
 
 // Resources pages
 import ResourcesPage from '../pages/resources/ResourcesPage.jsx'; // Import Resources Page
@@ -393,7 +394,7 @@ const AppRoutes = () => {
 
       {/* Patient Home Page Route - New vibrant UI */}
       <Route
-        path="/patient-home-v2" // Define the path for the patient home page
+        path="/" // Define the path for the patient home page
         element={
           <MainLayout>
             <PatientHomePage />
@@ -433,30 +434,6 @@ const AppRoutes = () => {
              </MainLayout>
            </ProtectedRoute>
          }
-       />
-
-      {/* Patient Home Page Route - New vibrant UI */}
-      <Route
-        path="/patient-home-v2" // Define the path for the patient home page
-        element={
-          <ProtectedRoute>
-            <MainLayout>
-              <PatientHomePage />
-            </MainLayout>
-          </ProtectedRoute>
-        }
-      />
-
-      {/* Patient Home Page Route - New vibrant UI */}
-      <Route
-        path="/patient-home-v2" // Define the path for the patient home page
-        element={
-          <ProtectedRoute>
-            <MainLayout>
-              <PatientHomePage />
-            </MainLayout>
-          </ProtectedRoute>
-        }
        />
 
        {/* Placeholder Change Password Page Route */}
@@ -609,13 +586,13 @@ const AppRoutes = () => {
         }
        />
 
-      {/* Patient Services Page Route */}
+      {/* Health Page Route */}
       <Route
-        path="/my-services" // Define the path for the patient services page
+        path="/health" // Define the path for the new Health page
         element={
           <ProtectedRoute>
             <MainLayout>
-              <PatientServicesPage />
+              <HealthPage />
             </MainLayout>
           </ProtectedRoute>
         }

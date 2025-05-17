@@ -1,5 +1,11 @@
-import React from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom'; // Removed unused Link
+import React, { useEffect } from 'react';
+import {
+  Routes,
+  Route,
+  Navigate,
+  useLocation,
+  useRoutes,
+} from 'react-router-dom'; // Added useLocation, useEffect, and useRoutes
 
 // Layout wrapper
 import MainLayout from '../layouts/MainLayout.jsx';
@@ -289,10 +295,7 @@ const AppRoutes = () => {
       />
 
       {/* Marketplace Page Route - Redirect to Shop page */}
-      <Route
-        path="/marketplace" 
-        element={<Navigate to="/shop" replace />}
-      />
+      <Route path="/marketplace" element={<Navigate to="/shop" replace />} />
 
       {/* Messaging Page Route */}
       <Route
@@ -342,51 +345,55 @@ const AppRoutes = () => {
 
       {/* Patient Program Page Route - Removed */}
 
-       {/* Placeholder Refill Page Route */}
-       <Route
-         path="/request-refill" 
-         element={
-           <MainLayout>
-             <div className="p-6">
-               <h2 className="text-xl font-semibold">Request Refill</h2>
-               <p className="mt-4 text-gray-600">(Medication selection and refill request form coming soon...)</p>
-             </div>
-           </MainLayout>
-         }
-       />
-
-      {/* Placeholder Booking Page Route */}
-       <Route
-         path="/book-appointment" 
-         element={
-           <MainLayout>
-             <div className="p-6">
-               <h2 className="text-xl font-semibold">Book Appointment</h2>
-               <p className="mt-4 text-gray-600">(Appointment booking/scheduling interface coming soon...)</p>
-             </div>
-           </MainLayout>
+      {/* Placeholder Refill Page Route */}
+      <Route
+        path="/request-refill"
+        element={
+          <MainLayout>
+            <div className="p-6">
+              <h2 className="text-xl font-semibold">Request Refill</h2>
+              <p className="mt-4 text-gray-600">
+                (Medication selection and refill request form coming soon...)
+              </p>
+            </div>
+          </MainLayout>
         }
       />
 
-       {/* Placeholder Change Password Page Route */}
-       <Route
-         path="/profile/change-password" 
-         element={
-           <MainLayout>
-             <ChangePasswordPage />
-           </MainLayout>
-         }
-       />
+      {/* Placeholder Booking Page Route */}
+      <Route
+        path="/book-appointment"
+        element={
+          <MainLayout>
+            <div className="p-6">
+              <h2 className="text-xl font-semibold">Book Appointment</h2>
+              <p className="mt-4 text-gray-600">
+                (Appointment booking/scheduling interface coming soon...)
+              </p>
+            </div>
+          </MainLayout>
+        }
+      />
 
-       {/* Placeholder Edit Profile Page Route */}
-       <Route
-         path="/profile/edit" 
-         element={
-           <MainLayout>
-             <EditProfilePage />
-           </MainLayout>
-         }
-       />
+      {/* Placeholder Change Password Page Route */}
+      <Route
+        path="/profile/change-password"
+        element={
+          <MainLayout>
+            <ChangePasswordPage />
+          </MainLayout>
+        }
+      />
+
+      {/* Placeholder Edit Profile Page Route */}
+      <Route
+        path="/profile/edit"
+        element={
+          <MainLayout>
+            <EditProfilePage />
+          </MainLayout>
+        }
+      />
 
       {/* Patient Profile Page Route */}
       <Route
@@ -408,15 +415,15 @@ const AppRoutes = () => {
         }
       />
 
-       {/* Patient Order History Page Route */}
-       <Route
-         path="/my-orders" // Define the path for the patient order history page
-         element={
-           <MainLayout>
-             <PatientOrderHistoryPage />
-           </MainLayout>
-         }
-       />
+      {/* Patient Order History Page Route */}
+      <Route
+        path="/my-orders" // Define the path for the patient order history page
+        element={
+          <MainLayout>
+            <PatientOrderHistoryPage />
+          </MainLayout>
+        }
+      />
 
       {/* Patient Forms Page Route */}
       <Route
@@ -459,7 +466,7 @@ const AppRoutes = () => {
       />
 
       {/* Patient Records Page Routes - Removed */}
-      
+
       {/* Programs Page Route */}
       <Route
         path="/programs"
@@ -469,7 +476,7 @@ const AppRoutes = () => {
           </MainLayout>
         }
       />
-      
+
       {/* Records Export Page Route - REMOVED */}
 
       {/* Notifications Page Route */}
@@ -489,7 +496,9 @@ const AppRoutes = () => {
           <MainLayout>
             <div className="p-6">
               <h2 className="text-xl font-semibold">Customer Support</h2>
-              <p className="mt-4 text-gray-600">(Customer support interface coming soon...)</p>
+              <p className="mt-4 text-gray-600">
+                (Customer support interface coming soon...)
+              </p>
             </div>
           </MainLayout>
         }
@@ -502,7 +511,9 @@ const AppRoutes = () => {
           <MainLayout>
             <div className="p-6">
               <h2 className="text-xl font-semibold">My Assistant</h2>
-              <p className="mt-4 text-gray-600">(AI assistant interface coming soon...)</p>
+              <p className="mt-4 text-gray-600">
+                (AI assistant interface coming soon...)
+              </p>
             </div>
           </MainLayout>
         }
@@ -533,17 +544,17 @@ const AppRoutes = () => {
         path="/admin/packages"
         element={<Navigate to="/admin/product-subscription" replace />}
       />
-      
+
       <Route
         path="/admin/packages/create"
         element={<Navigate to="/admin/product-subscription" replace />}
       />
-      
+
       <Route
         path="/admin/packages/edit/:id"
         element={<Navigate to="/admin/product-subscription" replace />}
       />
-      
+
       {/* Subscription Durations Management Route */}
       <Route
         path="/admin/subscription-durations"
@@ -553,7 +564,7 @@ const AppRoutes = () => {
           </MainLayout>
         }
       />
-      
+
       {/* Subscription Plans Management Route */}
       <Route
         path="/admin/subscription-plans"
@@ -563,7 +574,7 @@ const AppRoutes = () => {
           </MainLayout>
         }
       />
-      
+
       {/* Educational Resources Management Route */}
       <Route
         path="/admin/resources"
@@ -573,10 +584,19 @@ const AppRoutes = () => {
           </MainLayout>
         }
       />
-      
+
       {/* Patient Subscription Management Route - Removed */}
-      
+
       {/* Redirect /my-subscription to /patient-dashboard - Removed */}
+
+      {/* Allow Tempo storyboard routes to pass through */}
+      {/* Safely check environment variables with fallbacks */}
+      {((typeof import.meta !== 'undefined' &&
+        import.meta.env?.VITE_TEMPO === 'true') ||
+        process.env?.REACT_APP_TEMPO === 'true' ||
+        process.env?.TEMPO === 'true') && (
+        <Route path="/tempobook/*" element={<div />} />
+      )}
 
       {/* Redirect any unknown routes to login page */}
       <Route path="*" element={<Navigate to="/" replace />} />

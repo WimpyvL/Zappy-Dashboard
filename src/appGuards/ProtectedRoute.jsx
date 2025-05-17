@@ -2,14 +2,16 @@
 import React, { useState, useEffect } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Shield, ShieldAlert } from 'lucide-react';
 
 /**
  * A wrapper component that checks if user is authenticated
  * and redirects to login if not.
+ * Now includes super user mode that bypasses authentication checks.
  */
 const ProtectedRoute = ({ children }) => {
-  const { isAuthenticated, authLoading } = useAuth();
+  const { isAuthenticated, authLoading, isSuperUser, toggleSuperUser } =
+    useAuth();
   const location = useLocation();
   const [loading, setLoading] = useState(true);
 
@@ -35,8 +37,31 @@ const ProtectedRoute = ({ children }) => {
     return <Navigate to="/login" state={{ from: location.pathname }} replace />;
   }
 
-  // If authenticated, render the child component
-  return children;
+  // If authenticated, render the child component with super user indicator if applicable
+  return (
+    <>
+      {isSuperUser && (
+        <div
+          className="fixed top-4 right-4 z-50 bg-yellow-100 border border-yellow-400 text-yellow-800 px-4 py-2 rounded-md flex items-center cursor-pointer shadow-md"
+          onClick={toggleSuperUser}
+          title="Click to toggle super user mode"
+        >
+          {isSuperUser ? (
+            <>
+              <ShieldAlert className="h-5 w-5 mr-2" />
+              <span>Super User Mode Active</span>
+            </>
+          ) : (
+            <>
+              <Shield className="h-5 w-5 mr-2" />
+              <span>Normal Mode</span>
+            </>
+          )}
+        </div>
+      )}
+      {children}
+    </>
+  );
 };
 
 export default ProtectedRoute;

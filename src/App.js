@@ -11,10 +11,14 @@ import { supabase } from './lib/supabase';
 function App() {
   // Initialize Tempo Devtools
   useEffect(() => {
-    if (
-      process.env.REACT_APP_TEMPO === 'true' ||
-      process.env.TEMPO === 'true'
-    ) {
+    // Safely check environment variables with fallbacks
+    const isTempo =
+      (typeof import.meta !== 'undefined' &&
+        import.meta.env?.VITE_TEMPO === 'true') ||
+      process.env?.REACT_APP_TEMPO === 'true' ||
+      process.env?.TEMPO === 'true';
+
+    if (isTempo) {
       TempoDevtools.init();
     }
 
@@ -23,10 +27,7 @@ function App() {
       try {
         // First check if the test table exists
         // Removed unused 'data' variable from destructuring
-        const { error } = await supabase
-          .from('patients')
-          .select('*')
-          .limit(1);
+        const { error } = await supabase.from('patients').select('*').limit(1);
 
         if (error) {
           console.error('Supabase connection test error:', error.message);

@@ -16,12 +16,12 @@ const validateSession = async () => {
   try {
     // This uses Supabase's built-in session validation
     const { data, error } = await supabase.auth.getUser();
-    
+
     if (error) {
       console.error('Session validation error:', error.message);
       return { isValid: false, user: null };
     }
-    
+
     return { isValid: !!data.user, user: data.user };
   } catch (error) {
     console.error('Session validation exception:', error.message);
@@ -37,7 +37,7 @@ export const AuthProvider = ({ children }) => {
   const [actionLoading, setActionLoading] = useState(false); // Separate loading state for actions like login/logout
   const [error, setError] = useState(null);
   const [sessionValid, setSessionValid] = useState(false); // Add state to track session validity
-  
+
   // Use a ref to track the visibility state
   const documentVisibilityRef = useRef(document.visibilityState);
   // Use a ref to track validation interval
@@ -77,12 +77,12 @@ export const AuthProvider = ({ children }) => {
           setSessionValid(false);
         } else {
           const user = session?.user ?? null;
-          
+
           // If we have a user from the session
           if (user) {
             setCurrentUser(user);
             setSessionValid(true); // Trust the session initially
-            
+
             try {
               const { data: profile, error: profileError } = await supabase
                 .from('profiles')
@@ -93,7 +93,10 @@ export const AuthProvider = ({ children }) => {
 
               if (profileError) {
                 // Log the error but don't throw it to prevent authentication failures
-                console.error('Error fetching profile role:', profileError.message);
+                console.error(
+                  'Error fetching profile role:',
+                  profileError.message
+                );
                 // Continue with default role
               }
 
@@ -172,7 +175,10 @@ export const AuthProvider = ({ children }) => {
 
                 // Log error but don't throw to prevent authentication failures
                 if (profileError) {
-                  console.error('Error fetching profile role:', profileError.message);
+                  console.error(
+                    'Error fetching profile role:',
+                    profileError.message
+                  );
                   // Continue with default role
                 }
 
@@ -220,9 +226,9 @@ export const AuthProvider = ({ children }) => {
     const handleVisibilityChange = () => {
       const isVisible = document.visibilityState === 'visible';
       const wasHidden = documentVisibilityRef.current === 'hidden';
-      
+
       documentVisibilityRef.current = document.visibilityState;
-      
+
       // If the page is becoming visible again and we have a user
       if (isVisible && wasHidden && currentUser) {
         console.log('Tab became visible again, checking session...');
@@ -234,31 +240,37 @@ export const AuthProvider = ({ children }) => {
         });
       }
     };
-    
+
     document.addEventListener('visibilitychange', handleVisibilityChange);
 
     // Set up one validation interval (only if not already set)
     if (!validationIntervalRef.current) {
-      validationIntervalRef.current = setInterval(async () => {
-        // Only check if we have a user and the tab is visible
-        if (currentUser && document.visibilityState === 'visible') {
-          console.log('Performing periodic session validation');
-          const { isValid } = await validateSession();
-          if (!isValid && sessionValid) {
-            console.warn('Session has expired, logging out');
-            logout();
-          } else {
-            setSessionValid(isValid);
+      validationIntervalRef.current = setInterval(
+        async () => {
+          // Only check if we have a user and the tab is visible
+          if (currentUser && document.visibilityState === 'visible') {
+            console.log('Performing periodic session validation');
+            const { isValid } = await validateSession();
+            if (!isValid && sessionValid) {
+              console.warn('Session has expired, logging out');
+              logout();
+            } else {
+              setSessionValid(isValid);
+            }
           }
-        }
-      }, 10 * 60 * 1000); // Every 10 minutes instead of 5
+        },
+        10 * 60 * 1000
+      ); // Every 10 minutes instead of 5
     }
 
     // Cleanup subscription, interval, and event listener on unmount
     return () => {
       try {
         subscription?.unsubscribe();
-        document.removeEventListener('visibilitychange', handleVisibilityChange);
+        document.removeEventListener(
+          'visibilitychange',
+          handleVisibilityChange
+        );
       } catch (error) {
         console.error(
           'AuthContext: Error unsubscribing from auth state:',
@@ -311,8 +323,13 @@ export const AuthProvider = ({ children }) => {
 
         if (loginError) {
           // If the error is about email not confirmed, provide a clearer message
-          if (loginError.message && loginError.message.toLowerCase().includes('email not confirmed')) {
-            setError('Email not confirmed. Please check your inbox or resend the verification email.');
+          if (
+            loginError.message &&
+            loginError.message.toLowerCase().includes('email not confirmed')
+          ) {
+            setError(
+              'Email not confirmed. Please check your inbox or resend the verification email.'
+            );
           } else {
             setError(loginError.message || 'Failed to log in.');
           }
@@ -554,7 +571,9 @@ export const AuthProvider = ({ children }) => {
     setError(null);
     try {
       if (!supabase) {
-        throw new Error('Supabase client not initialized. Please check your environment variables.');
+        throw new Error(
+          'Supabase client not initialized. Please check your environment variables.'
+        );
       }
       // This will send a new confirmation email if the user is unconfirmed
       const { error } = await supabase.auth.signInWithOtp({ email });
@@ -573,11 +592,21 @@ export const AuthProvider = ({ children }) => {
     setError(null);
   }, []);
 
-  // Derive isAuthenticated from currentUser state - don't require sessionValid for UI rendering
+  // Add super user mode state
+  const [isSuperUser, setIsSuperUser] = useState(true); // Default to true to enable super user mode
+
+  // Toggle super user mode
+  const toggleSuperUser = useCallback(() => {
+    setIsSuperUser((prev) => !prev);
+    console.log('Super user mode toggled:', !isSuperUser);
+  }, [isSuperUser]);
+
+  // Derive isAuthenticated from currentUser state or super user mode
   const value = {
     currentUser,
     userRole, // Provide userRole
-    isAuthenticated: !!currentUser, // Only check for user to avoid flickering when switching tabs
+    isSuperUser, // Provide super user state
+    isAuthenticated: isSuperUser || !!currentUser, // Super user is always authenticated
     authLoading, // Provide authLoading state
     actionLoading, // Provide actionLoading state
     error: error
@@ -593,6 +622,7 @@ export const AuthProvider = ({ children }) => {
     forgotPassword, // Use Supabase forgotPassword
     updatePassword, // Use Supabase updatePassword (after reset link)
     resendVerificationEmail, // Add to context
+    toggleSuperUser, // Add toggle function
     clearError,
   };
 

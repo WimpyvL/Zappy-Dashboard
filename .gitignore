@@ -28,6 +28,7 @@ yarn-debug.log*
 yarn-error.log*
 
 # Tempo
+
 node_modules/
-**/tempobook/dynamic/
-**/tempobook/storyboards/
+**/routes/tempobook.dynamic.*
+**/routes/tempobook.storyboards.*

@@ -18,26 +18,31 @@ import {
   Map,
   // Patient view icons
   LayoutDashboard as PatientDashboardIcon,
-  User as PatientProfileIcon,
+  // User as PatientProfileIcon, // Removed unused
   ShoppingCart as PatientOrdersIcon,
-  CalendarCheck as PatientSessionsIcon,
-  MessageSquare as PatientMessagesIcon,
+  // CalendarCheck as PatientSessionsIcon, // Removed unused
+  // MessageSquare as PatientMessagesIcon, // Removed unused
   LayoutGrid as PatientProgramIcon,
   FolderClock as PatientRecordsIcon,
-  CreditCard,
-  Store as ShopIcon,
+  // CreditCard, // Removed unused (duplicate import)
+  // Store as ShopIcon, // Removed
   Headphones, // For Customer Support
-  Bot as AssistantIcon, // For My Assistant
-  CreditCard as PaymentIcon, // For Payment Methods
+  // Bot as AssistantIcon, // Removed unused
+  // CreditCard as PaymentIcon, // Removed unused (duplicate import)
   UserCog, // For My Information
+  ShoppingBag, // For Marketplace
+  BookOpen, // For Resources
+  Layers, // For My Services
+  Shield, // For Super User Mode
 } from 'lucide-react';
 
 import { paths } from './paths'; // Ensure paths are imported
+import { useAuth } from '../context/AuthContext'; // Import useAuth
 
 export const sidebarItems = [
   {
     title: 'Dashboard',
-    path: '/',
+    path: '/dashboard', // Changed from '/' to '/dashboard'
     icon: Home,
     color: 'primary', // Added color
   },
@@ -65,13 +70,7 @@ export const sidebarItems = [
     icon: Package,
     color: 'accent4', // Added color
   },
-  {
-    title: 'Products',
-    path: '/products',
-    icon: Pill,
-    color: 'primary', // Added color
-  },
-  // Removed Product Services item
+  // Products are now managed through the unified Products & Subscriptions page
   {
     title: 'Discounts',
     path: '/discounts',
@@ -108,12 +107,7 @@ export const sidebarItems = [
     icon: FileText,
     color: 'accent1', // Added color
   },
-  {
-    title: 'Services',
-    path: '/services',
-    icon: Tag,
-    color: 'accent2', // Added color
-  },
+  // Services are now managed through the unified Products & Subscriptions page
   {
     title: 'Tags',
     path: '/tags',
@@ -127,10 +121,25 @@ export const sidebarItems = [
     color: 'accent4', // Added color
   },
   {
-    title: 'System Map',
-    path: '/system-map',
-    icon: Map,
-    color: 'primary', // Added color
+    title: 'Products & Subscriptions',
+    path: '/admin/product-subscription',
+    icon: Package,
+    color: 'primary',
+    isAdmin: true,
+  },
+  // Treatment Packages functionality has been consolidated into Products & Subscriptions
+  {
+    title: 'Subscription Durations',
+    path: '/admin/subscription-durations',
+    icon: Calendar,
+    color: 'accent2',
+  },
+  {
+    title: 'Educational Resources',
+    path: '/admin/resources',
+    icon: BookOpen,
+    color: 'accent3',
+    isAdmin: true,
   },
 ];
 
@@ -157,19 +166,47 @@ export const logoutItem = {
   action: () => console.log('Logging out...'),
 };
 
+// Define super user toggle item
+export const superUserItem = {
+  title: 'Super User Mode',
+  icon: Shield,
+  color: 'accent3',
+  // The action will be handled in the Sidebar component
+};
+
 // Define patient sidebar items (Further Simplified View)
 export const patientSidebarItems = [
-  { title: 'Home', path: '/', icon: PatientDashboardIcon, color: 'accent3' }, // Changed color from primary (Red) to accent3 (Blue)
-  { title: 'Records', path: '/records', icon: PatientRecordsIcon, color: 'accent3' },
-  { title: 'Programs', path: '/program', icon: PatientProgramIcon, color: 'accent4' },
-  { title: 'Shop', path: '/shop', icon: ShopIcon, color: 'accent2' },
+  { title: 'New Home', path: '/patient-home-v2', icon: Home, color: 'primary' }, // New Vibrant Home Page
+  {
+    title: 'My Services',
+    path: '/my-services',
+    icon: Layers,
+    color: 'primary',
+  }, // Modular Services Interface
+  { title: 'Shop', path: '/shop', icon: ShoppingBag, color: 'primary' }, // Shop page replacing Marketplace
+  {
+    title: 'Programs',
+    path: '/programs',
+    icon: PatientProgramIcon,
+    color: 'primary',
+  }, // Patient programs
 ];
 
 // Define profile dropdown menu items (Simplified)
 export const profileMenuItems = [
-  { title: 'My Account', path: '/profile', icon: UserCog, color: 'accent4' }, // Central hub for profile, payment, plan
-  { title: 'My Orders', path: '/my-orders', icon: PatientOrdersIcon, color: 'accent1' }, // Keep orders separate
-  { title: 'Help Center', path: '/support', icon: Headphones, color: 'accent2' }, // Central support link
+  { title: 'My Account', path: '/profile', icon: UserCog, color: 'primary' }, // Central hub for profile, payment, plan
+  {
+    title: 'My Orders',
+    path: '/my-orders',
+    icon: PatientOrdersIcon,
+    color: 'primary',
+  }, // Keep orders separate
+  {
+    title: 'Help Center',
+    path: '/support',
+    icon: Headphones,
+    color: 'primary',
+  }, // Central support link
 ];
 
 // Note: Logout item is handled separately in Sidebar.js

@@ -1,5 +1,5 @@
 import { defineConfig } from 'vite';
-import react from '@vitejs/plugin-react';
+import react from '@vitejs/plugin-react-swc';
 import { tempo } from 'tempo-devtools/dist/vite';
 
 // https://vitejs.dev/config/
@@ -8,13 +8,16 @@ export default defineConfig({
     react(),
     tempo(), // Add the tempo plugin
   ],
+  define: {
+    // Define environment variables with proper fallbacks
+    'import.meta.env.VITE_TEMPO': JSON.stringify(process.env.TEMPO || 'true'),
+    'process.env.REACT_APP_TEMPO': JSON.stringify(process.env.TEMPO || 'true'),
+    'process.env.TEMPO': JSON.stringify(process.env.TEMPO || 'true'),
+  },
   server: {
     // @ts-ignore
     allowedHosts: process.env.TEMPO === 'true' ? true : undefined,
-  },
-  resolve: {
-    alias: {
-      '@': '/src',
-    },
+    host: '0.0.0.0',
+    port: 3000,
   },
 });

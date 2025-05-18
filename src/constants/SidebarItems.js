@@ -33,9 +33,11 @@ import {
   ShoppingBag, // For Marketplace
   BookOpen, // For Resources
   Layers, // For My Services
+  Shield, // For Super User Mode
 } from 'lucide-react';
 
 import { paths } from './paths'; // Ensure paths are imported
+import { useAuth } from '../context/AuthContext'; // Import useAuth
 
 export const sidebarItems = [
   {
@@ -164,19 +166,47 @@ export const logoutItem = {
   action: () => console.log('Logging out...'),
 };
 
+// Define super user toggle item
+export const superUserItem = {
+  title: 'Super User Mode',
+  icon: Shield,
+  color: 'accent3',
+  // The action will be handled in the Sidebar component
+};
+
 // Define patient sidebar items (Further Simplified View)
 export const patientSidebarItems = [
   { title: 'New Home', path: '/patient-home-v2', icon: Home, color: 'primary' }, // New Vibrant Home Page
-  { title: 'My Services', path: '/my-services', icon: Layers, color: 'primary' }, // Modular Services Interface
+  {
+    title: 'My Services',
+    path: '/my-services',
+    icon: Layers,
+    color: 'primary',
+  }, // Modular Services Interface
   { title: 'Shop', path: '/shop', icon: ShoppingBag, color: 'primary' }, // Shop page replacing Marketplace
-  { title: 'Programs', path: '/programs', icon: PatientProgramIcon, color: 'primary' }, // Patient programs
+  {
+    title: 'Programs',
+    path: '/programs',
+    icon: PatientProgramIcon,
+    color: 'primary',
+  }, // Patient programs
 ];
 
 // Define profile dropdown menu items (Simplified)
 export const profileMenuItems = [
   { title: 'My Account', path: '/profile', icon: UserCog, color: 'primary' }, // Central hub for profile, payment, plan
-  { title: 'My Orders', path: '/my-orders', icon: PatientOrdersIcon, color: 'primary' }, // Keep orders separate
-  { title: 'Help Center', path: '/support', icon: Headphones, color: 'primary' }, // Central support link
+  {
+    title: 'My Orders',
+    path: '/my-orders',
+    icon: PatientOrdersIcon,
+    color: 'primary',
+  }, // Keep orders separate
+  {
+    title: 'Help Center',
+    path: '/support',
+    icon: Headphones,
+    color: 'primary',
+  }, // Central support link
 ];
 
 // Note: Logout item is handled separately in Sidebar.js

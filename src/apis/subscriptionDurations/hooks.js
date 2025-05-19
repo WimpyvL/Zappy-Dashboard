@@ -46,14 +46,24 @@ export const useCreateSubscriptionDuration = (options = {}) => {
           throw new Error('Database connection error');
         }
         
+        // Create a data object without duration_days first
         const dataToInsert = {
           name: durationData.name, // e.g., "Monthly", "Quarterly", etc.
           duration_months: durationData.duration_months,
-          duration_days: durationData.duration_days || null,
           discount_percent: durationData.discount_percent || 0,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
         };
+        
+        // Only add duration_days if it's provided
+        if (durationData.duration_days !== undefined && durationData.duration_days !== null) {
+          try {
+            dataToInsert.duration_days = durationData.duration_days;
+          } catch (err) {
+            console.warn('Could not add duration_days to insert data. Column might not exist yet:', err.message);
+            // Continue without duration_days
+          }
+        }
         
         console.log('Sending data to database:', dataToInsert);
         
@@ -103,13 +113,23 @@ export const useUpdateSubscriptionDuration = (options = {}) => {
     mutationFn: async ({ id, durationData }) => {
       if (!id) throw new Error('Duration ID is required for update');
       
+      // Create a data object without duration_days first
       const dataToUpdate = {
         name: durationData.name,
         duration_months: durationData.duration_months,
-        duration_days: durationData.duration_days || null,
         discount_percent: durationData.discount_percent,
         updated_at: new Date().toISOString(),
       };
+      
+      // Only add duration_days if it's provided
+      if (durationData.duration_days !== undefined) {
+        try {
+          dataToUpdate.duration_days = durationData.duration_days || null;
+        } catch (err) {
+          console.warn('Could not add duration_days to update data. Column might not exist yet:', err.message);
+          // Continue without duration_days
+        }
+      }
       
       const { data, error } = await supabase
         .from('subscription_duration')
@@ -233,21 +253,32 @@ export const initializeSubscriptionDurations = async () => {
   // If durations already exist, no need to initialize
   if (data?.length > 0) return true;
   
-  // Create the standard durations
+  // Create the standard durations without duration_days first
   const standardDurations = [
-    { name: 'Monthly (28 days)', duration_months: 1, duration_days: 28, discount_percent: 0 },
-    { name: 'Quarterly', duration_months: 3, duration_days: null, discount_percent: 5 },
-    { name: 'Semi-Annual', duration_months: 6, duration_days: null, discount_percent: 10 },
-    { name: 'Annual', duration_months: 12, duration_days: null, discount_percent: 15 }
+    { name: 'Monthly (28 days)', duration_months: 1, discount_percent: 0 },
+    { name: 'Quarterly', duration_months: 3, discount_percent: 5 },
+    { name: 'Semi-Annual', duration_months: 6, discount_percent: 10 },
+    { name: 'Annual', duration_months: 12, discount_percent: 15 }
   ];
+  
+  // Add timestamps to all durations
+  const durationsWithTimestamps = standardDurations.map(d => ({
+    ...d,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString()
+  }));
+  
+  // Try to add duration_days to each duration
+  try {
+    durationsWithTimestamps[0].duration_days = 28; // Monthly (28 days)
+  } catch (err) {
+    console.warn('Could not add duration_days to durations. Column might not exist yet:', err.message);
+    // Continue without duration_days
+  }
   
   const { error: insertError } = await supabase
     .from('subscription_duration')
-    .insert(standardDurations.map(d => ({
-      ...d,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    })));
+    .insert(durationsWithTimestamps);
     
   if (insertError) {
     console.error('Error initializing subscription durations:', insertError);

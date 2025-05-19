@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import PropTypes from 'prop-types';
 import { X, User, Loader2, Search } from 'lucide-react';
 import { usePatients } from '../../../apis/patients/hooks'; // Assuming hook exists
 import { debounce } from 'lodash';
@@ -90,6 +91,12 @@ const PatientSelectionModal = ({ isOpen, onClose, onSelectPatient }) => {
       </div>
     </div>
   );
+};
+
+PatientSelectionModal.propTypes = {
+  isOpen: PropTypes.bool.isRequired,
+  onClose: PropTypes.func.isRequired,
+  onSelectPatient: PropTypes.func.isRequired,
 };
 
 export default PatientSelectionModal;

@@ -1,66 +1,79 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import Header from './components/Headers';
 import Sidebar from './components/Sidebar';
 import ShoppingCart from '../pages/shop/components/ShoppingCart';
 import { useAppContext } from '../context/AppContext';
 import { patientSidebarItems } from '../constants/SidebarItems';
-import BottomNavigation from '../components/ui/redesign/BottomNavigation';
 import TopNavigation from '../components/ui/redesign/TopNavigation';
+import BottomNavigation from '../components/ui/redesign/BottomNavigation';
+import {
+  Home, Heart, BookOpen, ShoppingBag, Plus, MessageSquare, Share2, HelpCircle
+} from 'lucide-react'; // Import icons
 
 /**
  * Main layout wrapper for authenticated pages
- * Includes the header, sidebar, shopping cart drawer, and Zappy-themed responsive design
+ * Mobile-first design with responsive adaptations for desktop
  */
 const MainLayout = ({ children }) => {
   const [isCartOpen, setIsCartOpen] = useState(false);
+  const [isQuickActionsOpen, setIsQuickActionsOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const { viewMode } = useAppContext();
   const location = useLocation();
+
+  // Handle window resize for responsive design
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   const toggleCart = () => {
     setIsCartOpen(!isCartOpen);
   };
 
-  // Check if current page is one of the new mobile-focused pages
-  const isMobilePage = ['/home', '/care', '/programs', '/shop'].includes(location.pathname);
+  const toggleQuickActions = useCallback(() => {
+    setIsQuickActionsOpen(prevState => !prevState);
+  }, []);
+
+  // Check if current page is one of the mobile-focused pages
+  const isMobilePage = ['/', '/home', '/health', '/learn', '/shop'].includes(location.pathname);
   
   // Determine which navigation page is active
   const getActivePage = () => {
-    if (location.pathname === '/home') return 'home';
-    if (location.pathname === '/care') return 'care';
-    if (location.pathname === '/programs') return 'programs';
+    if (location.pathname === '/' || location.pathname === '/home') return 'home';
+    if (location.pathname === '/health') return 'health';
+    if (location.pathname === '/learn') return 'learn';
     if (location.pathname === '/shop') return 'shop';
     return '';
   };
 
   return (
-    <div className="flex flex-col md:flex-row h-screen overflow-hidden bg-gradient-to-br from-accent1/5 via-white to-accent2/5">
-      {/* Left sidebar - hidden on mobile and mobile-focused pages */}
-      {!isMobilePage && (
-        <div className="hidden md:block">
-          <Sidebar />
-        </div>
+    <div className="flex flex-col md:flex-row h-screen overflow-hidden bg-slate-50">
+      {/* Sidebar - only visible in admin view and on desktop */}
+      {viewMode === 'admin' && !isMobile && (
+        <Sidebar />
       )}
       
       {/* Main content area */}
       <div className="flex flex-col flex-1 overflow-hidden">
-        {/* Header - hidden on mobile-focused pages */}
-        {!isMobilePage && <Header onToggleCart={toggleCart} />}
-        
-        {/* Top Navigation for desktop on mobile-focused pages */}
-        {isMobilePage && <TopNavigation activePage={getActivePage()} />}
-        
-        {/* Decorative floating elements - hidden on mobile-focused pages */}
-        {!isMobilePage && (
-          <>
-            <div className="absolute top-0 left-0 w-40 h-40 bg-primary/10 rounded-full blur-2xl -z-10"></div>
-            <div className="absolute bottom-0 right-0 w-32 h-32 bg-accent3/10 rounded-full blur-2xl -z-10"></div>
-          </>
+        {/* Admin Header - only visible in admin view */}
+        {viewMode === 'admin' && (
+          <Header onToggleCart={toggleCart} />
         )}
         
+        {/* Top Navigation - only visible in patient view or mobile */}
+        {(viewMode === 'patient' || isMobile) && (
+          <TopNavigation activePage={getActivePage()} />
+        )}
+
         {/* Main content */}
-        <main className={`flex-1 overflow-y-auto ${isMobilePage ? 'p-0' : 'px-4 py-6 md:p-6'}`}>
-          <div className={isMobilePage ? 'md:max-w-3xl md:mx-auto' : 'max-w-7xl mx-auto'}>
+        <main className={`flex-1 overflow-y-auto ${isMobilePage ? 'pb-20' : 'px-4 py-6 md:p-6'}`}>
+          <div className={isMobilePage ? 'max-w-md mx-auto' : 'max-w-7xl mx-auto'}>
             {children}
           </div>
         </main>
@@ -69,42 +82,70 @@ const MainLayout = ({ children }) => {
       {/* Shopping Cart drawer */}
       <ShoppingCart isOpen={isCartOpen} onClose={toggleCart} />
 
-      {/* Bottom Navigation for mobile-focused pages - hidden on desktop */}
-      {isMobilePage && (
-        <div className="md:hidden">
-          <BottomNavigation 
-            activePage={getActivePage()}
-            notifications={{
-              home: 0,
-              care: 0,
-              programs: 0,
-              shop: 0,
-              learn: 0
-            }}
-          />
+      {/* Quick Actions Menu */}
+      <div className={`quick-actions-menu fixed bottom-20 left-1/2 transform -translate-x-1/2 bg-white rounded-xl shadow-lg p-4 transition-all duration-300 z-40 ${isQuickActionsOpen ? 'opacity-100 scale-100' : 'opacity-0 scale-95 pointer-events-none'}`}>
+        <div className="grid grid-cols-2 gap-3">
+          <button className="quick-action-btn flex flex-col items-center justify-center p-4 border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-all duration-200" onClick={() => console.log('Support clicked')}>
+            <MessageSquare className="w-5 h-5 text-blue-500 mb-2" />
+            <span className="text-sm font-medium text-gray-900">Support</span>
+          </button>
+          
+          <button className="quick-action-btn flex flex-col items-center justify-center p-4 border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-all duration-200" onClick={() => console.log('Refer clicked')}>
+            <Share2 className="w-5 h-5 text-green-500 mb-2" />
+            <span className="text-sm font-medium text-gray-900">Refer</span>
+          </button>
+          
+          <button className="quick-action-btn flex flex-col items-center justify-center p-4 border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-all duration-200" onClick={() => console.log('Share clicked')}>
+            <Share2 className="w-5 h-5 text-purple-500 mb-2" />
+            <span className="text-sm font-medium text-gray-900">Share</span>
+          </button>
+          
+          <button className="quick-action-btn flex flex-col items-center justify-center p-4 border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-all duration-200" onClick={() => console.log('Assistant clicked')}>
+            <HelpCircle className="w-5 h-5 text-orange-500 mb-2" />
+            <span className="text-sm font-medium text-gray-900">Assistant</span>
+          </button>
         </div>
+      </div>
+
+      {/* Bottom Navigation - only visible on mobile */}
+      {isMobilePage && isMobile && (
+        <>
+          <nav className="fixed bottom-0 left-0 right-0 max-w-md mx-auto bottom-nav-with-fab z-30">
+            <div className="bg-white/95 backdrop-blur-md border-t border-gray-100 flex">
+              <Link to="/" className={`flex-1 flex flex-col items-center justify-center py-3 ${getActivePage() === 'home' ? 'text-cyan-600' : 'text-gray-500'}`}>
+                <Home className="w-6 h-6 mb-1" strokeWidth={getActivePage() === 'home' ? 2 : 1.5} />
+                <span className={`text-xs ${getActivePage() === 'home' ? 'font-medium' : ''}`}>Home</span>
+              </Link>
+              <Link to="/health" className={`flex-1 flex flex-col items-center justify-center py-3 ${getActivePage() === 'health' ? 'text-cyan-600' : 'text-gray-500'}`}>
+                <Heart className="w-6 h-6 mb-1" strokeWidth={getActivePage() === 'health' ? 2 : 1.5} />
+                <span className={`text-xs ${getActivePage() === 'health' ? 'font-medium' : ''}`}>Health</span>
+              </Link>
+              <div className="flex-1"></div> {/* Placeholder for FAB */}
+              <Link to="/learn" className={`flex-1 flex flex-col items-center justify-center py-3 ${getActivePage() === 'learn' ? 'text-cyan-600' : 'text-gray-500'}`}>
+                <BookOpen className="w-6 h-6 mb-1" strokeWidth={getActivePage() === 'learn' ? 2 : 1.5} />
+                <span className={`text-xs ${getActivePage() === 'learn' ? 'font-medium' : ''}`}>Learn</span>
+              </Link>
+              <Link to="/shop" className={`flex-1 flex flex-col items-center justify-center py-3 ${getActivePage() === 'shop' ? 'text-cyan-600' : 'text-gray-500'}`}>
+                <ShoppingBag className="w-6 h-6 mb-1" strokeWidth={getActivePage() === 'shop' ? 2 : 1.5} />
+                <span className={`text-xs ${getActivePage() === 'shop' ? 'font-medium' : ''}`}>Shop</span>
+              </Link>
+            </div>
+            
+            {/* Center FAB */}
+            <button 
+              className="nav-fab flex items-center justify-center shadow-lg" 
+              onClick={toggleQuickActions}
+              aria-label="Quick actions"
+            >
+              <Plus className={`w-5 h-5 text-white transition-transform duration-300 ${isQuickActionsOpen ? 'rotate-45' : 'rotate-0'}`} />
+            </button>
+          </nav>
+        </>
       )}
       
-      {/* Legacy Patient Bottom Navigation for non-mobile-focused pages */}
-      {viewMode === 'patient' && !isMobilePage && (
-        <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 flex justify-around items-center h-16 px-2 md:hidden z-30 shadow-lg">
-          {patientSidebarItems.map((item) => {
-            const Icon = item.icon;
-            const isActive = location.pathname === item.path;
-            const colorClass = item.color || 'primary';
-            
-            return (
-              <Link 
-                key={`bottom-nav-${item.path}`}
-                to={item.path} 
-                className={`flex flex-col items-center justify-center w-1/5 ${isActive ? `text-${colorClass}` : 'text-gray-500'}`}
-              >
-                <Icon className={`h-5 w-5 ${isActive ? 'mb-0.5' : 'mb-0.5'}`} />
-                <span className="text-xs font-medium">{item.title}</span>
-              </Link>
-            );
-          })}
-        </div>
+      {/* Bottom Navigation for non-mobile pages on mobile devices */}
+      {!isMobilePage && isMobile && viewMode === 'patient' && (
+        <BottomNavigation activePage={location.pathname.split('/')[1] || 'home'} />
       )}
     </div>
   );

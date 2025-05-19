@@ -2,9 +2,9 @@
 import React, { useState } from 'react';
 import { Plus, CheckCircle, Clock, XCircle, Send, RefreshCw } from 'lucide-react'; // Added icons
 import { toast } from 'react-toastify';
-import { useSendFormReminder, useResendForm, useSendFormToPatient } from '../../../apis/forms/hooks'; // Import hooks
 import LoadingSpinner from './common/LoadingSpinner';
 import FormSelectionModal from '../../../components/forms/FormSelectionModal';
+import usePatientFormActions from '../../../hooks/usePatientFormActions';
 
 const FormStatusBadge = ({ status }) => {
   return (
@@ -52,35 +52,18 @@ const PatientForms = ({ patientId, forms, loading }) => {
       ? forms
       : forms.filter((form) => form.status === formFilter);
 
-  // Hooks for form actions
-  const sendReminderMutation = useSendFormReminder();
-  const resendFormMutation = useResendForm();
-  const sendFormToPatientMutation = useSendFormToPatient({
-    onSuccess: () => {
-      setShowFormSelectionModal(false);
-      // Optionally refetch forms list here if needed
-    }
-  });
-
-  // Send form reminder
-  const handleSendFormReminder = (formId) => {
-    sendReminderMutation.mutate({ patientId, formId });
-  };
-
-  // Resend form
-  const handleResendForm = (formId) => {
-    resendFormMutation.mutate({ patientId, formId });
-  };
-
-  // Handle form selection from modal
-  const handleFormSelect = (formId) => {
-    if (!formId) return;
-    
-    sendFormToPatientMutation.mutate({ 
-      patientId, 
-      formId 
-    });
-  };
+  // Use custom hook for form actions
+  const {
+    handleSendFormReminder,
+    handleResendForm,
+    handleFormSelect,
+    sendReminderLoading,
+    resendFormLoading,
+    sendFormLoading,
+    sendReminderVariables,
+    resendFormVariables,
+    sendFormVariables,
+  } = usePatientFormActions(patientId, () => setShowFormSelectionModal(false));
 
   return (
     <div className="bg-white p-6 rounded-lg shadow">
@@ -159,21 +142,21 @@ const PatientForms = ({ patientId, forms, loading }) => {
                       </button>
                     ) : (
                       <button
-                        className={`text-indigo-600 hover:text-indigo-900 mr-3 inline-flex items-center ${sendReminderMutation.isLoading && sendReminderMutation.variables?.formId === form.id ? 'opacity-50 cursor-not-allowed' : ''}`}
+                        className={`text-indigo-600 hover:text-indigo-900 mr-3 inline-flex items-center ${sendReminderLoading && sendReminderVariables?.formId === form.id ? 'opacity-50 cursor-not-allowed' : ''}`}
                         onClick={() => handleSendFormReminder(form.id)}
-                        disabled={sendReminderMutation.isLoading && sendReminderMutation.variables?.formId === form.id}
+                        disabled={sendReminderLoading && sendReminderVariables?.formId === form.id}
                       >
                         <Send className="h-3 w-3 mr-1" />
-                        {sendReminderMutation.isLoading && sendReminderMutation.variables?.formId === form.id ? 'Sending...' : 'Send Reminder'}
+                        {sendReminderLoading && sendReminderVariables?.formId === form.id ? 'Sending...' : 'Send Reminder'}
                       </button>
                     )}
                     <button
-                      className={`text-indigo-600 hover:text-indigo-900 inline-flex items-center ${resendFormMutation.isLoading && resendFormMutation.variables?.formId === form.id ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      className={`text-indigo-600 hover:text-indigo-900 inline-flex items-center ${resendFormLoading && resendFormVariables?.formId === form.id ? 'opacity-50 cursor-not-allowed' : ''}`}
                       onClick={() => handleResendForm(form.id)}
-                      disabled={resendFormMutation.isLoading && resendFormMutation.variables?.formId === form.id}
+                      disabled={resendFormLoading && resendFormVariables?.formId === form.id}
                     >
                        <RefreshCw className="h-3 w-3 mr-1" />
-                       {resendFormMutation.isLoading && resendFormMutation.variables?.formId === form.id ? 'Resending...' : 'Resend'}
+                       {resendFormLoading && resendFormVariables?.formId === form.id ? 'Resending...' : 'Resend'}
                     </button>
                   </td>
                 </tr>

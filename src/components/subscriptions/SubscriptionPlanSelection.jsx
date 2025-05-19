@@ -1,16 +1,20 @@
 import React, { useState, useEffect } from 'react';
+import PropTypes from 'prop-types';
 import { useSubscriptionPlans } from '../../apis/subscriptionPlans/hooks';
 import { useSubscriptionDurations } from '../../apis/subscriptionDurations/hooks';
 import { toast } from 'react-toastify';
+import { supabase } from '../../lib/supabase';
+import { handleApiError } from '../../utils/errorHandling';
 
 // Components
 import LoadingSpinner from '../ui/LoadingSpinner';
 
-const SubscriptionPlanSelection = ({ patientId }) => {
+const SubscriptionPlanSelection = ({ patientId, onSubscriptionCreated }) => {
   const [selectedPlan, setSelectedPlan] = useState(null);
   const [selectedDuration, setSelectedDuration] = useState(null);
   const [selectedCategory, setSelectedCategory] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null);
   const [categories, setCategories] = useState([]);
 
   // Fetch subscription plans
@@ -48,7 +52,7 @@ const SubscriptionPlanSelection = ({ patientId }) => {
   };
 
   // Handle subscription
-  const handleSubscribe = () => {
+  const handleSubscribe = async () => {
     if (!patientId) {
       toast.error('Patient ID is required');
       return;
@@ -60,14 +64,68 @@ const SubscriptionPlanSelection = ({ patientId }) => {
     }
 
     setIsLoading(true);
+    setError(null);
     
-    // Mock implementation - in a real app, this would call a Supabase function
-    setTimeout(() => {
+    try {
+      // Get the selected plan and duration details
+      const plan = plans.find(p => p.id === selectedPlan);
+      const duration = durations.find(d => d.id === selectedDuration);
+      
+      if (!plan || !duration) {
+        throw new Error('Selected plan or duration not found');
+      }
+      
+      // Calculate dates
+      const now = new Date();
+      const endDate = new Date(now);
+      
+      // Use days if available, otherwise use months
+      if (duration.duration_days) {
+        endDate.setDate(now.getDate() + duration.duration_days);
+      } else {
+        endDate.setMonth(now.getMonth() + duration.duration_months);
+      }
+      
+      // Calculate price with discount
+      const discountPercent = duration.discount_percent || 0;
+      const discountAmount = (plan.price * discountPercent) / 100;
+      const finalPrice = plan.price - discountAmount;
+      
+      // Create the subscription
+      const { data, error } = await supabase
+        .from('patient_subscriptions')
+        .insert({
+          patient_id: patientId,
+          subscription_plan_id: selectedPlan,
+          duration_id: selectedDuration,
+          status: 'active',
+          current_period_start: now.toISOString(),
+          current_period_end: endDate.toISOString(),
+          amount: finalPrice,
+          discount_percent: discountPercent,
+          created_at: now.toISOString(),
+          updated_at: now.toISOString()
+        })
+        .select()
+        .single();
+        
+      if (error) throw error;
+      
       toast.success('Subscription created successfully!');
       setSelectedPlan(null);
       setSelectedDuration(null);
+      
+      // Optionally redirect to subscription details page
+      if (onSubscriptionCreated && typeof onSubscriptionCreated === 'function') {
+        onSubscriptionCreated(data);
+      }
+    } catch (err) {
+      console.error('Error creating subscription:', err);
+      setError(`Failed to create subscription: ${err.message}`);
+      toast.error(`Failed to create subscription: ${err.message}`);
+    } finally {
       setIsLoading(false);
-    }, 1500);
+    }
   };
 
   const getSelectedDurationDiscount = () => {
@@ -90,6 +148,14 @@ const SubscriptionPlanSelection = ({ patientId }) => {
   return (
     <div className="subscription-selection-container">
       <h2 className="text-2xl font-bold mb-6">Select a Subscription Plan</h2>
+      
+      {/* Error display */}
+      {error && (
+        <div className="mb-4 p-4 bg-red-50 border-l-4 border-red-400 text-red-700">
+          <p className="font-bold">Error</p>
+          <p>{error}</p>
+        </div>
+      )}
       
       {/* Category Filter */}
       {categories.length > 0 && (
@@ -240,6 +306,15 @@ const SubscriptionPlanSelection = ({ patientId }) => {
       )}
     </div>
   );
+};
+
+SubscriptionPlanSelection.propTypes = {
+  patientId: PropTypes.string.isRequired,
+  onSubscriptionCreated: PropTypes.func
+};
+
+SubscriptionPlanSelection.defaultProps = {
+  onSubscriptionCreated: null
 };
 
 export default SubscriptionPlanSelection;

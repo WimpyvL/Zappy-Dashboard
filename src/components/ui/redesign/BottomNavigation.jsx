@@ -4,14 +4,15 @@ import { Link } from 'react-router-dom';
 import { 
   Home, 
   Heart, 
-  Calendar, 
-  ShoppingBag
+  BookOpen, 
+  ShoppingBag,
+  Bell
 } from 'lucide-react';
 
 /**
  * BottomNavigation component
  * 
- * A fixed bottom navigation bar with 4 main sections: Home, Care, Programs, and Shop
+ * A fixed bottom navigation bar for mobile devices with 4 main sections
  * 
  * @param {string} activePage - The currently active page
  * @param {object} notifications - Object with notification counts for each section
@@ -23,19 +24,19 @@ const BottomNavigation = ({ activePage, notifications = {} }) => {
       id: 'home', 
       name: 'Home', 
       icon: Home, 
-      route: '/home' 
+      route: '/' 
     },
     { 
-      id: 'care', 
-      name: 'Care', 
+      id: 'health', 
+      name: 'Health', 
       icon: Heart, 
-      route: '/care' 
+      route: '/health' 
     },
     { 
-      id: 'programs', 
-      name: 'Programs', 
-      icon: Calendar, 
-      route: '/programs' 
+      id: 'learn', 
+      name: 'Learn', 
+      icon: BookOpen, 
+      route: '/learn' 
     },
     { 
       id: 'shop', 
@@ -46,8 +47,8 @@ const BottomNavigation = ({ activePage, notifications = {} }) => {
   ];
   
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 py-2 z-10 md:hidden">
-      <div className="flex justify-around">
+    <div className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-gray-200 py-2 z-30 shadow-lg">
+      <div className="max-w-md mx-auto flex justify-around">
         {navItems.map(item => (
           <Link 
             key={item.id}
@@ -55,10 +56,11 @@ const BottomNavigation = ({ activePage, notifications = {} }) => {
             className={`flex flex-col items-center relative ${
               activePage === item.id 
                 ? 'text-[#2D7FF9] font-semibold' 
-                : 'text-gray-500'
+                : 'text-gray-500 hover:text-gray-700'
             }`}
+            aria-label={item.name}
           >
-            <item.icon className="h-6 w-6" />
+            <item.icon className="h-6 w-6" strokeWidth={activePage === item.id ? 2 : 1.5} />
             <span className="text-xs mt-1">{item.name}</span>
             
             {/* Notification badge */}
@@ -75,11 +77,11 @@ const BottomNavigation = ({ activePage, notifications = {} }) => {
 };
 
 BottomNavigation.propTypes = {
-  activePage: PropTypes.oneOf(['home', 'care', 'programs', 'shop']).isRequired,
+  activePage: PropTypes.oneOf(['home', 'health', 'learn', 'shop', '']).isRequired,
   notifications: PropTypes.shape({
     home: PropTypes.number,
-    care: PropTypes.number,
-    programs: PropTypes.number,
+    health: PropTypes.number,
+    learn: PropTypes.number,
     shop: PropTypes.number
   })
 };

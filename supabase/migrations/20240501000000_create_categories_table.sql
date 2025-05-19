@@ -19,24 +19,7 @@ CREATE INDEX IF NOT EXISTS idx_categories_category_id ON categories(category_id)
 -- Create index on status for filtering
 CREATE INDEX IF NOT EXISTS idx_categories_status ON categories(status);
 
--- Insert default categories
-INSERT INTO categories (name, description, category_id, status, display_order, icon, show_in_marketplace, show_in_admin)
-VALUES
-    ('Hair', 'Products and services for hair loss and hair care', 'hair', 'active', 10, 'hair', TRUE, TRUE),
-    ('ED', 'Products and services for erectile dysfunction', 'ed', 'active', 20, 'pill', TRUE, TRUE),
-    ('Weight Management', 'Products and services for weight management', 'weight-management', 'active', 30, 'scale', TRUE, TRUE),
-    ('Skin', 'Skincare products and treatments', 'skin', 'active', 40, 'skin', TRUE, TRUE),
-    ('Mental Health', 'Mental health services and medications', 'mental-health', 'active', 50, 'brain', TRUE, TRUE),
-    ('General Health', 'General health products and services', 'general-health', 'active', 60, '', TRUE, TRUE),
-    ('Supplements', 'Nutritional supplements', 'supplements', 'active', 70, 'pill', TRUE, TRUE),
-    ('Nutrition', 'Nutrition products and services', 'nutrition', 'active', 80, 'food', TRUE, TRUE),
-    ('Devices', 'Medical and health devices', 'devices', 'active', 90, 'device', TRUE, TRUE),
-    ('Diagnostics', 'Diagnostic tests and services', 'diagnostics', 'active', 100, 'test', TRUE, TRUE),
-    ('Family', 'Family health products and services', 'family', 'active', 110, 'family', TRUE, TRUE),
-    ('Premium', 'Premium health products and services', 'premium', 'active', 120, 'star', TRUE, TRUE),
-    ('Standard', 'Standard health products and services', 'standard', 'active', 130, '', TRUE, TRUE),
-    ('Supplies', 'Medical and health supplies', 'supplies', 'active', 140, 'box', TRUE, TRUE)
-ON CONFLICT (category_id) DO NOTHING;
+-- Sample categories can be added here if needed
 
 -- Add column to products table if it doesn't exist
 DO $$

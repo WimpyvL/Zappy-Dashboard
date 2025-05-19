@@ -4,18 +4,33 @@ import Tag from './Tag';
 // Removed useAppContext import
 import { useTags, useCreateTag } from '../../apis/tags/hooks'; // Fetch all tags and create new ones
 // Import mutation hooks for adding/removing tags for each entity type
-// Note: These hooks are assumed to exist in the respective entity's hooks file
-// e.g., useAddPatientTag in src/apis/patients/hooks.js
 import {
   useAddPatientTag,
   useRemovePatientTag,
 } from '../../apis/patients/hooks';
-import {
-  useAddSessionTag,
-  useRemoveSessionTag,
-} from '../../apis/sessions/hooks';
-import { useAddOrderTag, useRemoveOrderTag } from '../../apis/orders/hooks';
-// TODO: Import hooks for document, form, invoice tags when available
+
+// Import other tag hooks conditionally to avoid errors if they don't exist yet
+let useAddSessionTag, useRemoveSessionTag, useAddOrderTag, useRemoveOrderTag;
+try {
+  const sessionHooks = require('../../apis/sessions/hooks');
+  useAddSessionTag = sessionHooks.useAddSessionTag;
+  useRemoveSessionTag = sessionHooks.useRemoveSessionTag;
+} catch (error) {
+  // Session hooks not available yet
+  useAddSessionTag = () => ({ mutate: () => console.warn('Session tag hooks not implemented') });
+  useRemoveSessionTag = () => ({ mutate: () => console.warn('Session tag hooks not implemented') });
+}
+
+try {
+  const orderHooks = require('../../apis/orders/hooks');
+  useAddOrderTag = orderHooks.useAddOrderTag;
+  useRemoveOrderTag = orderHooks.useRemoveOrderTag;
+} catch (error) {
+  // Order hooks not available yet
+  useAddOrderTag = () => ({ mutate: () => console.warn('Order tag hooks not implemented') });
+  useRemoveOrderTag = () => ({ mutate: () => console.warn('Order tag hooks not implemented') });
+}
+// TODO: Add hooks for document, form, invoice tags when available
 
 const TagField = ({
   entityId,
@@ -30,7 +45,7 @@ const TagField = ({
     isLoading: isLoadingTags,
     error: errorTags,
   } = useTags();
-  const allTags = tagsData?.data || tagsData || []; // Adapt based on API response
+  const allTags = tagsData || []; // useTags now returns the data array directly
 
   // Mutation hook for creating a new tag
   const createTagMutation = useCreateTag({

@@ -10,7 +10,6 @@ import InsuranceRecordTable from './components/InsuranceRecordTable';
 import InsuranceRecordFilters from './components/InsuranceRecordFilters';
 import AddInsuranceRecordModal from './components/AddInsuranceRecordModal';
 import ViewInsuranceRecordModal from './components/ViewInsuranceRecordModal';
-import DecorativeElement from '../../components/ui/DecorativeElement';
 
 // Removed unused formatDate function
 
@@ -129,8 +128,6 @@ const InsuranceDocumentation = () => {
 
   return (
     <div className="relative overflow-hidden pb-10">
-      <DecorativeElement type="watercolor" color="accent3" position="top-right" size={100} rotation={-15} opacity={0.1} />
-      <DecorativeElement type="doodle" color="accent1" position="bottom-left" size={110} rotation={5} opacity={0.1} />
 
       <div className="flex justify-between items-center mb-6 relative z-10">
         <h1 className="text-2xl font-bold text-gray-800">

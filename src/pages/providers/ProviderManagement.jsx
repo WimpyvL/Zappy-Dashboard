@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { AlertCircle, CheckCircle } from 'lucide-react';
 import {
   Search,
   Edit,
@@ -12,14 +11,20 @@ import {
   Award,
   FileText,
   Image,
+  AlertCircle, // Added AlertCircle import
+  CheckCircle, // Added CheckCircle import
 } from 'lucide-react';
-import { 
-  useProviders, 
-  useAddProvider, 
-  useUpdateProvider, 
+import {
+  useProviders,
+  useAddProvider,
+  useUpdateProvider,
   useDeleteProvider,
 } from '../../apis/providers/hooks';
 import { useAuth } from '../../context/AuthContext';
+import Toast from '../../components/ui/Toast'; // Import Toast component
+import useProviderFilters from '../../hooks/useProviderFilters'; // Import useProviderFilters hook
+import useProviderForm from '../../hooks/useProviderForm'; // Import useProviderForm hook
+
 
 // List of US states
 const states = [
@@ -75,145 +80,51 @@ const states = [
   { code: 'WY', name: 'Wyoming' },
 ];
 
-// Toast notification component
-const Toast = ({ message, type, onClose }) => {
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      onClose();
-    }, 3000);
-    return () => clearTimeout(timer);
-  }, [onClose]);
-
-  return (
-    <div className={`fixed top-4 right-4 z-50 flex items-center p-4 rounded-md shadow-lg ${
-      type === 'success' ? 'bg-green-100' : 'bg-red-100'
-    }`}>
-      {type === 'success' ? (
-        <CheckCircle className="h-5 w-5 text-green-500 mr-2" />
-      ) : (
-        <AlertCircle className="h-5 w-5 text-red-500 mr-2" />
-      )}
-      <p className={`text-sm font-medium ${
-        type === 'success' ? 'text-green-800' : 'text-red-800'
-      }`}>
-        {message}
-      </p>
-      <button
-        className="ml-4 text-gray-400 hover:text-gray-500"
-        onClick={onClose}
-      >
-        <X className="h-4 w-4" />
-      </button>
-    </div>
-  );
-};
 
 const ProviderManagement = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [toast, setToast] = useState(null);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [specialtyFilter, setSpecialtyFilter] = useState('all');
+
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [currentProvider, setCurrentProvider] = useState(null);
-  const [stateSearchTerm, setStateSearchTerm] = useState('');
-  const [activeTab, setActiveTab] = useState('basic');
-  const [formData, setFormData] = useState({
-    name: '',
-    specialty: '',
-    email: '',
-    phone: '',
-    active: true,
-    authorizedStates: [],
-    // Role-based access
-    role: 'provider',
-  });
+
 
   const { data: providers = [], isLoading, error } = useProviders();
   const addProvider = useAddProvider();
   const updateProvider = useUpdateProvider();
   const deleteProvider = useDeleteProvider();
 
-  // Filter providers based on search and specialty
-  const filteredProviders = providers.filter((provider) => {
-    const matchesSearch =
-      provider.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      provider.email?.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesSpecialty =
-      specialtyFilter === 'all' || provider.specialty === specialtyFilter;
+  const {
+    searchTerm,
+    setSearchTerm,
+    specialtyFilter,
+    setSpecialtyFilter,
+    filteredProviders,
+    specialties,
+  } = useProviderFilters(providers);
 
-    return matchesSearch && matchesSpecialty;
+  // Hook for the provider form
+  const {
+    formData,
+    setFormData,
+    activeTab,
+    setActiveTab,
+    stateSearchTerm,
+    setStateSearchTerm,
+    filteredStates,
+    handleInputChange,
+    handleStateSelection,
+    handleSubmit,
+    errors,
+    isSubmitting: isFormSubmitting, // Renamed to avoid conflict with mutation loading
+  } = useProviderForm(currentProvider, () => {
+     setShowAddModal(false);
+     setShowEditModal(false);
+     setCurrentProvider(null);
   });
 
-  // Get unique specialties for filter dropdown
-  const specialties = [
-    ...new Set(providers.map((provider) => provider.specialty).filter(Boolean)),
-  ];
-
-  // Filter states based on search term
-  const filteredStates = states.filter(
-    (state) =>
-      state.name.toLowerCase().includes(stateSearchTerm.toLowerCase()) ||
-      state.code.toLowerCase().includes(stateSearchTerm.toLowerCase())
-  );
-
-  // Handle adding new provider
-  const handleAddProvider = () => {
-    setFormData({
-      name: '',
-      specialty: '',
-      email: '',
-      phone: '',
-      active: true,
-      authorizedStates: [],
-      role: 'provider',
-    });
-    setActiveTab('basic');
-    setShowAddModal(true);
-  };
-
-  // Handle editing provider
-  const handleEditProvider = (provider) => {
-    setCurrentProvider(provider);
-    setFormData({
-      name: provider.name || '',
-      specialty: provider.specialty || '',
-      email: provider.email || '',
-      phone: provider.phone || '',
-      active: provider.active || true,
-      authorizedStates: [...(provider.authorizedStates || [])],
-      role: provider.role || 'provider',
-    });
-    setActiveTab('basic');
-    setShowEditModal(true);
-  };
-
-  // Handle form input changes
-  const handleInputChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    setFormData({
-      ...formData,
-      [name]: type === 'checkbox' ? checked : value,
-    });
-  };
-
-  // Handle state selection
-  const handleStateSelection = (stateCode) => {
-    if (formData.authorizedStates.includes(stateCode)) {
-      setFormData({
-        ...formData,
-        authorizedStates: formData.authorizedStates.filter(
-          (code) => code !== stateCode
-        ),
-      });
-    } else {
-      setFormData({
-        ...formData,
-        authorizedStates: [...formData.authorizedStates, stateCode],
-      });
-    }
-  };
 
   // Effect to handle mutation success and error states
   useEffect(() => {
@@ -225,7 +136,7 @@ const ProviderManagement = () => {
       });
       queryClient.invalidateQueries(['providers']);
     }
-    
+
     // Handle add provider error
     if (addProvider.isError) {
       setToast({
@@ -233,7 +144,7 @@ const ProviderManagement = () => {
         type: 'error'
       });
     }
-    
+
     // Handle update provider success
     if (updateProvider.isSuccess) {
       setToast({
@@ -242,7 +153,7 @@ const ProviderManagement = () => {
       });
       queryClient.invalidateQueries(['providers']);
     }
-    
+
     // Handle update provider error
     if (updateProvider.isError) {
       setToast({
@@ -250,7 +161,7 @@ const ProviderManagement = () => {
         type: 'error'
       });
     }
-    
+
     // Handle delete provider success
     if (deleteProvider.isSuccess) {
       setToast({
@@ -259,7 +170,7 @@ const ProviderManagement = () => {
       });
       queryClient.invalidateQueries(['providers']);
     }
-    
+
     // Handle delete provider error
     if (deleteProvider.isError) {
       setToast({
@@ -274,17 +185,11 @@ const ProviderManagement = () => {
     queryClient
   ]);
 
-  // Handle form submission
-  const handleSubmit = () => {
-    if (showAddModal) {
-      // Add new provider
-      addProvider.mutate(formData);
-      setShowAddModal(false);
-    } else if (showEditModal) {
-      // Update existing provider
-      updateProvider.mutate({ id: currentProvider.id, ...formData });
-      setShowEditModal(false);
-    }
+  // Handle deleting provider
+  // Handle resource edit
+  const handleEditProvider = (provider) => {
+    setCurrentProvider(provider);
+    setShowEditModal(true);
   };
 
   // Handle deleting provider
@@ -311,7 +216,24 @@ const ProviderManagement = () => {
         </h1>
         <button
           className="px-4 py-2 bg-indigo-600 text-white rounded-md flex items-center hover:bg-indigo-700"
-          onClick={handleAddProvider}
+          onClick={() => {
+             setCurrentProvider(null); // Clear current provider for add mode
+             setShowAddModal(true);
+             setActiveTab('basic'); // Reset tab to basic
+             setFormData({ // Reset form data
+                name: '',
+                specialty: '',
+                email: '',
+                phone: '',
+                active: true,
+                authorizedStates: [],
+                role: 'provider',
+                credentials: '',
+                licenseNumber: '',
+                profileImageUrl: '',
+                biography: '',
+             });
+          }}
         >
           <UserPlus className="h-5 w-5 mr-2" />
           Add Provider
@@ -638,7 +560,7 @@ const ProviderManagement = () => {
                       Professional details settings are currently in development and will be available in a future update.
                     </p>
                   </div>
-                  
+
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="mb-4">
                       <label className="block text-sm font-medium text-gray-700 mb-1">

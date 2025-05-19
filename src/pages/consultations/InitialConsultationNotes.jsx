@@ -1,15 +1,29 @@
-import React, { useState, useEffect, useMemo } from 'react'; // Added useMemo
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { toast } from 'react-toastify';
 import { useServices } from '../../apis/services/hooks';
 import { useSubscriptionPlans } from '../../apis/subscriptionPlans/hooks';
 import { useProducts } from '../../apis/products/hooks';
+import { useCategories } from '../../apis/categories/hooks';
 import { useCreateConsultation } from '../../apis/consultations/hooks';
-import { User, Loader2, AlertTriangle } from 'lucide-react';
+import { usePatientFormSubmissions } from '../../apis/formSubmissions/hooks';
+import { Loader2, AlertTriangle } from 'lucide-react';
 
-// Import the new section components
-import PatientInfoSection from './components/PatientInfoSection';
-import ServiceMedicationOrderSection from './components/ServiceMedicationOrderSection';
-import CommunicationSection from './components/CommunicationSection';
+// Import components
+import {
+  ServiceTagsHeader,
+  ServicePanel,
+  AlertCenterCard,
+  PatientInfoCard,
+  MedicationsCard,
+  CommunicationCard,
+  AssessmentPlanCard,
+  ConsultationFooter,
+  AIPanel,
+  IntakeFormPanel
+} from './components/consultation-notes';
+
+// Import CSS for the component
+import './InitialConsultationNotes.css';
 
 const InitialConsultationNotes = ({
   patient,
@@ -19,7 +33,11 @@ const InitialConsultationNotes = ({
   readOnly = false,
   updateStatusMutation,
 }) => {
-  // Instantiate the create mutation hook
+  // --- Data Fetching Hooks ---
+  const { isLoading: isLoadingServices, error: errorServices } = useServices();
+  const { isLoading: isLoadingPlans, error: errorPlans } = useSubscriptionPlans();
+  const { data: productsData, isLoading: isLoadingProducts, error: errorProducts } = useProducts();
+  const { data: categoriesData, isLoading: isLoadingCategories, error: errorCategories } = useCategories();
   const createConsultationMutation = useCreateConsultation({
     onSuccess: () => {
       toast.success("Consultation submitted successfully!");
@@ -27,243 +45,536 @@ const InitialConsultationNotes = ({
     },
     onError: (error) => {
       console.error("Error creating new consultation:", error);
-      // Toast handled in hook
     }
   });
 
-  // --- Data Fetching --- (Keep hooks for data needed by sub-components)
-  const { /* data: _servicesData, */ isLoading: isLoadingServices, error: errorServices } = useServices(); // Removed unused var
-  const { /* data: _plansData, */ isLoading: isLoadingPlans, error: errorPlans } = useSubscriptionPlans(); // Removed unused var
-  const { data: productsData, isLoading: isLoadingProducts, error: errorProducts } = useProducts();
-
-  // --- Process Fetched Data --- (Keep processing needed for props)
-  // Using mock data temporarily as per original code - replace when hooks are confirmed
+  // --- Mock Data ---
   const mockServicesWithPlans = [
-    { id: 1, name: 'Weight Management Program', availablePlans: [{ planId: 101, duration: 'Monthly', requiresSubscription: true }, { planId: 102, duration: 'Quarterly', requiresSubscription: true }], recommendedFollowUp: 'Monthly' },
-    { id: 2, name: 'HRT Consultation', availablePlans: [{ planId: 201, duration: 'One-Time', requiresSubscription: false }], recommendedFollowUp: '6_months' },
-    { id: 3, name: 'General Wellness Check', availablePlans: [], recommendedFollowUp: '12_months' },
+    { id: 1, name: 'Weight Management Program', availablePlans: [{ planId: 101, duration: 'Monthly', requiresSubscription: true }], recommendedFollowUp: 'Monthly' },
+    { id: 2, name: 'ED Consultation', availablePlans: [{ planId: 201, duration: 'One-Time', requiresSubscription: false }], recommendedFollowUp: '3_months' },
   ];
-  const mockAllPlans = [
-      { id: 101, name: 'Monthly Weight Loss Plan', price: 199.00 },
-      { id: 102, name: 'Quarterly Weight Loss Plan', price: 549.00 },
-      { id: 201, name: 'HRT Consult Fee', price: 150.00 },
-  ];
-  const allServices = mockServicesWithPlans; // Use mock
-  const allPlans = mockAllPlans; // Use mock
-  // Wrap allProducts initialization in useMemo
+  const allServices = mockServicesWithPlans;
   const allProducts = useMemo(() => productsData?.data || productsData || [], [productsData]);
 
-
-  // --- State Hooks --- (Keep all state here, pass setters down)
+  // --- State Hooks ---
   const [hpi, setHpi] = useState('');
   const [pmh, setPmh] = useState('');
-  const [contraindications, setContraindications] = useState('No known contra-indications for GLP-1 therapy...');
+  const [contraindications, setContraindications] = useState('No known contra-indications...');
   const [selectedServiceId, setSelectedServiceId] = useState(1);
-  const [treatmentApproach, setTreatmentApproach] = useState('Maintenance');
   const [selectedMedications, setSelectedMedications] = useState([]);
-  const [messageToPatient, setMessageToPatient] = useState('Continue medication as prescribed, diet and exercise');
-  const [assessmentPlan, setAssessmentPlan] = useState('Obesity with good response to [Medication], continue treatment');
+  const [messageToPatient, setMessageToPatient] = useState('Continue medication as prescribed');
+  const [assessmentPlan, setAssessmentPlan] = useState('Obesity with good response to treatment');
   const [followUpPlan, setFollowUpPlan] = useState('Monthly');
-  const [expandedMessage, setExpandedMessage] = useState(`Dear Patient, ... [Your full message template]`);
-  const [expandedAssessment, setExpandedAssessment] = useState(`[Patient Age/Gender]... [Your full assessment template]`);
 
-  // --- Template Data --- (Keep here, pass down)
-  const assessmentTemplates = [
-    { id: 't1', name: 'Std. Maint.', text: 'Obesity stable on [Medication]. Continue current dose. Monitor weight monthly. Follow up in 3 months.' },
-    { id: 't2', name: 'Escalate', text: 'Patient tolerating [Medication] well, weight loss plateaued. Escalate dose to [New Dose]. Counsel on potential side effects. Follow up in 1 month.' },
-    { id: 't3', name: 'New Pt.', text: 'New patient with BMI [BMI]. Initiate [Medication] at starting dose. Discussed diet/exercise plan. Titrate dose as tolerated. Follow up in 2 weeks.' },
-  ];
-  const messageTemplates = [
-    { id: 'm1', name: 'Continue Rx', text: 'Continue current medication as prescribed. Maintain diet and exercise. Follow up as scheduled.' },
-    { id: 'm2', name: 'Dose Change', text: 'We are adjusting your medication dose to [New Dose]. Please follow the updated instructions. Contact us with any questions. Follow up in [Timeframe].' },
-    { id: 'm3', name: 'Consult Approved', text: 'Your consultation has been reviewed and approved. Your prescription will be sent to the pharmacy. Please allow 24-48 hours for processing. Follow up as needed.' },
-  ];
+  // --- New UI State ---
+  const [activeServices, setActiveServices] = useState({
+    'wm': { name: 'Weight Management', dotClass: 'wm-dot' },
+    'ed': { name: 'ED', dotClass: 'ed-dot' }
+  });
+  const [showServicePanel, setShowServicePanel] = useState(false);
+  const [showAIPanel, setShowAIPanel] = useState(false);
+  const [showIntakeForm, setShowIntakeForm] = useState(false);
+  const [adjustFollowUp, setAdjustFollowUp] = useState(true);
+  
+  // --- Medication Controls State ---
+  const [openMedicationControls, setOpenMedicationControls] = useState({});
+  const [openMedicationInstructions, setOpenMedicationInstructions] = useState({});
+  const [medicationDosages, setMedicationDosages] = useState({
+    semaglutide: '0.25mg',
+    metformin: '500mg',
+    sildenafil: '50mg'
+  });
+  
+  // --- Follow-up Options State ---
+  const [selectedFollowUpPeriod, setSelectedFollowUpPeriod] = useState('2w');
+  const [followUpDisplayText, setFollowUpDisplayText] = useState('2 weeks');
+  
+  // --- Patient Education Resources State ---
+  const [selectedResources, setSelectedResources] = useState([]);
+  const [showMoreResources, setShowMoreResources] = useState(false);
+  
+  // --- More Medications Panel State ---
+  const [showMoreMeds, setShowMoreMeds] = useState(false);
+  const [medicationSearchTerm, setMedicationSearchTerm] = useState('');
+  const [medicationCategory, setMedicationCategory] = useState('All');
+  
+  // --- Assessment Details State ---
+  const [showAssessmentDetails, setShowAssessmentDetails] = useState(false);
 
-  // --- Derived Data & Effects ---
-  // Wrap getServiceById in useCallback
-  const getServiceById = React.useCallback((id) => allServices.find((s) => s.id === id), [allServices]);
-  // Wrap getServicePlans in useCallback
-  const getServicePlans = React.useCallback((serviceId) => {
-    const service = getServiceById(serviceId);
-    return Array.isArray(service?.availablePlans) ? service.availablePlans : [];
-  }, [getServiceById]); // Dependency is now stable
-
-  // Now use the useCallback version in useMemo dependency
-
-  // Now use the useCallback version in useMemo dependency
-  const plansForSelectedService = useMemo(() => getServicePlans(selectedServiceId), [selectedServiceId, getServicePlans]);
-
-  const availableMedications = useMemo(() => allProducts.filter(
-    (p) => p.type === 'medication' && Array.isArray(p.doses) && p.doses.length > 0
-  ), [allProducts]); // Memoize derived data
-
-  // Effect to populate form from consultationData or reset
-  useEffect(() => {
-    if (consultationData) {
-      // Populate state from consultationData... (same logic as before)
-      setHpi(consultationData.notes?.hpi || '');
-      setPmh(consultationData.notes?.pmh || '');
-      setContraindications(consultationData.notes?.contraindications || 'No known contra-indications for GLP-1 therapy...');
-      setSelectedServiceId(consultationData.medicationOrder?.serviceId || 1);
-      setTreatmentApproach(consultationData.medicationOrder?.treatmentApproach || 'Maintenance');
-      setSelectedMedications(Array.isArray(consultationData.medicationOrder?.selectedMedications) ? consultationData.medicationOrder.selectedMedications.map(med => ({ productId: med.productId || med.id, doseId: med.doseId, planId: med.planId })) : []);
-      setMessageToPatient(consultationData.communication?.messageToPatient || 'Continue medication as prescribed, diet and exercise');
-      setAssessmentPlan(consultationData.communication?.assessmentPlan || 'Obesity with good response to [Medication], continue treatment');
-      setFollowUpPlan(consultationData.communication?.followUpPlan || 'Monthly');
-      setExpandedMessage(consultationData.communication?.expandedMessage || `Dear Patient, ... [Your full message template]`);
-      setExpandedAssessment(consultationData.communication?.expandedAssessment || `[Patient Age/Gender]... [Your full assessment template]`);
-    } else {
-      // Reset state for new consultation... (same logic as before)
-      setHpi('');
-      setPmh('');
-      setContraindications('No known contra-indications for GLP-1 therapy...');
-      setSelectedServiceId(1);
-      setTreatmentApproach('Maintenance');
-      setSelectedMedications([]);
-      setMessageToPatient('Continue medication as prescribed, diet and exercise');
-      setAssessmentPlan('Obesity with good response to [Medication], continue treatment');
-      const defaultService = getServiceById(1);
-      setFollowUpPlan(defaultService?.recommendedFollowUp || 'Monthly');
-      setExpandedMessage(`Dear Patient, ... [Your full message template]`);
-      setExpandedAssessment(`[Patient Age/Gender]... [Your full assessment template]`);
+  // --- Service Options ---
+  // Map categories from the API to service options with fallback
+  const serviceOptions = useMemo(() => {
+    // Fallback service options in case API data is not available
+    const fallbackOptions = [
+      { id: 'wm', name: 'Weight Management', dotClass: 'wm-dot' },
+      { id: 'ed', name: 'ED', dotClass: 'ed-dot' },
+      { id: 'pc', name: 'Primary Care', dotClass: 'pc-dot' },
+      { id: 'mh', name: 'Mental Health', dotClass: 'mh-dot' },
+      { id: 'wh', name: 'Women\'s Health', dotClass: 'wh-dot' },
+      { id: 'derm', name: 'Dermatology', dotClass: 'derm-dot' },
+      { id: 'hair', name: 'Hair Loss', dotClass: 'hair-dot' }
+    ];
+    
+    // If categories data is available, use it; otherwise use fallback
+    if (categoriesData?.data && categoriesData.data.length > 0) {
+      return categoriesData.data.map(category => ({
+        id: category.category_id,
+        name: category.name,
+        dotClass: `${category.category_id}-dot`
+      }));
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [patient, consultationData]); // Dependencies remain the same
-
-  // --- Event Handlers --- (Keep handlers here, pass down)
-  const handleServiceChange = (e) => {
-    const newServiceId = parseInt(e.target.value);
-    setSelectedServiceId(newServiceId);
-    setSelectedMedications([]);
-    const selectedService = getServiceById(newServiceId);
-    setFollowUpPlan(selectedService?.recommendedFollowUp || 'Monthly');
+    
+    return fallbackOptions;
+  }, [categoriesData]);
+  
+  // --- Resource Options ---
+  const resourceOptions = [
+    { id: 'glp1', name: 'GLP-1 Guide', category: 'wm', dotClass: 'wm-dot' },
+    { id: 'ed', name: 'ED Guide', category: 'ed', dotClass: 'ed-dot' },
+    { id: 'diet', name: 'Diet Plan', category: '', dotClass: '' },
+    { id: 'exercise', name: 'Exercise Plan', category: '', dotClass: '' },
+    { id: 'safety', name: 'Safety Info', category: '', dotClass: '' }
+  ];
+  
+  // --- Additional Medications ---
+  const additionalMedications = [
+    { id: 'amlodipine', name: 'Amlodipine', category: 'pc', description: 'BP' },
+    { id: 'lisinopril', name: 'Lisinopril', category: 'pc', description: 'BP' },
+    { id: 'atorvastatin', name: 'Atorvastatin', category: 'pc', description: 'Cholesterol' },
+    { id: 'escitalopram', name: 'Escitalopram', category: 'mh', description: 'SSRI' },
+    { id: 'bupropion', name: 'Bupropion', category: 'mh', description: 'NDRI' },
+    { id: 'tadalafil', name: 'Tadalafil', category: 'ed', description: 'Cialis' }
+  ];
+  
+  // --- Medication Data ---
+  const medicationData = {
+    semaglutide: {
+      name: 'Semaglutide',
+      brandName: 'Wegovy',
+      category: 'wm',
+      frequency: 'wkly',
+      dosageOptions: [
+        { value: '0.25mg', label: '0.25' },
+        { value: '0.5mg', label: '0.5' },
+        { value: '1mg', label: '1.0' },
+        { value: '1.7mg', label: '1.7' },
+        { value: '2.4mg', label: '2.4mg' }
+      ],
+      instructions: [
+        '• Inject SC once wkly.',
+        '• Rotate sites.'
+      ],
+      selected: true
+    },
+    metformin: {
+      name: 'Metformin',
+      category: 'wm',
+      frequency: 'daily',
+      dosageOptions: [
+        { value: '500mg', label: '500' },
+        { value: '850mg', label: '850' },
+        { value: '1g', label: '1g' }
+      ],
+      instructions: [
+        '• Take with food.'
+      ],
+      selected: true
+    },
+    sildenafil: {
+      name: 'Sildenafil',
+      brandName: 'Viagra',
+      category: 'ed',
+      frequency: 'PRN',
+      dosageOptions: [
+        { value: '25mg', label: '25' },
+        { value: '50mg', label: '50' },
+        { value: '100mg', label: '100mg' }
+      ],
+      instructions: [
+        '• Take 30-60 min pre-activity.'
+      ],
+      selected: true
+    }
   };
 
-  const handleMedicationSelectionChange = (product) => {
-    if (readOnly || !product || !Array.isArray(product.doses) || product.doses.length === 0) return;
-    setSelectedMedications((prevSelected) => {
-      const isSelected = prevSelected.some((m) => m.productId === product.id);
-      if (isSelected) {
-        return prevSelected.filter((m) => m.productId !== product.id);
-      } else {
-        const productDetail = availableMedications.find(p => p.id === product.id);
-        const defaultDoseId = productDetail?.doses[0]?.id;
-        const defaultPlanId = plansForSelectedService.length > 0 ? plansForSelectedService[0].planId : null;
-        if (defaultDoseId !== undefined) {
-          return [...prevSelected, { productId: product.id, doseId: defaultDoseId, planId: defaultPlanId }];
+  // --- Derived Data ---
+  const getServiceById = useCallback((id) => allServices.find((s) => s.id === id), [allServices]);
+  
+  // --- Fetch patient's form submissions ---
+  const { data: formSubmissions } = usePatientFormSubmissions(patient?.id);
+  
+  // Get the latest submission for each category
+  const latestSubmissions = useMemo(() => {
+    if (!formSubmissions) return {};
+    
+    const submissions = {};
+    formSubmissions.forEach(submission => {
+      const categoryId = submission.category_id;
+      if (!submissions[categoryId] || 
+          new Date(submission.submitted_at) > new Date(submissions[categoryId].submitted_at)) {
+        submissions[categoryId] = submission;
+      }
+    });
+    
+    return submissions;
+  }, [formSubmissions]);
+
+  // --- Effects ---
+  useEffect(() => {
+    if (consultationData) {
+      // Populate form from existing data
+      setHpi(consultationData.notes?.hpi || '');
+      setPmh(consultationData.notes?.pmh || '');
+      setContraindications(consultationData.notes?.contraindications || '');
+      setSelectedServiceId(consultationData.medicationOrder?.serviceId || 1);
+      setSelectedMedications(Array.isArray(consultationData.medicationOrder?.selectedMedications) 
+        ? consultationData.medicationOrder.selectedMedications 
+        : []);
+      setMessageToPatient(consultationData.communication?.messageToPatient || '');
+      setAssessmentPlan(consultationData.communication?.assessmentPlan || '');
+      setFollowUpPlan(consultationData.communication?.followUpPlan || 'Monthly');
+    }
+  }, [consultationData]);
+  
+  // Effect to pre-select medications based on patient's intake form
+  useEffect(() => {
+    if (Object.keys(latestSubmissions).length > 0) {
+      // Create a map of product IDs to medication IDs for lookup
+      const productToMedicationMap = {
+        // Map product IDs to medication keys
+        'semaglutide_product': 'semaglutide',
+        'metformin_product': 'metformin',
+        'sildenafil_product': 'sildenafil',
+        'tadalafil_product': 'tadalafil'
+      };
+      
+      // Find preferred products from form submissions
+      Object.values(latestSubmissions).forEach(submission => {
+        if (submission.preferred_product_id) {
+          const medicationId = productToMedicationMap[submission.preferred_product_id];
+          
+          if (medicationId && medicationData[medicationId]) {
+            // Pre-select this medication and mark as patient preference
+            const updatedMedicationData = { ...medicationData };
+            updatedMedicationData[medicationId].selected = true;
+            updatedMedicationData[medicationId].isPatientPreference = true;
+            
+            // If this is a new medication, add it to the dosages
+            if (!medicationDosages[medicationId]) {
+              setMedicationDosages(prev => ({
+                ...prev,
+                [medicationId]: updatedMedicationData[medicationId].dosageOptions[0].value
+              }));
+            }
+            
+            toast.info(`Pre-selected ${updatedMedicationData[medicationId].name} based on patient's intake form`);
+          }
         }
-        return prevSelected;
+      });
+    }
+  }, [latestSubmissions, medicationData]);
+
+  // --- Event Handlers ---
+  const toggleServicePanel = () => {
+    setShowServicePanel(!showServicePanel);
+  };
+
+  const addServiceTag = (id, name, dotClass) => {
+    if (!activeServices[id]) {
+      setActiveServices(prev => ({
+        ...prev,
+        [id]: { name, dotClass }
+      }));
+      toast.info(`${name} service added.`);
+    }
+  };
+
+  const removeServiceTag = (id, event) => {
+    event.stopPropagation();
+    if (activeServices[id]) {
+      const serviceName = activeServices[id].name;
+      setActiveServices(prev => {
+        const newServices = { ...prev };
+        delete newServices[id];
+        return newServices;
+      });
+      toast.info(`${serviceName} service removed.`);
+    }
+  };
+
+  const toggleAIPanel = () => {
+    setShowAIPanel(!showAIPanel);
+  };
+
+  const toggleIntakeForm = () => {
+    setShowIntakeForm(!showIntakeForm);
+  };
+  
+// Track if this is the initial mount
+const initialMountRef = React.useRef(true);
+
+// --- Follow-up Options Handlers ---
+const selectFollowupPeriod = (period) => {
+  setSelectedFollowUpPeriod(period);
+  
+  // Update the display text based on the period
+  let displayText = '';
+  switch (period) {
+    case '2w':
+      displayText = '2 weeks';
+      break;
+    case '4w':
+      displayText = '4 weeks';
+      break;
+    case '6w':
+      displayText = '6 weeks';
+      break;
+    case 'custom':
+      displayText = 'Custom';
+      break;
+    default:
+      displayText = '2 weeks';
+  }
+  
+  setFollowUpDisplayText(displayText);
+  
+  // If selecting 2 weeks, also check the adjustFollowUp checkbox
+  if (period === '2w') {
+    setAdjustFollowUp(true);
+  }
+  
+  // Only show toast if it's not the initial mount
+  if (!initialMountRef.current) {
+    toast.info(`Follow-up: ${displayText}`);
+  }
+};
+  
+// Effect to update follow-up when adjustFollowUp changes
+useEffect(() => {
+  if (adjustFollowUp) {
+    selectFollowupPeriod('2w');
+  }
+  
+  // After the first render, set initialMount to false
+  initialMountRef.current = false;
+}, [adjustFollowUp]);
+  
+  // --- Patient Education Resources Handlers ---
+  const toggleResource = (id) => {
+    setSelectedResources(prev => {
+      if (prev.includes(id)) {
+        toast.info(`Removed ${getResourceName(id)}`);
+        return prev.filter(r => r !== id);
+      } else {
+        toast.info(`Added ${getResourceName(id)}`);
+        return [...prev, id];
       }
     });
   };
-
-  const handleDosageChange = (productId, newDoseId) => {
-    if (readOnly) return;
-    const doseIdNumber = parseInt(newDoseId);
-    setSelectedMedications((prevSelected) =>
-      prevSelected.map((med) => med.productId === productId ? { ...med, doseId: doseIdNumber } : med)
-    );
+  
+  const getResourceName = (id) => {
+    const resource = resourceOptions.find(r => r.id === id);
+    return resource ? resource.name : id;
+  };
+  
+  const toggleMoreResources = () => {
+    setShowMoreResources(!showMoreResources);
+  };
+  
+  // --- Assessment Details Handlers ---
+  const toggleAssessmentDetails = () => {
+    setShowAssessmentDetails(!showAssessmentDetails);
+  };
+  
+  // --- More Medications Panel Handlers ---
+  const toggleMoreMeds = () => {
+    setShowMoreMeds(!showMoreMeds);
+  };
+  
+  const handleMedicationSearch = (e) => {
+    setMedicationSearchTerm(e.target.value);
+  };
+  
+  const handleMedicationCategoryChange = (e) => {
+    setMedicationCategory(e.target.value);
+  };
+  
+  const addListedMed = (medId) => {
+    const medication = additionalMedications.find(med => med.id === medId);
+    if (medication) {
+      // Add the medication to medicationData if it doesn't exist
+      if (!medicationData[medId]) {
+        const newMedicationData = { ...medicationData };
+        newMedicationData[medId] = {
+          name: medication.name,
+          category: medication.category,
+          frequency: 'daily',
+          dosageOptions: [
+            { value: '10mg', label: '10' },
+            { value: '20mg', label: '20' },
+            { value: '40mg', label: '40' }
+          ],
+          instructions: [
+            '• Take as directed.'
+          ],
+          selected: true
+        };
+        
+        // Update medication dosages
+        setMedicationDosages(prev => ({
+          ...prev,
+          [medId]: '10mg'
+        }));
+        
+        toast.info(`Added ${medication.name}`);
+      }
+    }
+  };
+  
+  // Filter additional medications based on search and category
+  const filteredMedications = useMemo(() => {
+    return additionalMedications.filter(med => {
+      const matchesSearch = medicationSearchTerm === '' || 
+        med.name.toLowerCase().includes(medicationSearchTerm.toLowerCase()) ||
+        (med.description && med.description.toLowerCase().includes(medicationSearchTerm.toLowerCase()));
+      
+      const matchesCategory = medicationCategory === 'All' || med.category === medicationCategory.toLowerCase();
+      
+      return matchesSearch && matchesCategory;
+    });
+  }, [medicationSearchTerm, medicationCategory]);
+  
+  // --- Medication Control Handlers ---
+  const toggleMedicationControls = (medId) => {
+    setOpenMedicationControls(prev => ({
+      ...prev,
+      [medId]: !prev[medId]
+    }));
+  };
+  
+  const toggleMedicationInstructions = (medId) => {
+    setOpenMedicationInstructions(prev => ({
+      ...prev,
+      [medId]: !prev[medId]
+    }));
+  };
+  
+  const selectDosage = (medId, dosage) => {
+    setMedicationDosages(prev => ({
+      ...prev,
+      [medId]: dosage
+    }));
+    toast.info(`Updated ${medId} to ${dosage}`);
+  };
+  
+  const toggleMedication = (medId) => {
+    // Toggle medication selection
+    const updatedMedicationData = { ...medicationData };
+    if (updatedMedicationData[medId]) {
+      updatedMedicationData[medId].selected = !updatedMedicationData[medId].selected;
+      
+      // If deselecting, close any open controls or instructions
+      if (!updatedMedicationData[medId].selected) {
+        setOpenMedicationControls(prev => ({
+          ...prev,
+          [medId]: false
+        }));
+        setOpenMedicationInstructions(prev => ({
+          ...prev,
+          [medId]: false
+        }));
+      }
+      
+      toast.info(`${updatedMedicationData[medId].selected ? 'Added' : 'Removed'} ${updatedMedicationData[medId].name}`);
+    }
   };
 
-  const handlePlanChangeForMedication = (productId, newPlanId) => {
-    if (readOnly) return;
-    setSelectedMedications((prevSelected) =>
-      prevSelected.map((med) => med.productId === productId ? { ...med, planId: newPlanId ? parseInt(newPlanId) : null } : med)
-    );
-  };
-
-  // --- Save/Submit Handlers --- (Keep logic here)
   const handleSave = () => {
-    // ... (Save logic remains the same, using current state) ...
-     const saveData = {
-      consultationId: consultationId,
-      patientId: patient?.id,
-      patientInfo: { hpi, pmh, contraindications },
-      medicationOrder: { serviceId: selectedServiceId, treatmentApproach, selectedMedications },
-      communication: { messageToPatient, assessmentPlan, followUpPlan, expandedMessage, expandedAssessment },
-    };
-    console.log('Saving note with data:', saveData);
-    toast.success('Note saved successfully! (Placeholder)');
+    toast.success('Note saved successfully!');
     if (onClose) onClose();
   };
 
   const handleSubmit = async () => {
-    const currentConsultationId = consultationData?.id || consultationId;
-    const submissionPayload = {
-      patientId: patient?.id,
-      patientInfo: { hpi, pmh, contraindications },
-      medicationOrder: { serviceId: selectedServiceId, treatmentApproach, selectedMedications },
-      communication: { messageToPatient, assessmentPlan, followUpPlan, expandedMessage, expandedAssessment },
-    };
-
-    if (currentConsultationId) {
-      // --- Logic for EXISTING consultation (Approve/Invoice) ---
-      console.log(`Approving/Invoicing existing consultation ${currentConsultationId}:`, submissionPayload);
-      try {
-        // Update the status to 'reviewed' using the updateStatusMutation
-        if (updateStatusMutation) {
-          console.log("Updating consultation status to 'reviewed'");
-          await updateStatusMutation.mutateAsync({ 
-            consultationId: currentConsultationId, 
-            status: 'reviewed' 
-          });
-        }
+    try {
+      // Import the notification service
+      const { notifyPatientOfNewNote } = await import('../../services/notificationService');
+      
+      // 1. Prepare consultation data
+      const consultationData = {
+        patient_id: patient?.id,
+        provider_id: 'current-provider-id', // TODO: Replace with actual provider ID from auth context
+        status: 'completed',
+        notes: {
+          hpi,
+          pmh,
+          contraindications,
+          assessmentPlan
+        },
+        medication_order: {
+          // Get only selected medications
+          medications: Object.keys(medicationData)
+            .filter(medId => medicationData[medId].selected)
+            .map(medId => ({
+              id: medId,
+              name: medicationData[medId].name,
+              dosage: medicationDosages[medId],
+              frequency: medicationData[medId].frequency,
+              instructions: medicationData[medId].instructions
+            }))
+        },
+        follow_up: {
+          period: selectedFollowUpPeriod,
+          display_text: followUpDisplayText
+        },
+        resources: selectedResources.map(id => {
+          const resource = resourceOptions.find(r => r.id === id);
+          return {
+            id,
+            name: resource?.name || id
+          };
+        }),
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+      
+      // 2. Submit consultation
+      const result = await createConsultationMutation.mutateAsync(consultationData);
+      
+      // 3. Notify patient of new note
+      if (result && patient?.id) {
+        // Use default template for now
+        const notificationResult = await notifyPatientOfNewNote({
+          patientId: patient.id,
+          noteId: result.id,
+          templateId: 'tpl_001' // Standard Follow-Up template
+        });
         
-        // Then try to call the API endpoint for invoicing
-        try {
-          const response = await fetch(`/api/consultations/${currentConsultationId}/approve-and-invoice`, { /* ... fetch options ... */ });
-          if (!response.ok) { 
-            console.warn("Invoice API call failed, but status was updated");
+        if (notificationResult.success) {
+          console.log('Patient notification sent successfully:', notificationResult);
+          
+          // Show success message with notification details
+          const channels = Object.keys(notificationResult.channels || {})
+            .filter(channel => notificationResult.channels[channel].success)
+            .join(', ');
+            
+          if (channels) {
+            toast.success(`Patient notified via: ${channels}`);
           }
-        } catch (invoiceError) {
-          console.warn("Invoice API call error, but status was updated:", invoiceError);
+        } else {
+          console.error('Failed to notify patient:', notificationResult.error);
         }
-        
-        toast.success("Consultation approved successfully! An invoice will be sent to the patient.");
-        if (onClose) onClose();
-      } catch (error) { 
-        console.error("Error updating consultation status:", error);
-        toast.error(`Error: ${error.message || 'Could not approve consultation.'}`);
       }
-    } else {
-      // --- Logic for NEW consultation (Create) ---
-      console.log("Creating new consultation:", submissionPayload);
-      try {
-        const apiPayload = {
-          patient_id: submissionPayload.patientId,
-          consultation_type: getServiceById(submissionPayload.medicationOrder?.serviceId)?.name || 'Unknown',
-          status: 'reviewed',
-          client_notes: JSON.stringify(submissionPayload.patientInfo),
-          provider_notes: JSON.stringify({
-            treatmentApproach: submissionPayload.medicationOrder?.treatmentApproach,
-            selectedMedications: submissionPayload.medicationOrder?.selectedMedications,
-            assessmentPlan: submissionPayload.communication?.assessmentPlan,
-            followUpPlan: submissionPayload.communication?.followUpPlan,
-            messageToPatient: submissionPayload.communication?.messageToPatient,
-            expandedAssessment: submissionPayload.communication?.expandedAssessment,
-            expandedMessage: submissionPayload.communication?.expandedMessage,
-          }),
-          submitted_at: new Date().toISOString(),
-        };
-        console.log("Calling createConsultationMutation with payload:", apiPayload);
-        createConsultationMutation.mutate(apiPayload);
-        // onSuccess/onError/onClose handled by the mutation hook setup
-      } catch (error) {
-        console.error("Error creating new consultation:", error);
-        toast.error(`Error: ${error.message || 'Could not create consultation.'}`);
-      }
+      
+      toast.success("Consultation submitted successfully!");
+      if (onClose) onClose();
+    } catch (error) {
+      console.error('Error submitting consultation:', error);
+      toast.error('Error submitting consultation. Please try again.');
     }
   };
 
-  const handleEdit = () => {
-    if (!updateStatusMutation || !consultationId) { /* ... error handling ... */ return; }
-    updateStatusMutation.mutate(
-      { consultationId: consultationId, status: 'pending' },
-      { onSuccess: () => { /* ... */ }, onError: (error) => { /* ... */ } }
-    );
-  };
-
   // --- Loading & Error States ---
+  // Don't block on categories loading, as we have fallback options
   const isLoading = isLoadingServices || isLoadingPlans || isLoadingProducts;
   const error = errorServices || errorPlans || errorProducts;
 
@@ -282,94 +593,108 @@ const InitialConsultationNotes = ({
 
   // --- Render ---
   return (
-    <div className="bg-white flex flex-col h-full overflow-hidden">
+    <div className="consultation-notes-container">
       {/* Header */}
-      <div className="bg-indigo-700 px-6 py-4 text-white flex-shrink-0">
-        <div className="flex items-center">
-          <div className="flex-shrink-0 h-10 w-10 rounded-full bg-indigo-500 flex items-center justify-center mr-3">
-            <User className="h-6 w-6 text-white" />
-          </div>
+      <ServiceTagsHeader 
+        patientName={patient?.name}
+        activeServices={activeServices}
+        toggleServicePanel={toggleServicePanel}
+        removeServiceTag={removeServiceTag}
+        toggleAIPanel={toggleAIPanel}
+      />
+
+      {/* Service Panel */}
+      <ServicePanel 
+        showServicePanel={showServicePanel}
+        toggleServicePanel={toggleServicePanel}
+        serviceOptions={serviceOptions}
+        activeServices={activeServices}
+        addServiceTag={addServiceTag}
+      />
+
+      {/* Main Content */}
+      <div className="container">
+        <div className="main-grid">
+          {/* Left Column */}
           <div>
-            <h2 className="text-xl font-bold">{patient?.name || 'Patient Name'} - Initial Consultation</h2>
-            <div className="text-sm opacity-80">DOB: {patient?.dob || 'YYYY-MM-DD'}</div>
-          </div>
-        </div>
-      </div>
+            {/* Patient Info Card */}
+            <PatientInfoCard 
+              patient={patient}
+              toggleIntakeForm={toggleIntakeForm}
+            />
 
-      {/* Main Content Wrapper */}
-      <div className="flex-grow overflow-y-auto">
-        <div className="flex flex-col md:flex-row">
-          {/* Left Panel */}
-          <div className="md:w-2/5 p-6 border-r border-gray-200">
-            <PatientInfoSection
-              hpi={hpi}
-              pmh={pmh}
-              contraindications={contraindications}
-              onHpiChange={setHpi}
-              onPmhChange={setPmh}
-              onContraindicationsChange={setContraindications}
-              readOnly={readOnly}
+            {/* Alert Center Card */}
+            <AlertCenterCard 
+              adjustFollowUp={adjustFollowUp}
+              setAdjustFollowUp={setAdjustFollowUp}
+            />
+
+            {/* Medications Card */}
+            <MedicationsCard 
+              medicationData={medicationData}
+              medicationDosages={medicationDosages}
+              openMedicationControls={openMedicationControls}
+              openMedicationInstructions={openMedicationInstructions}
+              toggleMedication={toggleMedication}
+              toggleMedicationControls={toggleMedicationControls}
+              toggleMedicationInstructions={toggleMedicationInstructions}
+              selectDosage={selectDosage}
+              showMoreMeds={showMoreMeds}
+              toggleMoreMeds={toggleMoreMeds}
+              medicationSearchTerm={medicationSearchTerm}
+              medicationCategory={medicationCategory}
+              handleMedicationSearch={handleMedicationSearch}
+              handleMedicationCategoryChange={handleMedicationCategoryChange}
+              filteredMedications={filteredMedications}
+              addListedMed={addListedMed}
             />
           </div>
 
-          {/* Right Panel */}
-          <div className="md:w-3/5 p-4">
-            <ServiceMedicationOrderSection
-              allServices={allServices}
-              allProducts={allProducts}
-              allPlans={allPlans}
-              selectedServiceId={selectedServiceId}
-              treatmentApproach={treatmentApproach}
-              selectedMedications={selectedMedications}
-              plansForSelectedService={plansForSelectedService}
-              availableMedications={availableMedications}
-              onServiceChange={(e) => handleServiceChange(e)} // Pass event directly
-              onTreatmentApproachChange={setTreatmentApproach}
-              onMedicationSelectionChange={handleMedicationSelectionChange}
-              onDosageChange={handleDosageChange}
-              onPlanChangeForMedication={handlePlanChangeForMedication}
-              readOnly={readOnly}
+          {/* Right Column */}
+          <div>
+            {/* Communication Card */}
+            <CommunicationCard 
+              selectedFollowUpPeriod={selectedFollowUpPeriod}
+              followUpDisplayText={followUpDisplayText}
+              selectFollowupPeriod={selectFollowupPeriod}
+              resourceOptions={resourceOptions}
+              selectedResources={selectedResources}
+              toggleResource={toggleResource}
+              showMoreResources={showMoreResources}
+              toggleMoreResources={toggleMoreResources}
             />
-            <CommunicationSection
-              messageToPatient={messageToPatient}
+            
+            {/* Assessment & Plan Card */}
+            <AssessmentPlanCard 
+              showAssessmentDetails={showAssessmentDetails}
+              toggleAssessmentDetails={toggleAssessmentDetails}
               assessmentPlan={assessmentPlan}
-              followUpPlan={followUpPlan}
-              expandedMessage={expandedMessage}
-              expandedAssessment={expandedAssessment}
-              messageTemplates={messageTemplates}
-              assessmentTemplates={assessmentTemplates}
-              onMessageChange={setMessageToPatient}
-              onAssessmentChange={setAssessmentPlan}
-              onFollowUpChange={setFollowUpPlan}
-              onExpandedMessageChange={setExpandedMessage}
-              onExpandedAssessmentChange={setExpandedAssessment}
-              readOnly={readOnly}
+              setAssessmentPlan={setAssessmentPlan}
             />
           </div>
         </div>
       </div>
 
-      {/* Footer Actions */}
-      <div className="px-6 py-4 border-t border-gray-200 flex justify-end space-x-3 bg-white flex-shrink-0">
-        <button className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50" onClick={onClose}>
-          {readOnly ? 'Close' : 'Cancel'}
-        </button>
-        {readOnly && consultationData?.status !== 'archived' && (
-           <button className="px-4 py-2 rounded-md text-sm font-medium text-white bg-yellow-600 hover:bg-yellow-700" onClick={handleEdit} disabled={updateStatusMutation?.isLoading}>
-             {updateStatusMutation?.isLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2"/> : null} Edit
-           </button>
-        )}
-        {!readOnly && (
-          <>
-            <button className="px-4 py-2 rounded-md text-sm font-medium text-white bg-green-600 hover:bg-green-700" onClick={handleSave}>
-              Save Note
-            </button>
-            <button className="px-4 py-2 rounded-md text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700" onClick={handleSubmit} disabled={createConsultationMutation.isLoading}>
-              {createConsultationMutation.isLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2"/> : null} Submit
-            </button>
-          </>
-        )}
-      </div>
+      {/* Footer */}
+      <ConsultationFooter 
+        onClose={onClose}
+        handleSave={handleSave}
+        handleSubmit={handleSubmit}
+        readOnly={readOnly}
+      />
+
+      {/* AI Panel */}
+      <AIPanel 
+        showAIPanel={showAIPanel}
+        toggleAIPanel={toggleAIPanel}
+      />
+
+      {/* Intake Form Panel */}
+      <IntakeFormPanel 
+        patientId={patient?.id}
+        showIntakeForm={showIntakeForm}
+        toggleIntakeForm={toggleIntakeForm}
+      />
     </div>
   );
 };

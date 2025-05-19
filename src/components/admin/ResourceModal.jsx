@@ -1,52 +1,30 @@
-import React, { useState, useEffect } from 'react';
-import { 
-  useCreateEducationalResource, 
-  useUpdateEducationalResource 
+import React from 'react';
+import {
+  useCreateEducationalResource,
+  useUpdateEducationalResource
 } from '../../apis/educationalResources/hooks';
 import { useCategories } from '../../apis/categories/hooks';
 import { useProducts } from '../../apis/products/hooks';
 import Modal from '../ui/Modal';
-import { 
-  X, 
-  FileText, 
-  Clock, 
-  Calendar, 
-  Tag, 
-  CheckCircle, 
-  User, 
-  Globe 
+import {
+  X,
+  FileText,
+  Clock,
+  Calendar,
+  Tag,
+  CheckCircle,
+  User,
+  Globe
 } from 'lucide-react';
 import { toast } from 'react-toastify';
+import useResourceForm from '../../hooks/useResourceForm';
 
 const ResourceModal = ({ isOpen, onClose, onSuccess, resource }) => {
   const isEditing = !!resource;
-  const [activeTab, setActiveTab] = useState('content');
-  const [formData, setFormData] = useState({
-    title: '',
-    content_id: '',
-    category: '',
-    content_type: 'medication_guide',
-    related_product: '',
-    related_condition: '',
-    description: '',
-    content: '',
-    keywords: [],
-    reading_time_minutes: 5,
-    status: 'draft',
-    version: '1.0',
-    target_audience: 'all_patients',
-    requires_medical_review: true,
-    requires_legal_review: true,
-    requires_marketing_review: false,
-    requires_regulatory_review: false,
-    references: []
-  });
-  const [keywordInput, setKeywordInput] = useState('');
-  const [workflowStep, setWorkflowStep] = useState('draft');
 
   // Fetch categories for dropdown
   const { data: categories } = useCategories();
-  
+
   // Fetch products for dropdown
   const { data: products } = useProducts();
 
@@ -72,105 +50,20 @@ const ResourceModal = ({ isOpen, onClose, onSuccess, resource }) => {
     }
   });
 
-  // Initialize form data if editing
-  useEffect(() => {
-    if (isEditing && resource) {
-      setFormData({
-        ...resource,
-        keywords: resource.keywords || [],
-        references: resource.references || []
-      });
-      
-      // Set workflow step based on status
-      if (resource.status === 'active') {
-        setWorkflowStep('published');
-      } else if (resource.status === 'review') {
-        setWorkflowStep('review');
-      } else {
-        setWorkflowStep('draft');
-      }
-    }
-  }, [isEditing, resource]);
-
-  // Handle form input changes
-  const handleInputChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: type === 'checkbox' ? checked : value
-    }));
-  };
-
-  // Handle content type change
-  const handleContentTypeChange = (type) => {
-    setFormData(prev => ({
-      ...prev,
-      content_type: type
-    }));
-  };
-
-  // Handle adding a keyword
-  const handleAddKeyword = () => {
-    if (keywordInput.trim() && !formData.keywords.includes(keywordInput.trim())) {
-      setFormData(prev => ({
-        ...prev,
-        keywords: [...prev.keywords, keywordInput.trim()]
-      }));
-      setKeywordInput('');
-    }
-  };
-
-  // Handle removing a keyword
-  const handleRemoveKeyword = (keyword) => {
-    setFormData(prev => ({
-      ...prev,
-      keywords: prev.keywords.filter(k => k !== keyword)
-    }));
-  };
-
-  // Handle form submission
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    
-    // Validate form
-    if (!formData.title) {
-      toast.error('Title is required');
-      return;
-    }
-    
-    if (!formData.content) {
-      toast.error('Content is required');
-      return;
-    }
-    
-    // Prepare data for submission
-    const resourceData = {
-      ...formData,
-      updated_at: new Date().toISOString()
-    };
-    
-    if (isEditing) {
-      updateResource({ id: resource.id, resourceData });
-    } else {
-      createResource(resourceData);
-    }
-  };
-
-  // Get content type label
-  const getContentTypeLabel = (type) => {
-    switch (type) {
-      case 'medication_guide':
-        return 'Medication Guide';
-      case 'usage_guide':
-        return 'Usage Guide';
-      case 'side_effect':
-        return 'Side Effect Management';
-      case 'condition_info':
-        return 'Condition Information';
-      default:
-        return type.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
-    }
-  };
+  const {
+    activeTab,
+    setActiveTab,
+    formData,
+    errors,
+    keywordInput,
+    setKeywordInput,
+    handleInputChange,
+    handleContentTypeChange,
+    handleAddKeyword,
+    handleRemoveKeyword,
+    handleSubmit,
+    getContentTypeLabel,
+  } = useResourceForm(resource, categories, products, onSuccess, createResource, updateResource);
 
   return (
     <Modal
@@ -182,11 +75,11 @@ const ResourceModal = ({ isOpen, onClose, onSuccess, resource }) => {
       <form onSubmit={handleSubmit}>
         {/* Tabs */}
         <div className="flex border-b border-gray-200 mb-4">
-          <button 
+          <button
             type="button"
             className={`px-4 py-2 font-medium text-sm ${
-              activeTab === 'content' 
-                ? 'text-blue-600 border-b-2 border-blue-600' 
+              activeTab === 'content'
+                ? 'text-blue-600 border-b-2 border-blue-600'
                 : 'text-gray-500 hover:text-gray-700'
             }`}
             onClick={() => setActiveTab('content')}
@@ -195,22 +88,22 @@ const ResourceModal = ({ isOpen, onClose, onSuccess, resource }) => {
           </button>
           {isEditing && (
             <>
-              <button 
+              <button
                 type="button"
                 className={`px-4 py-2 font-medium text-sm ${
-                  activeTab === 'versions' 
-                    ? 'text-blue-600 border-b-2 border-blue-600' 
+                  activeTab === 'versions'
+                    ? 'text-blue-600 border-b-2 border-blue-600'
                     : 'text-gray-500 hover:text-gray-700'
                 }`}
                 onClick={() => setActiveTab('versions')}
               >
                 Version History
               </button>
-              <button 
+              <button
                 type="button"
                 className={`px-4 py-2 font-medium text-sm ${
-                  activeTab === 'assignments' 
-                    ? 'text-blue-600 border-b-2 border-blue-600' 
+                  activeTab === 'assignments'
+                    ? 'text-blue-600 border-b-2 border-blue-600'
                     : 'text-gray-500 hover:text-gray-700'
                 }`}
                 onClick={() => setActiveTab('assignments')}
@@ -319,13 +212,13 @@ const ResourceModal = ({ isOpen, onClose, onSuccess, resource }) => {
               </label>
               <div className="flex flex-wrap gap-2 p-2 border border-gray-300 rounded-md bg-gray-50 mb-1">
                 {formData.keywords.map((keyword, index) => (
-                  <div 
-                    key={index} 
+                  <div
+                    key={index}
                     className="flex items-center bg-gray-200 text-gray-800 px-3 py-1 rounded-full text-sm"
                   >
                     {keyword}
-                    <button 
-                      type="button" 
+                    <button
+                      type="button"
                       className="ml-1 text-gray-600 hover:text-red-600"
                       onClick={() => handleRemoveKeyword(keyword)}
                     >

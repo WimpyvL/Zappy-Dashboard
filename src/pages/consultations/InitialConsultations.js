@@ -130,7 +130,7 @@ const InitialConsultations = () => {
     setShowConsultationNotesModal(true); // Open notes modal immediately after selection
   };
 
-  const handleViewConsultation = (consultation, forceEdit = false) => {
+  const handleViewConsultation = (consultation) => {
     // Need patient data for the notes modal, find it (assuming consultations join patient data)
     // This might need adjustment based on actual data structure from useConsultations
     const patientData = {
@@ -141,40 +141,15 @@ const InitialConsultations = () => {
         // Add other necessary fields
     };
     setSelectedPatientForNew(patientData); // Set patient context for the notes modal
-    
-    // If forceEdit is true or if coming from Edit button, set status to pending first
-    if (forceEdit && consultation.status === 'reviewed') {
-      console.log("Setting consultation to editable mode");
-      updateStatusMutation.mutate(
-        { consultationId: consultation.id, status: 'pending' },
-        {
-          onSuccess: () => {
-            // After status is updated, set the consultation with updated status
-            const updatedConsultation = {
-              ...consultation,
-              status: 'pending' // Update the status locally for immediate UI feedback
-            };
-            setSelectedConsultation(updatedConsultation);
-            setShowConsultationNotesModal(true);
-          }
-        }
-      );
-    } else {
-      setSelectedConsultation(consultation);
-      setShowConsultationNotesModal(true);
-    }
+    setSelectedConsultation(consultation); // Set the consultation being viewed/edited
+    setShowConsultationNotesModal(true);
   };
 
   const handleCloseNotesModal = () => {
     setShowConsultationNotesModal(false);
     setSelectedPatientForNew(null);
     setSelectedConsultation(null);
-    
-    // Force refetch with a delay to ensure the server has time to update
-    setTimeout(() => {
-      console.log("Refetching consultations after modal close");
-      refetchConsultations(); // Refetch list when notes modal closes
-    }, 500);
+    refetchConsultations(); // Refetch list when notes modal closes
   };
 
   const handleSendEmail = (consultation) => {

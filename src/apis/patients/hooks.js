@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../../lib/supabase';
 import auditLogService from '../../utils/auditLogService';
+import { toast } from 'react-toastify';
 
 // Get patients hook using Supabase
 export const usePatients = (currentPage = 1, filters = {}, pageSize = 10) => {
@@ -185,6 +186,85 @@ export const useUpdatePatient = (options = {}) => {
 };
 
 // Delete patient hook using Supabase
+// Hook to add a tag to a patient
+export const useAddPatientTag = (options = {}) => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ entityId, tagId }) => {
+      if (!entityId) throw new Error("Patient ID is required");
+      if (!tagId) throw new Error("Tag ID is required");
+
+      // Create a record in the patient_tag junction table
+      const { data, error } = await supabase
+        .from('patient_tag')
+        .insert({
+          patient_id: entityId,
+          tag_id: tagId
+        })
+        .select();
+
+      if (error) {
+        console.error(`Error adding tag ${tagId} to patient ${entityId}:`, error);
+        if (error.code === '23505') { // Unique violation
+          throw new Error(`This tag is already assigned to the patient.`);
+        }
+        throw new Error(error.message);
+      }
+      return data;
+    },
+    onSuccess: (data, variables) => {
+      // Invalidate the patient query to refresh the data
+      queryClient.invalidateQueries({ queryKey: ['patient', variables.entityId] });
+      queryClient.invalidateQueries({ queryKey: ['patients'] });
+      toast.success('Tag added successfully');
+      options.onSuccess?.(data, variables);
+    },
+    onError: (error, variables) => {
+      toast.error(error.message || 'An error occurred while adding the tag.');
+      options.onError?.(error, variables);
+    },
+  });
+};
+
+// Hook to remove a tag from a patient
+export const useRemovePatientTag = (options = {}) => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ entityId, tagId }) => {
+      if (!entityId) throw new Error("Patient ID is required");
+      if (!tagId) throw new Error("Tag ID is required");
+
+      // Delete the record from the patient_tag junction table
+      const { error } = await supabase
+        .from('patient_tag')
+        .delete()
+        .match({
+          patient_id: entityId,
+          tag_id: tagId
+        });
+
+      if (error) {
+        console.error(`Error removing tag ${tagId} from patient ${entityId}:`, error);
+        throw new Error(error.message);
+      }
+      return { success: true };
+    },
+    onSuccess: (data, variables) => {
+      // Invalidate the patient query to refresh the data
+      queryClient.invalidateQueries({ queryKey: ['patient', variables.entityId] });
+      queryClient.invalidateQueries({ queryKey: ['patients'] });
+      toast.success('Tag removed successfully');
+      options.onSuccess?.(data, variables);
+    },
+    onError: (error, variables) => {
+      toast.error(error.message || 'An error occurred while removing the tag.');
+      options.onError?.(error, variables);
+    },
+  });
+};
+
 export const useDeletePatient = (options = {}) => {
   const queryClient = useQueryClient();
 

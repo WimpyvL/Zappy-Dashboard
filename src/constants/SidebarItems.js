@@ -33,6 +33,7 @@ import {
   ShoppingBag, // For Marketplace
   BookOpen, // For Resources
   Layers, // For My Services
+  Heart, // For Health page
 } from 'lucide-react';
 
 import { paths } from './paths'; // Ensure paths are imported
@@ -166,8 +167,8 @@ export const logoutItem = {
 
 // Define patient sidebar items (Further Simplified View)
 export const patientSidebarItems = [
-  { title: 'New Home', path: '/patient-home-v2', icon: Home, color: 'primary' }, // New Vibrant Home Page
-  { title: 'My Services', path: '/my-services', icon: Layers, color: 'primary' }, // Modular Services Interface
+  { title: 'Home', path: '/', icon: Home, color: 'primary' }, // Updated to Home page
+  { title: 'Health', path: '/health', icon: Heart, color: 'primary' }, // Updated to Health page
   { title: 'Shop', path: '/shop', icon: ShoppingBag, color: 'primary' }, // Shop page replacing Marketplace
   { title: 'Programs', path: '/programs', icon: PatientProgramIcon, color: 'primary' }, // Patient programs
 ];

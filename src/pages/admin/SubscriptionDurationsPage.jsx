@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { 
-  useSubscriptionDurations, 
+import {
+  useSubscriptionDurations,
   useUpdateSubscriptionDuration,
   useCreateSubscriptionDuration,
   useDeleteSubscriptionDuration
@@ -10,16 +10,11 @@ import { toast } from 'react-toastify';
 // Components
 import PageHeader from '../../components/ui/PageHeader';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
+import useSubscriptionDurationForm from '../../hooks/useSubscriptionDurationForm';
 
 const SubscriptionDurationsPage = () => {
-  const [editingDuration, setEditingDuration] = useState(null);
+  const [editingDurationId, setEditingDurationId] = useState(null);
   const [isCreating, setIsCreating] = useState(false);
-  const [newDuration, setNewDuration] = useState({
-    name: '',
-    duration_months: 1,
-    duration_days: null,
-    discount_percent: 0
-  });
 
   // Fetch all durations
   const { data: durations, isLoading, refetch } = useSubscriptionDurations();
@@ -28,7 +23,7 @@ const SubscriptionDurationsPage = () => {
   const { mutate: updateDuration, isLoading: isUpdating } = useUpdateSubscriptionDuration({
     onSuccess: () => {
       toast.success('Subscription duration updated successfully');
-      setEditingDuration(null);
+      setEditingDurationId(null);
       refetch();
     }
   });
@@ -38,12 +33,6 @@ const SubscriptionDurationsPage = () => {
     onSuccess: () => {
       toast.success('Subscription duration created successfully');
       setIsCreating(false);
-      setNewDuration({
-        name: '',
-        duration_months: 1,
-        duration_days: null,
-        discount_percent: 0
-      });
       refetch();
     }
   });
@@ -56,79 +45,89 @@ const SubscriptionDurationsPage = () => {
     }
   });
 
+  // Hook for the create form
+  const {
+    formData: newDuration,
+    errors: createErrors,
+    handleInputChange: handleCreateFieldChange,
+    handleNumericChange: handleCreateNumericChange,
+    validateForm: validateCreateForm,
+    setFormData: setNewDuration,
+  } = useSubscriptionDurationForm({
+    name: '',
+    duration_months: 1,
+    duration_days: null,
+    discount_percent: 0
+  });
+
+  // Hook for the edit form
+  const editingDuration = durations?.find(d => d.id === editingDurationId);
+  const {
+    formData: editFormData,
+    errors: editErrors,
+    handleInputChange: handleEditFieldChange,
+    handleNumericChange: handleEditNumericChange,
+    validateForm: validateEditForm,
+    setFormData: setEditFormData,
+  } = useSubscriptionDurationForm(editingDuration || {
+    name: '',
+    duration_months: 1,
+    duration_days: null,
+    discount_percent: 0
+  });
+
   // Handle edit mode toggle
   const handleEditToggle = (duration) => {
-    if (editingDuration?.id === duration.id) {
-      setEditingDuration(null);
+    if (editingDurationId === duration.id) {
+      setEditingDurationId(null);
     } else {
-      setEditingDuration({ ...duration });
+      setEditingDurationId(duration.id);
     }
   };
 
   // Handle create mode toggle
   const handleCreateToggle = () => {
     setIsCreating(!isCreating);
-    setNewDuration({
-      name: '',
-      duration_months: 1,
-      discount_percent: 0
-    });
-  };
-
-  // Handle field updates for editing
-  const handleEditFieldChange = (field, value) => {
-    setEditingDuration(prev => ({
-      ...prev,
-      [field]: field === 'duration_months' || field === 'discount_percent' 
-        ? parseFloat(value) 
-        : value
-    }));
-  };
-
-  // Handle field updates for creating
-  const handleCreateFieldChange = (field, value) => {
-    setNewDuration(prev => ({
-      ...prev,
-      [field]: field === 'duration_months' || field === 'discount_percent' 
-        ? parseFloat(value) 
-        : value
-    }));
+    // Reset new duration form when toggling off
+    if (isCreating) {
+       setNewDuration({
+        name: '',
+        duration_months: 1,
+        duration_days: null,
+        discount_percent: 0
+      });
+    }
   };
 
   // Handle update submission
   const handleUpdateSubmit = () => {
-    if (!editingDuration.name || (editingDuration.duration_months <= 0 && !editingDuration.duration_days)) {
-      toast.error('Name and at least one duration type are required. Duration must be greater than 0.');
-      return;
+    if (validateEditForm()) {
+      updateDuration({
+        id: editingDurationId,
+        durationData: {
+          name: editFormData.name,
+          duration_months: editFormData.duration_months,
+          duration_days: editFormData.duration_days,
+          discount_percent: editFormData.discount_percent || 0
+        }
+      });
+    } else {
+       toast.error(editErrors.duration || editErrors.name || 'Validation failed.');
     }
-
-    updateDuration({
-      id: editingDuration.id,
-      durationData: {
-        name: editingDuration.name,
-        duration_months: editingDuration.duration_months,
-        duration_days: editingDuration.duration_days,
-        discount_percent: editingDuration.discount_percent || 0
-      }
-    });
   };
 
   // Handle create submission
   const handleCreateSubmit = () => {
-    if (!newDuration.name || (newDuration.duration_months <= 0 && !newDuration.duration_days)) {
-      toast.error('Name and at least one duration type are required. Duration must be greater than 0.');
-      return;
+    if (validateCreateForm()) {
+      createDuration(newDuration, {
+        onError: (error) => {
+          console.error('Detailed error:', error);
+          toast.error(`Failed to create: ${error.message || 'Unknown error'}`);
+        }
+      });
+    } else {
+       toast.error(createErrors.duration || createErrors.name || 'Validation failed.');
     }
-
-    // Log the data being sent
-    console.log('Creating duration with:', newDuration);
-
-    createDuration(newDuration, {
-      onError: (error) => {
-        console.error('Detailed error:', error);
-        toast.error(`Failed to create: ${error.message || 'Unknown error'}`);
-      }
-    });
   };
 
   // Handle delete
@@ -149,8 +148,8 @@ const SubscriptionDurationsPage = () => {
 
   return (
     <div className="container mx-auto px-4 py-6">
-      <PageHeader 
-        title="Subscription Durations" 
+      <PageHeader
+        title="Subscription Durations"
         actionButton={{
           label: isCreating ? "Cancel" : "Add Duration",
           onClick: handleCreateToggle
@@ -177,7 +176,8 @@ const SubscriptionDurationsPage = () => {
                     className="w-full p-2 border rounded"
                     placeholder="e.g., Quarterly"
                     value={newDuration.name}
-                    onChange={(e) => handleCreateFieldChange('name', e.target.value)}
+                    onChange={handleCreateFieldChange}
+                    name="name"
                   />
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
@@ -186,7 +186,8 @@ const SubscriptionDurationsPage = () => {
                     min="1"
                     className="w-full p-2 border rounded"
                     value={newDuration.duration_months}
-                    onChange={(e) => handleCreateFieldChange('duration_months', e.target.value)}
+                    onChange={handleCreateNumericChange}
+                    name="duration_months"
                   />
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
@@ -196,7 +197,8 @@ const SubscriptionDurationsPage = () => {
                     className="w-full p-2 border rounded"
                     value={newDuration.duration_days || ''}
                     placeholder="Optional"
-                    onChange={(e) => handleCreateFieldChange('duration_days', e.target.value ? parseInt(e.target.value) : null)}
+                    onChange={handleCreateNumericChange}
+                    name="duration_days"
                   />
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
@@ -206,7 +208,8 @@ const SubscriptionDurationsPage = () => {
                     max="100"
                     className="w-full p-2 border rounded"
                     value={newDuration.discount_percent}
-                    onChange={(e) => handleCreateFieldChange('discount_percent', e.target.value)}
+                    onChange={handleCreateNumericChange}
+                    name="discount_percent"
                   />
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-right">
@@ -226,65 +229,69 @@ const SubscriptionDurationsPage = () => {
                 </td>
               </tr>
             )}
-            
+
             {durations?.length > 0 ? (
               durations.map(duration => (
-                <tr key={duration.id} className={`hover:bg-gray-50 ${editingDuration?.id === duration.id ? 'bg-yellow-50' : ''}`}>
+                <tr key={duration.id} className={`hover:bg-gray-50 ${editingDurationId === duration.id ? 'bg-yellow-50' : ''}`}>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    {editingDuration?.id === duration.id ? (
+                    {editingDurationId === duration.id ? (
                       <input
                         type="text"
                         className="w-full p-2 border rounded"
-                        value={editingDuration.name}
-                        onChange={(e) => handleEditFieldChange('name', e.target.value)}
+                        value={editFormData.name}
+                        onChange={handleEditFieldChange}
+                        name="name"
                       />
                     ) : (
                       <div className="font-medium text-gray-900">{duration.name}</div>
                     )}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    {editingDuration?.id === duration.id ? (
+                    {editingDurationId === duration.id ? (
                       <input
                         type="number"
                         min="1"
                         className="w-full p-2 border rounded"
-                        value={editingDuration.duration_months}
-                        onChange={(e) => handleEditFieldChange('duration_months', e.target.value)}
+                        value={editFormData.duration_months}
+                        onChange={handleEditNumericChange}
+                        name="duration_months"
                       />
                     ) : (
                       duration.duration_months
                     )}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    {editingDuration?.id === duration.id ? (
+                    {editingDurationId === duration.id ? (
                       <input
                         type="number"
                         min="1"
                         className="w-full p-2 border rounded"
-                        value={editingDuration.duration_days || ''}
+                        value={editFormData.duration_days || ''}
                         placeholder="Optional"
-                        onChange={(e) => handleEditFieldChange('duration_days', e.target.value ? parseInt(e.target.value) : null)}
+                        onChange={handleEditNumericChange}
+                        name="duration_days"
                       />
                     ) : (
                       duration.duration_days || '-'
                     )}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    {editingDuration?.id === duration.id ? (
+                    {editingDurationId === duration.id ? (
                       <input
                         type="number"
                         min="0"
                         max="100"
                         className="w-full p-2 border rounded"
-                        value={editingDuration.discount_percent}
-                        onChange={(e) => handleEditFieldChange('discount_percent', e.target.value)}
+                        value={editFormData.discount_percent}
+                        onChange={handleEditNumericChange}
+                        name="discount_percent"
                       />
                     ) : (
                       `${duration.discount_percent || 0}%`
                     )}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right">
-                    {editingDuration?.id === duration.id ? (
+                    {editingDurationId === duration.id ? (
                       <>
                         <button
                           onClick={handleUpdateSubmit}
@@ -294,7 +301,7 @@ const SubscriptionDurationsPage = () => {
                           {isUpdating ? 'Saving...' : 'Save'}
                         </button>
                         <button
-                          onClick={() => setEditingDuration(null)}
+                          onClick={() => setEditingDurationId(null)}
                           className="bg-gray-600 hover:bg-gray-700 text-white py-1 px-3 rounded"
                         >
                           Cancel

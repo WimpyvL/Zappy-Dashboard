@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import PropTypes from 'prop-types';
 import { X } from 'lucide-react';
 import { toast } from 'react-toastify';
 
@@ -101,6 +102,16 @@ const EmailPatientModal = ({ isOpen, onClose, consultation }) => {
       </div>
     </div>
   );
+};
+
+EmailPatientModal.propTypes = {
+  isOpen: PropTypes.bool.isRequired,
+  onClose: PropTypes.func.isRequired,
+  consultation: PropTypes.shape({
+    email: PropTypes.string,
+    patientName: PropTypes.string,
+    // Add other fields as needed
+  }),
 };
 
 export default EmailPatientModal;

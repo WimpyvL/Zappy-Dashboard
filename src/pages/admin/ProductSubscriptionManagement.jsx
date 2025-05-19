@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { 
+import {
   Package, Tag, Box, Briefcase, Plus, Edit, Trash2, Search, Loader2, Layers
 } from 'lucide-react';
 
@@ -7,17 +7,17 @@ import {
 import { useTreatmentPackages } from '../../apis/treatmentPackages/hooks';
 import { useSubscriptionDurations } from '../../apis/subscriptionDurations/hooks';
 import { useServices } from '../../apis/services/hooks';
-import { 
-  useProducts, 
-  useCreateProduct, 
-  useUpdateProduct, 
-  useDeleteProduct 
+import {
+  useProducts,
+  useCreateProduct,
+  useUpdateProduct,
+  useDeleteProduct
 } from '../../apis/products/hooks';
-import { 
-  useSubscriptionPlans, 
-  useCreateSubscriptionPlan, 
-  useUpdateSubscriptionPlan, 
-  useDeleteSubscriptionPlan 
+import {
+  useSubscriptionPlans,
+  useCreateSubscriptionPlan,
+  useUpdateSubscriptionPlan,
+  useDeleteSubscriptionPlan
 } from '../../apis/subscriptionPlans/hooks';
 import {
   useCategories,
@@ -36,6 +36,7 @@ import BundleModal from '../../components/admin/BundleModal';
 import ServiceModal from '../../components/admin/ServiceModal';
 import CategoryModal from '../../components/admin/CategoryModal';
 import { toast } from 'react-toastify';
+import { applyFilters } from '../../utils/filterUtils';
 
 const ProductSubscriptionManagement = () => {
   const [activeTab, setActiveTab] = useState('products');
@@ -43,7 +44,7 @@ const ProductSubscriptionManagement = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
-  
+
   // Modal states
   const [showProductModal, setShowProductModal] = useState(false);
   const [showPlanModal, setShowPlanModal] = useState(false);
@@ -66,7 +67,7 @@ const ProductSubscriptionManagement = () => {
   const products = productsData?.data || productsData || [];
   const subscriptionPlans = plansData?.data || plansData || [];
   const categories = categoriesData?.data || categoriesData || [];
-  
+
   // Sample data for bundles (since we don't have a real API for them yet)
   const bundles = [
     {
@@ -197,47 +198,24 @@ const ProductSubscriptionManagement = () => {
 
   // Set loading state
   useEffect(() => {
-    if (!isLoadingServices && !isLoadingPackages && !isLoadingDurations && 
+    if (!isLoadingServices && !isLoadingPackages && !isLoadingDurations &&
         !isLoadingProducts && !isLoadingPlans && !isLoadingCategories) {
       setIsLoading(false);
     }
   }, [isLoadingServices, isLoadingPackages, isLoadingDurations, isLoadingProducts, isLoadingPlans, isLoadingCategories]);
 
-  // Filter functions
-  const filterByCategory = (items, category) => {
-    if (category === 'all') return items;
-    return items.filter(item => item.category?.toLowerCase() === category.toLowerCase());
-  };
-
-  const filterByStatus = (items, status) => {
-    if (status === 'all') return items;
-    return items.filter(item => item.status?.toLowerCase() === status.toLowerCase());
-  };
-
-  const filterBySearch = (items, search) => {
-    if (!search) return items;
-    const lowerSearch = search.toLowerCase();
-    return items.filter(item => 
-      (item.name && item.name.toLowerCase().includes(lowerSearch)) || 
-      (item.sku && item.sku.toLowerCase().includes(lowerSearch)) ||
-      (item.planId && item.planId.toLowerCase().includes(lowerSearch)) ||
-      (item.bundleId && item.bundleId.toLowerCase().includes(lowerSearch)) ||
-      (item.serviceId && item.serviceId.toLowerCase().includes(lowerSearch))
-    );
-  };
-
   // Apply all filters
-  const filteredProducts = filterBySearch(filterByStatus(filterByCategory(products, categoryFilter), statusFilter), searchTerm);
-  const filteredPlans = filterBySearch(filterByStatus(filterByCategory(subscriptionPlans, categoryFilter), statusFilter), searchTerm);
-  const filteredBundles = filterBySearch(filterByStatus(filterByCategory(bundles, categoryFilter), statusFilter), searchTerm);
-  const filteredServices = filterBySearch(filterByStatus(filterByCategory(services, categoryFilter), statusFilter), searchTerm);
-  const filteredCategories = filterBySearch(filterByStatus(categories, statusFilter), searchTerm);
+  const filteredProducts = applyFilters(products, searchTerm, categoryFilter, statusFilter);
+  const filteredPlans = applyFilters(subscriptionPlans, searchTerm, categoryFilter, statusFilter);
+  const filteredBundles = applyFilters(bundles, searchTerm, categoryFilter, statusFilter);
+  const filteredServices = applyFilters(services, searchTerm, categoryFilter, statusFilter);
+  const filteredCategories = applyFilters(categories, searchTerm, categoryFilter, statusFilter);
 
   // Handle actions
   const handleAddNew = () => {
     setIsEditMode(false);
     setCurrentItem(null);
-    
+
     switch (activeTab) {
       case 'products':
         setShowProductModal(true);
@@ -262,7 +240,7 @@ const ProductSubscriptionManagement = () => {
   const handleEdit = (item) => {
     setIsEditMode(true);
     setCurrentItem(item);
-    
+
     switch (activeTab) {
       case 'products':
         setShowProductModal(true);
@@ -288,7 +266,7 @@ const ProductSubscriptionManagement = () => {
     if (!window.confirm(`Are you sure you want to delete this ${activeTab.slice(0, -1)}?`)) {
       return;
     }
-    
+
     switch (activeTab) {
       case 'products':
         deleteProductMutation.mutate(item.id);
@@ -384,7 +362,7 @@ const ProductSubscriptionManagement = () => {
       {/* Page Header */}
       <div className="flex justify-between items-center mb-6">
         <PageHeader title="Products & Subscriptions" />
-        <button 
+        <button
           className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md flex items-center"
           onClick={handleAddNew}
         >
@@ -401,35 +379,35 @@ const ProductSubscriptionManagement = () => {
       <div className="bg-white shadow-md rounded-lg overflow-hidden mb-6">
         {/* Tabs */}
         <div className="tabs flex border-b border-gray-200">
-          <button 
+          <button
             className={`tab px-6 py-3 font-medium ${activeTab === 'products' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
             onClick={() => setActiveTab('products')}
           >
             <Package className="h-4 w-4 inline-block mr-1" />
             Products
           </button>
-          <button 
+          <button
             className={`tab px-6 py-3 font-medium ${activeTab === 'subscriptionPlans' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
             onClick={() => setActiveTab('subscriptionPlans')}
           >
             <Tag className="h-4 w-4 inline-block mr-1" />
             Subscription Plans
           </button>
-          <button 
+          <button
             className={`tab px-6 py-3 font-medium ${activeTab === 'bundles' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
             onClick={() => setActiveTab('bundles')}
           >
             <Box className="h-4 w-4 inline-block mr-1" />
             Bundles
           </button>
-          <button 
+          <button
             className={`tab px-6 py-3 font-medium ${activeTab === 'services' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
             onClick={() => setActiveTab('services')}
           >
             <Briefcase className="h-4 w-4 inline-block mr-1" />
             Services
           </button>
-          <button 
+          <button
             className={`tab px-6 py-3 font-medium ${activeTab === 'categories' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
             onClick={() => setActiveTab('categories')}
           >
@@ -496,8 +474,61 @@ const ProductSubscriptionManagement = () => {
           {/* Dynamic Tab Content */}
           {activeTab === 'products' && (
             <div className="overflow-x-auto">
-              {/* Products table content */}
-              <p className="text-sm text-gray-500">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">SKU</th>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Price</th>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                    <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {filteredProducts.map((product) => (
+                    <tr key={product.id} className="hover:bg-gray-50">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm font-medium text-gray-900">{product.name}</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-500">{product.sku}</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-500">{product.category}</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-900">${product.price?.toFixed(2) || '0.00'}</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <StatusBadge status={product.status} />
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        <button
+                          className="text-blue-600 hover:text-blue-900 mr-3"
+                          onClick={() => handleEdit(product)}
+                        >
+                          <Edit className="h-5 w-5" />
+                        </button>
+                        <button
+                          className="text-red-600 hover:text-red-900"
+                          onClick={() => handleDelete(product)}
+                        >
+                          <Trash2 className="h-5 w-5" />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                  {filteredProducts.length === 0 && (
+                    <tr>
+                      <td colSpan="6" className="px-6 py-4 text-center text-sm text-gray-500">
+                        No products found
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+              <p className="text-sm text-gray-500 mt-4">
                 {filteredProducts.length} products found
               </p>
             </div>
@@ -505,8 +536,64 @@ const ProductSubscriptionManagement = () => {
 
           {activeTab === 'subscriptionPlans' && (
             <div className="overflow-x-auto">
-              {/* Subscription plans table content */}
-              <p className="text-sm text-gray-500">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Price</th>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Billing Cycle</th>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                    <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {filteredPlans.map((plan) => (
+                    <tr key={plan.id} className="hover:bg-gray-50">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm font-medium text-gray-900">{plan.name}</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-500">{plan.category}</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-900">${plan.price?.toFixed(2) || '0.00'}</div>
+                        {plan.discount > 0 && (
+                          <div className="text-xs text-green-600">{plan.discount}% off</div>
+                        )}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-500">{plan.billingFrequency || 'Monthly'}</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <StatusBadge status={plan.status || 'active'} />
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        <button
+                          className="text-blue-600 hover:text-blue-900 mr-3"
+                          onClick={() => handleEdit(plan)}
+                        >
+                          <Edit className="h-5 w-5" />
+                        </button>
+                        <button
+                          className="text-red-600 hover:text-red-900"
+                          onClick={() => handleDelete(plan)}
+                        >
+                          <Trash2 className="h-5 w-5" />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                  {filteredPlans.length === 0 && (
+                    <tr>
+                      <td colSpan="6" className="px-6 py-4 text-center text-sm text-gray-500">
+                        No subscription plans found
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+              <p className="text-sm text-gray-500 mt-4">
                 {filteredPlans.length} subscription plans found
               </p>
             </div>
@@ -514,8 +601,68 @@ const ProductSubscriptionManagement = () => {
 
           {activeTab === 'bundles' && (
             <div className="overflow-x-auto">
-              {/* Bundles table content */}
-              <p className="text-sm text-gray-500">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Bundle ID</th>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Price</th>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Products</th>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                    <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {filteredBundles.map((bundle) => (
+                    <tr key={bundle.id} className="hover:bg-gray-50">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm font-medium text-gray-900">{bundle.name}</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-500">{bundle.bundleId}</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-500">{bundle.category}</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-900">${bundle.price?.toFixed(2) || '0.00'}</div>
+                        {bundle.discount > 0 && (
+                          <div className="text-xs text-green-600">Save ${bundle.discount.toFixed(2)}</div>
+                        )}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-500">{bundle.includedProducts?.length || 0} items</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <StatusBadge status={bundle.status} />
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        <button
+                          className="text-blue-600 hover:text-blue-900 mr-3"
+                          onClick={() => handleEdit(bundle)}
+                        >
+                          <Edit className="h-5 w-5" />
+                        </button>
+                        <button
+                          className="text-red-600 hover:text-red-900"
+                          onClick={() => handleDelete(bundle)}
+                        >
+                          <Trash2 className="h-5 w-5" />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                  {filteredBundles.length === 0 && (
+                    <tr>
+                      <td colSpan="7" className="px-6 py-4 text-center text-sm text-gray-500">
+                        No bundles found
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+              <p className="text-sm text-gray-500 mt-4">
                 {filteredBundles.length} bundles found
               </p>
             </div>
@@ -523,8 +670,65 @@ const ProductSubscriptionManagement = () => {
 
           {activeTab === 'services' && (
             <div className="overflow-x-auto">
-              {/* Services table content */}
-              <p className="text-sm text-gray-500">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Service ID</th>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Provider</th>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Duration</th>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                    <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {filteredServices.map((service) => (
+                    <tr key={service.id} className="hover:bg-gray-50">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm font-medium text-gray-900">{service.name}</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-500">{service.serviceId}</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-500">{service.category}</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-500">{service.provider || 'Any Provider'}</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-500">{service.duration || '30'} min</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <StatusBadge status={service.status} />
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        <button
+                          className="text-blue-600 hover:text-blue-900 mr-3"
+                          onClick={() => handleEdit(service)}
+                        >
+                          <Edit className="h-5 w-5" />
+                        </button>
+                        <button
+                          className="text-red-600 hover:text-red-900"
+                          onClick={() => handleDelete(service)}
+                        >
+                          <Trash2 className="h-5 w-5" />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                  {filteredServices.length === 0 && (
+                    <tr>
+                      <td colSpan="7" className="px-6 py-4 text-center text-sm text-gray-500">
+                        No services found
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+              <p className="text-sm text-gray-500 mt-4">
                 {filteredServices.length} services found
               </p>
             </div>

@@ -1,4 +1,5 @@
 import React from 'react';
+import PropTypes from 'prop-types';
 
 const CommunicationSection = ({
   messageToPatient,
@@ -14,6 +15,11 @@ const CommunicationSection = ({
   onExpandedMessageChange,
   onExpandedAssessmentChange,
   readOnly,
+  medicationsSummary = [],
+  resources = [],
+  onResourceToggle = () => {},
+  selectedResources = [],
+  followUpOptions = ['2 weeks', '4 weeks', 'Monthly', '8 weeks', '12 weeks'],
 }) => {
   // State for template visibility (can be managed internally or passed as props)
   const [showPatientMessageTemplates] = React.useState(true); // Removed unused setter
@@ -21,6 +27,28 @@ const CommunicationSection = ({
 
   return (
     <>
+      {/* Medications Summary */}
+      {medicationsSummary.length > 0 && (
+        <div className="card bg-white rounded-lg shadow mb-4">
+          <div className="card-header px-4 py-2 border-b border-gray-200 font-semibold text-sm">
+            Medications Summary
+          </div>
+          <div className="card-body p-4 text-xs">
+            {medicationsSummary.map((med, idx) => (
+              <div key={idx} className="flex justify-between mb-1">
+                <span>
+                  <strong>{med.name}</strong> {med.dose} {med.frequency}
+                  {med.duration && (
+                    <span className="text-gray-500 ml-1">({med.duration})</span>
+                  )}
+                </span>
+                <span className="text-gray-500">{med.category}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Message to Patient Section */}
       <div className="border border-blue-200 rounded-xl overflow-hidden mb-4 bg-blue-50">
         <div className="bg-blue-100 px-4 py-3 border-b border-blue-200 flex justify-between items-center">
@@ -39,7 +67,6 @@ const CommunicationSection = ({
             <button
               className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-r-md text-xs font-medium"
               disabled={readOnly}
-              // onClick={() => setExpandedMessage(messageToPatient)} // Example: Expand logic
             >
               Expand
             </button>
@@ -90,7 +117,6 @@ const CommunicationSection = ({
             <button
               className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded-r-md text-xs font-medium"
               disabled={readOnly}
-              // onClick={() => setExpandedAssessment(assessmentPlan)} // Example: Expand logic
             >
               Expand
             </button>
@@ -128,22 +154,102 @@ const CommunicationSection = ({
           <h3 className="text-base font-medium text-purple-800">Follow-up Plan</h3>
         </div>
         <div className="p-4">
+          <div className="followup-options flex flex-wrap gap-2 mb-2">
+            {followUpOptions.map(option => (
+              <button
+                key={option}
+                type="button"
+                className={`followup-option px-2 py-0.5 rounded ${followUpPlan === option ? 'bg-blue-200 border-blue-400 text-blue-900' : 'bg-white border border-gray-300 text-gray-700'}`}
+                onClick={() => onFollowUpChange(option)}
+                disabled={readOnly}
+              >
+                {option}
+              </button>
+            ))}
+          </div>
           <select
             className="w-full border border-purple-300 rounded-md p-2 text-sm focus:ring-primary focus:border-primary"
             value={followUpPlan}
             onChange={(e) => onFollowUpChange(e.target.value)}
             disabled={readOnly}
           >
-            <option value="2_weeks">2 weeks</option>
-            <option value="4_weeks">4 weeks</option>
-            <option value="Monthly">Monthly</option>
-            <option value="8_weeks">8 weeks</option>
-            <option value="12_weeks">12 weeks</option>
+            {followUpOptions.map(option => (
+              <option key={option} value={option}>{option}</option>
+            ))}
           </select>
         </div>
       </div>
+
+      {/* Patient Education Resources */}
+      {resources.length > 0 && (
+        <div className="card bg-white rounded-lg shadow mb-4">
+          <div className="card-header px-4 py-2 border-b border-gray-200 font-semibold text-sm">
+            Patient Education
+          </div>
+          <div className="card-body p-4 grid grid-cols-2 gap-2">
+            {resources.map(resource => (
+              <button
+                key={resource.id}
+                type="button"
+                className={`resource-button flex items-center justify-between px-2 py-1 rounded ${selectedResources.includes(resource.id) ? 'bg-blue-100 border-blue-400' : 'bg-gray-50 border border-gray-200'}`}
+                onClick={() => onResourceToggle(resource.id)}
+                disabled={readOnly}
+              >
+                <span>{resource.title}</span>
+                <svg width="10" height="10" viewBox="0 0 24 24"><path d="M12 6v12M6 12h12" stroke="currentColor" strokeWidth="2"/></svg>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
     </>
   );
+};
+
+CommunicationSection.propTypes = {
+  messageToPatient: PropTypes.string.isRequired,
+  assessmentPlan: PropTypes.string.isRequired,
+  followUpPlan: PropTypes.string.isRequired,
+  expandedMessage: PropTypes.string.isRequired,
+  expandedAssessment: PropTypes.string.isRequired,
+  messageTemplates: PropTypes.arrayOf(
+    PropTypes.shape({
+      id: PropTypes.string.isRequired,
+      name: PropTypes.string.isRequired,
+      text: PropTypes.string.isRequired,
+    })
+  ).isRequired,
+  assessmentTemplates: PropTypes.arrayOf(
+    PropTypes.shape({
+      id: PropTypes.string.isRequired,
+      name: PropTypes.string.isRequired,
+      text: PropTypes.string.isRequired,
+    })
+  ).isRequired,
+  onMessageChange: PropTypes.func.isRequired,
+  onAssessmentChange: PropTypes.func.isRequired,
+  onFollowUpChange: PropTypes.func.isRequired,
+  onExpandedMessageChange: PropTypes.func.isRequired,
+  onExpandedAssessmentChange: PropTypes.func.isRequired,
+  readOnly: PropTypes.bool,
+  medicationsSummary: PropTypes.arrayOf(
+    PropTypes.shape({
+      name: PropTypes.string,
+      dose: PropTypes.string,
+      frequency: PropTypes.string,
+      duration: PropTypes.string,
+      category: PropTypes.string,
+    })
+  ),
+  resources: PropTypes.arrayOf(
+    PropTypes.shape({
+      id: PropTypes.string.isRequired,
+      title: PropTypes.string.isRequired,
+    })
+  ),
+  onResourceToggle: PropTypes.func,
+  selectedResources: PropTypes.arrayOf(PropTypes.string),
+  followUpOptions: PropTypes.arrayOf(PropTypes.string),
 };
 
 export default CommunicationSection;

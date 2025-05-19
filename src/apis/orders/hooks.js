@@ -1,383 +1,396 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '../../lib/supabase';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'react-toastify';
-import { executeBatchedQueries } from '../../utils/supabase/batchedQueries';
 
-// Get orders hook using Supabase
-export const useOrders = (currentPage = 1, filters = {}, pageSize = 10) => {
-  const rangeFrom = (currentPage - 1) * pageSize;
-  const rangeTo = rangeFrom + pageSize - 1;
-
-  return useQuery({
-    queryKey: ['orders', currentPage, filters, pageSize],
-    queryFn: async () => {
-      // Create query for orders
-      let ordersQuery = supabase
-        .from('orders')
-        .select(`
-          *,
-          patients!inner(id, first_name, last_name),
-          pharmacies:pharmacy_id(id, name)
-        `, { count: 'exact' })
-        .order('order_date', { ascending: false })
-        .range(rangeFrom, rangeTo);
-
-      // Apply filters
-      if (filters.status) {
-        ordersQuery = ordersQuery.eq('status', filters.status);
+// Mock data for orders
+const mockOrders = [
+  {
+    id: 'ord1',
+    patient_id: 'p1',
+    status: 'pending_review',
+    items: [
+      {
+        id: 'item1',
+        product_id: 'semaglutide_product',
+        product_name: 'Semaglutide (Wegovy)',
+        quantity: 1,
+        price: 299.99,
+        dosage: '0.25mg',
+        frequency: 'weekly'
       }
-      if (filters.patientId) {
-        ordersQuery = ordersQuery.eq('patient_id', filters.patientId);
-      }
-      if (filters.search) {
-        ordersQuery = ordersQuery.or(
-          `patients.first_name.ilike.%${filters.search}%,patients.last_name.ilike.%${filters.search}%`
-        );
-      }
-
-      // Get orders data
-      const { data: ordersData, error: ordersError, count } = await ordersQuery;
-
-      if (ordersError) {
-        console.error('Error fetching orders:', ordersError);
-        throw new Error(ordersError.message);
-      }
-
-      // If we have orders, get their order items using batched queries
-      if (ordersData && ordersData.length > 0) {
-        const orderIds = ordersData.map(order => order.id);
-        
-        // Use batched queries to get order items in a single network request
-        const { orderItems } = await executeBatchedQueries([
-          {
-            key: 'orderItems',
-            query: () => supabase
-              .from('order_items')
-              .select(`
-                *,
-                products:product_id(id, name, description)
-              `)
-              .in('order_id', orderIds)
-          }
-        ]);
-
-        if (orderItems.error) {
-          console.error('Error fetching order items:', orderItems.error);
-        } else {
-          // Group order items by order_id
-          const orderItemsByOrder = (orderItems.data || []).reduce((acc, item) => {
-            acc[item.order_id] = acc[item.order_id] || [];
-            acc[item.order_id].push(item);
-            return acc;
-          }, {});
-
-          // Add order items to their respective orders
-          ordersData.forEach(order => {
-            const items = orderItemsByOrder[order.id] || [];
-            order.orderItems = items;
-            
-            // Add medication information based on order items
-            if (items.length > 0 && items[0].products) {
-              order.medication = items[0].products.name;
-            } else if (items.length > 0) {
-              order.medication = items[0].description || 'Unknown Medication';
-            }
-            
-            // Add pharmacy name from the joined pharmacy data
-            if (order.pharmacies) {
-              order.pharmacy = order.pharmacies.name;
-            }
-          });
-        }
-      }
-
-      const mappedData = ordersData?.map((order) => ({
-        ...order,
-        patientName: order.patients 
-          ? `${order.patients.first_name || ''} ${order.patients.last_name || ''}`.trim()
-          : 'N/A',
-        patientId: order.patient_id 
-      })) || [];
-
-      return {
-        data: mappedData,
-        meta: {
-          total: count || 0,
-          per_page: pageSize,
-          current_page: currentPage,
-          last_page: Math.ceil((count || 0) / pageSize),
-        },
-      };
+    ],
+    total: 299.99,
+    created_at: '2025-05-15T14:35:00Z',
+    updated_at: '2025-05-15T14:35:00Z',
+    form_submission_id: 'fs1',
+    shipping_address: {
+      street: '123 Main St',
+      city: 'San Francisco',
+      state: 'CA',
+      zip: '94105'
     },
+    payment_method_id: 'pm_1',
+    prescription: {
+      status: 'pending',
+      provider_id: null,
+      approved_at: null,
+      notes: null
+    }
+  },
+  {
+    id: 'ord2',
+    patient_id: 'p2',
+    status: 'approved',
+    items: [
+      {
+        id: 'item2',
+        product_id: 'sildenafil_product',
+        product_name: 'Sildenafil (Viagra)',
+        quantity: 1,
+        price: 129.99,
+        dosage: '50mg',
+        frequency: 'as needed'
+      }
+    ],
+    total: 129.99,
+    created_at: '2025-05-16T10:20:00Z',
+    updated_at: '2025-05-16T15:45:00Z',
+    form_submission_id: 'fs2',
+    shipping_address: {
+      street: '456 Market St',
+      city: 'San Francisco',
+      state: 'CA',
+      zip: '94103'
+    },
+    payment_method_id: 'pm_2',
+    prescription: {
+      status: 'approved',
+      provider_id: 'prov1',
+      approved_at: '2025-05-16T15:45:00Z',
+      notes: 'Approved for 3 month supply'
+    }
+  },
+  {
+    id: 'ord3',
+    patient_id: 'p3',
+    status: 'shipped',
+    items: [
+      {
+        id: 'item3',
+        product_id: 'finasteride_product',
+        product_name: 'Finasteride',
+        quantity: 1,
+        price: 79.99,
+        dosage: '1mg',
+        frequency: 'daily'
+      }
+    ],
+    total: 79.99,
+    created_at: '2025-05-17T16:50:00Z',
+    updated_at: '2025-05-18T09:30:00Z',
+    form_submission_id: 'fs3',
+    shipping_address: {
+      street: '789 Howard St',
+      city: 'San Francisco',
+      state: 'CA',
+      zip: '94107'
+    },
+    payment_method_id: 'pm_3',
+    prescription: {
+      status: 'approved',
+      provider_id: 'prov2',
+      approved_at: '2025-05-18T09:00:00Z',
+      notes: 'Approved for 3 month supply'
+    },
+    shipping: {
+      carrier: 'USPS',
+      tracking_number: '9400123456789012345678',
+      shipped_at: '2025-05-18T09:30:00Z',
+      estimated_delivery: '2025-05-21'
+    }
+  }
+];
+
+// Fetch all orders (for admin)
+export const useOrders = () => {
+  return useQuery({
+    queryKey: ['orders'],
+    queryFn: async () => {
+      // In a real implementation, this would be an API call
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      return mockOrders;
+    },
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    onError: (error) => {
+      console.error('Error fetching orders:', error);
+      toast.error('Failed to load orders');
+    }
   });
 };
 
-// Get order by ID hook using Supabase with enhanced batched queries
-export const useOrderById = (id, options = {}) => {
+// Fetch all orders for a patient
+export const usePatientOrders = (patientId) => {
   return useQuery({
-    queryKey: ['order', id],
+    queryKey: ['orders', patientId],
     queryFn: async () => {
-      if (!id) return null;
-
-      // Use batched queries to fetch order and order items in parallel
-      const results = await executeBatchedQueries([
-        {
-          key: 'order',
-          query: () => supabase
-            .from('orders')
-            .select(`
-              *,
-              patients!patient_id(id, first_name, last_name)
-            `)
-            .eq('id', id)
-            .single()
-        },
-        {
-          key: 'orderItems',
-          query: () => supabase
-            .from('order_items')
-            .select(`
-              *,
-              products:product_id(id, name, description)
-            `)
-            .eq('order_id', id)
-        }
-      ]);
-
-      // Handle errors
-      if (results.order.error) {
-        console.error(`Error fetching order ${id}:`, results.order.error);
-        if (results.order.error.code === 'PGRST116') return null;
-        throw new Error(results.order.error.message);
-      }
-
-      // Combine the results
-      const order = results.order.data;
-      const orderItems = results.orderItems.data || [];
-
-      if (!order) return null;
-
-      return {
-        ...order,
-        orderItems,
-        patientName: order.patients 
-          ? `${order.patients.first_name || ''} ${order.patients.last_name || ''}`.trim()
-          : 'N/A'
-      };
-    },
-    enabled: !!id,
-    ...options,
-  });
-};
-
-// Hook to fetch orders for a specific patient
-export const useMyOrders = (patientId, options = {}) => {
-  return useQuery({
-    queryKey: ['orders', 'patient', patientId],
-    queryFn: async () => {
-      if (!patientId) return [];
-
-      const { data, error } = await supabase
-        .from('orders') 
-        .select('*') 
-        .eq('patient_id', patientId)
-        .order('order_date', { ascending: false });
-
-      if (error) {
-        console.error(`Error fetching orders for patient ${patientId}:`, error);
-        throw new Error(error.message);
-      }
-      return data || [];
+      // In a real implementation, this would be an API call
+      // For now, we'll simulate a delay and return mock data
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // Filter orders for this patient
+      return mockOrders.filter(order => 
+        order.patient_id === patientId
+      );
     },
     enabled: !!patientId,
-    ...options,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    onError: (error) => {
+      console.error('Error fetching orders:', error);
+      toast.error('Failed to load patient orders');
+    }
   });
 };
 
-// Create order hook using Supabase
-export const useCreateOrder = (options = {}) => {
-  const queryClient = useQueryClient();
+// Fetch a single order by ID
+export const useOrder = (orderId) => {
+  return useQuery({
+    queryKey: ['order', orderId],
+    queryFn: async () => {
+      // In a real implementation, this would be an API call
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      const order = mockOrders.find(order => order.id === orderId);
+      if (!order) {
+        throw new Error('Order not found');
+      }
+      
+      return order;
+    },
+    enabled: !!orderId,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    onError: (error) => {
+      console.error('Error fetching order:', error);
+      toast.error('Failed to load order details');
+    }
+  });
+};
 
+// Alias for useOrder for backward compatibility
+export const useOrderById = (orderId) => useOrder(orderId);
+
+// Create a new order
+export const useCreateOrder = () => {
+  const queryClient = useQueryClient();
+  
   return useMutation({
     mutationFn: async (orderData) => {
-      const dataToInsert = {
-        ...orderData,
-        order_date: orderData.order_date || new Date().toISOString(),
+      // In a real implementation, this would be an API call
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Generate a new order ID
+      const newOrder = {
+        id: `ord${Date.now()}`,
+        patient_id: orderData.patientId,
+        status: 'pending_review',
+        items: orderData.items.map((item, index) => ({
+          id: `item${Date.now()}_${index}`,
+          product_id: item.productId,
+          product_name: item.productName,
+          quantity: item.quantity,
+          price: item.price,
+          dosage: item.dosage,
+          frequency: item.frequency
+        })),
+        total: orderData.items.reduce((sum, item) => sum + (item.price * item.quantity), 0),
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
+        form_submission_id: orderData.formSubmissionId,
+        shipping_address: orderData.shippingAddress,
+        payment_method_id: orderData.paymentMethodId,
+        prescription: {
+          status: 'pending',
+          provider_id: null,
+          approved_at: null,
+          notes: null
+        }
       };
-
-      const { data, error } = await supabase
-        .from('orders')
-        .insert(dataToInsert)
-        .select()
-        .single();
-
-      if (error) {
-        console.error('Error creating order:', error);
-        throw new Error(error.message);
-      }
-      return data;
+      
+      // In a real implementation, this would be saved to the database
+      mockOrders.push(newOrder);
+      
+      return newOrder;
     },
-    onSuccess: (data, variables, context) => {
-      queryClient.invalidateQueries({ queryKey: ['orders'] });
-      toast.success('Order created successfully');
-      options.onSuccess?.(data, variables, context);
+    onSuccess: (data) => {
+      queryClient.invalidateQueries(['orders', data.patient_id]);
+      toast.success('Order placed successfully');
     },
-    onError: (error, variables, context) => {
-      console.error('Create order mutation error:', error);
-      toast.error(`Error creating order: ${error.message}`);
-      options.onError?.(error, variables, context);
-    },
-    onSettled: options.onSettled,
+    onError: (error) => {
+      console.error('Error creating order:', error);
+      toast.error('Failed to place order');
+    }
   });
 };
 
-// Update order hook using Supabase
-export const useUpdateOrder = (options = {}) => {
+// Create a new order item
+export const useCreateOrderItem = () => {
   const queryClient = useQueryClient();
-
+  
   return useMutation({
-    mutationFn: async ({ id, orderData }) => {
-      if (!id) throw new Error('Order ID is required for update.');
-
-      const dataToUpdate = {
-        ...orderData,
-        updated_at: new Date().toISOString(),
-      };
-
-      const { data, error } = await supabase
-        .from('orders')
-        .update(dataToUpdate)
-        .eq('id', id)
-        .select()
-        .single();
-
-      if (error) {
-        console.error(`Error updating order ${id}:`, error);
-        throw new Error(error.message);
+    mutationFn: async ({ orderId, itemData }) => {
+      // In a real implementation, this would be an API call
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      const orderIndex = mockOrders.findIndex(order => order.id === orderId);
+      if (orderIndex === -1) {
+        throw new Error('Order not found');
       }
-      return data;
+      
+      // Generate a new item ID
+      const newItem = {
+        id: `item${Date.now()}`,
+        product_id: itemData.productId,
+        product_name: itemData.productName,
+        quantity: itemData.quantity,
+        price: itemData.price,
+        dosage: itemData.dosage,
+        frequency: itemData.frequency
+      };
+      
+      // Update the order with the new item
+      const updatedOrder = {
+        ...mockOrders[orderIndex],
+        items: [...mockOrders[orderIndex].items, newItem],
+        total: mockOrders[orderIndex].total + (itemData.price * itemData.quantity),
+        updated_at: new Date().toISOString()
+      };
+      
+      // In a real implementation, this would update the database
+      mockOrders[orderIndex] = updatedOrder;
+      
+      return { order: updatedOrder, item: newItem };
     },
-    onSuccess: (data, variables, context) => {
-      queryClient.invalidateQueries({ queryKey: ['orders'] });
-      queryClient.invalidateQueries({ queryKey: ['order', variables.id] });
-      toast.success('Order updated successfully');
-      options.onSuccess?.(data, variables, context);
+    onSuccess: (data) => {
+      queryClient.invalidateQueries(['order', data.order.id]);
+      queryClient.invalidateQueries(['orders', data.order.patient_id]);
+      toast.success('Item added to order');
     },
-    onError: (error, variables, context) => {
-      console.error(`Update order ${variables.id} mutation error:`, error);
-      toast.error(`Error updating order: ${error.message}`);
-      options.onError?.(error, variables, context);
-    },
-    onSettled: options.onSettled,
+    onError: (error) => {
+      console.error('Error adding item to order:', error);
+      toast.error('Failed to add item to order');
+    }
   });
 };
 
-// Update order status hook using Supabase
-export const useUpdateOrderStatus = (options = {}) => {
+// Update an order
+export const useUpdateOrder = () => {
   const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async ({ orderId, updates }) => {
+      // In a real implementation, this would be an API call
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      const orderIndex = mockOrders.findIndex(order => order.id === orderId);
+      if (orderIndex === -1) {
+        throw new Error('Order not found');
+      }
+      
+      // Update the order
+      const updatedOrder = {
+        ...mockOrders[orderIndex],
+        ...updates,
+        updated_at: new Date().toISOString()
+      };
+      
+      // In a real implementation, this would update the database
+      mockOrders[orderIndex] = updatedOrder;
+      
+      return updatedOrder;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries(['order', data.id]);
+      queryClient.invalidateQueries(['orders', data.patient_id]);
+      toast.success('Order updated successfully');
+    },
+    onError: (error) => {
+      console.error('Error updating order:', error);
+      toast.error('Failed to update order');
+    }
+  });
+};
 
+// Update order status
+export const useUpdateOrderStatus = () => {
+  const queryClient = useQueryClient();
+  
   return useMutation({
     mutationFn: async ({ orderId, status }) => {
-      if (!orderId) throw new Error('Order ID is required for status update.');
-
-      const { data, error } = await supabase
-        .from('orders')
-        .update({ status: status, updated_at: new Date().toISOString() })
-        .eq('id', orderId)
-        .select()
-        .single();
-
-      if (error) {
-        console.error(`Error updating order status ${orderId}:`, error);
-        throw new Error(error.message);
+      // In a real implementation, this would be an API call
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      const orderIndex = mockOrders.findIndex(order => order.id === orderId);
+      if (orderIndex === -1) {
+        throw new Error('Order not found');
       }
-      return data;
-    },
-    onSuccess: (data, variables, context) => {
-      queryClient.invalidateQueries({ queryKey: ['orders'] });
-      queryClient.invalidateQueries({ queryKey: ['order', variables.orderId] });
-      toast.success('Order status updated successfully');
-      options.onSuccess?.(data, variables, context);
-    },
-    onError: (error, variables, context) => {
-      console.error(`Update order status ${variables.orderId} mutation error:`, error);
-      toast.error(`Error updating order status: ${error.message}`);
-      options.onError?.(error, variables, context);
-    },
-    onSettled: options.onSettled,
-  });
-};
-
-// Delete order hook using Supabase (Hard Delete)
-export const useDeleteOrder = (options = {}) => {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async (id) => {
-      if (!id) throw new Error('Order ID is required for deletion.');
-
-      // Changed from update to delete since is_deleted column doesn't exist
-      const { error } = await supabase
-        .from('orders')
-        .delete()
-        .eq('id', id);
-
-      if (error) {
-        console.error(`Error deleting order ${id}:`, error);
-        throw new Error(error.message);
-      }
-      return { success: true, id };
-    },
-    onSuccess: (data, variables, context) => {
-      queryClient.invalidateQueries({ queryKey: ['orders'] });
-      queryClient.removeQueries({ queryKey: ['order', variables] });
-      toast.success('Order deleted successfully');
-      options.onSuccess?.(data, variables, context);
-    },
-    onError: (error, variables, context) => {
-      console.error(`Delete order ${variables} mutation error:`, error);
-      toast.error(`Error deleting order: ${error.message}`);
-      options.onError?.(error, variables, context);
-    },
-    onSettled: options.onSettled,
-  });
-};
-
-// Create order item hook using Supabase
-export const useCreateOrderItem = (options = {}) => {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async (orderItemData) => {
-      // Remove created_at field since it doesn't exist in the schema
-      const dataToInsert = {
-        ...orderItemData
+      
+      // Update the order status
+      const updatedOrder = {
+        ...mockOrders[orderIndex],
+        status,
+        updated_at: new Date().toISOString()
       };
+      
+      // In a real implementation, this would update the database
+      mockOrders[orderIndex] = updatedOrder;
+      
+      return updatedOrder;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries(['order', data.id]);
+      queryClient.invalidateQueries(['orders', data.patient_id]);
+      toast.success(`Order status updated to ${data.status}`);
+    },
+    onError: (error) => {
+      console.error('Error updating order status:', error);
+      toast.error('Failed to update order status');
+    }
+  });
+};
 
-      const { data, error } = await supabase
-        .from('order_items')
-        .insert(dataToInsert)
-        .select()
-        .single();
-
-      if (error) {
-        console.error('Error creating order item:', error);
-        throw new Error(error.message);
+// Cancel an order
+export const useCancelOrder = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async (orderId) => {
+      // In a real implementation, this would be an API call
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      const orderIndex = mockOrders.findIndex(order => order.id === orderId);
+      if (orderIndex === -1) {
+        throw new Error('Order not found');
       }
-      return data;
+      
+      // Update the order status
+      const updatedOrder = {
+        ...mockOrders[orderIndex],
+        status: 'cancelled',
+        updated_at: new Date().toISOString()
+      };
+      
+      // In a real implementation, this would update the database
+      mockOrders[orderIndex] = updatedOrder;
+      
+      return updatedOrder;
     },
-    onSuccess: (data, variables, context) => {
-      queryClient.invalidateQueries({ queryKey: ['orders'] });
-      queryClient.invalidateQueries({ queryKey: ['order', variables.order_id] });
-      options.onSuccess?.(data, variables, context);
+    onSuccess: (data) => {
+      queryClient.invalidateQueries(['order', data.id]);
+      queryClient.invalidateQueries(['orders', data.patient_id]);
+      toast.success('Order cancelled successfully');
     },
-    onError: (error, variables, context) => {
-      console.error('Create order item mutation error:', error);
-      toast.error(`Error creating order item: ${error.message}`);
-      options.onError?.(error, variables, context);
-    },
-    onSettled: options.onSettled,
+    onError: (error) => {
+      console.error('Error cancelling order:', error);
+      toast.error('Failed to cancel order');
+    }
   });
 };

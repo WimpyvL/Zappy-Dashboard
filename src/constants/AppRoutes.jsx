@@ -75,6 +75,8 @@ import PaymentMethodsPage from '../pages/payment/PaymentMethodsPage.jsx'; // Imp
 import NotificationsPage from '../pages/notifications/NotificationsPage.jsx'; // Import Notifications Page
 import LandingPage from '../pages/LandingPage.jsx'; // Import Landing Page
 import HealthPage from '../pages/patients/HealthPage.jsx'; // Import HealthPage
+import IntakeFormPage from '../pages/intake/IntakeFormPage.jsx'; // Import IntakeFormPage
+import TreatmentPlanPage from '../pages/patients/TreatmentPlanPage.jsx'; // Import TreatmentPlanPage
 // import PatientServicesPage from '../pages/patients/PatientServicesPage.jsx'; // Removed
 
 // Resources pages
@@ -107,8 +109,6 @@ const AppRoutes = () => {
 
   return (
     <Routes future={future}>
-      {/* Landing page as root */}
-      <Route path="/" element={<Login />} />
       {/* Public routes */}
       <Route path={paths.login} element={<Login />} />
       <Route path={paths.signup} element={<Signup />} />
@@ -435,6 +435,18 @@ const AppRoutes = () => {
            </ProtectedRoute>
          }
        />
+       
+       {/* Intake Form Route */}
+       <Route
+         path="/intake-form"
+         element={
+           <ProtectedRoute>
+             <MainLayout>
+               <IntakeFormPage />
+             </MainLayout>
+           </ProtectedRoute>
+         }
+       />
 
        {/* Placeholder Change Password Page Route */}
        <Route
@@ -593,6 +605,18 @@ const AppRoutes = () => {
           <ProtectedRoute>
             <MainLayout>
               <HealthPage />
+            </MainLayout>
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Treatment Plan Page Route */}
+      <Route
+        path="/treatment-plan/:planId" // Define the path for the Treatment Plan page
+        element={
+          <ProtectedRoute>
+            <MainLayout>
+              <TreatmentPlanPage />
             </MainLayout>
           </ProtectedRoute>
         }

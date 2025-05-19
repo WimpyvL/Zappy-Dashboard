@@ -2,6 +2,8 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import './home/PatientHomePage.css'; // Import the new CSS file
+import { supabase } from '../../lib/supabase';
+import PatientNotifications from '../../components/patient/notifications/PatientNotifications';
 import {
   Home, Heart, BookOpen, ShoppingBag, Plus, MessageSquare, Share2, HelpCircle,
   Bell, Package, Calendar, Pill, UserPlus, Building, FileText, Settings, LogOut,
@@ -29,6 +31,34 @@ const PatientHomePage = () => {
   const [activeProgram, setActiveProgram] = useState(null); // State for active program tab, initialized to null
   const [showInstructionsModal, setShowInstructionsModal] = useState(false);
   const [currentInstruction, setCurrentInstruction] = useState(null);
+  const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [unreadNotificationsCount, setUnreadNotificationsCount] = useState(0);
+
+  // User action status - this would come from an API in a real implementation
+  const [userActionStatus, setUserActionStatus] = useState({
+    intakeForm: {
+      status: "not_started", // or "in_progress", "completed", "requires_update"
+      lastUpdated: null,
+      categoryId: null
+    },
+    idVerification: {
+      status: "not_started", // or "submitted", "verified", "rejected"
+      lastUpdated: null,
+      rejectionReason: null
+    },
+    prescription: {
+      status: "pending", // or "approved", "denied", "requires_info"
+      lastUpdated: null,
+      providerId: null
+    },
+    invoice: {
+      status: "pending", // or "paid", "overdue"
+      lastUpdated: null,
+      amount: 89.00,
+      dueDate: "2025-05-25"
+    }
+  });
 
   // Derive program tabs and content from fetched services
   const programs = useMemo(() => {
@@ -47,7 +77,8 @@ const PatientHomePage = () => {
     if (programs.length > 0 && activeProgram === null) {
       setActiveProgram(programs[0].serviceType); // Set first service type as active
     }
-  }, [programs, activeProgram]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [programs]);
 
 
   // Placeholder program configuration - ideally derived from service data
@@ -291,8 +322,10 @@ const PatientHomePage = () => {
       }
     };
 
-    applyThemeToElement(mainContent, config.colors);
-    applyThemeToElement(headerEl, config.colors);
+    if (config && config.colors) {
+      applyThemeToElement(mainContent, config.colors);
+      applyThemeToElement(headerEl, config.colors);
+    }
 
     // Update trending card themes - this part still relies on class names
     document.querySelectorAll('.trending-card').forEach(tc => {
@@ -301,10 +334,12 @@ const PatientHomePage = () => {
       else if (tc.classList.contains('program-aging')) cardProgramKey = 'anti-aging'; // Assuming anti-aging service type
 
       const cardConfig = programConfig[cardProgramKey] || programConfig['weight-management'];
-      const iconBg = tc.querySelector('.trending-card-icon-bg');
-      const icon = tc.querySelector('.trending-card-icon');
-      if (iconBg) applyThemeToElement(iconBg, cardConfig.colors);
-      if (icon) applyThemeToElement(icon, cardConfig.colors);
+      if (cardConfig && cardConfig.colors) {
+        const iconBg = tc.querySelector('.trending-card-icon-bg');
+        const icon = tc.querySelector('.trending-card-icon');
+        if (iconBg) applyThemeToElement(iconBg, cardConfig.colors);
+        if (icon) applyThemeToElement(icon, cardConfig.colors);
+      }
     });
 
 
@@ -450,6 +485,37 @@ const PatientHomePage = () => {
     });
   }, [updateCTABasedOnCheckin]);
 
+
+  // Effect to fetch unread notifications count
+  useEffect(() => {
+    if (patientId) {
+      const fetchUnreadNotificationsCount = async () => {
+        try {
+          const { data, error } = await supabase
+            .from('patient_notifications')
+            .select('id', { count: 'exact' })
+            .eq('patient_id', patientId)
+            .eq('is_read', false);
+            
+          if (error) {
+            console.error('Error fetching unread notifications count:', error);
+            return;
+          }
+          
+          setUnreadNotificationsCount(data?.length || 0);
+        } catch (err) {
+          console.error('Error in fetchUnreadNotificationsCount:', err);
+        }
+      };
+      
+      fetchUnreadNotificationsCount();
+      
+      // Set up a polling interval to check for new notifications
+      const intervalId = setInterval(fetchUnreadNotificationsCount, 60000); // Check every minute
+      
+      return () => clearInterval(intervalId);
+    }
+  }, [patientId]);
 
   // Initial data load and UI setup
   useEffect(() => {
@@ -654,8 +720,20 @@ const PatientHomePage = () => {
 
   // Find the active service based on activeProgram
   const activeService = processedServices?.find(service => service.service_type === activeProgram);
-  const currentProgramConfig = programConfig[activeProgram] || programConfig['weight-management']; // Fallback to weight-management service type
-
+  const currentProgramConfig =
+    programConfig[activeProgram] ||
+    programConfig['weight-management'] ||
+    {
+      class: 'program-default',
+      priorityText: '',
+      colors: {
+        primary: '#0f766e',
+        lightBg: '#f0fdfa',
+        darkText: '#134e4a',
+        light: '#f0fdfa',
+        gradient: 'linear-gradient(135deg, #0f766e 0%, #14b8a6 100%)'
+      }
+    };
 
   return (
     <div className="max-w-md mx-auto bg-slate-50 min-h-screen">
@@ -666,12 +744,108 @@ const PatientHomePage = () => {
             <h1 className="text-lg font-bold text-white">Good morning, <span className="inline">Michel</span></h1>
           </div>
           <div className="flex items-center gap-2">
-            <button id="notificationsButton" className="w-9 h-9 bg-white/10 rounded-full flex items-center justify-center hover:bg-white/20 transition-colors focus:outline-none focus:ring-2 focus:ring-white/30 backdrop-blur-sm" aria-label="Notifications">
-              <Bell className="w-4 h-4 text-white" />
-              <span className="absolute top-0.5 right-0.5 w-2 h-2 bg-yellow-400 rounded-full"></span>
-            </button>
-            <div className="w-9 h-9 bg-white/10 rounded-full overflow-hidden backdrop-blur-sm">
-              <img src="https://images.unsplash.com/photo-1607990281513-2c110a25bd8c?w=80&h=80&fit=crop&q=80" alt="Michel's avatar" className="w-full h-full object-cover" />
+            <div className="relative">
+              <button 
+                id="notificationsButton" 
+                className="w-9 h-9 bg-white/10 rounded-full flex items-center justify-center hover:bg-white/20 transition-colors focus:outline-none focus:ring-2 focus:ring-white/30 backdrop-blur-sm" 
+                aria-label="Notifications"
+                onClick={() => setShowNotifications(!showNotifications)}
+              >
+                <Bell className="w-4 h-4 text-white" />
+                {unreadNotificationsCount > 0 && (
+                  <span className="absolute top-0.5 right-0.5 w-2 h-2 bg-yellow-400 rounded-full"></span>
+                )}
+              </button>
+              
+              {/* Notifications Dropdown */}
+              {showNotifications && (
+                <div className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-lg z-50">
+                  <PatientNotifications patientId={patientId} />
+                </div>
+              )}
+            </div>
+            <div className="relative">
+              <button 
+                className="w-9 h-9 bg-white/10 rounded-full overflow-hidden backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-white/30"
+                onClick={() => setShowProfileMenu(!showProfileMenu)}
+              >
+                <img src="https://images.unsplash.com/photo-1607990281513-2c110a25bd8c?w=80&h=80&fit=crop&q=80" alt="Michel's avatar" className="w-full h-full object-cover" />
+              </button>
+              
+              {/* Profile Menu Dropdown */}
+              {showProfileMenu && (
+                <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg py-1 z-50">
+                  <div className="px-4 py-3 border-b border-gray-100">
+                    <p className="text-sm font-medium text-gray-900">Michel Choueiri</p>
+                    <p className="text-xs text-gray-500 truncate">michel@example.com</p>
+                  </div>
+                  
+                  <ul className="py-1">
+                    <li>
+                      <button 
+                        className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center"
+                        onClick={() => {
+                          setShowProfileMenu(false);
+                          navigate('/profile');
+                        }}
+                      >
+                        <UserCog className="w-4 h-4 mr-3 text-gray-500" />
+                        Profile Settings
+                      </button>
+                    </li>
+                    <li>
+                      <button 
+                        className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center"
+                        onClick={() => {
+                          setShowProfileMenu(false);
+                          navigate('/billing');
+                        }}
+                      >
+                        <FileText className="w-4 h-4 mr-3 text-gray-500" />
+                        Billing & Invoices
+                      </button>
+                    </li>
+                    <li>
+                      <button 
+                        className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center"
+                        onClick={() => {
+                          setShowProfileMenu(false);
+                          navigate('/subscriptions');
+                        }}
+                      >
+                        <Layers className="w-4 h-4 mr-3 text-gray-500" />
+                        Subscriptions
+                      </button>
+                    </li>
+                    <li>
+                      <button 
+                        className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center"
+                        onClick={() => {
+                          setShowProfileMenu(false);
+                          navigate('/orders');
+                        }}
+                      >
+                        <Package className="w-4 h-4 mr-3 text-gray-500" />
+                        Orders & Shipments
+                      </button>
+                    </li>
+                  </ul>
+                  
+                  <div className="py-1 border-t border-gray-100">
+                    <button 
+                      className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100 flex items-center"
+                      onClick={() => {
+                        setShowProfileMenu(false);
+                        // Handle logout
+                        console.log('Logging out...');
+                      }}
+                    >
+                      <LogOut className="w-4 h-4 mr-3 text-red-500" />
+                      Sign Out
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -717,20 +891,113 @@ const PatientHomePage = () => {
       </div>
 
       <main className="px-6 pt-4 pb-24" id="main-content">
-        {/* Priority notification with improved styling - needs to use fetched data */}
-        {activeService?.priorityTask && ( // Assuming serviceData has a priorityTask object
-          <button id="priorityActionButton" className="notification-banner w-full text-left transition-all duration-300 cursor-pointer" tabIndex="0" role="button" aria-label="Complete today's priority task">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center">
-                <span className="font-medium" id="priority-text">{activeService.priorityTask.text}</span> {/* Assuming priorityTask has text */}
-              </div>
-              <div className="flex items-center space-x-2">
-                <span className="text-xs bg-amber-600 text-white px-3 py-1.5 rounded-full font-medium">Complete</span>
-                <ChevronRight className="w-4 h-4" />
-              </div>
-            </div>
-          </button>
-        )}
+        {/* Action Items - based on user action status */}
+        {(() => {
+          // Determine which action item to show based on priority
+          if (userActionStatus.intakeForm.status === 'not_started' || userActionStatus.intakeForm.status === 'in_progress') {
+            return (
+              <button 
+                id="completeIntakeFormButton" 
+                className="notification-banner w-full text-left transition-all duration-300 cursor-pointer" 
+                tabIndex="0" 
+                role="button" 
+                aria-label="Complete intake form"
+                onClick={() => navigate('/intake-form', { 
+                  state: { 
+                    productCategory: activeProgram,
+                    prescriptionItems: activeService?.medications || []
+                  } 
+                })}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center">
+                    <span className="font-medium" id="priority-text">Complete your medical intake form</span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <span className="text-xs bg-amber-600 text-white px-3 py-1.5 rounded-full font-medium">Required</span>
+                    <ChevronRight className="w-4 h-4" />
+                  </div>
+                </div>
+              </button>
+            );
+          } else if (userActionStatus.idVerification.status === 'not_started' || userActionStatus.idVerification.status === 'rejected') {
+            return (
+              <button 
+                id="verifyIdButton" 
+                className="notification-banner w-full text-left transition-all duration-300 cursor-pointer" 
+                tabIndex="0" 
+                role="button" 
+                aria-label="Verify your ID"
+                onClick={() => navigate('/intake-form', { 
+                  state: { 
+                    step: 'id_verification',
+                    productCategory: activeProgram,
+                    prescriptionItems: activeService?.medications || []
+                  } 
+                })}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center">
+                    <span className="font-medium" id="priority-text">Verify your ID for prescription approval</span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <span className="text-xs bg-amber-600 text-white px-3 py-1.5 rounded-full font-medium">Required</span>
+                    <ChevronRight className="w-4 h-4" />
+                  </div>
+                </div>
+              </button>
+            );
+          } else if (userActionStatus.invoice.status === 'pending' || userActionStatus.invoice.status === 'overdue') {
+            return (
+              <button 
+                id="payInvoiceButton" 
+                className="notification-banner w-full text-left transition-all duration-300 cursor-pointer" 
+                tabIndex="0" 
+                role="button" 
+                aria-label="Pay your invoice"
+                onClick={() => navigate('/billing/invoices')}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center">
+                    <span className="font-medium" id="priority-text">
+                      {userActionStatus.invoice.status === 'overdue' 
+                        ? `Your invoice of $${userActionStatus.invoice.amount} is overdue` 
+                        : `Pay your invoice of $${userActionStatus.invoice.amount}`}
+                    </span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <span className={`text-xs ${userActionStatus.invoice.status === 'overdue' ? 'bg-red-600' : 'bg-amber-600'} text-white px-3 py-1.5 rounded-full font-medium`}>
+                      {userActionStatus.invoice.status === 'overdue' ? 'Overdue' : 'Due Soon'}
+                    </span>
+                    <ChevronRight className="w-4 h-4" />
+                  </div>
+                </div>
+              </button>
+            );
+          } else if (activeService?.priorityTask) {
+            return (
+              <button 
+                id="priorityActionButton" 
+                className="notification-banner w-full text-left transition-all duration-300 cursor-pointer" 
+                tabIndex="0" 
+                role="button" 
+                aria-label="Complete today's priority task"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center">
+                    <span className="font-medium" id="priority-text">{activeService.priorityTask.text}</span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <span className="text-xs bg-amber-600 text-white px-3 py-1.5 rounded-full font-medium">Complete</span>
+                    <ChevronRight className="w-4 h-4" />
+                  </div>
+                </div>
+              </button>
+            );
+          }
+          
+          return null;
+        })()}
 
 
         {/* Program tabs with improved styling - dynamically rendered */}
@@ -831,12 +1098,21 @@ const PatientHomePage = () => {
                       )}
                     </div>
 
-                    {medication.instructionType && ( // Assuming medication has instructionType for modal
-                      <button className="text-xs text-blue-600 font-medium mt-2 underline view-instructions-link inline-flex items-center" data-instruction-type={medication.instructionType}>
-                        View detailed instructions
+                    <div className="flex flex-col space-y-2 mt-2">
+                      {medication.instructionType && ( // Assuming medication has instructionType for modal
+                        <button className="text-xs text-blue-600 font-medium underline view-instructions-link inline-flex items-center" data-instruction-type={medication.instructionType}>
+                          View detailed instructions
+                          <ChevronRight className="w-3 h-3 ml-1" />
+                        </button>
+                      )}
+                      <button 
+                        className="text-xs text-blue-600 font-medium underline inline-flex items-center"
+                        onClick={() => navigate(`/treatment-plan/tp-123456`)} // Using a mock plan ID for now
+                      >
+                        View full treatment plan
                         <ChevronRight className="w-3 h-3 ml-1" />
                       </button>
-                    )}
+                    </div>
                   </div>
                 </div>
                 {medication.taskId && ( // Assuming medication has a taskId if it's a task

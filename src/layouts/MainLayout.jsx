@@ -54,21 +54,23 @@ const MainLayout = ({ children }) => {
 
   return (
     <div className="flex flex-col md:flex-row h-screen overflow-hidden bg-slate-50">
-      {/* Left sidebar - hidden on mobile, visible on desktop for non-mobile pages */}
-      {!isMobilePage && !isMobile && (
-        <div className="hidden md:block">
-          <Sidebar />
-        </div>
+      {/* Sidebar - only visible in admin view and on desktop */}
+      {viewMode === 'admin' && !isMobile && (
+        <Sidebar />
       )}
       
       {/* Main content area */}
       <div className="flex flex-col flex-1 overflow-hidden">
-        {/* Header - hidden on mobile-focused pages */}
-        {!isMobilePage && <Header onToggleCart={toggleCart} />}
+        {/* Admin Header - only visible in admin view */}
+        {viewMode === 'admin' && (
+          <Header onToggleCart={toggleCart} />
+        )}
         
-        {/* Top Navigation - visible on all mobile-focused pages, but only on desktop */}
-        {isMobilePage && !isMobile && <TopNavigation activePage={getActivePage()} />}
-        
+        {/* Top Navigation - only visible in patient view or mobile */}
+        {(viewMode === 'patient' || isMobile) && (
+          <TopNavigation activePage={getActivePage()} />
+        )}
+
         {/* Main content */}
         <main className={`flex-1 overflow-y-auto ${isMobilePage ? 'pb-20' : 'px-4 py-6 md:p-6'}`}>
           <div className={isMobilePage ? 'max-w-md mx-auto' : 'max-w-7xl mx-auto'}>

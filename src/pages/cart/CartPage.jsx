@@ -71,13 +71,12 @@ const CartPage = () => {
       const nonPrescriptionItems = cartItems.filter(item => !item.requiresPrescription);
       
       if (prescriptionItems.length > 0) {
-        // For prescription items, redirect to intake form
-        navigate('/intake-form', { 
-          state: { 
-            prescriptionItems,
-            returnToCart: true
-          } 
-        });
+      // For prescription items, redirect to intake form
+      navigate('/intake-form', { 
+        state: { 
+          prescriptionItems
+        } 
+      });
         return;
       }
       

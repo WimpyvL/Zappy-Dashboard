@@ -21,7 +21,7 @@ const TopNavigation = ({ activePage }) => {
   const navItems = [
     { id: 'home', label: 'Home', icon: Heart, path: '/' },
     { id: 'health', label: 'Health', icon: Layers, path: '/health' },
-    { id: 'learn', label: 'Learn', icon: Award, path: '/learn' },
+    { id: 'learn', label: 'Learn', icon: Award, path: '/programs' },
     { id: 'shop', label: 'Shop', icon: ShoppingBag, path: '/shop' }
   ];
 

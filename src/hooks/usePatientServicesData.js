@@ -124,8 +124,8 @@ const usePatientServicesData = (patientId) => {
         } finally {
           setIsLoading(false);
         }
-      } else if (!isLoadingServices) {
-         // If no patientServices are fetched and not loading, provide fallback placeholder data
+      } else if (!isLoadingServices && processedServices.length === 0) {
+         // If no patientServices are fetched and not loading, and processedServices is empty, provide fallback placeholder data
          setProcessedServices([
              {
                 id: 'fallback-service-1',

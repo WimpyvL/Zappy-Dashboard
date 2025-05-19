@@ -33,4 +33,6 @@ export const paths = {
   forms: '/forms',
   messages: '/messages', // Added messages path
   auditlog: '/audit-log', // Added audit log path
+  // AI Prompts are now managed through Settings -> AI Prompts
+  // Note Templates are now managed through Settings -> Note Templates
 };

@@ -1,11 +1,5 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { 
-  fetchInvoices, 
-  fetchInvoiceById,
-  createInvoice,
-  updateInvoice,
-  deleteInvoice
-} from './api';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { supabase } from '../../lib/supabase';
 import { toast } from 'react-toastify';
 
 // Define query keys
@@ -13,157 +7,263 @@ const queryKeys = {
   all: ['invoices'],
   lists: (params = {}) => [...queryKeys.all, 'list', { params }],
   details: (id) => [...queryKeys.all, 'detail', id],
+  patientInvoices: (patientId) => [...queryKeys.all, 'patient', patientId],
 };
 
-export const useInvoices = (params = {}) => {
-  const queryClient = useQueryClient();
-
+// Fetch all invoices (for admin)
+export const useInvoices = (options = {}) => {
   return useQuery({
-    queryKey: queryKeys.lists(params),
+    queryKey: queryKeys.lists(),
     queryFn: async () => {
-      try {
-        const data = await fetchInvoices();
-        
-        // Process the data to ensure patient names are properly displayed
-        const processedData = data.map(invoice => {
-          // Add a patientName field for easier access in the UI
-          // Set default values for amount and amount_paid to prevent NaN
-          const amount = typeof invoice.invoice_amount === 'number' ? invoice.invoice_amount : 0;
-          const amountPaid = typeof invoice.amount_paid === 'number' ? invoice.amount_paid : 0;
-          const discountAmount = typeof invoice.discount_amount === 'number' ? invoice.discount_amount : 
-                               (typeof invoice.pb_invoice_metadata?.discount_amount === 'number' ? invoice.pb_invoice_metadata.discount_amount : 0);
-          const taxRate = typeof invoice.tax_rate === 'number' ? invoice.tax_rate : 
-                        (typeof invoice.pb_invoice_metadata?.tax_rate === 'number' ? invoice.pb_invoice_metadata.tax_rate : 0);
-          
-          return {
-            ...invoice,
-            patientName: invoice.pb_invoice_metadata?.patient_name || 'Unknown',
-            amount: amount,
-            amount_paid: amountPaid,
-            discount_amount: discountAmount,
-            tax_rate: taxRate
-          };
-        });
-        
-        return { data: processedData };
-      } catch (error) {
+      const { data, error } = await supabase
+        .from('invoices')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching invoices:', error);
+        toast.error(`Error fetching invoices: ${error.message}`);
         throw new Error(error.message);
       }
+      
+      return data || [];
     },
-    refetchOnWindowFocus: true,
-    refetchOnMount: true,
-    staleTime: 10000 // Consider data stale after 10 seconds
+    ...options,
   });
 };
 
-export const useInvoiceById = (id) => {
+// Fetch invoices for a patient
+export const usePatientInvoices = (patientId, options = {}) => {
+  return useQuery({
+    queryKey: queryKeys.patientInvoices(patientId),
+    queryFn: async () => {
+      if (!patientId) return [];
+      
+      const { data, error } = await supabase
+        .from('invoices')
+        .select('*')
+        .eq('patient_id', patientId)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error(`Error fetching invoices for patient ${patientId}:`, error);
+        toast.error(`Error fetching invoices: ${error.message}`);
+        throw new Error(error.message);
+      }
+      
+      return data || [];
+    },
+    enabled: !!patientId,
+    ...options,
+  });
+};
+
+// Fetch a single invoice by ID
+export const useInvoiceById = (id, options = {}) => {
   return useQuery({
     queryKey: queryKeys.details(id),
     queryFn: async () => {
       if (!id) return null;
-      try {
-        const invoice = await fetchInvoiceById(id);
-        
-        // Process the data to ensure patient names are properly displayed
-        if (invoice) {
-          // Add a patientName field for easier access in the UI
-          // Set default values for amount and amount_paid to prevent NaN
-          const amount = typeof invoice.invoice_amount === 'number' ? invoice.invoice_amount : 0;
-          const amountPaid = typeof invoice.amount_paid === 'number' ? invoice.amount_paid : 0;
-          const discountAmount = typeof invoice.discount_amount === 'number' ? invoice.discount_amount : 
-                               (typeof invoice.pb_invoice_metadata?.discount_amount === 'number' ? invoice.pb_invoice_metadata.discount_amount : 0);
-          const taxRate = typeof invoice.tax_rate === 'number' ? invoice.tax_rate : 
-                        (typeof invoice.pb_invoice_metadata?.tax_rate === 'number' ? invoice.pb_invoice_metadata.tax_rate : 0);
-          
-          return {
-            data: {
-              ...invoice,
-              patientName: invoice.pb_invoice_metadata?.patient_name || 'Unknown',
-              amount: amount,
-              amount_paid: amountPaid,
-              discount_amount: discountAmount,
-              tax_rate: taxRate
-            }
-          };
-        }
-        return { data: null };
-      } catch (error) {
+      
+      const { data, error } = await supabase
+        .from('invoices')
+        .select('*')
+        .eq('id', id)
+        .single();
+
+      if (error) {
+        console.error(`Error fetching invoice ${id}:`, error);
+        if (error.code === 'PGRST116') return null; // Not found
+        toast.error(`Error fetching invoice details: ${error.message}`);
         throw new Error(error.message);
       }
+      
+      return data;
     },
     enabled: !!id,
+    ...options,
   });
 };
 
+// Create a new invoice
 export const useCreateInvoice = (options = {}) => {
   const queryClient = useQueryClient();
   
   return useMutation({
     mutationFn: async (invoiceData) => {
-      try {
-        return await createInvoice(invoiceData);
-      } catch (error) {
+      const { data, error } = await supabase
+        .from('invoices')
+        .insert({
+          patient_id: invoiceData.patient_id,
+          consultation_id: invoiceData.consultation_id,
+          items: invoiceData.items,
+          status: invoiceData.status || 'pending',
+          due_date: invoiceData.due_date,
+          created_at: invoiceData.created_at || new Date().toISOString(),
+          updated_at: invoiceData.updated_at || new Date().toISOString(),
+          total: invoiceData.items.reduce((sum, item) => sum + (item.amount * item.quantity), 0),
+          payment_method: invoiceData.payment_method,
+          payment_id: invoiceData.payment_id,
+          notes: invoiceData.notes
+        })
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error creating invoice:', error);
+        toast.error(`Error creating invoice: ${error.message}`);
         throw new Error(error.message);
       }
+      
+      return data;
     },
     onSuccess: (data, variables, context) => {
-      // Invalidate and refetch the invoice list
       queryClient.invalidateQueries({ queryKey: queryKeys.lists() });
-      toast.success('Invoice created successfully!');
+      queryClient.invalidateQueries({ queryKey: queryKeys.patientInvoices(data.patient_id) });
+      toast.success('Invoice created successfully');
       options.onSuccess?.(data, variables, context);
     },
     onError: (error, variables, context) => {
-      toast.error(`Failed to create invoice: ${error.message}`);
+      toast.error(`Error creating invoice: ${error.message}`);
       options.onError?.(error, variables, context);
-    }
+    },
+    ...options,
   });
 };
 
+// Update an invoice
 export const useUpdateInvoice = (options = {}) => {
   const queryClient = useQueryClient();
-
+  
   return useMutation({
-    mutationFn: async ({ id, updates }) => {
-      try {
-        return await updateInvoice(id, updates);
-      } catch (error) {
+    mutationFn: async ({ id, invoiceData }) => {
+      const { data, error } = await supabase
+        .from('invoices')
+        .update({
+          ...invoiceData,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) {
+        console.error(`Error updating invoice ${id}:`, error);
+        toast.error(`Error updating invoice: ${error.message}`);
         throw new Error(error.message);
       }
+      
+      return data;
     },
     onSuccess: (data, variables, context) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.lists() });
       queryClient.invalidateQueries({ queryKey: queryKeys.details(variables.id) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.patientInvoices(data.patient_id) });
       toast.success('Invoice updated successfully');
       options.onSuccess?.(data, variables, context);
     },
     onError: (error, variables, context) => {
-      toast.error(`Failed to update invoice: ${error.message}`);
+      toast.error(`Error updating invoice: ${error.message}`);
       options.onError?.(error, variables, context);
-    }
+    },
+    ...options,
   });
 };
 
-export const useDeleteInvoice = (options = {}) => {
+// Update invoice status
+export const useUpdateInvoiceStatus = (options = {}) => {
   const queryClient = useQueryClient();
-
+  
   return useMutation({
-    mutationFn: async (id) => {
-      try {
-        await deleteInvoice(id);
-        return { id };
-      } catch (error) {
+    mutationFn: async ({ id, status, paymentMethod, paymentId }) => {
+      const updateData = {
+        status,
+        updated_at: new Date().toISOString()
+      };
+      
+      if (status === 'paid') {
+        updateData.paid_at = new Date().toISOString();
+        if (paymentMethod) updateData.payment_method = paymentMethod;
+        if (paymentId) updateData.payment_id = paymentId;
+      }
+      
+      const { data, error } = await supabase
+        .from('invoices')
+        .update(updateData)
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) {
+        console.error(`Error updating invoice status ${id}:`, error);
+        toast.error(`Error updating invoice status: ${error.message}`);
         throw new Error(error.message);
       }
+      
+      // If the invoice is marked as paid, update any associated follow-ups
+      if (status === 'paid') {
+        const { error: followUpError } = await supabase
+          .from('patient_follow_ups')
+          .update({ 
+            payment_status: 'paid',
+            updated_at: new Date().toISOString() 
+          })
+          .eq('invoice_id', id);
+          
+        if (followUpError) {
+          console.error(`Error updating follow-up payment status for invoice ${id}:`, followUpError);
+          // Don't throw error, just log it
+        }
+      }
+      
+      return data;
     },
     onSuccess: (data, variables, context) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.lists() });
-      queryClient.removeQueries({ queryKey: queryKeys.details(variables) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.details(variables.id) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.patientInvoices(data.patient_id) });
+      queryClient.invalidateQueries({ queryKey: ['followUps'] }); // Invalidate follow-ups queries
+      toast.success(`Invoice marked as ${variables.status}`);
+      options.onSuccess?.(data, variables, context);
+    },
+    onError: (error, variables, context) => {
+      toast.error(`Error updating invoice status: ${error.message}`);
+      options.onError?.(error, variables, context);
+    },
+    ...options,
+  });
+};
+
+// Delete an invoice
+export const useDeleteInvoice = (options = {}) => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async ({ id, patientId }) => {
+      const { error } = await supabase
+        .from('invoices')
+        .delete()
+        .eq('id', id);
+
+      if (error) {
+        console.error(`Error deleting invoice ${id}:`, error);
+        toast.error(`Error deleting invoice: ${error.message}`);
+        throw new Error(error.message);
+      }
+      
+      return { id, patientId };
+    },
+    onSuccess: (data, variables, context) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.lists() });
+      queryClient.removeQueries({ queryKey: queryKeys.details(variables.id) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.patientInvoices(variables.patientId) });
       toast.success('Invoice deleted successfully');
       options.onSuccess?.(data, variables, context);
     },
     onError: (error, variables, context) => {
-      toast.error(`Failed to delete invoice: ${error.message}`);
+      toast.error(`Error deleting invoice: ${error.message}`);
       options.onError?.(error, variables, context);
-    }
+    },
+    ...options,
   });
 };

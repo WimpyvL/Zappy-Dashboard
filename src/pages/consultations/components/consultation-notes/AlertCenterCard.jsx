@@ -20,18 +20,6 @@ const AlertCenterCard = ({ adjustFollowUp, setAdjustFollowUp }) => {
           </svg>
           <span><strong>Monitoring:</strong> Check TSH at f/u.</span>
         </div>
-        <div style={{ fontSize: '15px', marginTop: '8px', paddingTop: '8px', borderTop: '1px solid #fde084' }}>
-          <div style={{ display: 'flex', alignItems: 'flex-start' }}>
-            <input 
-              type="checkbox" 
-              id="adjustFollowUp" 
-              checked={adjustFollowUp}
-              onChange={() => setAdjustFollowUp(!adjustFollowUp)}
-              style={{ marginRight: '6px', position: 'relative', top: '1px' }}
-            />
-            <label htmlFor="adjustFollowUp">Adjust f/u to 2 wks.</label>
-          </div>
-        </div>
       </div>
     </div>
   );

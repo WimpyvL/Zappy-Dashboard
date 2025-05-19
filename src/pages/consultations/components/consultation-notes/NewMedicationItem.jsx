@@ -1,17 +1,26 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { ChevronDown, ChevronUp, Pencil, FileText, Heart } from 'lucide-react';
 
-const MedicationItem = ({
+const NewMedicationItem = ({
   medId,
   medication,
   dosage,
-  openInstructions, // Keep openInstructions for instructions toggle
+  openInstructions,
   toggleMedication,
-  toggleInstructions, // Keep toggleInstructions for instructions toggle
+  toggleInstructions,
   selectDosage,
+  updateApproach,
   isPatientPreference = false,
-  supportedApproaches = ['Maint.', 'Escalation', 'PRN', 'Daily'] // Default to all options if not provided
+  supportedApproaches = ['Maint.', 'Escalation', 'PRN', 'Daily']
 }) => {
+  // Local state to track selection
+  const [isSelected, setIsSelected] = useState(medication.selected || false);
+  
+  // Update local state when medication.selected changes
+  useEffect(() => {
+    setIsSelected(medication.selected || false);
+  }, [medication.selected]);
+
   // Define all possible approach options with their display labels
   const allApproachOptions = [
     { value: 'Maint.', label: 'Maint.' },
@@ -26,25 +35,34 @@ const MedicationItem = ({
   );
 
   // Determine the default selected approach based on medication frequency or a default
-  const defaultApproach = medication.frequency === 'PRN' ? 'PRN' : 'Escalation'; // Adjust default logic as needed
+  const defaultApproach = medication.frequency === 'PRN' ? 'PRN' : 'Escalation';
 
   // Component state
-  const [editedInstructions, setEditedInstructions] = React.useState(
+  const [editedInstructions, setEditedInstructions] = useState(
     Array.isArray(medication.instructions)
       ? medication.instructions.join('\n')
       : (medication.instructions || '')
   );
-  const [isEditingInstructions, setIsEditingInstructions] = React.useState(false);
-  const [planDuration, setPlanDuration] = React.useState(
+  const [isEditingInstructions, setIsEditingInstructions] = useState(false);
+  const [planDuration, setPlanDuration] = useState(
     medication.category === 'wm' ? '6_mos' : '3_mos'
   );
-  const [approach, setApproach] = React.useState(defaultApproach);
-  const [frequency, setFrequency] = React.useState(medication.frequency || 'dly');
+  const [approach, setApproach] = useState(medication.approach || defaultApproach);
+  const [frequency, setFrequency] = useState(medication.frequency || 'dly');
 
-  // Save instructions handler (frontend only)
+  // Handle medication toggle
+  const handleToggle = () => {
+    console.log(`NewMedicationItem: Toggling medication ${medId} from ${isSelected} to ${!isSelected}`);
+    
+    // Update local state first
+    setIsSelected(!isSelected);
+    
+    // Then call the parent component's toggle function
+    toggleMedication(medId);
+  };
+
+  // Save instructions handler
   const handleSaveInstructions = () => {
-    // In a real app, this would update the backend or parent state
-    // For now, just update the local medication.instructions array
     medication.instructions = editedInstructions.split('\n');
     setIsEditingInstructions(false);
   };
@@ -53,12 +71,12 @@ const MedicationItem = ({
     <>
       {/* Medication Item */}
       <div
-        className={`medication-item ${medication.selected ? 'selected' : ''}`}
+        className={`medication-item ${isSelected ? 'selected' : ''}`}
         style={{ 
           padding: '12px 14px',
           borderRadius: '6px',
-          border: medication.selected ? '1px solid #3b82f6' : '1px solid #d1d5db',
-          backgroundColor: medication.selected ? '#f0f9ff' : 'white',
+          border: isSelected ? '1px solid #3b82f6' : '1px solid #d1d5db',
+          backgroundColor: isSelected ? '#f0f9ff' : 'white',
           width: '100%',
           boxSizing: 'border-box'
         }}
@@ -69,76 +87,52 @@ const MedicationItem = ({
             <input
               type="checkbox"
               id={medId}
-              checked={medication.selected}
-              onChange={() => {
-                console.log(`Toggling medication ${medId} from ${medication.selected} to ${!medication.selected}`);
-                // Directly update the medication's selected state
-                medication.selected = !medication.selected;
-                // Then call toggleMedication to update the state
-                toggleMedication(medId);
-              }}
+              checked={isSelected}
+              onChange={handleToggle}
               style={{ 
                 marginRight: '10px',
                 marginTop: '3px',
                 width: '16px',
                 height: '16px',
-                accentColor: '#3b82f6'
-              }}
-            />
-            {/* Toggle Button - Added for direct toggling */}
-            <button
-              onClick={() => {
-                console.log(`Button toggling medication ${medId} from ${medication.selected} to ${!medication.selected}`);
-                // Directly update the medication's selected state
-                medication.selected = !medication.selected;
-                // Force a re-render
-                toggleMedication(medId);
-              }}
-              style={{
-                padding: '2px 6px',
-                marginRight: '10px',
-                backgroundColor: medication.selected ? '#ef4444' : '#10b981',
-                color: 'white',
-                border: 'none',
-                borderRadius: '4px',
-                fontSize: '12px',
+                accentColor: '#3b82f6',
                 cursor: 'pointer'
               }}
-            >
-              {medication.selected ? 'Unselect' : 'Select'}
-            </button>
+            />
+            
             <div style={{ flex: '1' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <span style={{ fontWeight: '500', fontSize: '15px' }}>
                   {medication.name}
                   {medication.brandName && <span style={{ color: '#4b5563', fontSize: '14px', marginLeft: '4px' }}>({medication.brandName})</span>}
                 </span>
-                {/* Frequency dropdown */}
-                <select
-                  value={frequency}
-                  onChange={e => {
-                    setFrequency(e.target.value);
-                    medication.frequency = e.target.value;
-                  }}
-                  style={{
-                    padding: '3px 8px',
-                    borderRadius: '4px',
-                    fontSize: '13px',
-                    width: '110px',
-                    border: '1px solid #d1d5db',
-                    backgroundColor: 'white',
-                    color: '#374151',
-                    flexShrink: 0
-                  }}
-                >
-                  <option value="wkly">Weekly</option>
-                  <option value="dly">Daily</option>
-                  <option value="bid">Twice Daily</option>
-                  <option value="tid">Three Times Daily</option>
-                  <option value="prn">PRN</option>
-                  <option value="monthly">Monthly</option>
-                  <option value="other">Other</option>
-                </select>
+                {/* Frequency dropdown - only show when selected */}
+                {isSelected && (
+                  <select
+                    value={frequency}
+                    onChange={e => {
+                      setFrequency(e.target.value);
+                      medication.frequency = e.target.value;
+                    }}
+                    style={{
+                      padding: '3px 8px',
+                      borderRadius: '4px',
+                      fontSize: '13px',
+                      width: '110px',
+                      border: '1px solid #d1d5db',
+                      backgroundColor: 'white',
+                      color: '#374151',
+                      flexShrink: 0
+                    }}
+                  >
+                    <option value="wkly">Weekly</option>
+                    <option value="dly">Daily</option>
+                    <option value="bid">Twice Daily</option>
+                    <option value="tid">Three Times Daily</option>
+                    <option value="prn">PRN</option>
+                    <option value="monthly">Monthly</option>
+                    <option value="other">Other</option>
+                  </select>
+                )}
               </div>
               {isPatientPreference && (
                 <div className="patient-preference-badge" style={{ marginTop: '4px' }}>
@@ -158,62 +152,62 @@ const MedicationItem = ({
             </div>
           </div>
           
-            {/* Dosage Row - Only show when medication is selected */}
-            {medication.selected && (
-              <div style={{ 
-                display: 'flex', 
-                alignItems: 'center', 
-                gap: '6px', 
-                flexWrap: 'nowrap', 
-                width: '100%', 
-                overflow: 'auto',
-                paddingLeft: '26px' /* Align with content after checkbox */
-              }}>
-                {medication.dosageOptions.map(option => (
-                  <span
-                    key={option.value}
-                    className={`dosage-pill ${dosage === option.value ? 'selected' : ''}`}
-                    onClick={() => selectDosage(medId, option.value)}
-                    style={{
-                      padding: '3px 8px',
-                      border: dosage === option.value ? '2px solid #2563eb' : '1px solid #d1d5db',
-                      borderRadius: '4px',
-                      cursor: 'pointer',
-                      background: dosage === option.value ? '#dbeafe' : 'white',
-                      display: 'inline-block',
-                      whiteSpace: 'nowrap',
-                      fontWeight: dosage === option.value ? '500' : 'normal',
-                      color: dosage === option.value ? '#1e40af' : '#4b5563',
-                      boxShadow: dosage === option.value ? '0 1px 2px rgba(0,0,0,0.05)' : 'none',
-                      fontSize: '13px',
-                      flexShrink: 0
-                    }}
-                  >
-                    {option.label}
-                  </span>
-                ))}
-                <input
-                  type="text"
-                  placeholder="Custom"
-                  value={dosage && !medication.dosageOptions.some(opt => opt.value === dosage) ? dosage : ''}
-                  onChange={(e) => selectDosage(medId, e.target.value)}
+          {/* Dosage Row - Only show when medication is selected */}
+          {isSelected && (
+            <div style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: '6px', 
+              flexWrap: 'nowrap', 
+              width: '100%', 
+              overflow: 'auto',
+              paddingLeft: '26px'
+            }}>
+              {medication.dosageOptions.map(option => (
+                <span
+                  key={option.value}
+                  className={`dosage-pill ${dosage === option.value ? 'selected' : ''}`}
+                  onClick={() => selectDosage(medId, option.value)}
                   style={{
                     padding: '3px 8px',
-                    border: '1px solid #d1d5db',
+                    border: dosage === option.value ? '2px solid #2563eb' : '1px solid #d1d5db',
                     borderRadius: '4px',
+                    cursor: 'pointer',
+                    background: dosage === option.value ? '#dbeafe' : 'white',
+                    display: 'inline-block',
+                    whiteSpace: 'nowrap',
+                    fontWeight: dosage === option.value ? '500' : 'normal',
+                    color: dosage === option.value ? '#1e40af' : '#4b5563',
+                    boxShadow: dosage === option.value ? '0 1px 2px rgba(0,0,0,0.05)' : 'none',
                     fontSize: '13px',
-                    width: '90px',
-                    color: '#374151',
                     flexShrink: 0
                   }}
-                />
-              </div>
-            )}
+                >
+                  {option.label}
+                </span>
+              ))}
+              <input
+                type="text"
+                placeholder="Custom"
+                value={dosage && !medication.dosageOptions.some(opt => opt.value === dosage) ? dosage : ''}
+                onChange={(e) => selectDosage(medId, e.target.value)}
+                style={{
+                  padding: '3px 8px',
+                  border: '1px solid #d1d5db',
+                  borderRadius: '4px',
+                  fontSize: '13px',
+                  width: '90px',
+                  color: '#374151',
+                  flexShrink: 0
+                }}
+              />
+            </div>
+          )}
         </div>
       </div>
 
       {/* Combined Duration and Instructions Box */}
-      {medication.selected && (
+      {isSelected && (
         <div className="medication-item-footer" style={{ 
           marginTop: '6px',
           backgroundColor: 'white',
@@ -269,7 +263,11 @@ const MedicationItem = ({
                     <span style={{ fontWeight: 600, color: '#374151', minWidth: '80px' }}>Approach:</span>
                     <select 
                       value={approach}
-                      onChange={(e) => setApproach(e.target.value)}
+                      onChange={(e) => {
+                        const newApproach = e.target.value;
+                        setApproach(newApproach);
+                        updateApproach(medId, newApproach);
+                      }}
                       style={{ 
                         marginLeft: '6px',
                         padding: '3px 8px',
@@ -383,7 +381,11 @@ const MedicationItem = ({
                     <span style={{ fontWeight: 600, color: '#374151', minWidth: '80px' }}>Approach:</span>
                     <select 
                       value={approach}
-                      onChange={(e) => setApproach(e.target.value)}
+                      onChange={(e) => {
+                        const newApproach = e.target.value;
+                        setApproach(newApproach);
+                        updateApproach(medId, newApproach);
+                      }}
                       style={{ 
                         marginLeft: '6px',
                         padding: '3px 8px',
@@ -460,4 +462,4 @@ const MedicationItem = ({
   );
 };
 
-export default MedicationItem;
+export default NewMedicationItem;

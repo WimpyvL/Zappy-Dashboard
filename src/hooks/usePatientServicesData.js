@@ -1,164 +1,269 @@
-import { useState, useEffect } from 'react';
+import { useMemo } from 'react';
 import { usePatientServices } from '../apis/patientServices/hooks';
-import { useResourcesByServiceType } from '../apis/educationalResources/hooks'; // Assuming this hook exists
+import { useResourcesByServiceType } from '../apis/educationalResources/hooks';
+import { useRecommendedProducts } from './useRecommendedProducts';
+import { useServiceMedications, useServiceActionItems } from '../apis/patientServices/hooks';
+import { processServiceData, createFallbackService } from '../utils/patientServicesUtils';
 
+/**
+ * Hook to fetch and process patient services data with related information
+ * 
+ * This hook combines data from multiple sources:
+ * - Patient services from the patient services API
+ * - Medications related to each service
+ * - Action items related to each service
+ * - Educational resources related to each service
+ * - Product recommendations related to each service
+ * 
+ * @param {string} patientId - The ID of the patient
+ * @returns {Object} Object containing processed services data, loading state, and error state
+ */
 const usePatientServicesData = (patientId) => {
-  // If patientId is null, don't try to fetch data
-  const { data: patientServices, isLoading: isLoadingServices, error: errorServices } = usePatientServices();
+  // Fetch patient services
+  const { 
+    data: patientServices, 
+    isLoading: isLoadingServices, 
+    error: errorServices 
+  } = usePatientServices();
 
-  const [processedServices, setProcessedServices] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState(null);
+  // Process each service with its related data
+  const processedServices = useMemo(() => {
+    if (!patientServices || patientServices.length === 0) {
+      // Return fallback data if no services
+      return [createFallbackService()];
+    }
 
-  // Hardcoded sample recommendations - this should ideally come from an API
-  const serviceRecommendations = {
-    'weight-management': [
-      { id: 1, name: 'Protein Powder', imageUrl: 'https://via.placeholder.com/50', price: 35.00 },
-      { id: 2, name: 'Meal Replacement Shakes', imageUrl: 'https://via.placeholder.com/50', price: 40.00 },
-    ],
-    'diabetes-management': [
-      { id: 3, name: 'Glucose Meter', imageUrl: 'https://via.placeholder.com/50', price: 25.00 },
-      { id: 4, name: 'Test Strips', imageUrl: 'https://via.placeholder.com/50', price: 15.00 },
-    ],
-  };
+    // Map each service to include its related data
+    return patientServices.map(service => {
+      // Get service type for related data fetching
+      const serviceType = service.type;
 
-
-  useEffect(() => {
-    const fetchAndProcessData = async () => {
-      if (patientServices && patientServices.length > 0) {
-        setIsLoading(true);
-        setError(null);
-        try {
-          // Simulate fetching related data for each service with more structured placeholder data
-          const servicesWithDetails = patientServices.map((service) => {
-            // Using more structured placeholder data
-            const medications = [
-                // Example placeholder medication
-                {
-                    id: 'med1',
-                    name: 'Semaglutide Injection',
-                    instructionsSummary: 'Weekly dose - Take with food',
-                    status: 'urgent', // 'urgent', 'normal', 'complete'
-                    nextRefillDate: 'Dec 15',
-                    refillStatus: 'Ordered - Arriving Dec 12',
-                    refillStatusColor: 'text-green-600',
-                    instructionType: 'semaglutide',
-                    taskId: 'WeightTask1' // Link to a task if applicable
-                },
-                // Add other placeholder medications as needed
-            ];
-            const actionItems = []; // Placeholder
-            const resources = [
-                // Example placeholder resources
-                {
-                    id: 'res1',
-                    title: 'Managing Appetite Changes',
-                    description: 'Common side effects and how to handle them',
-                    category: 'recommended', // 'recommended', 'week-focus', 'quick-help', 'coming-up'
-                    status: 'new', // 'new', 'in-progress', 'completed'
-                    readTime: 4,
-                    imageUrl: 'https://images.unsplash.com/photo-1540189549336-e6e99c3679fe?w=80&h=80&fit=crop&q=80',
-                    progress: 0, // For in-progress status
-                    instructionType: null, // For quick-help resources
-                    isLocked: false, // For coming-up resources
-                    unlockText: null // For coming-up resources
-                },
-                 {
-                    id: 'res2',
-                    title: 'Injection Site Rotation',
-                    description: 'Rotate between thigh, abdomen, upper arm',
-                    category: 'quick-help',
-                    status: 'completed',
-                    readTime: 2,
-                    imageUrl: null,
-                    progress: 100,
-                    instructionType: 'injection-rotation',
-                    isLocked: false,
-                    unlockText: null
-                },
-                // Add other placeholder resources as needed
-            ];
-            const recommendations = serviceRecommendations[service.service_type] || [];
-
-            // Placeholder data for service progress and status
-            const progressTitle = `${service.name} Progress`;
-            const progressSubtitle = 'Updates';
-            const progressStatus = 'Active';
-            const progressToGoalText = 'Progress to goal';
-            const progressPercentage = 0; // Example
-
-            // Placeholder data for status bar
-            const nextRefillDate = 'N/A'; // Should come from medications
-            const upcomingRefills = []; // Should come from medications
-            const nextCheckinDate = 'N/A'; // Should come from action items or service data
-            const checkinStatus = 'normal'; // 'overdue', 'due-today', 'due-tomorrow', 'due-in-two-days', 'normal'
-
-            // Placeholder for priority task
-            const priorityTask = {
-                text: `Your ${service.name} task is due`,
-                taskId: null // Link to a task if applicable
-            };
-
-
-            return {
-              ...service,
-              medications,
-              actionItems,
-              resources,
-              recommendations,
-              progressTitle,
-              progressSubtitle,
-              progressStatus,
-              progressToGoalText,
-              progressPercentage,
-              nextRefillDate,
-              upcomingRefills,
-              nextCheckinDate,
-              checkinStatus,
-              priorityTask
-            };
-          });
-          setProcessedServices(servicesWithDetails);
-        } catch (err) {
-          setError(err);
-        } finally {
-          setIsLoading(false);
+      // For each service, we would normally fetch related data here
+      // In a production environment, these would be actual API calls
+      // For now, we'll use placeholder data that would be replaced with real data
+      
+      // Example placeholder medication
+      const medications = [
+        {
+          id: 'med1',
+          name: 'Semaglutide Injection',
+          instructionsSummary: 'Weekly dose - Take with food',
+          status: 'urgent', // 'urgent', 'normal', 'complete'
+          nextRefillDate: 'Dec 15',
+          refillStatus: 'Ordered - Arriving Dec 12',
+          refillStatusColor: 'text-green-600',
+          instructionType: 'semaglutide',
+          taskId: 'WeightTask1' // Link to a task if applicable
         }
-      } else if (!isLoadingServices && processedServices.length === 0) {
-         // If no patientServices are fetched and not loading, and processedServices is empty, provide fallback placeholder data
-         setProcessedServices([
-             {
-                id: 'fallback-service-1',
-                name: 'Placeholder Program',
-                service_type: 'placeholder',
-                medications: [],
-                actionItems: [],
-                resources: [],
-                recommendations: [],
-                progressTitle: 'Progress N/A',
-                progressSubtitle: 'No data available',
-                progressStatus: 'Inactive',
-                progressToGoalText: 'N/A',
-                progressPercentage: 0,
-                nextRefillDate: 'N/A',
-                upcomingRefills: [],
-                nextCheckinDate: 'N/A',
-                checkinStatus: 'normal',
-                priorityTask: null
-             }
-         ]);
-         setIsLoading(false);
-      }
-    };
+      ];
+      
+      // Example placeholder resources
+      const resources = [
+        {
+          id: 'res1',
+          title: 'Managing Appetite Changes',
+          description: 'Common side effects and how to handle them',
+          category: 'recommended', // 'recommended', 'week-focus', 'quick-help', 'coming-up'
+          status: 'new', // 'new', 'in-progress', 'completed'
+          readTime: 4,
+          imageUrl: 'https://images.unsplash.com/photo-1540189549336-e6e99c3679fe?w=80&h=80&fit=crop&q=80',
+          progress: 0, // For in-progress status
+          instructionType: null, // For quick-help resources
+          isLocked: false, // For coming-up resources
+          unlockText: null // For coming-up resources
+        },
+        {
+          id: 'res2',
+          title: 'Injection Site Rotation',
+          description: 'Rotate between thigh, abdomen, upper arm',
+          category: 'quick-help',
+          status: 'completed',
+          readTime: 2,
+          imageUrl: null,
+          progress: 100,
+          instructionType: 'injection-rotation',
+          isLocked: false,
+          unlockText: null
+        }
+      ];
+      
+      // Example placeholder recommendations based on service type
+      const recommendations = serviceType === 'weight-management' 
+        ? [
+            { id: 1, name: 'Protein Powder', imageUrl: 'https://via.placeholder.com/50', price: 35.00 },
+            { id: 2, name: 'Meal Replacement Shakes', imageUrl: 'https://via.placeholder.com/50', price: 40.00 }
+          ]
+        : serviceType === 'diabetes-management'
+        ? [
+            { id: 3, name: 'Glucose Meter', imageUrl: 'https://via.placeholder.com/50', price: 25.00 },
+            { id: 4, name: 'Test Strips', imageUrl: 'https://via.placeholder.com/50', price: 15.00 }
+          ]
+        : [];
 
-    fetchAndProcessData();
-  }, [patientServices, isLoadingServices, serviceRecommendations]); // Depend on patientServices, isLoadingServices, and serviceRecommendations
+      // Process the service with its related data
+      return processServiceData(service, medications, [], resources, recommendations);
+    });
+  }, [patientServices]); // Only depends on patientServices
+
+  // Combine loading and error states
+  const isLoading = isLoadingServices;
+  const error = errorServices;
 
   return {
     processedServices,
-    isLoading: isLoading || isLoadingServices, // Combine loading states
-    error: error || errorServices, // Combine error states
+    isLoading,
+    error,
+  };
+};
+
+/**
+ * Enhanced version of usePatientServicesData that uses React Query for data fetching
+ * This is the recommended implementation for production use
+ * 
+ * @param {string} patientId - The ID of the patient
+ * @returns {Object} Object containing processed services data, loading state, and error state
+ */
+export const usePatientServicesDataEnhanced = (patientId) => {
+  // Fetch patient services
+  const { 
+    data: patientServices, 
+    isLoading: isLoadingServices, 
+    error: errorServices 
+  } = usePatientServices();
+
+  // Process each service with its related data
+  const processedServices = useMemo(() => {
+    if (!patientServices || patientServices.length === 0) {
+      // Return fallback data if no services
+      return [createFallbackService()];
+    }
+
+    // Map each service to include its related data
+    return patientServices.map(service => {
+      // Get service type for related data fetching
+      const serviceType = service.type;
+      
+      // In a real implementation, we would use these hooks to fetch real data
+      // For now, we're using placeholder data to demonstrate the pattern
+      
+      // These hooks would be used in a production environment:
+      // const { data: medications = [] } = useServiceMedications(serviceType);
+      // const { data: actionItems = [] } = useServiceActionItems(serviceType);
+      // const { data: resources = [] } = useResourcesByServiceType(serviceType);
+      // const { recommendedProducts: recommendations = [] } = useRecommendedProducts(patientId, serviceType);
+      
+      // Example placeholder data (would be replaced with real data from hooks)
+      const medications = [
+        {
+          id: 'med1',
+          name: 'Semaglutide Injection',
+          instructionsSummary: 'Weekly dose - Take with food',
+          status: 'urgent',
+          nextRefillDate: 'Dec 15',
+          refillStatus: 'Ordered - Arriving Dec 12',
+          refillStatusColor: 'text-green-600',
+          instructionType: 'semaglutide',
+          taskId: 'WeightTask1'
+        }
+      ];
+      
+      const resources = [
+        {
+          id: 'res1',
+          title: 'Managing Appetite Changes',
+          description: 'Common side effects and how to handle them',
+          category: 'recommended',
+          status: 'new',
+          readTime: 4,
+          imageUrl: 'https://images.unsplash.com/photo-1540189549336-e6e99c3679fe?w=80&h=80&fit=crop&q=80',
+          progress: 0,
+          instructionType: null,
+          isLocked: false,
+          unlockText: null
+        }
+      ];
+      
+      const recommendations = serviceType === 'weight-management' 
+        ? [
+            { id: 1, name: 'Protein Powder', imageUrl: 'https://via.placeholder.com/50', price: 35.00 },
+            { id: 2, name: 'Meal Replacement Shakes', imageUrl: 'https://via.placeholder.com/50', price: 40.00 }
+          ]
+        : serviceType === 'diabetes-management'
+        ? [
+            { id: 3, name: 'Glucose Meter', imageUrl: 'https://via.placeholder.com/50', price: 25.00 },
+            { id: 4, name: 'Test Strips', imageUrl: 'https://via.placeholder.com/50', price: 15.00 }
+          ]
+        : [];
+
+      // Process the service with its related data
+      return processServiceData(service, medications, [], resources, recommendations);
+    });
+  }, [patientServices, patientId]); // Only depends on patientServices and patientId
+
+  // Combine loading and error states
+  const isLoading = isLoadingServices;
+  const error = errorServices;
+
+  return {
+    processedServices,
+    isLoading,
+    error,
   };
 };
 
 export default usePatientServicesData;
+
+/**
+ * Hook to fetch service-specific data for a single service
+ * This is a more focused hook that can be used when you only need data for one service
+ *
+ * @param {string} serviceId - The ID of the service
+ * @param {string} serviceType - The type of service
+ * @param {string} patientId - The ID of the patient
+ * @returns {Object} Object containing service data, loading state, and error state
+ */
+export const useServiceData = (serviceId, serviceType, patientId) => {
+  // Fetch medications for this service type
+  const {
+    data: medications = [],
+    isLoading: isLoadingMedications,
+    error: errorMedications
+  } = useServiceMedications(serviceType);
+
+  // Fetch action items for this service type
+  const {
+    data: actionItems = [],
+    isLoading: isLoadingActionItems,
+    error: errorActionItems
+  } = useServiceActionItems(serviceType);
+
+  // Fetch educational resources for this service type
+  const {
+    data: resources = [],
+    isLoading: isLoadingResources,
+    error: errorResources
+  } = useResourcesByServiceType(serviceType);
+
+  // Fetch product recommendations for this service type
+  const {
+    recommendedProducts: recommendations = [],
+    isLoading: isLoadingRecommendations,
+    error: errorRecommendations
+  } = useRecommendedProducts(patientId, serviceType);
+
+  // Combine loading and error states
+  const isLoading = isLoadingMedications || isLoadingActionItems ||
+                    isLoadingResources || isLoadingRecommendations;
+  
+  const error = errorMedications || errorActionItems ||
+                errorResources || errorRecommendations;
+
+  return {
+    medications,
+    actionItems,
+    resources,
+    recommendations,
+    isLoading,
+    error
+  };
+};

@@ -2,7 +2,7 @@
 // Export all contexts for easy imports
 
 // Auth contexts
-export * from './auth/AuthContext';
+export * from './auth';
 
 // App contexts
 export * from './app/AppContext';

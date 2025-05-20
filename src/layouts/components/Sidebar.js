@@ -1,6 +1,6 @@
 import React, { useRef, useEffect } from 'react'; // Import useRef and useEffect
-import { useAuth } from '../../context/AuthContext';
-import { useAppContext } from '../../context/AppContext';
+import { useAuth } from '../../contexts/auth/AuthContext';
+import { useAppContext } from '../../contexts/app/AppContext';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   sidebarItems as adminSidebarItems,

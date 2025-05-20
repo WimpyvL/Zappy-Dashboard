@@ -1,5 +1,5 @@
 import React from 'react';
-import { useCart } from '../../../context/CartContext';
+import { useCart } from '../../../contexts/cart/CartContext';
 import { redirectToPaymentCheckout } from '../../../utils/stripeCheckout';
 import { X, Trash2, Plus, Minus, ShoppingCart as CartIcon } from 'lucide-react';
 import { message } from 'antd';

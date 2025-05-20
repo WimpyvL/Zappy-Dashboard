@@ -1,12 +1,13 @@
 import React from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { AuthProvider, useAuth } from './AuthContext';
-import { supabase } from '../lib/supabase';
-import { useAppContext } from './AppContext';
+import { AuthProviders, useAuth, useSession, useUserProfile } from './index';
+import { supabase } from '../../lib/supabase';
+import { useAppContext } from '../app/AppContext';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 // Mock dependencies
-jest.mock('../lib/supabase', () => ({
+jest.mock('../../lib/supabase', () => ({
   supabase: {
     auth: {
       getSession: jest.fn(),
@@ -27,39 +28,64 @@ jest.mock('../lib/supabase', () => ({
   },
 }));
 
-jest.mock('./AppContext', () => ({
+jest.mock('../app/AppContext', () => ({
   useAppContext: jest.fn().mockReturnValue({
     setViewMode: jest.fn(),
   }),
 }));
 
-// Create a test component that uses the auth context
+// Create a test QueryClient
+const createTestQueryClient = () => new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: false,
+      cacheTime: 0,
+    },
+  },
+});
+
+// Create a test component that uses all the auth contexts
 const TestComponent = () => {
+  // Auth context
   const {
     currentUser,
-    userRole,
     isAuthenticated,
     authLoading,
-    actionLoading,
-    error,
+    error: authError,
     login,
     logout,
     register,
-    updateProfile,
-    changePassword,
     forgotPassword,
     updatePassword,
     resendVerificationEmail,
-    clearError,
+    clearError: clearAuthError,
   } = useAuth();
+
+  // Session context
+  const {
+    sessionValid,
+    sessionLoading,
+    sessionError,
+    validateSession,
+    clearSessionError,
+  } = useSession();
+
+  // User profile context
+  const {
+    userProfile,
+    profileLoading,
+    profileError,
+    updateProfile,
+    changePassword,
+    refreshProfile,
+    clearProfileError,
+  } = useUserProfile();
 
   return (
     <div>
-      <div data-testid="loading-state">
+      {/* Auth context */}
+      <div data-testid="auth-loading-state">
         {authLoading ? 'Auth Loading' : 'Auth Ready'}
-      </div>
-      <div data-testid="action-loading-state">
-        {actionLoading ? 'Action Loading' : 'Action Ready'}
       </div>
       <div data-testid="auth-state">
         {isAuthenticated ? 'Authenticated' : 'Not Authenticated'}
@@ -67,20 +93,39 @@ const TestComponent = () => {
       <div data-testid="user-email">
         {currentUser?.email || 'No user email'}
       </div>
-      <div data-testid="user-role">{userRole || 'No role'}</div>
-      <div data-testid="error-message">{error || 'No errors'}</div>
+      <div data-testid="auth-error-message">
+        {authError || 'No auth errors'}
+      </div>
+
+      {/* Session context */}
+      <div data-testid="session-loading-state">
+        {sessionLoading ? 'Session Loading' : 'Session Ready'}
+      </div>
+      <div data-testid="session-state">
+        {sessionValid ? 'Session Valid' : 'Session Invalid'}
+      </div>
+      <div data-testid="session-error-message">
+        {sessionError || 'No session errors'}
+      </div>
+
+      {/* User profile context */}
+      <div data-testid="profile-loading-state">
+        {profileLoading ? 'Profile Loading' : 'Profile Ready'}
+      </div>
+      <div data-testid="user-role">
+        {userProfile?.role || 'No role'}
+      </div>
+      <div data-testid="profile-error-message">
+        {profileError || 'No profile errors'}
+      </div>
+
+      {/* Auth actions */}
       <button onClick={() => login('test@example.com', 'password123')}>
         Login
       </button>
       <button onClick={() => logout()}>Logout</button>
       <button onClick={() => register('new@example.com', 'password123')}>
         Register
-      </button>
-      <button onClick={() => updateProfile({ displayName: 'New Name' })}>
-        Update Profile
-      </button>
-      <button onClick={() => changePassword('newpassword123')}>
-        Change Password
       </button>
       <button onClick={() => forgotPassword('test@example.com')}>
         Forgot Password
@@ -91,7 +136,21 @@ const TestComponent = () => {
       <button onClick={() => resendVerificationEmail('test@example.com')}>
         Resend Verification
       </button>
-      <button onClick={clearError}>Clear Error</button>
+      <button onClick={clearAuthError}>Clear Auth Error</button>
+
+      {/* Session actions */}
+      <button onClick={() => validateSession()}>Validate Session</button>
+      <button onClick={clearSessionError}>Clear Session Error</button>
+
+      {/* Profile actions */}
+      <button onClick={() => updateProfile({ displayName: 'New Name' })}>
+        Update Profile
+      </button>
+      <button onClick={() => changePassword('newpassword123')}>
+        Change Password
+      </button>
+      <button onClick={refreshProfile}>Refresh Profile</button>
+      <button onClick={clearProfileError}>Clear Profile Error</button>
     </div>
   );
 };
@@ -112,24 +171,29 @@ describe('AuthContext', () => {
   });
 
   test('renders with initial unauthenticated state', async () => {
+    const testQueryClient = createTestQueryClient();
+    
     render(
-      <AuthProvider>
-        <TestComponent />
-      </AuthProvider>
+      <QueryClientProvider client={testQueryClient}>
+        <AuthProviders>
+          <TestComponent />
+        </AuthProviders>
+      </QueryClientProvider>
     );
 
     // Initially shows loading
-    expect(screen.getByTestId('loading-state')).toHaveTextContent('Auth Loading');
+    expect(screen.getByTestId('auth-loading-state')).toHaveTextContent('Auth Loading');
     
     // After session check resolves
     await waitFor(() => {
-      expect(screen.getByTestId('loading-state')).toHaveTextContent('Auth Ready');
+      expect(screen.getByTestId('auth-loading-state')).toHaveTextContent('Auth Ready');
     });
     
     // Check that the user is not authenticated
     expect(screen.getByTestId('auth-state')).toHaveTextContent('Not Authenticated');
     expect(screen.getByTestId('user-email')).toHaveTextContent('No user email');
     expect(screen.getByTestId('user-role')).toHaveTextContent('No role');
+    expect(screen.getByTestId('session-state')).toHaveTextContent('Session Invalid');
   });
 
   test('handles successful login', async () => {
@@ -150,22 +214,26 @@ describe('AuthContext', () => {
       error: null,
     });
 
+    const testQueryClient = createTestQueryClient();
+    
     render(
-      <AuthProvider>
-        <TestComponent />
-      </AuthProvider>
+      <QueryClientProvider client={testQueryClient}>
+        <AuthProviders>
+          <TestComponent />
+        </AuthProviders>
+      </QueryClientProvider>
     );
     
     // Wait for initial auth check to complete
     await waitFor(() => {
-      expect(screen.getByTestId('loading-state')).toHaveTextContent('Auth Ready');
+      expect(screen.getByTestId('auth-loading-state')).toHaveTextContent('Auth Ready');
     });
     
     // Perform login
     await user.click(screen.getByText('Login'));
     
-    // Check that action loading state is shown
-    expect(screen.getByTestId('action-loading-state')).toHaveTextContent('Action Loading');
+    // Check that auth loading state is shown during login
+    expect(screen.getByTestId('auth-loading-state')).toHaveTextContent('Auth Loading');
     
     // Verify login was called with correct params
     expect(supabase.auth.signInWithPassword).toHaveBeenCalledWith({
@@ -175,7 +243,7 @@ describe('AuthContext', () => {
     
     // Wait for login action to complete
     await waitFor(() => {
-      expect(screen.getByTestId('action-loading-state')).toHaveTextContent('Action Ready');
+      expect(screen.getByTestId('auth-loading-state')).toHaveTextContent('Auth Ready');
     });
     
     // Simulate the onAuthStateChange event with auth state change
@@ -202,15 +270,19 @@ describe('AuthContext', () => {
       error: { message: 'Invalid login credentials' },
     });
 
+    const testQueryClient = createTestQueryClient();
+    
     render(
-      <AuthProvider>
-        <TestComponent />
-      </AuthProvider>
+      <QueryClientProvider client={testQueryClient}>
+        <AuthProviders>
+          <TestComponent />
+        </AuthProviders>
+      </QueryClientProvider>
     );
     
     // Wait for initial auth check
     await waitFor(() => {
-      expect(screen.getByTestId('loading-state')).toHaveTextContent('Auth Ready');
+      expect(screen.getByTestId('auth-loading-state')).toHaveTextContent('Auth Ready');
     });
     
     // Perform login
@@ -218,7 +290,7 @@ describe('AuthContext', () => {
     
     // Wait for error
     await waitFor(() => {
-      expect(screen.getByTestId('error-message')).toHaveTextContent('Invalid login credentials');
+      expect(screen.getByTestId('auth-error-message')).toHaveTextContent('Invalid login credentials');
     });
   });
 
@@ -244,15 +316,19 @@ describe('AuthContext', () => {
       error: null,
     });
 
+    const testQueryClient = createTestQueryClient();
+    
     render(
-      <AuthProvider>
-        <TestComponent />
-      </AuthProvider>
+      <QueryClientProvider client={testQueryClient}>
+        <AuthProviders>
+          <TestComponent />
+        </AuthProviders>
+      </QueryClientProvider>
     );
     
     // Wait for initial auth to complete and establish authenticated state
     await waitFor(() => {
-      expect(screen.getByTestId('loading-state')).toHaveTextContent('Auth Ready');
+      expect(screen.getByTestId('auth-loading-state')).toHaveTextContent('Auth Ready');
     });
     
     // Simulate auth state change with authenticated user
@@ -293,15 +369,19 @@ describe('AuthContext', () => {
       error: null,
     });
 
+    const testQueryClient = createTestQueryClient();
+    
     render(
-      <AuthProvider>
-        <TestComponent />
-      </AuthProvider>
+      <QueryClientProvider client={testQueryClient}>
+        <AuthProviders>
+          <TestComponent />
+        </AuthProviders>
+      </QueryClientProvider>
     );
     
     // Wait for initial auth check
     await waitFor(() => {
-      expect(screen.getByTestId('loading-state')).toHaveTextContent('Auth Ready');
+      expect(screen.getByTestId('auth-loading-state')).toHaveTextContent('Auth Ready');
     });
     
     // Perform registration
@@ -353,15 +433,19 @@ describe('AuthContext', () => {
       error: null,
     });
 
+    const testQueryClient = createTestQueryClient();
+    
     render(
-      <AuthProvider>
-        <TestComponent />
-      </AuthProvider>
+      <QueryClientProvider client={testQueryClient}>
+        <AuthProviders>
+          <TestComponent />
+        </AuthProviders>
+      </QueryClientProvider>
     );
     
     // Wait for initial auth check and simulate authenticated state
     await waitFor(() => {
-      expect(screen.getByTestId('loading-state')).toHaveTextContent('Auth Ready');
+      expect(screen.getByTestId('auth-loading-state')).toHaveTextContent('Auth Ready');
     });
     
     const authStateChangeCallback = supabase.auth.onAuthStateChange.mock.calls[0][0];
@@ -403,15 +487,19 @@ describe('AuthContext', () => {
       error: null,
     });
 
+    const testQueryClient = createTestQueryClient();
+    
     render(
-      <AuthProvider>
-        <TestComponent />
-      </AuthProvider>
+      <QueryClientProvider client={testQueryClient}>
+        <AuthProviders>
+          <TestComponent />
+        </AuthProviders>
+      </QueryClientProvider>
     );
     
     // Wait for initial auth check
     await waitFor(() => {
-      expect(screen.getByTestId('loading-state')).toHaveTextContent('Auth Ready');
+      expect(screen.getByTestId('auth-loading-state')).toHaveTextContent('Auth Ready');
     });
     
     // Simulate authenticated state
@@ -443,15 +531,19 @@ describe('AuthContext', () => {
       error: null,
     });
 
+    const testQueryClient = createTestQueryClient();
+    
     render(
-      <AuthProvider>
-        <TestComponent />
-      </AuthProvider>
+      <QueryClientProvider client={testQueryClient}>
+        <AuthProviders>
+          <TestComponent />
+        </AuthProviders>
+      </QueryClientProvider>
     );
     
     // Wait for initial auth check
     await waitFor(() => {
-      expect(screen.getByTestId('loading-state')).toHaveTextContent('Auth Ready');
+      expect(screen.getByTestId('auth-loading-state')).toHaveTextContent('Auth Ready');
     });
     
     // Perform forgot password action
@@ -480,15 +572,19 @@ describe('AuthContext', () => {
       error: null,
     });
 
+    const testQueryClient = createTestQueryClient();
+    
     render(
-      <AuthProvider>
-        <TestComponent />
-      </AuthProvider>
+      <QueryClientProvider client={testQueryClient}>
+        <AuthProviders>
+          <TestComponent />
+        </AuthProviders>
+      </QueryClientProvider>
     );
     
     // Wait for initial auth check
     await waitFor(() => {
-      expect(screen.getByTestId('loading-state')).toHaveTextContent('Auth Ready');
+      expect(screen.getByTestId('auth-loading-state')).toHaveTextContent('Auth Ready');
     });
     
     // Perform resend verification action
@@ -528,8 +624,8 @@ describe('AuthContext', () => {
 
   test('handles uninitialized supabase client', async () => {
     // Temporarily unmock supabase to simulate uninitialized client
-    jest.unmock('../lib/supabase');
-    jest.mock('../lib/supabase', () => ({
+    jest.unmock('../../lib/supabase');
+    jest.mock('../../lib/supabase', () => ({
       supabase: null,
     }));
     
@@ -561,7 +657,7 @@ describe('AuthContext', () => {
     
     // Restore the original mock
     jest.resetModules();
-    jest.mock('../lib/supabase', () => ({
+    jest.mock('../../lib/supabase', () => ({
       supabase: {
         auth: {
           getSession: jest.fn().mockResolvedValue({ data: { session: null }, error: null }),

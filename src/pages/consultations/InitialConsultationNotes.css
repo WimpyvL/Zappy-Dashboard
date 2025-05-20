@@ -68,11 +68,11 @@
 
 .add-service {
     background-color: rgba(255, 255, 255, 0.1);
-    border: 1px dashed rgba(255, 255, 255, 0.4); 
+    border: 1px dashed rgba(255, 255, 255, 0.4);
     color: white;
     padding: 4px 10px;
-    border-radius: 12px; 
-    font-size: 14px; 
+    border-radius: 12px;
+    font-size: 14px;
     cursor: pointer;
     display: flex;
     align-items: center;
@@ -83,6 +83,25 @@
 .add-service:hover {
     background-color: rgba(255, 255, 255, 0.2);
     border-color: rgba(255, 255, 255, 0.6);
+}
+
+.add-more-button {
+    display: flex;
+    align-items: center;
+    padding: 6px 12px;
+    background-color: #f3f4f6;
+    border: 1px solid #d1d5db;
+    border-radius: 4px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #374151;
+    cursor: pointer;
+    width: 100%;
+    justify-content: center;
+}
+
+.add-more-button:hover {
+    background-color: #e5e7eb;
 }
 
 .header-ai-notice button { 
@@ -280,26 +299,33 @@
     margin: 0 auto; 
 }
 
-.card { 
-    background: white; 
-    border-radius: 6px; 
-    box-shadow: 0 1px 2px rgba(0,0,0,0.05); 
-    overflow: hidden; 
-    margin-bottom: 12px; 
+.card {
+    background: white;
+    border-radius: 6px;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+    overflow: hidden;
+    margin-bottom: 12px;
+    display: flex;
+    flex-direction: column;
 }
 
-.card-header { 
-    padding: 10px 16px; 
-    border-bottom: 1px solid #e5e7eb; 
-    font-weight: 600; 
-    display: flex; 
-    justify-content: space-between; 
-    align-items: center; 
-    font-size: 16px; 
+.card-header {
+    padding: 10px 14px;
+    border-bottom: 1px solid #e5e7eb;
+    font-weight: 600;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 15px;
+    background-color: #f9fafb;
 }
 
-.card-body { 
-    padding: 16px; 
+.card-body {
+    padding: 10px 14px;
+    overflow-y: auto;
+    flex: 1;
+    font-size: 14px;
+    background-color: white;
 }
 
 .service-dot { 
@@ -330,53 +356,73 @@
     margin-bottom: 12px; 
 }
 
-.category-header { 
-    padding: 8px 12px; 
-    border-radius: 4px; 
-    font-weight: 600; 
-    font-size: 15px; 
-    display: flex; 
-    align-items: center; 
-    justify-content: space-between; 
-    margin-bottom: 8px; 
+.category-header {
+    padding: 8px 12px;
+    margin-bottom: 8px;
+    background-color: #f9fafb;
+    border-radius: 4px;
+    border-left: 3px solid;
+    font-weight: 500;
+    font-size: 15px;
+    display: flex;
+    align-items: center;
+    text-align: left;
 }
 
-.wm-header { 
-    background-color: #eff6ff; 
-    border-bottom: 1px solid #dbeafe; 
+.wm-header {
+    border-left-color: #3b82f6;
 }
 
-.ed-header { 
-    background-color: #f5f3ff; 
-    border-bottom: 1px solid #ede9fe; 
+.ed-header {
+    border-left-color: #ec4899;
+}
+
+.pc-header {
+    border-left-color: #10b981;
+}
+
+.mh-header {
+    border-left-color: #8b5cf6;
 }
 
 .medication-item {
     padding: 10px 12px;
-    border-radius: 4px 4px 0 0; /* Rounded top corners only if controls follow */
-    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    border: 1px solid #d1d5db;
+    background-color: white;
+    margin-bottom: 8px;
+    width: 100%;
+}
+
+.medication-item.selected {
+    border-color: #3b82f6;
+    background-color: #f0f9ff;
+}
+
+.medication-name-row {
     display: flex;
-    justify-content: space-between;
-    align-items: center;
-    cursor: pointer;
-    font-size: 15px;
-    border-bottom: 1px solid #e5e7eb; /* Ensure bottom border for standalone item */
+    align-items: flex-start;
+    margin-bottom: 6px;
 }
 
-.medication-item.no-bottom-border-if-controls-open {
-    border-bottom: none;
-    border-radius: 4px 4px 0 0;
+.medication-checkbox {
+    margin-right: 10px;
+    margin-top: 3px;
+    width: 16px;
+    height: 16px;
+    accent-color: #3b82f6;
 }
 
-.medication-item:hover { 
-    background-color: #f9fafb; 
+.medication-name {
+    font-weight: 500;
+    font-size: 14px;
 }
 
-.medication-item.selected { 
-    background-color: #f0f9ff; 
-    border-left: 3px solid #3b82f6; 
-    padding-left: 7px; 
-} /* Adjusted padding for border */
+.medication-brand {
+    color: #4b5563;
+    font-size: 13px;
+    margin-left: 4px;
+}
 
 .medication-name { 
     display: flex; 
@@ -384,55 +430,110 @@
 }
 
 .medication-controls {
-    padding: 10px 14px 10px 36px; 
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 8px;
+    padding: 4px 6px;
     background-color: #f9fafb;
-    border-left: 1px solid #e5e7eb;
-    border-right: 1px solid #e5e7eb;
-    border-bottom: 1px solid #e5e7eb;
-    border-radius: 0 0 4px 4px;
-    margin-top: -1px; /* Overlap with item's bottom border */
+    border-radius: 4px;
 }
 
-.medication-controls .details-row { 
-    margin-bottom: 8px; 
-    display: flex; 
-    align-items: center; 
-    font-size: 14px; 
+.control-group {
+    display: flex;
+    align-items: center;
 }
 
-.medication-controls .details-row:last-child { 
-    margin-bottom: 0; 
+.control-label {
+    font-weight: 600;
+    color: #374151;
+    min-width: 60px;
+    font-size: 12px;
 }
 
-.medication-controls .details-label { 
-    font-weight: 600; 
-    margin-right: 8px; 
-    width: 60px; 
+.control-select {
+    margin-left: 6px;
+    padding: 2px 6px;
+    font-size: 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 4px;
+    background-color: white;
 }
 
-.medication-controls .dosage-pills { 
-    display: flex; 
-    flex-wrap: wrap; 
-    gap: 4px; 
+.medication-footer {
+    margin-top: 6px;
+    background-color: white;
+    border-radius: 6px;
+    padding: 8px 10px;
+    border: 1px solid #d1d5db;
+    font-size: 13px;
 }
 
-.medication-controls .dosage-pill { 
-    padding: 4px 8px; 
-    border-radius: 12px; 
-    background-color: #e9ebee; 
-    border: 1px solid #d1d5db; 
-    font-size: 14px; 
-    cursor: pointer; 
+.instructions-area {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    border-top: 1px dashed #d1d5db;
+    padding-top: 6px;
+    margin-top: 4px;
+    font-size: 12px;
 }
 
-.medication-controls .dosage-pill:hover { 
-    background-color: #d1d5db; 
+.instructions-text {
+    font-style: italic;
+    color: #374151;
+    line-height: 1.4;
 }
 
-.medication-controls .dosage-pill.selected { 
-    background-color: #dbeafe; 
-    border-color: #93c5fd; 
-    color: #1e40af; 
+.edit-button {
+    background: #f3f4f6;
+    color: #374151;
+    padding: 3px;
+    border-radius: 4px;
+    border: 1px solid #e5e7eb;
+    font-size: 12px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+}
+
+.dosage-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: nowrap;
+    width: 100%;
+    overflow: auto;
+    padding-left: 26px;
+}
+
+.dosage-pill {
+    padding: 2px 6px;
+    border: 1px solid #d1d5db;
+    border-radius: 4px;
+    cursor: pointer;
+    background: white;
+    display: inline-block;
+    white-space: nowrap;
+    font-size: 12px;
+}
+
+.dosage-pill.selected {
+    border: 2px solid #2563eb;
+    background: #dbeafe;
+    font-weight: 500;
+    color: #1e40af;
+}
+
+.frequency-dropdown {
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 12px;
+    border: 1px solid #d1d5db;
+    background-color: white;
 }
 
 .medication-controls select { 
@@ -533,23 +634,23 @@
     color: #8b5cf6; 
 }
 
-.resource-grid { 
-    display: grid; 
-    grid-template-columns: 1fr 1fr 1fr; 
-    gap: 6px; 
+.resource-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 6px;
 }
 
-.resource-button { 
-    padding: 6px 8px; 
-    border-radius: 4px; 
-    background-color: #f3f4f6; 
-    border: 1px solid #e5e7eb; 
-    font-size: 14px; 
-    cursor: pointer; 
-    display: flex; 
-    justify-content: space-between; 
-    align-items: center; 
-    text-align: left; 
+.resource-button {
+    padding: 4px 8px;
+    border-radius: 4px;
+    background-color: #f3f4f6;
+    border: 1px solid #e5e7eb;
+    font-size: 11px;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    text-align: left;
 }
 
 .resource-button:hover { 
@@ -561,20 +662,20 @@
     border-color: #93c5fd; 
 }
 
-.followup-options { 
-    display: flex; 
-    flex-wrap: wrap; 
-    gap: 4px; 
-    margin-bottom: 8px; 
+.followup-options {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 8px;
 }
 
-.followup-option { 
-    padding: 4px 8px; 
-    border-radius: 4px; 
-    background-color: #f3f4f6; 
-    border: 1px solid #e5e7eb; 
-    font-size: 14px; 
-    cursor: pointer; 
+.followup-option {
+    padding: 2px 8px;
+    border-radius: 4px;
+    background-color: #f3f4f6;
+    border: 1px solid #e5e7eb;
+    font-size: 11px;
+    cursor: pointer;
 }
 
 .followup-option:hover { 

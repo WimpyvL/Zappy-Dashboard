@@ -1,5 +1,5 @@
 import React from 'react';
-import { useAppContext } from '../context/AppContext'; // Import the context hook
+import { useAppContext } from '../contexts/app/AppContext'; // Import the context hook
 import PatientDashboard from './dashboard/PatientDashboard'; // Import the new Patient Dashboard
 import ProviderDashboard from './dashboard/ProviderDashboard'; // Import the new Provider Dashboard
 // import { Loader2 } from 'lucide-react'; // Removed unused Loader2

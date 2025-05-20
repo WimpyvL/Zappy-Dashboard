@@ -1,0 +1,904 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Medication Box Component Test</title>
+    <script src="https://unpkg.com/react@17/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@17/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
+    <!-- Removed Lucide React dependency -->
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            margin-top: 0;
+        }
+        .card {
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 12px;
+            border-bottom: 1px solid #e5e7eb;
+            background-color: #f9fafb;
+        }
+        .card-body {
+            padding: 16px;
+        }
+        .medication-item {
+            padding: 12px 14px;
+            border-radius: 6px;
+            border: 1px solid #d1d5db;
+            background-color: white;
+            width: 100%;
+            box-sizing: border-box;
+            margin-bottom: 10px;
+        }
+        .medication-item.selected {
+            border: 1px solid #3b82f6;
+            background-color: #f0f9ff;
+        }
+        .medication-item-footer {
+            margin-top: 6px;
+            background-color: white;
+            border-radius: 6px;
+            padding: 10px 12px;
+            border: 1px solid #d1d5db;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+            width: 100%;
+            box-sizing: border-box;
+            margin-bottom: 16px;
+        }
+        .category-header {
+            padding: 8px 12px;
+            margin-top: 8px;
+            margin-bottom: 4px;
+            background-color: #f9fafb;
+            border-radius: 4px;
+            border-left: 3px solid;
+        }
+        .wm-header {
+            border-left-color: #3b82f6;
+        }
+        .ed-header {
+            border-left-color: #ec4899;
+        }
+        .pc-header {
+            border-left-color: #10b981;
+        }
+        .mh-header {
+            border-left-color: #8b5cf6;
+        }
+        .add-more-meds-container {
+            margin-top: 12px;
+        }
+        .add-more-meds-button {
+            display: flex;
+            align-items: center;
+            padding: 6px 12px;
+            background-color: #f3f4f6;
+            border: 1px solid #d1d5db;
+            border-radius: 4px;
+            font-size: 13px;
+            font-weight: 500;
+            color: #374151;
+            cursor: pointer;
+            width: 100%;
+            justify-content: center;
+        }
+        .add-more-meds-panel {
+            margin-top: 8px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            overflow: hidden;
+        }
+        .add-more-meds-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 12px;
+            background-color: #f9fafb;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        .add-more-meds-list {
+            max-height: 200px;
+            overflow-y: auto;
+            padding: 8px 0;
+        }
+        .med-checkbox-item {
+            display: flex;
+            align-items: center;
+            padding: 6px 12px;
+            border-bottom: 1px solid #f3f4f6;
+            font-size: 13px;
+            cursor: pointer;
+        }
+        .add-custom-med-button-container {
+            padding: 8px 12px;
+            border-top: 1px solid #e5e7eb;
+            background-color: #f9fafb;
+        }
+        .add-custom-med-button {
+            display: flex;
+            align-items: center;
+            padding: 4px 10px;
+            background-color: white;
+            border: 1px solid #d1d5db;
+            border-radius: 4px;
+            font-size: 13px;
+            color: #374151;
+            cursor: pointer;
+        }
+        .dosage-pill {
+            padding: 3px 8px;
+            border: 1px solid #d1d5db;
+            border-radius: 4px;
+            cursor: pointer;
+            background-color: white;
+            display: inline-block;
+            white-space: nowrap;
+            font-weight: normal;
+            color: #4b5563;
+            font-size: 13px;
+            flex-shrink: 0;
+        }
+        .dosage-pill.selected {
+            border: 2px solid #2563eb;
+            background-color: #dbeafe;
+            font-weight: 500;
+            color: #1e40af;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Medication Box Component Test</h1>
+        <div id="root"></div>
+    </div>
+
+    <script type="text/babel">
+        // Mock data
+        const medicationData = {
+            semaglutide: {
+                name: 'Semaglutide',
+                brandName: 'Wegovy',
+                category: 'wm',
+                frequency: 'wkly',
+                dosageOptions: [
+                    { value: '0.25mg', label: '0.25' },
+                    { value: '0.5mg', label: '0.5' },
+                    { value: '1mg', label: '1.0' },
+                    { value: '1.7mg', label: '1.7' },
+                    { value: '2.4mg', label: '2.4mg' }
+                ],
+                instructions: [
+                    '• Inject SC once wkly.',
+                    '• Rotate sites.'
+                ],
+                selected: true,
+                supportedApproaches: ['Maint.', 'Escalation']
+            },
+            metformin: {
+                name: 'Metformin',
+                category: 'wm',
+                frequency: 'daily',
+                dosageOptions: [
+                    { value: '500mg', label: '500' },
+                    { value: '850mg', label: '850' },
+                    { value: '1g', label: '1g' }
+                ],
+                instructions: [
+                    '• Take with food.'
+                ],
+                selected: true,
+                supportedApproaches: ['Maint.']
+            },
+            sildenafil: {
+                name: 'Sildenafil',
+                brandName: 'Viagra',
+                category: 'ed',
+                frequency: 'PRN',
+                dosageOptions: [
+                    { value: '25mg', label: '25' },
+                    { value: '50mg', label: '50' },
+                    { value: '100mg', label: '100mg' }
+                ],
+                instructions: [
+                    '• Take 30-60 min pre-activity.'
+                ],
+                selected: true,
+                supportedApproaches: ['PRN']
+            }
+        };
+
+        // Additional medications
+        const additionalMedications = [
+            { id: 'amlodipine', name: 'Amlodipine', category: 'pc', description: 'BP' },
+            { id: 'lisinopril', name: 'Lisinopril', category: 'pc', description: 'BP' },
+            { id: 'atorvastatin', name: 'Atorvastatin', category: 'pc', description: 'Cholesterol' },
+            { id: 'escitalopram', name: 'Escitalopram', category: 'mh', description: 'SSRI' },
+            { id: 'bupropion', name: 'Bupropion', category: 'mh', description: 'NDRI' },
+            { id: 'tadalafil', name: 'Tadalafil', category: 'ed', description: 'Cialis' }
+        ];
+
+        // MedicationItem component
+        const MedicationItem = ({ 
+            medId, 
+            medication, 
+            dosage, 
+            toggleMedication, 
+            selectDosage, 
+            isPatientPreference = false 
+        }) => {
+            const [editedInstructions, setEditedInstructions] = React.useState(
+                Array.isArray(medication.instructions)
+                ? medication.instructions.join('\n')
+                : (medication.instructions || '')
+            );
+            const [isEditingInstructions, setIsEditingInstructions] = React.useState(false);
+            const [planDuration, setPlanDuration] = React.useState(
+                medication.category === 'wm' ? '6_mos' : '3_mos'
+            );
+            const [approach, setApproach] = React.useState(
+                medication.frequency === 'PRN' ? 'PRN' : 'Escalation'
+            );
+            const [frequency, setFrequency] = React.useState(medication.frequency || 'dly');
+
+            // All approach options
+            const allApproachOptions = [
+                { value: 'Maint.', label: 'Maint.' },
+                { value: 'Escalation', label: 'Escal.' },
+                { value: 'PRN', label: 'PRN' },
+                { value: 'Daily', label: 'Daily' },
+            ];
+
+            // Filter approach options based on supported approaches
+            const availableApproachOptions = allApproachOptions.filter(option =>
+                (medication.supportedApproaches || ['Maint.', 'Escalation', 'PRN', 'Daily']).includes(option.value)
+            );
+
+            // Save instructions handler
+            const handleSaveInstructions = () => {
+                medication.instructions = editedInstructions.split('\n');
+                setIsEditingInstructions(false);
+            };
+
+            return (
+                <div>
+                    {/* Medication Item */}
+                    <div
+                        className={`medication-item ${medication.selected ? 'selected' : ''}`}
+                    >
+                        <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
+                            {/* Medication Name Row */}
+                            <div style={{ display: 'flex', alignItems: 'flex-start', marginBottom: '6px' }}>
+                                <input
+                                    type="checkbox"
+                                    id={medId}
+                                    checked={medication.selected}
+                                    onChange={() => toggleMedication(medId)}
+                                    style={{ 
+                                        marginRight: '10px',
+                                        marginTop: '3px',
+                                        width: '16px',
+                                        height: '16px',
+                                    }}
+                                />
+                                <div style={{ flex: '1' }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                        <span style={{ fontWeight: '500', fontSize: '15px' }}>
+                                            {medication.name}
+                                            {medication.brandName && <span style={{ color: '#4b5563', fontSize: '14px', marginLeft: '4px' }}>({medication.brandName})</span>}
+                                        </span>
+                                        {/* Frequency dropdown */}
+                                        <select
+                                            value={frequency}
+                                            onChange={e => {
+                                                setFrequency(e.target.value);
+                                                medication.frequency = e.target.value;
+                                            }}
+                                            style={{
+                                                padding: '3px 8px',
+                                                borderRadius: '4px',
+                                                fontSize: '13px',
+                                                width: '110px',
+                                                border: '1px solid #d1d5db',
+                                                backgroundColor: 'white',
+                                                color: '#374151',
+                                                flexShrink: 0
+                                            }}
+                                        >
+                                            <option value="wkly">Weekly</option>
+                                            <option value="dly">Daily</option>
+                                            <option value="bid">Twice Daily</option>
+                                            <option value="tid">Three Times Daily</option>
+                                            <option value="prn">PRN</option>
+                                            <option value="monthly">Monthly</option>
+                                            <option value="other">Other</option>
+                                        </select>
+                                    </div>
+                                    {isPatientPreference && (
+                                        <div style={{ marginTop: '4px' }}>
+                                            <span style={{ 
+                                                fontSize: '12px', 
+                                                backgroundColor: '#dbeafe', 
+                                                color: '#1e40af', 
+                                                padding: '2px 8px', 
+                                                borderRadius: '12px',
+                                                fontWeight: '500'
+                                            }}>
+                                                Patient Preference
+                                            </span>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                            
+                            {/* Dosage Row */}
+                            <div style={{ 
+                                display: 'flex', 
+                                alignItems: 'center', 
+                                gap: '6px', 
+                                flexWrap: 'nowrap', 
+                                width: '100%', 
+                                overflow: 'auto',
+                                paddingLeft: '26px' /* Align with content after checkbox */
+                            }}>
+                                {medication.dosageOptions.map(option => (
+                                    <span
+                                        key={option.value}
+                                        className={`dosage-pill ${dosage === option.value ? 'selected' : ''}`}
+                                        onClick={() => selectDosage(medId, option.value)}
+                                    >
+                                        {option.label}
+                                    </span>
+                                ))}
+                                <input
+                                    type="text"
+                                    placeholder="Custom"
+                                    value={dosage && !medication.dosageOptions.some(opt => opt.value === dosage) ? dosage : ''}
+                                    onChange={(e) => selectDosage(medId, e.target.value)}
+                                    style={{
+                                        padding: '3px 8px',
+                                        border: '1px solid #d1d5db',
+                                        borderRadius: '4px',
+                                        fontSize: '13px',
+                                        width: '90px',
+                                        color: '#374151',
+                                        flexShrink: 0
+                                    }}
+                                />
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Combined Duration and Instructions Box */}
+                    {medication.selected && (
+                        <div className="medication-item-footer">
+                            {isEditingInstructions ? (
+                                <div>
+                                    <div style={{ 
+                                        display: 'flex', 
+                                        alignItems: 'center', 
+                                        gap: '16px', 
+                                        fontSize: '14px', 
+                                        marginBottom: '10px',
+                                        padding: '6px 8px',
+                                        backgroundColor: '#f9fafb',
+                                        borderRadius: '4px',
+                                        width: '100%',
+                                        boxSizing: 'border-box',
+                                        justifyContent: 'space-between'
+                                    }}>
+                                        <div style={{ display: 'flex', gap: '16px', flexGrow: 1 }}>
+                                            {/* Plan (formerly Duration) */}
+                                            <div style={{ display: 'flex', alignItems: 'center', flex: '1' }}>
+                                                <span style={{ fontWeight: 600, color: '#374151', minWidth: '60px' }}>Plan:</span>
+                                                <select 
+                                                    value={planDuration}
+                                                    onChange={(e) => setPlanDuration(e.target.value)}
+                                                    style={{ 
+                                                        marginLeft: '6px',
+                                                        padding: '3px 8px',
+                                                        fontSize: '14px',
+                                                        flex: '1',
+                                                        minWidth: '120px',
+                                                        border: '1px solid #d1d5db',
+                                                        borderRadius: '4px',
+                                                        backgroundColor: 'white'
+                                                    }}
+                                                >
+                                                    <option value="1_mo">1 month</option>
+                                                    <option value="3_mos">3 months</option>
+                                                    <option value="6_mos">6 months</option>
+                                                    <option value="12_mos">12 months</option>
+                                                    <option value="prn">PRN</option>
+                                                </select>
+                                            </div>
+                                            {/* Approach */}
+                                            <div style={{ display: 'flex', alignItems: 'center', flex: '1' }}>
+                                                <span style={{ fontWeight: 600, color: '#374151', minWidth: '80px' }}>Approach:</span>
+                                                <select 
+                                                    value={approach}
+                                                    onChange={(e) => setApproach(e.target.value)}
+                                                    style={{ 
+                                                        marginLeft: '6px',
+                                                        padding: '3px 8px',
+                                                        fontSize: '14px',
+                                                        flex: '1',
+                                                        minWidth: '120px',
+                                                        border: '1px solid #d1d5db',
+                                                        borderRadius: '4px',
+                                                        backgroundColor: 'white'
+                                                    }}
+                                                >
+                                                    {availableApproachOptions.map(option => (
+                                                        <option key={option.value} value={option.value}>{option.label}</option>
+                                                    ))}
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <textarea
+                                        value={editedInstructions}
+                                        onChange={e => setEditedInstructions(e.target.value)}
+                                        placeholder="Enter instructions here..."
+                                        style={{
+                                            width: '100%',
+                                            minHeight: '50px',
+                                            maxHeight: '80px',
+                                            padding: '6px',
+                                            border: '1px solid #e5e7eb',
+                                            borderRadius: '4px',
+                                            fontSize: '14px',
+                                            fontFamily: 'inherit',
+                                            resize: 'vertical',
+                                            marginBottom: '4px',
+                                            fontStyle: 'italic'
+                                        }}
+                                    />
+                                    <div style={{ display: 'flex', gap: '4px', justifyContent: 'flex-end' }}>
+                                        <button
+                                            onClick={() => setIsEditingInstructions(false)}
+                                            style={{
+                                                background: '#f3f4f6',
+                                                color: '#374151',
+                                                padding: '2px 6px',
+                                                borderRadius: '4px',
+                                                border: '1px solid #e5e7eb',
+                                                fontSize: '13px',
+                                                cursor: 'pointer'
+                                            }}
+                                        >
+                                            Cancel
+                                        </button>
+                                        <button
+                                            onClick={handleSaveInstructions}
+                                            style={{
+                                                background: '#d1fae5',
+                                                color: '#065f46',
+                                                padding: '2px 6px',
+                                                borderRadius: '4px',
+                                                border: '1px solid #a7f3d0',
+                                                fontSize: '13px',
+                                                fontWeight: '500',
+                                                cursor: 'pointer'
+                                            }}
+                                        >
+                                            Save
+                                        </button>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div>
+                                    <div style={{ 
+                                        display: 'flex', 
+                                        alignItems: 'center', 
+                                        gap: '16px', 
+                                        fontSize: '14px', 
+                                        marginBottom: '10px',
+                                        padding: '6px 8px',
+                                        backgroundColor: '#f9fafb',
+                                        borderRadius: '4px',
+                                        width: '100%',
+                                        boxSizing: 'border-box',
+                                        justifyContent: 'space-between'
+                                    }}>
+                                        <div style={{ display: 'flex', gap: '16px', flexGrow: 1 }}>
+                                            {/* Plan (formerly Duration) */}
+                                            <div style={{ display: 'flex', alignItems: 'center', flex: '1' }}>
+                                                <span style={{ fontWeight: 600, color: '#374151', minWidth: '60px' }}>Plan:</span>
+                                                <select 
+                                                    value={planDuration}
+                                                    onChange={(e) => setPlanDuration(e.target.value)}
+                                                    style={{ 
+                                                        marginLeft: '6px',
+                                                        padding: '3px 8px',
+                                                        fontSize: '14px',
+                                                        flex: '1',
+                                                        minWidth: '120px',
+                                                        border: '1px solid #d1d5db',
+                                                        borderRadius: '4px',
+                                                        backgroundColor: 'white'
+                                                    }}
+                                                >
+                                                    <option value="1_mo">1 month</option>
+                                                    <option value="3_mos">3 months</option>
+                                                    <option value="6_mos">6 months</option>
+                                                    <option value="12_mos">12 months</option>
+                                                    <option value="prn">PRN</option>
+                                                </select>
+                                            </div>
+                                            {/* Approach */}
+                                            <div style={{ display: 'flex', alignItems: 'center', flex: '1' }}>
+                                                <span style={{ fontWeight: 600, color: '#374151', minWidth: '80px' }}>Approach:</span>
+                                                <select 
+                                                    value={approach}
+                                                    onChange={(e) => setApproach(e.target.value)}
+                                                    style={{ 
+                                                        marginLeft: '6px',
+                                                        padding: '3px 8px',
+                                                        fontSize: '14px',
+                                                        flex: '1',
+                                                        minWidth: '120px',
+                                                        border: '1px solid #d1d5db',
+                                                        borderRadius: '4px',
+                                                        backgroundColor: 'white'
+                                                    }}
+                                                >
+                                                    {availableApproachOptions.map(option => (
+                                                        <option key={option.value} value={option.value}>{option.label}</option>
+                                                    ))}
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div style={{ 
+                                        display: 'flex', 
+                                        justifyContent: 'space-between', 
+                                        alignItems: 'flex-start',
+                                        borderTop: '1px dashed #d1d5db',
+                                        paddingTop: '8px',
+                                        marginTop: '4px'
+                                    }}>
+                                        <div style={{ 
+                                            fontSize: '14px',
+                                            lineHeight: '1.4',
+                                            whiteSpace: 'pre-line',
+                                            flex: '1',
+                                            fontStyle: 'italic',
+                                            color: '#374151',
+                                            padding: '0 4px'
+                                        }}>
+                                            <span style={{ 
+                                                fontWeight: 600, 
+                                                fontSize: '14px', 
+                                                marginRight: '6px', 
+                                                fontStyle: 'normal',
+                                                color: '#1f2937'
+                                            }}>Instructions:</span>
+                                            {Array.isArray(medication.instructions) && medication.instructions.length > 0
+                                                ? medication.instructions.join(', ')
+                                                : (medication.instructions || 'None provided')}
+                                        </div>
+                                        <button
+                                            onClick={() => setIsEditingInstructions(true)}
+                                            style={{
+                                                background: '#f3f4f6',
+                                                color: '#374151',
+                                                padding: '4px',
+                                                borderRadius: '4px',
+                                                border: '1px solid #e5e7eb',
+                                                fontSize: '13px',
+                                                cursor: 'pointer',
+                                                marginLeft: '8px',
+                                                flexShrink: 0,
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                width: '24px',
+                                                height: '24px'
+                                            }}
+                                        >
+                                            ✏️
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    )}
+                </div>
+            );
+        };
+
+        // Main App component
+        const App = () => {
+            const [medData, setMedData] = React.useState(medicationData);
+            const [medicationDosages, setMedicationDosages] = React.useState({
+                semaglutide: '0.25mg',
+                metformin: '500mg',
+                sildenafil: '50mg'
+            });
+            const [showMoreMeds, setShowMoreMeds] = React.useState(false);
+            const [medicationSearchTerm, setMedicationSearchTerm] = React.useState('');
+            const [medicationCategory, setMedicationCategory] = React.useState('All');
+
+            // Group medications by category
+            const medicationsByCategory = Object.entries(medData).reduce((acc, [medId, med]) => {
+                if (!acc[med.category]) {
+                    acc[med.category] = [];
+                }
+                acc[med.category].push({ id: medId, ...med });
+                return acc;
+            }, {});
+
+            // Category display names
+            const categoryNames = {
+                'wm': 'Weight Management',
+                'ed': 'ED',
+                'pc': 'Primary Care',
+                'mh': 'Mental Health'
+            };
+
+            // Toggle medication selection
+            const toggleMedication = (medId) => {
+                setMedData(prev => {
+                    const newData = { ...prev };
+                    newData[medId].selected = !newData[medId].selected;
+                    return newData;
+                });
+            };
+
+            // Select dosage
+            const selectDosage = (medId, dosage) => {
+                setMedicationDosages(prev => ({
+                    ...prev,
+                    [medId]: dosage
+                }));
+            };
+
+            // Toggle more medications panel
+            const toggleMoreMeds = () => {
+                setShowMoreMeds(!showMoreMeds);
+            };
+
+            // Handle medication search
+            const handleMedicationSearch = (e) => {
+                setMedicationSearchTerm(e.target.value);
+            };
+
+            // Handle medication category change
+            const handleMedicationCategoryChange = (e) => {
+                setMedicationCategory(e.target.value);
+            };
+
+            // Filter additional medications
+            const filteredMedications = additionalMedications.filter(med => {
+                const matchesSearch = medicationSearchTerm === '' || 
+                    med.name.toLowerCase().includes(medicationSearchTerm.toLowerCase()) ||
+                    (med.description && med.description.toLowerCase().includes(medicationSearchTerm.toLowerCase()));
+                
+                const matchesCategory = medicationCategory === 'All' || med.category === medicationCategory.toLowerCase();
+                
+                return matchesSearch && matchesCategory;
+            });
+
+            // Add listed medication
+            const addListedMed = (medId) => {
+                const medication = additionalMedications.find(med => med.id === medId);
+                if (medication) {
+                    // Add the medication to medicationData if it doesn't exist
+                    if (!medData[medId]) {
+                        setMedData(prev => {
+                            const newData = { ...prev };
+                            newData[medId] = {
+                                name: medication.name,
+                                category: medication.category,
+                                frequency: 'daily',
+                                dosageOptions: [
+                                    { value: '10mg', label: '10' },
+                                    { value: '20mg', label: '20' },
+                                    { value: '40mg', label: '40' }
+                                ],
+                                instructions: [
+                                    '• Take as directed.'
+                                ],
+                                selected: true
+                            };
+                            return newData;
+                        });
+                        
+                        // Update medication dosages
+                        setMedicationDosages(prev => ({
+                            ...prev,
+                            [medId]: '10mg'
+                        }));
+                        
+                        console.log(`Added ${medication.name}`);
+                    }
+                }
+            };
+
+            return (
+                <div className="card">
+                    <div className="card-header">
+                        <span style={{ fontWeight: '600', fontSize: '15px', color: '#1f2937' }}>Select Medications</span>
+                        <div style={{ position: 'relative' }}>
+                            <input 
+                                type="text" 
+                                placeholder="Search meds..." 
+                                style={{ 
+                                    fontSize: '13px', 
+                                    border: '1px solid #d1d5db', 
+                                    borderRadius: '4px', 
+                                    padding: '3px 24px 3px 8px', 
+                                    width: '120px',
+                                    color: '#374151'
+                                }}
+                            />
+                            <svg width="14" height="14" viewBox="0 0 24 24" style={{ position: 'absolute', right: '6px', top: '50%', transform: 'translateY(-50%)', color: '#9ca3af' }}>
+                                <path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" stroke="currentColor" strokeWidth="2"/>
+                            </svg>
+                        </div>
+                    </div>
+                    <div className="card-body">
+                        {/* Render medications by category */}
+                        {Object.entries(medicationsByCategory).map(([category, meds]) => (
+                            <div className="medication-category" key={category}>
+                                <div className={`category-header ${category}-header`} style={{
+                                    borderLeftColor: category === 'wm' ? '#3b82f6' : 
+                                                    category === 'ed' ? '#ec4899' : 
+                                                    category === 'pc' ? '#10b981' : 
+                                                    category === 'mh' ? '#8b5cf6' : '#6b7280'
+                                }}>
+                                    <div style={{ display: 'flex', alignItems: 'center' }}>
+                                        <span style={{ 
+                                            width: '8px', 
+                                            height: '8px', 
+                                            borderRadius: '50%', 
+                                            marginRight: '8px',
+                                            backgroundColor: category === 'wm' ? '#3b82f6' : 
+                                                            category === 'ed' ? '#ec4899' : 
+                                                            category === 'pc' ? '#10b981' : 
+                                                            category === 'mh' ? '#8b5cf6' : '#6b7280'
+                                        }}></span>
+                                        <span style={{ fontWeight: '500', fontSize: '14px', color: '#374151' }}>
+                                            {categoryNames[category] || category}
+                                        </span>
+                                    </div>
+                                </div>
+                                
+                                {/* Render medications in this category */}
+                                {meds.map(med => (
+                                    <MedicationItem
+                                        key={med.id}
+                                        medId={med.id}
+                                        medication={med}
+                                        dosage={medicationDosages[med.id]}
+                                        toggleMedication={toggleMedication}
+                                        selectDosage={selectDosage}
+                                        isPatientPreference={med.isPatientPreference}
+                                    />
+                                ))}
+                            </div>
+                        ))}
+
+                        {/* Add More Medications Button */}
+                        <div className="add-more-meds-container">
+                            <button 
+                                className="add-more-meds-button" 
+                                onClick={toggleMoreMeds}
+                            >
+                                + {showMoreMeds ? 'Hide Additional Medications' : 'Add More Medications'}
+                            </button>
+                            
+                            {/* More Medications Panel */}
+                            {showMoreMeds && (
+                                <div className="add-more-meds-panel">
+                                    <div className="add-more-meds-header">
+                                        <span style={{ fontWeight: '500', fontSize: '14px' }}>Additional Medications</span>
+                                        <div style={{ display: 'flex', gap: '8px' }}>
+                                            <select 
+                                                style={{ 
+                                                    fontSize: '13px', 
+                                                    border: '1px solid #d1d5db', 
+                                                    borderRadius: '4px', 
+                                                    padding: '3px 8px', 
+                                                    backgroundColor: 'white',
+                                                    color: '#374151'
+                                                }}
+                                                value={medicationCategory}
+                                                onChange={handleMedicationCategoryChange}
+                                            >
+                                                <option>All</option>
+                                                <option>WM</option>
+                                                <option>ED</option>
+                                                <option>PC</option>
+                                                <option>MH</option>
+                                            </select>
+                                            <input 
+                                                type="text" 
+                                                placeholder="Search..." 
+                                                style={{ 
+                                                    fontSize: '13px', 
+                                                    border: '1px solid #d1d5db', 
+                                                    borderRadius: '4px', 
+                                                    padding: '3px 8px', 
+                                                    width: '100px',
+                                                    color: '#374151'
+                                                }}
+                                                value={medicationSearchTerm}
+                                                onChange={handleMedicationSearch}
+                                            />
+                                        </div>
+                                    </div>
+                                    
+                                    <div className="add-more-meds-list">
+                                        {filteredMedications.map(med => (
+                                            <div 
+                                                key={med.id} 
+                                                className="med-checkbox-item"
+                                                onClick={() => {
+                                                    addListedMed(med.id);
+                                                    toggleMoreMeds();
+                                                }}
+                                            >
+                                                <input 
+                                                    type="checkbox" 
+                                                    id={`${med.id}_more`}
+                                                    style={{ 
+                                                        marginRight: '8px',
+                                                        width: '16px',
+                                                        height: '16px',
+                                                        cursor: 'pointer'
+                                                    }}
+                                                    onChange={() => {
+                                                        addListedMed(med.id);
+                                                        toggleMoreMeds();
+                                                    }}
+                                                    onClick={(e) => e.stopPropagation()}
+                                                />
+                                                <label htmlFor={`${med.id}_more`} style={{ cursor: 'pointer', flex: 1 }}>
+                                                    {med.name} 
+                                                    {med.description && <span style={{ color: '#6b7280', fontSize: '12px', marginLeft: '4px' }}> {med.description}</span>}
+                                                </label>
+                                            </div>
+                                        ))}
+                                    </div>
+                                    
+                                    <div className="add-custom-med-button-container">
+                                        <button className="add-custom-med-button">
+                                            + Add Custom
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        // Render the App component
+        ReactDOM.render(<App />, document.getElementById('root'));
+    </script>

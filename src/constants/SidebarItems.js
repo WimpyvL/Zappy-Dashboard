@@ -156,6 +156,8 @@ export const settingsItems = [
     icon: History,
     color: 'accent2', // Added color
   },
+  // AI Prompts are now managed through the Settings page
+  // Note Templates are now managed through the Settings page
 ];
 
 // Export the logout item

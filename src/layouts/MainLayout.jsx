@@ -3,7 +3,7 @@ import { Link, useLocation } from 'react-router-dom';
 import Header from './components/Headers';
 import Sidebar from './components/Sidebar';
 import ShoppingCart from '../pages/shop/components/ShoppingCart';
-import { useAppContext } from '../context/AppContext';
+import { useAppContext } from '../contexts/app/AppContext';
 import { patientSidebarItems } from '../constants/SidebarItems';
 import TopNavigation from '../components/ui/redesign/TopNavigation';
 import BottomNavigation from '../components/ui/redesign/BottomNavigation';

@@ -5,6 +5,10 @@ import { Routes, Route, Navigate } from 'react-router-dom'; // Removed unused Li
 import MainLayout from '../layouts/MainLayout.jsx';
 import ProtectedRoute from "../appGuards/ProtectedRoute.jsx"; // Temporarily commented out
 
+// Admin pages
+import AIPromptSettingsPage from '../pages/admin/AIPromptSettingsPage.jsx';
+import NoteTemplatesPage from '../pages/admin/NoteTemplatesPage.jsx';
+
 // Authentication pages
 import Login from '../pages/auth/Login.jsx';
 import ProviderDashboard from '../pages/dashboard/ProviderDashboard.jsx'; // Import ProviderDashboard
@@ -300,6 +304,8 @@ const AppRoutes = () => {
           </ProtectedRoute>
         }
       />
+
+      {/* AI Prompt Settings are now managed through Settings -> AI Prompts */}
 
       {/* Settings routes */}
       <Route
@@ -671,6 +677,8 @@ const AppRoutes = () => {
           </MainLayout>
         }
       />
+
+      {/* Note Templates are now managed through Settings -> Note Templates */}
 
       {/* Patient Subscription Management Route - Removed */}
 

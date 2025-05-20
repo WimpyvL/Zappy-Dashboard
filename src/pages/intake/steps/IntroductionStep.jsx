@@ -1,8 +1,16 @@
 import React from 'react';
+import PropTypes from 'prop-types';
 import { ClipboardCheck, Shield, Clock } from 'lucide-react';
+import { ErrorBoundary } from '../../../components/common/ErrorBoundary';
 
+/**
+ * IntroductionStep component - Displays introduction and benefits for the selected product category
+ */
 const IntroductionStep = ({ productCategory, onNext }) => {
-  // Get category-specific content
+  /**
+   * Get category-specific content based on the product category
+   * @returns {Object} - Content object with title, description, benefits, and image
+   */
   const getCategoryContent = () => {
     switch (productCategory) {
       case 'weight_management':
@@ -15,7 +23,8 @@ const IntroductionStep = ({ productCategory, onNext }) => {
             'Ongoing support from healthcare providers',
             'Convenient home delivery'
           ],
-          image: 'https://placehold.co/600x400/e6f7ff/0099cc?text=Weight+Management'
+          image: 'https://placehold.co/600x400/e6f7ff/0099cc?text=Weight+Management',
+          altText: 'Weight management illustration'
         };
       case 'ed':
         return {
@@ -27,7 +36,8 @@ const IntroductionStep = ({ productCategory, onNext }) => {
             'Convenient home delivery',
             'Ongoing support from healthcare providers'
           ],
-          image: 'https://placehold.co/600x400/e6f7ff/0099cc?text=ED+Treatment'
+          image: 'https://placehold.co/600x400/e6f7ff/0099cc?text=ED+Treatment',
+          altText: 'ED treatment illustration'
         };
       case 'hair_loss':
         return {
@@ -39,7 +49,8 @@ const IntroductionStep = ({ productCategory, onNext }) => {
             'Convenient home delivery',
             'Ongoing support from healthcare providers'
           ],
-          image: 'https://placehold.co/600x400/e6f7ff/0099cc?text=Hair+Loss+Treatment'
+          image: 'https://placehold.co/600x400/e6f7ff/0099cc?text=Hair+Loss+Treatment',
+          altText: 'Hair loss treatment illustration'
         };
       default:
         return {
@@ -51,7 +62,8 @@ const IntroductionStep = ({ productCategory, onNext }) => {
             'Convenient home delivery',
             'Ongoing support from healthcare providers'
           ],
-          image: 'https://placehold.co/600x400/e6f7ff/0099cc?text=Medical+Consultation'
+          image: 'https://placehold.co/600x400/e6f7ff/0099cc?text=Medical+Consultation',
+          altText: 'Medical consultation illustration'
         };
     }
   };
@@ -59,95 +71,103 @@ const IntroductionStep = ({ productCategory, onNext }) => {
   const content = getCategoryContent();
   
   return (
-    <div>
-      <h2 className="text-xl font-semibold mb-4">{content.title}</h2>
-      <p className="text-gray-600 mb-6">{content.description}</p>
-      
-      <div className="mb-6">
-        <img 
-          src={content.image} 
-          alt={content.title} 
-          className="w-full h-48 object-cover rounded-lg mb-4"
-        />
-      </div>
-      
-      <div className="mb-8">
-        <h3 className="font-medium text-lg mb-3">Benefits</h3>
-        <ul className="space-y-2">
-          {content.benefits.map((benefit, index) => (
-            <li key={index} className="flex items-start">
-              <span className="text-green-500 mr-2">✓</span>
-              <span>{benefit}</span>
-            </li>
-          ))}
-        </ul>
-      </div>
-      
-      <div className="bg-blue-50 p-4 rounded-lg mb-8">
-        <h3 className="font-medium text-lg mb-3 text-blue-800">How It Works</h3>
-        <div className="space-y-4">
-          <div className="flex">
-            <div className="flex-shrink-0 mr-3">
-              <div className="flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 text-blue-600">
-                <ClipboardCheck className="h-4 w-4" />
+    <ErrorBoundary>
+      <div>
+        <h2 className="text-xl font-semibold mb-4">{content.title}</h2>
+        <p className="text-gray-600 mb-6">{content.description}</p>
+        
+        <div className="mb-6">
+          <img 
+            src={content.image} 
+            alt={content.altText} 
+            className="w-full h-48 object-cover rounded-lg mb-4"
+          />
+        </div>
+        
+        <div className="mb-8">
+          <h3 className="font-medium text-lg mb-3">Benefits</h3>
+          <ul className="space-y-2" aria-label="Treatment benefits">
+            {content.benefits.map((benefit, index) => (
+              <li key={index} className="flex items-start">
+                <span className="text-green-500 mr-2" aria-hidden="true">✓</span>
+                <span>{benefit}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+        
+        <div className="bg-blue-50 p-4 rounded-lg mb-8">
+          <h3 className="font-medium text-lg mb-3 text-blue-800">How It Works</h3>
+          <div className="space-y-4">
+            <div className="flex">
+              <div className="flex-shrink-0 mr-3">
+                <div className="flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 text-blue-600">
+                  <ClipboardCheck className="h-4 w-4" aria-hidden="true" />
+                </div>
+              </div>
+              <div>
+                <h4 className="font-medium">Complete this form</h4>
+                <p className="text-sm text-gray-600">
+                  Provide your medical history and preferences to help us understand your needs.
+                </p>
               </div>
             </div>
-            <div>
-              <h4 className="font-medium">Complete this form</h4>
-              <p className="text-sm text-gray-600">
-                Provide your medical history and preferences to help us understand your needs.
-              </p>
-            </div>
-          </div>
-          
-          <div className="flex">
-            <div className="flex-shrink-0 mr-3">
-              <div className="flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 text-blue-600">
-                <Shield className="h-4 w-4" />
+            
+            <div className="flex">
+              <div className="flex-shrink-0 mr-3">
+                <div className="flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 text-blue-600">
+                  <Shield className="h-4 w-4" aria-hidden="true" />
+                </div>
+              </div>
+              <div>
+                <h4 className="font-medium">Healthcare provider review</h4>
+                <p className="text-sm text-gray-600">
+                  A licensed healthcare provider will review your information and determine if treatment is appropriate.
+                </p>
               </div>
             </div>
-            <div>
-              <h4 className="font-medium">Healthcare provider review</h4>
-              <p className="text-sm text-gray-600">
-                A licensed healthcare provider will review your information and determine if treatment is appropriate.
-              </p>
-            </div>
-          </div>
-          
-          <div className="flex">
-            <div className="flex-shrink-0 mr-3">
-              <div className="flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 text-blue-600">
-                <Clock className="h-4 w-4" />
+            
+            <div className="flex">
+              <div className="flex-shrink-0 mr-3">
+                <div className="flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 text-blue-600">
+                  <Clock className="h-4 w-4" aria-hidden="true" />
+                </div>
               </div>
-            </div>
-            <div>
-              <h4 className="font-medium">Receive your treatment</h4>
-              <p className="text-sm text-gray-600">
-                If approved, your medication will be shipped directly to your door in discreet packaging.
-              </p>
+              <div>
+                <h4 className="font-medium">Receive your treatment</h4>
+                <p className="text-sm text-gray-600">
+                  If approved, your medication will be shipped directly to your door in discreet packaging.
+                </p>
+              </div>
             </div>
           </div>
         </div>
+        
+        <div className="text-sm text-gray-500 mb-8">
+          <p>
+            By proceeding, you agree to our Terms of Service and Privacy Policy. 
+            This consultation is not a replacement for emergency medical care. 
+            If you are experiencing a medical emergency, please call 911 or go to your nearest emergency room.
+          </p>
+        </div>
+        
+        <div className="flex justify-end">
+          <button
+            onClick={onNext}
+            className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+            aria-label={`Get started with ${content.title}`}
+          >
+            Get Started
+          </button>
+        </div>
       </div>
-      
-      <div className="text-sm text-gray-500 mb-8">
-        <p>
-          By proceeding, you agree to our Terms of Service and Privacy Policy. 
-          This consultation is not a replacement for emergency medical care. 
-          If you are experiencing a medical emergency, please call 911 or go to your nearest emergency room.
-        </p>
-      </div>
-      
-      <div className="flex justify-end">
-        <button
-          onClick={onNext}
-          className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-        >
-          Get Started
-        </button>
-      </div>
-    </div>
+    </ErrorBoundary>
   );
+};
+
+IntroductionStep.propTypes = {
+  productCategory: PropTypes.string,
+  onNext: PropTypes.func.isRequired
 };
 
 export default IntroductionStep;

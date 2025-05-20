@@ -1,19 +1,16 @@
-import React from 'react';
+import React, { useState } from 'react';
 import PropTypes from 'prop-types';
+import { Search, Star, Clock, Tag } from 'lucide-react';
 
 const CommunicationSection = ({
   messageToPatient,
   assessmentPlan,
   followUpPlan,
-  expandedMessage,
-  expandedAssessment,
   messageTemplates,
   assessmentTemplates,
   onMessageChange,
   onAssessmentChange,
   onFollowUpChange,
-  onExpandedMessageChange,
-  onExpandedAssessmentChange,
   readOnly,
   medicationsSummary = [],
   resources = [],
@@ -21,9 +18,25 @@ const CommunicationSection = ({
   selectedResources = [],
   followUpOptions = ['2 weeks', '4 weeks', 'Monthly', '8 weeks', '12 weeks'],
 }) => {
-  // State for template visibility (can be managed internally or passed as props)
-  const [showPatientMessageTemplates] = React.useState(true); // Removed unused setter
-  const [showAssessmentTemplates] = React.useState(true); // Removed unused setter
+  // State for template management
+  const [templateFilter, setTemplateFilter] = useState('');
+  const [templateCategory, setTemplateCategory] = useState('all');
+  const [showTemplatePreview, setShowTemplatePreview] = useState(null);
+  
+  // Filter templates based on search and category
+  const filteredMessageTemplates = messageTemplates.filter(template => {
+    const matchesSearch = template.name.toLowerCase().includes(templateFilter.toLowerCase()) ||
+                          template.text.toLowerCase().includes(templateFilter.toLowerCase());
+    const matchesCategory = templateCategory === 'all' || template.category === templateCategory;
+    return matchesSearch && matchesCategory;
+  });
+  
+  const filteredAssessmentTemplates = assessmentTemplates.filter(template => {
+    const matchesSearch = template.name.toLowerCase().includes(templateFilter.toLowerCase()) ||
+                          template.text.toLowerCase().includes(templateFilter.toLowerCase());
+    const matchesCategory = templateCategory === 'all' || template.category === templateCategory;
+    return matchesSearch && matchesCategory;
+  });
 
   return (
     <>
@@ -56,45 +69,72 @@ const CommunicationSection = ({
           <span className="inline-block bg-blue-100 text-blue-800 text-xs px-2 py-0.5 rounded-full">Communication</span>
         </div>
         <div className="p-4">
-          <div className="flex mb-2">
-            <input
-              type="text"
-              className="flex-1 border border-blue-300 rounded-l-md p-2 text-sm focus:ring-primary focus:border-primary"
-              value={messageToPatient}
-              onChange={(e) => onMessageChange(e.target.value)}
-              disabled={readOnly}
-            />
-            <button
-              className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-r-md text-xs font-medium"
-              disabled={readOnly}
-            >
-              Expand
-            </button>
-          </div>
-          {showPatientMessageTemplates && !readOnly && (
-            <div className="mt-2 space-x-2">
-              <span className="text-xs font-medium text-gray-600">Templates:</span>
-              {messageTemplates.map(template => (
-                <button
-                  key={template.id}
-                  type="button"
-                  onClick={() => {
-                    onMessageChange(template.text); // Update short message
-                    onExpandedMessageChange(template.text); // Update expanded message
-                  }}
-                  className="px-2 py-0.5 text-xs bg-gray-200 hover:bg-gray-300 text-gray-800 rounded"
-                >
-                  {template.name}
-                </button>
-              ))}
+          <textarea
+            className="w-full border border-blue-300 rounded-md p-2 text-sm focus:ring-primary focus:border-primary"
+            rows={4}
+            value={messageToPatient}
+            onChange={(e) => onMessageChange(e.target.value)}
+            disabled={readOnly}
+            placeholder="Enter message to patient..."
+          ></textarea>
+          
+          {!readOnly && (
+            <div className="mt-3 border-t border-blue-200 pt-3">
+              <div className="flex justify-between items-center mb-2">
+                <h4 className="text-sm font-medium text-blue-800">Message Templates</h4>
+                <div className="flex items-center space-x-2">
+                  <div className="relative">
+                    <Search size={14} className="absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                    <input
+                      type="text"
+                      placeholder="Search templates..."
+                      className="pl-8 pr-2 py-1 text-xs border border-gray-300 rounded-md"
+                      value={templateFilter}
+                      onChange={(e) => setTemplateFilter(e.target.value)}
+                    />
+                  </div>
+                  <select
+                    className="text-xs border border-gray-300 rounded-md py-1 px-2"
+                    value={templateCategory}
+                    onChange={(e) => setTemplateCategory(e.target.value)}
+                  >
+                    <option value="all">All Categories</option>
+                    <option value="general">General</option>
+                    <option value="wm">Weight Management</option>
+                    <option value="ed">ED</option>
+                  </select>
+                </div>
+              </div>
+              
+              <div className="template-grid grid grid-cols-2 gap-2 max-h-40 overflow-y-auto">
+                {filteredMessageTemplates.map(template => (
+                  <div
+                    key={template.id}
+                    className="template-item relative border border-gray-200 rounded p-2 hover:bg-blue-50 cursor-pointer"
+                    onClick={() => onMessageChange(template.text)}
+                    onMouseEnter={() => setShowTemplatePreview(template.id)}
+                    onMouseLeave={() => setShowTemplatePreview(null)}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-medium">{template.name}</span>
+                      <div className="flex items-center space-x-1">
+                        {template.isFrequent && <Star size={12} className="text-yellow-500" />}
+                        {template.category && <Tag size={12} className="text-gray-400" />}
+                      </div>
+                    </div>
+                    
+                    {/* Preview popup */}
+                    {showTemplatePreview === template.id && (
+                      <div className="absolute z-10 left-full ml-2 top-0 w-64 bg-white border border-gray-200 rounded-md shadow-lg p-2 text-xs">
+                        <div className="font-medium mb-1">{template.name}</div>
+                        <div className="text-gray-600">{template.text.substring(0, 150)}...</div>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
             </div>
           )}
-          <textarea
-            className="w-full bg-white p-3 border border-blue-300 rounded-md text-sm italic min-h-32 mt-2 focus:ring-primary focus:border-primary"
-            value={expandedMessage}
-            onChange={(e) => onExpandedMessageChange(e.target.value)}
-            disabled={readOnly}
-          ></textarea>
         </div>
       </div>
 
@@ -105,46 +145,47 @@ const CommunicationSection = ({
           <span className="inline-block bg-green-100 text-green-800 text-xs px-2 py-0.5 rounded-full">Clinical Notes</span>
         </div>
         <div className="p-4">
-          <div className="flex mb-2">
-            <input
-              type="text"
-              className="flex-1 border border-green-300 rounded-l-md p-2 text-sm focus:ring-primary focus:border-primary"
-              value={assessmentPlan}
-              onChange={(e) => onAssessmentChange(e.target.value)}
-              placeholder="Enter brief assessment and plan..."
-              disabled={readOnly}
-            />
-            <button
-              className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded-r-md text-xs font-medium"
-              disabled={readOnly}
-            >
-              Expand
-            </button>
-          </div>
-          {showAssessmentTemplates && !readOnly && (
-            <div className="mt-2 space-x-2">
-              <span className="text-xs font-medium text-gray-600">Templates:</span>
-              {assessmentTemplates.map(template => (
-                <button
-                  key={template.id}
-                  type="button"
-                  onClick={() => {
-                    onAssessmentChange(template.text); // Update short assessment
-                    onExpandedAssessmentChange(template.text); // Update expanded assessment
-                  }}
-                  className="px-2 py-0.5 text-xs bg-gray-200 hover:bg-gray-300 text-gray-800 rounded"
-                >
-                  {template.name}
-                </button>
-              ))}
-            </div>
-          )}
           <textarea
-            className="w-full bg-white p-3 border border-green-300 rounded-md text-sm italic min-h-32 mt-2 focus:ring-primary focus:border-primary"
-            value={expandedAssessment}
-            onChange={(e) => onExpandedAssessmentChange(e.target.value)}
+            className="w-full border border-green-300 rounded-md p-2 text-sm focus:ring-primary focus:border-primary"
+            rows={4}
+            value={assessmentPlan}
+            onChange={(e) => onAssessmentChange(e.target.value)}
+            placeholder="Enter assessment and plan..."
             disabled={readOnly}
           ></textarea>
+          
+          {!readOnly && (
+            <div className="mt-3 border-t border-green-200 pt-3">
+              <h4 className="text-sm font-medium text-green-800 mb-2">Assessment Templates</h4>
+              <div className="template-grid grid grid-cols-2 gap-2 max-h-40 overflow-y-auto">
+                {filteredAssessmentTemplates.map(template => (
+                  <div
+                    key={template.id}
+                    className="template-item relative border border-gray-200 rounded p-2 hover:bg-green-50 cursor-pointer"
+                    onClick={() => onAssessmentChange(template.text)}
+                    onMouseEnter={() => setShowTemplatePreview(template.id)}
+                    onMouseLeave={() => setShowTemplatePreview(null)}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-medium">{template.name}</span>
+                      <div className="flex items-center space-x-1">
+                        {template.isFrequent && <Star size={12} className="text-yellow-500" />}
+                        {template.category && <Tag size={12} className="text-gray-400" />}
+                      </div>
+                    </div>
+                    
+                    {/* Preview popup */}
+                    {showTemplatePreview === template.id && (
+                      <div className="absolute z-10 left-full ml-2 top-0 w-64 bg-white border border-gray-200 rounded-md shadow-lg p-2 text-xs">
+                        <div className="font-medium mb-1">{template.name}</div>
+                        <div className="text-gray-600">{template.text.substring(0, 150)}...</div>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
@@ -159,24 +200,15 @@ const CommunicationSection = ({
               <button
                 key={option}
                 type="button"
-                className={`followup-option px-2 py-0.5 rounded ${followUpPlan === option ? 'bg-blue-200 border-blue-400 text-blue-900' : 'bg-white border border-gray-300 text-gray-700'}`}
+                className={`followup-option px-3 py-1 rounded-full flex items-center ${followUpPlan === option ? 'bg-purple-200 border-purple-400 text-purple-900' : 'bg-white border border-gray-300 text-gray-700'}`}
                 onClick={() => onFollowUpChange(option)}
                 disabled={readOnly}
               >
+                <Clock size={12} className="mr-1" />
                 {option}
               </button>
             ))}
           </div>
-          <select
-            className="w-full border border-purple-300 rounded-md p-2 text-sm focus:ring-primary focus:border-primary"
-            value={followUpPlan}
-            onChange={(e) => onFollowUpChange(e.target.value)}
-            disabled={readOnly}
-          >
-            {followUpOptions.map(option => (
-              <option key={option} value={option}>{option}</option>
-            ))}
-          </select>
         </div>
       </div>
 
@@ -191,12 +223,16 @@ const CommunicationSection = ({
               <button
                 key={resource.id}
                 type="button"
-                className={`resource-button flex items-center justify-between px-2 py-1 rounded ${selectedResources.includes(resource.id) ? 'bg-blue-100 border-blue-400' : 'bg-gray-50 border border-gray-200'}`}
+                className={`resource-button flex items-center justify-between px-3 py-2 rounded ${selectedResources.includes(resource.id) ? 'bg-blue-100 border border-blue-400 text-blue-800' : 'bg-gray-50 border border-gray-200 text-gray-700'}`}
                 onClick={() => onResourceToggle(resource.id)}
                 disabled={readOnly}
               >
-                <span>{resource.title}</span>
-                <svg width="10" height="10" viewBox="0 0 24 24"><path d="M12 6v12M6 12h12" stroke="currentColor" strokeWidth="2"/></svg>
+                <span className="text-sm">{resource.title}</span>
+                {selectedResources.includes(resource.id) ? (
+                  <span className="text-xs bg-blue-200 px-2 py-0.5 rounded-full">Selected</span>
+                ) : (
+                  <span className="text-xs">Add</span>
+                )}
               </button>
             ))}
           </div>
@@ -210,13 +246,13 @@ CommunicationSection.propTypes = {
   messageToPatient: PropTypes.string.isRequired,
   assessmentPlan: PropTypes.string.isRequired,
   followUpPlan: PropTypes.string.isRequired,
-  expandedMessage: PropTypes.string.isRequired,
-  expandedAssessment: PropTypes.string.isRequired,
   messageTemplates: PropTypes.arrayOf(
     PropTypes.shape({
       id: PropTypes.string.isRequired,
       name: PropTypes.string.isRequired,
       text: PropTypes.string.isRequired,
+      category: PropTypes.string,
+      isFrequent: PropTypes.bool,
     })
   ).isRequired,
   assessmentTemplates: PropTypes.arrayOf(
@@ -224,13 +260,13 @@ CommunicationSection.propTypes = {
       id: PropTypes.string.isRequired,
       name: PropTypes.string.isRequired,
       text: PropTypes.string.isRequired,
+      category: PropTypes.string,
+      isFrequent: PropTypes.bool,
     })
   ).isRequired,
   onMessageChange: PropTypes.func.isRequired,
   onAssessmentChange: PropTypes.func.isRequired,
   onFollowUpChange: PropTypes.func.isRequired,
-  onExpandedMessageChange: PropTypes.func.isRequired,
-  onExpandedAssessmentChange: PropTypes.func.isRequired,
   readOnly: PropTypes.bool,
   medicationsSummary: PropTypes.arrayOf(
     PropTypes.shape({

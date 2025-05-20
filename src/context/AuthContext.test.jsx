@@ -3,7 +3,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { AuthProvider, useAuth } from './AuthContext';
 import { supabase } from '../lib/supabase';
-import { useAppContext } from './AppContext';
+import { useAppContext } from '../contexts/app/AppContext';
 
 // Mock dependencies
 jest.mock('../lib/supabase', () => ({
@@ -27,7 +27,7 @@ jest.mock('../lib/supabase', () => ({
   },
 }));
 
-jest.mock('./AppContext', () => ({
+jest.mock('../contexts/app/AppContext', () => ({
   useAppContext: jest.fn().mockReturnValue({
     setViewMode: jest.fn(),
   }),

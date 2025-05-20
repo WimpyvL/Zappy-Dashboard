@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useAuth } from '../../context/AuthContext';
+import { useAuth } from '../../contexts/auth/AuthContext';
 import { LayoutGrid, CreditCard } from 'lucide-react';
 import PatientProgramContent from './PatientProgramContent';
 import PatientSubscriptionContent from './PatientSubscriptionContent';

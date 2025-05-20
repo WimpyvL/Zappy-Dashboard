@@ -5,7 +5,7 @@ import {
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
-import { useAuth } from '../../context/AuthContext';
+import { useAuth } from '../../contexts/auth/AuthContext';
 import ProgramsHeader from '../../components/patient/programs/ProgramsHeader';
 import ProgramCategoryTabs from '../../components/patient/programs/ProgramCategoryTabs';
 import NextUpSection from '../../components/patient/programs/NextUpSection';

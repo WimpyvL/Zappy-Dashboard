@@ -40,12 +40,11 @@ const TopNavigation = ({ activePage }) => {
                 e.target.src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="%232D7FF9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>';
               }}
             />
-            <span className="ml-2 text-lg font-bold text-gray-900">Zappy Health</span>
           </div>
           
-          <div className="flex items-center">
+          <div className="flex items-center gap-2">
             <button 
-              className="relative p-2 text-gray-500 hover:text-gray-700 mr-2"
+              className="relative p-2 text-gray-500 hover:text-gray-700"
               aria-label="Notifications"
             >
               <Bell className="h-5 w-5" />
@@ -53,11 +52,19 @@ const TopNavigation = ({ activePage }) => {
             </button>
             
             <button 
-              className="p-2 text-gray-500 hover:text-gray-700"
+              className="w-8 h-8 bg-gray-100 rounded-full overflow-hidden focus:outline-none focus:ring-2 focus:ring-blue-500"
               onClick={() => setIsMenuOpen(!isMenuOpen)}
               aria-label={isMenuOpen ? "Close menu" : "Open menu"}
             >
-              {isMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+              <img 
+                src="https://images.unsplash.com/photo-1607990281513-2c110a25bd8c?w=80&h=80&fit=crop&q=80" 
+                alt="User avatar" 
+                className="w-full h-full object-cover"
+                onError={(e) => {
+                  e.target.onerror = null;
+                  e.target.src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="%232D7FF9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>';
+                }}
+              />
             </button>
           </div>
         </div>

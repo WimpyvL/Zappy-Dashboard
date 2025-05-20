@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '../../context/AuthContext';
+import { useAuth } from '../../contexts/auth/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { Loader2, AlertTriangle, Eye, EyeOff, Check, X, Save, ArrowLeft } from 'lucide-react';
 import { useChangePassword } from '../../apis/users/hooks';

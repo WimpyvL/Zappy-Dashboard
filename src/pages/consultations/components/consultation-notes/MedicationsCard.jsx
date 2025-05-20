@@ -52,19 +52,19 @@ const MedicationsCard = ({
         boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
         overflow: 'hidden',
         marginBottom: '8px',
-        borderLeft: '3px solid #10b981'
+        border: '1px solid #e5e7eb'
       }}>
         <div style={{ 
           padding: '10px 14px',
           borderBottom: '1px solid #e5e7eb',
-          fontWeight: 600,
+          fontWeight: 500,
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
           fontSize: '15px',
-          backgroundColor: '#f9fafb'
+          backgroundColor: '#4f46e5'
         }}>
-          <span>Medications</span>
+          <span style={{ color: 'white' }}>Medications</span>
         </div>
         <div style={{ 
           padding: '16px',
@@ -89,19 +89,19 @@ const MedicationsCard = ({
         boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
         overflow: 'hidden',
         marginBottom: '8px',
-        borderLeft: '3px solid #10b981'
+        border: '1px solid #e5e7eb'
       }}>
         <div style={{ 
           padding: '10px 14px',
           borderBottom: '1px solid #e5e7eb',
-          fontWeight: 600,
+          fontWeight: 500,
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
           fontSize: '15px',
-          backgroundColor: '#f9fafb'
+          backgroundColor: '#4f46e5'
         }}>
-          <span>Medications</span>
+          <span style={{ color: 'white' }}>Medications</span>
         </div>
         <div style={{ padding: '16px' }}>
           <div style={{ 
@@ -126,19 +126,19 @@ const MedicationsCard = ({
       boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
       overflow: 'hidden',
       marginBottom: '8px',
-      borderLeft: '3px solid #10b981'
+      border: '1px solid #e5e7eb'
     }}>
       <div style={{ 
         padding: '10px 14px',
         borderBottom: '1px solid #e5e7eb',
-        fontWeight: 600,
+        fontWeight: 500,
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center',
         fontSize: '15px',
-        backgroundColor: '#f9fafb'
+        backgroundColor: '#4f46e5'
       }}>
-        <span>Medications</span>
+        <span style={{ color: 'white' }}>Medications</span>
       </div>
       <div style={{ padding: '16px' }}>
         {/* Render medications by category */}
@@ -148,15 +148,27 @@ const MedicationsCard = ({
               <div className={`category-header ${categoryHeaderClasses[category] || ''}`} style={{ 
                 textAlign: 'left',
                 marginBottom: '8px',
-                padding: '8px 12px',
-                backgroundColor: '#f9fafb',
-                borderRadius: '4px',
-                fontWeight: 500,
+                padding: '4px 0',
+                fontWeight: 600,
                 fontSize: '15px',
                 display: 'flex',
-                alignItems: 'center'
+                alignItems: 'center',
+                borderBottom: '1px solid #e5e7eb'
               }}>
-                <span className={`service-dot ${category}-dot`} style={{ marginRight: '8px' }}></span>
+                <span 
+                  className={`service-dot ${category}-dot`} 
+                  style={{ 
+                    marginRight: '8px',
+                    width: '10px',
+                    height: '10px',
+                    borderRadius: '50%',
+                    display: 'inline-block',
+                    backgroundColor: category === 'wm' ? '#3b82f6' : 
+                                    category === 'ed' ? '#ec4899' : 
+                                    category === 'pc' ? '#10b981' :
+                                    category === 'mh' ? '#8b5cf6' : '#6b7280'
+                  }}
+                ></span>
                 <span>{categoryNames[category] || category}</span>
               </div>
               
@@ -192,17 +204,18 @@ const MedicationsCard = ({
             style={{
               display: 'flex',
               alignItems: 'center',
-              fontSize: '14px',
-              color: '#2563eb',
-              fontWeight: 500,
-              background: 'none',
+              fontSize: '12px',
+              color: 'white',
+              fontWeight: 'normal',
+              background: '#3b82f6', // Blue-500
               border: 'none',
+              borderRadius: '4px',
               cursor: 'pointer',
-              padding: 0
+              padding: '2px 4px'
             }}
             onClick={toggleMoreMeds}
           >
-            <Plus size={16} style={{ marginRight: '4px' }} />
+            <Plus size={12} style={{ marginRight: '4px' }} />
             Add Medication
           </button>
         </div>

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useAuth } from '../../context/AuthContext';
+import { useAuth } from '../../contexts/auth/AuthContext';
 import useToast from '../../hooks/useToast';
 import * as patientServicesApi from './api';
 

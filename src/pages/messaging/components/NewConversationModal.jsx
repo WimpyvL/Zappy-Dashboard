@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Modal, Select, Input, Button, Radio, Spin, message } from 'antd';
 import { useCreateConversation } from '../../../apis/messaging/hooks';
-import { useAuth } from '../../../context/AuthContext';
+import { useAuth } from '../../../contexts/auth/AuthContext';
 import { isEncryptionAvailable } from '../../../utils/encryption';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../../../lib/supabase';

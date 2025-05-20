@@ -1,16 +1,17 @@
 import React from 'react';
-import { Plus, X } from 'lucide-react';
+import { Plus, X, ArrowLeft } from 'lucide-react';
 
 const ServiceTagsHeader = ({ 
   patientName, 
   activeServices, 
   toggleServicePanel, 
   removeServiceTag,
-  toggleAIPanel 
+  toggleAIPanel,
+  title = 'Initial Visit' // Default to Initial Visit if not provided
 }) => {
   return (
     <header className="consultation-header">
-      <div className="patient-name-header">{patientName || 'Sarah Johnson'} - Initial Visit</div>
+      <div className="patient-name-header">{patientName || 'Sarah Johnson'} - {title}</div>
       <div className="service-tags">
         {Object.entries(activeServices).map(([id, service]) => (
           <div key={id} className="service-tag">

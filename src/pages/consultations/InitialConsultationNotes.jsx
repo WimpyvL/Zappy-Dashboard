@@ -889,6 +889,7 @@ const InitialConsultationNotes = ({
         toggleServicePanel={toggleServicePanel}
         removeServiceTag={removeServiceTag}
         toggleAIPanel={toggleAIPanel}
+        title="Initial Visit" // Explicitly set title for initial consultation
       />
 
       {/* Service Panel */}

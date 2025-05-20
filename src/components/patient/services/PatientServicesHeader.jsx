@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../../../context/AuthContext';
+import { useAuth } from '../../../contexts/auth/AuthContext';
 
 const PatientServicesHeader = ({ greeting }) => {
   const navigate = useNavigate();

@@ -20,7 +20,7 @@ import {
   useUpdateProvider,
   useDeleteProvider,
 } from '../../apis/providers/hooks';
-import { useAuth } from '../../context/AuthContext';
+import { useAuth } from '../../contexts/auth/AuthContext';
 import Toast from '../../components/ui/Toast'; // Import Toast component
 import useProviderFilters from '../../hooks/useProviderFilters'; // Import useProviderFilters hook
 import useProviderForm from '../../hooks/useProviderForm'; // Import useProviderForm hook

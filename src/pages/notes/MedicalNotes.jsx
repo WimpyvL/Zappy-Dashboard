@@ -12,7 +12,7 @@ import {
   FileText,
   Loader2, // Added
 } from 'lucide-react';
-import { useAuth } from '../../context/AuthContext'; // Import useAuth
+import { useAuth } from '../../contexts/auth/AuthContext'; // Import useAuth
 import {
   useNotes,
   useAddNote,

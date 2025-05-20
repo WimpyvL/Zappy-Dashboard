@@ -8,7 +8,7 @@ import { useCreateConsultation } from '../../apis/consultations/hooks';
 import { usePatientFormSubmissions } from '../../apis/formSubmissions/hooks';
 import { useScheduleFollowUp, useFollowUpTemplatesByCategoryAndPeriod } from '../../apis/followUps/hooks';
 import { useCreateInvoice } from '../../apis/invoices/hooks';
-import { useAuth } from '../../context/AuthContext'; // Import auth context
+import { useAuth } from '../../contexts/auth/AuthContext'; // Import auth context
 import { Loader2, AlertTriangle } from 'lucide-react';
 
 // Import components

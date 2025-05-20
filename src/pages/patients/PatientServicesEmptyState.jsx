@@ -4,7 +4,7 @@ import {
   TrendingDown, Heart, Edit, Sparkles
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../../context/AuthContext';
+import { useAuth } from '../../contexts/auth/AuthContext';
 import Button from '../../components/ui/redesign/Button';
 
 const PatientServicesEmptyState = () => {

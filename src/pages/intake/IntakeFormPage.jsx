@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { useAuth } from '../../context/AuthContext';
+import { useAuth } from '../../contexts/auth/AuthContext';
 import { useSubmitForm } from '../../apis/formSubmissions/hooks';
 import { useCreateOrder } from '../../apis/orders/hooks';
 import { toast } from 'react-toastify';

@@ -5,11 +5,11 @@ import App from './App';
 import reportWebVitals from './reportWebVitals';
 import { BrowserRouter as Router } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { AuthProvider } from './context/AuthContext';
-import { AppProvider } from './context/AppContext';
-import { CartProvider } from './context/CartContext';
+import { AuthProvider } from './contexts/auth/AuthContext';
+import { AppProvider } from './contexts/app/AppContext';
+import { CartProvider } from './contexts/cart/CartContext';
 import { NotificationsProvider } from './contexts/NotificationsContext';
-import { RouteTrackerProvider } from './context/RouteTrackerContext';
+import { RouteTrackerProvider } from './contexts/route/RouteTrackerContext';
 import ErrorBoundary from './components/common/ErrorBoundary';
 
 // Instantiate QueryClient (moved from App.js)

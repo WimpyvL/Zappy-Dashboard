@@ -3,8 +3,8 @@ import PropTypes from 'prop-types';
 
 /**
  * PatientInfoSection
- * Refactored to match the streamlined HTML layout.
- * Accepts vitals, allergies, medications, insurance, and chief complaint as props.
+ * Simplified version without vitals grid.
+ * Focuses on editable patient information fields.
  */
 const PatientInfoSection = ({
   hpi,
@@ -14,10 +14,6 @@ const PatientInfoSection = ({
   onPmhChange,
   onContraindicationsChange,
   readOnly,
-  vitals = {},
-  allergies = '',
-  medications = '',
-  insurance = '',
   chiefComplaint = '',
 }) => {
   return (
@@ -29,32 +25,17 @@ const PatientInfoSection = ({
         </span>
       </div>
       <div className="card-body p-4">
-        {/* Vitals grid */}
-        <div className="patient-info-grid grid grid-cols-2 gap-2 text-xs mb-2 bg-gray-50 p-2 rounded">
-          <div><span className="font-semibold">BP:</span> {vitals.bp || 'N/A'}</div>
-          <div><span className="font-semibold">HR:</span> {vitals.hr || 'N/A'}</div>
-          <div><span className="font-semibold">Weight:</span> {vitals.weight || 'N/A'}</div>
-          <div><span className="font-semibold">A1C:</span> {vitals.a1c || 'N/A'}</div>
-          <div><span className="font-semibold">Allergies:</span> {allergies || 'None'}</div>
-          <div><span className="font-semibold">Meds:</span> {medications || 'None'}</div>
-        </div>
         {/* Chief Complaint */}
-        <div className="text-xs mb-2">
-          <span className="font-semibold">Chief Complaint:</span> {chiefComplaint || 'N/A'}
-        </div>
-        {/* Insurance and coverage */}
-        <div className="flex justify-between items-center text-xs mb-4">
-          <div><span className="font-semibold">Insurance:</span> {insurance || 'N/A'}</div>
-          <div className="flex gap-2">
-            <span className="coverage-dot covered"></span>
-            <span className="coverage-dot partial"></span>
-            <span className="coverage-dot not-covered"></span>
+        {chiefComplaint && (
+          <div className="text-xs mb-4 p-2 bg-gray-50 rounded">
+            <span className="font-semibold">Chief Complaint:</span> {chiefComplaint}
           </div>
-        </div>
+        )}
+        
         {/* Editable fields */}
-        <div className="mb-2">
+        <div className="mb-3">
           <label className="block text-xs font-medium text-gray-700 mb-1">
-            HPI
+            HPI (History of Present Illness)
           </label>
           <textarea
             className="w-full border border-gray-300 rounded-md p-2 text-xs focus:ring-primary focus:border-primary"
@@ -62,11 +43,12 @@ const PatientInfoSection = ({
             value={hpi}
             onChange={(e) => onHpiChange(e.target.value)}
             disabled={readOnly}
+            placeholder="Enter patient's history of present illness..."
           ></textarea>
         </div>
-        <div className="mb-2">
+        <div className="mb-3">
           <label className="block text-xs font-medium text-gray-700 mb-1">
-            PMH
+            PMH (Past Medical History)
           </label>
           <textarea
             className="w-full border border-gray-300 rounded-md p-2 text-xs focus:ring-primary focus:border-primary"
@@ -74,6 +56,7 @@ const PatientInfoSection = ({
             value={pmh}
             onChange={(e) => onPmhChange(e.target.value)}
             disabled={readOnly}
+            placeholder="Enter patient's past medical history..."
           ></textarea>
         </div>
         <div>
@@ -89,6 +72,7 @@ const PatientInfoSection = ({
             value={contraindications}
             onChange={(e) => onContraindicationsChange(e.target.value)}
             disabled={readOnly}
+            placeholder="Enter any contraindications..."
           ></textarea>
         </div>
       </div>
@@ -104,15 +88,6 @@ PatientInfoSection.propTypes = {
   onPmhChange: PropTypes.func.isRequired,
   onContraindicationsChange: PropTypes.func.isRequired,
   readOnly: PropTypes.bool,
-  vitals: PropTypes.shape({
-    bp: PropTypes.string,
-    hr: PropTypes.string,
-    weight: PropTypes.string,
-    a1c: PropTypes.string,
-  }),
-  allergies: PropTypes.string,
-  medications: PropTypes.string,
-  insurance: PropTypes.string,
   chiefComplaint: PropTypes.string,
 };
 

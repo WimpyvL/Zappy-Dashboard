@@ -7,7 +7,7 @@ import React, {
   useRef,
 } from 'react';
 import { supabase } from '../lib/supabase'; // Use the correct Supabase client
-import { useAppContext } from './AppContext'; // Import AppContext hook
+import { useAppContext } from '../contexts/app/AppContext'; // Import AppContext hook
 
 const AuthContext = createContext();
 

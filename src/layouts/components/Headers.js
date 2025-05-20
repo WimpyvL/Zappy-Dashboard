@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react'; // Removed useMemo, Removed useCallback
-import { useAuth } from '../../context/AuthContext';
-// import { useCart } from '../../context/CartContext'; // Removed unused useCart import
-import { useAppContext } from '../../context/AppContext';
+import { useAuth } from '../../contexts/auth/AuthContext';
+// import { useCart } from '../../contexts/cart/CartContext'; // Removed unused useCart import
+import { useAppContext } from '../../contexts/app/AppContext';
 import NotificationsCenter from '../../components/notifications/NotificationsCenter';
 import { useNavigate } from 'react-router-dom'; // Removed unused Link
 import { Dropdown, Button, Avatar } from 'antd'; // Removed unused Menu

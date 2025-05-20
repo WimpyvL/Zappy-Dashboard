@@ -1,5 +1,5 @@
 import React, { createContext, useContext } from 'react';
-import useRouteTracker from '../hooks/useRouteTracker';
+import useRouteTracker from '../../hooks/useRouteTracker';
 
 // Create context
 const RouteTrackerContext = createContext(null);

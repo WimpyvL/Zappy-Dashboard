@@ -1,56 +1,82 @@
 import React from 'react';
 import PropTypes from 'prop-types';
+import { X } from 'lucide-react';
 
 /**
  * AlertCenter
  * Displays AI-flagged alerts and monitoring recommendations.
- * Accepts an array of alerts and a callback for adjusting follow-up.
+ * Includes a dismiss button for each alert.
  */
 const AlertCenter = ({
   alerts = [],
-  onAdjustFollowUp = () => {},
-  adjustFollowUpChecked = false,
+  onDismissAlert = () => {},
   readOnly = false,
 }) => {
   return (
-    <div className="card bg-yellow-50 rounded-lg shadow mb-4">
-      <div className="card-header flex justify-between items-center px-4 py-2 border-b border-yellow-200">
-        <span className="font-semibold text-sm">Alert Center</span>
-        <span className="text-xs text-yellow-700 opacity-70">AI-flagged</span>
+    <div style={{ 
+      background: 'linear-gradient(135deg, #fffbeb, #fef3c7)',
+      borderRadius: '6px',
+      boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
+      overflow: 'hidden',
+      marginBottom: '8px',
+      borderLeft: '3px solid #f59e0b'
+    }}>
+      <div style={{ 
+        padding: '10px 14px',
+        borderBottom: '1px solid #e5e7eb',
+        fontWeight: 600,
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        fontSize: '15px',
+        backgroundColor: '#f9fafb'
+      }}>
+        Alert Center
       </div>
-      <div className="card-body p-4">
+      <div style={{ padding: '10px 14px', fontSize: '14px' }}>
         {alerts.length === 0 && (
-          <div className="text-xs text-gray-500">No alerts.</div>
+          <div style={{ fontSize: '13px', color: '#6b7280' }}>No alerts.</div>
         )}
         {alerts.map((alert, idx) => (
           <div
             key={idx}
-            className={`alert-center-item flex items-start mb-2 text-xs ${alert.type === 'warning' ? 'text-yellow-800' : 'text-blue-800'}`}
+            style={{ 
+              display: 'flex', 
+              alignItems: 'flex-start', 
+              justifyContent: 'space-between', 
+              marginBottom: '8px', 
+              fontSize: '14px',
+              color: alert.type === 'warning' ? '#92400e' : '#1e40af'
+            }}
           >
-            {alert.type === 'warning' ? (
-              <svg width="14" height="14" viewBox="0 0 24 24" className="mr-1 flex-shrink-0" fill="none" stroke="currentColor"><path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" strokeWidth="2"/></svg>
-            ) : (
-              <svg width="14" height="14" viewBox="0 0 24 24" className="mr-1 flex-shrink-0" fill="none" stroke="currentColor"><path d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" strokeWidth="2"/></svg>
+            <div style={{ display: 'flex', alignItems: 'flex-start' }}>
+              {alert.type === 'warning' ? (
+                <svg width="14" height="14" viewBox="0 0 24 24" style={{ marginRight: '6px', flexShrink: 0 }} fill="none" stroke="currentColor"><path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" strokeWidth="2"/></svg>
+              ) : (
+                <svg width="14" height="14" viewBox="0 0 24 24" style={{ marginRight: '6px', flexShrink: 0 }} fill="none" stroke="currentColor"><path d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" strokeWidth="2"/></svg>
+              )}
+              <span>
+                <strong>{alert.title}:</strong> {alert.message}
+              </span>
+            </div>
+            {!readOnly && (
+              <button
+                style={{ 
+                  marginLeft: '8px', 
+                  color: '#6b7280', 
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  padding: 0
+                }}
+                onClick={() => onDismissAlert(idx)}
+                aria-label="Dismiss alert"
+              >
+                <X size={14} />
+              </button>
             )}
-            <span>
-              <strong>{alert.title}:</strong> {alert.message}
-            </span>
           </div>
         ))}
-        {/* Adjust follow-up option */}
-        <div className="flex items-center mt-3 pt-3 border-t border-yellow-200">
-          <input
-            type="checkbox"
-            id="adjustFollowUp"
-            checked={adjustFollowUpChecked}
-            onChange={e => onAdjustFollowUp(e.target.checked)}
-            disabled={readOnly}
-            className="mr-2"
-          />
-          <label htmlFor="adjustFollowUp" className="text-xs">
-            Adjust f/u to 2 wks.
-          </label>
-        </div>
       </div>
     </div>
   );
@@ -64,8 +90,7 @@ AlertCenter.propTypes = {
       message: PropTypes.string.isRequired,
     })
   ),
-  onAdjustFollowUp: PropTypes.func,
-  adjustFollowUpChecked: PropTypes.bool,
+  onDismissAlert: PropTypes.func,
   readOnly: PropTypes.bool,
 };
 

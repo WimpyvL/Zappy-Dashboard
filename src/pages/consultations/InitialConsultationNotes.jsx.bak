@@ -8,7 +8,7 @@ import { useCreateConsultation } from '../../apis/consultations/hooks';
 import { usePatientFormSubmissions } from '../../apis/formSubmissions/hooks';
 import { useScheduleFollowUp, useFollowUpTemplatesByCategoryAndPeriod } from '../../apis/followUps/hooks';
 import { useCreateInvoice } from '../../apis/invoices/hooks';
-import { useAuth } from '../../contexts/auth/AuthContext'; // Import auth context
+import { useAuth } from '../../context/AuthContext'; // Import auth context
 import { Loader2, AlertTriangle } from 'lucide-react';
 
 // Import components
@@ -775,17 +775,17 @@ const InitialConsultationNotes = ({
           
           // Create the invoice
           const invoice = await createInvoiceMutation.mutateAsync({
-            patient_id: patient.id,
-            consultation_id: result.id,
-            items: [{
-              description: `Follow-up consultation (${followUpDisplayText})`,
-              amount: followUpServicePrice,
-              quantity: 1
-            }],
-            status: 'pending',
-            due_date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // Due in 7 days
-            created_at: new Date().toISOString()
-          });
+          patient_id: patient.id,
+          consultation_id: result.id,
+          items: [{
+            description: `Follow-up consultation (${followUpDisplayText})`,
+            amount: followUpServicePrice,
+            quantity: 1
+          }],
+          status: 'pending',
+          due_date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // Due in 7 days
+          created_at: new Date().toISOString()
+        });
         
           if (invoice) {
             invoiceId = invoice.id;
@@ -959,20 +959,12 @@ const InitialConsultationNotes = ({
             />
             
             {/* Assessment & Plan Card */}
-              {/* Prepare selected medications for AssessmentPlanCard */}
-              <AssessmentPlanCard 
-                assessmentPlan={assessmentPlan}
-                setAssessmentPlan={setAssessmentPlan}
-                selectedMedications={Object.keys(medicationData)
-                  .filter(medId => medicationData[medId].selected)
-                  .map(medId => ({
-                    id: medId,
-                    name: medicationData[medId].name,
-                    dosage: medicationDosages[medId],
-                    frequency: medicationData[medId].frequency,
-                    category: medicationData[medId].category
-                  }))}
-              />
+            <AssessmentPlanCard 
+              showAssessmentDetails={showAssessmentDetails}
+              toggleAssessmentDetails={toggleAssessmentDetails}
+              assessmentPlan={assessmentPlan}
+              setAssessmentPlan={setAssessmentPlan}
+            />
           </div>
         </div>
       </div>

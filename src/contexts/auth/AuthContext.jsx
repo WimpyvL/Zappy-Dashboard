@@ -6,8 +6,8 @@ import React, {
   useCallback,
   useRef,
 } from 'react';
-import { supabase } from '../lib/supabase'; // Use the correct Supabase client
-import { useAppContext } from './AppContext'; // Import AppContext hook
+import { supabase } from '../../lib/supabase.js'; // Use explicit .js extension
+import { useAppContext } from '../app/AppContext.jsx'; // Use explicit .jsx extension
 
 const AuthContext = createContext();
 

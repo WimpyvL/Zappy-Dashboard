@@ -2,11 +2,11 @@ import React from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { AuthProvider, useAuth } from './AuthContext';
-import { supabase } from '../lib/supabase';
-import { useAppContext } from './AppContext';
+import { supabase } from '../../lib/supabase';
+import { useAppContext } from '../app/AppContext';
 
 // Mock dependencies
-jest.mock('../lib/supabase', () => ({
+jest.mock('../../lib/supabase', () => ({
   supabase: {
     auth: {
       getSession: jest.fn(),
@@ -27,7 +27,7 @@ jest.mock('../lib/supabase', () => ({
   },
 }));
 
-jest.mock('./AppContext', () => ({
+jest.mock('../app/AppContext', () => ({
   useAppContext: jest.fn().mockReturnValue({
     setViewMode: jest.fn(),
   }),
@@ -528,8 +528,8 @@ describe('AuthContext', () => {
 
   test('handles uninitialized supabase client', async () => {
     // Temporarily unmock supabase to simulate uninitialized client
-    jest.unmock('../lib/supabase');
-    jest.mock('../lib/supabase', () => ({
+    jest.unmock('../../lib/supabase');
+    jest.mock('../../lib/supabase', () => ({
       supabase: null,
     }));
     
@@ -561,7 +561,7 @@ describe('AuthContext', () => {
     
     // Restore the original mock
     jest.resetModules();
-    jest.mock('../lib/supabase', () => ({
+    jest.mock('../../lib/supabase', () => ({
       supabase: {
         auth: {
           getSession: jest.fn().mockResolvedValue({ data: { session: null }, error: null }),

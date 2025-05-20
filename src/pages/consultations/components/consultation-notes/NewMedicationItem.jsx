@@ -73,12 +73,14 @@ const NewMedicationItem = ({
       <div
         className={`medication-item ${isSelected ? 'selected' : ''}`}
         style={{ 
-          padding: '12px 14px',
+          padding: isSelected ? '12px 14px' : '6px 10px',
           borderRadius: '6px',
-          border: isSelected ? '1px solid #3b82f6' : '1px solid #d1d5db',
+          border: isSelected ? '1px solid #3b82f6' : 'none',
           backgroundColor: isSelected ? '#f0f9ff' : 'white',
           width: '100%',
-          boxSizing: 'border-box'
+          boxSizing: 'border-box',
+          marginBottom: isSelected ? '4px' : '2px',
+          borderBottom: isSelected ? 'none' : '1px solid #f3f4f6'
         }}
       >
         <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
@@ -101,9 +103,9 @@ const NewMedicationItem = ({
             
             <div style={{ flex: '1' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontWeight: '500', fontSize: '15px' }}>
+                <span style={{ fontWeight: '500', fontSize: isSelected ? '15px' : '14px' }}>
                   {medication.name}
-                  {medication.brandName && <span style={{ color: '#4b5563', fontSize: '14px', marginLeft: '4px' }}>({medication.brandName})</span>}
+                  {medication.brandName && <span style={{ color: '#4b5563', fontSize: isSelected ? '14px' : '13px', marginLeft: '4px' }}>({medication.brandName})</span>}
                 </span>
                 {/* Frequency dropdown - only show when selected */}
                 {isSelected && (
@@ -127,10 +129,7 @@ const NewMedicationItem = ({
                     <option value="wkly">Weekly</option>
                     <option value="dly">Daily</option>
                     <option value="bid">Twice Daily</option>
-                    <option value="tid">Three Times Daily</option>
                     <option value="prn">PRN</option>
-                    <option value="monthly">Monthly</option>
-                    <option value="other">Other</option>
                   </select>
                 )}
               </div>

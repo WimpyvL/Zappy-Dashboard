@@ -22,19 +22,26 @@ const IntakeFormPage = () => {
   const submitFormMutation = useSubmitForm();
   const createOrderMutation = useCreateOrder();
   
-  // Get prescription items from location state
+  // Get data from location state
   const prescriptionItems = location.state?.prescriptionItems || [];
+  const initialStep = location.state?.step || 'introduction';
   
-  // Determine product category from items
+  // Determine product category from location state or items
   const determineProductCategory = () => {
+    // If productCategory is provided in location state, use it
+    if (location.state?.productCategory) {
+      return location.state.productCategory;
+    }
+    
+    // Otherwise determine from prescription items
     if (prescriptionItems.length === 0) return 'general';
     
     const firstItem = prescriptionItems[0];
-    if (firstItem.category === 'weight_management' || firstItem.name.toLowerCase().includes('weight')) {
+    if (firstItem.category === 'weight_management' || firstItem.name?.toLowerCase().includes('weight')) {
       return 'weight_management';
-    } else if (firstItem.category === 'ed' || firstItem.name.toLowerCase().includes('viagra') || firstItem.name.toLowerCase().includes('cialis')) {
+    } else if (firstItem.category === 'ed' || firstItem.name?.toLowerCase().includes('viagra') || firstItem.name?.toLowerCase().includes('cialis')) {
       return 'ed';
-    } else if (firstItem.category === 'hair_loss' || firstItem.name.toLowerCase().includes('hair')) {
+    } else if (firstItem.category === 'hair_loss' || firstItem.name?.toLowerCase().includes('hair')) {
       return 'hair_loss';
     }
     
@@ -55,8 +62,14 @@ const IntakeFormPage = () => {
     'confirmation'
   ];
   
+  // Find step index from step name
+  const getStepIndex = (stepName) => {
+    const index = steps.indexOf(stepName);
+    return index >= 0 ? index : 0;
+  };
+  
   // State
-  const [currentStep, setCurrentStep] = useState(0);
+  const [currentStep, setCurrentStep] = useState(getStepIndex(initialStep));
   const [formData, setFormData] = useState({
     basicInfo: {
       height: '',

@@ -2,7 +2,7 @@ import React from 'react';
 import { render, screen } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
 import MainLayout from './MainLayout';
-import { useAppContext } from '../context/AppContext';
+import { useAppContext } from '../contexts/app/AppContext';
 import { patientSidebarItems } from '../constants/SidebarItems';
 
 // Mock dependencies
@@ -14,7 +14,7 @@ jest.mock('../pages/shop/components/ShoppingCart', () => ({ isOpen, onClose }) =
   </div>
 ));
 
-jest.mock('../context/AppContext', () => ({
+jest.mock('../contexts/app/AppContext', () => ({
   useAppContext: jest.fn(),
 }));
 

@@ -6,8 +6,8 @@ import { Search, Plus, Edit, Trash2, Check, X } from 'lucide-react';
 
 // Define badge styles using Zappy accent colors
 const typeBadgeStyles = {
-  medication: 'bg-accent1/10 text-accent1', // Example: accent1
-  supplement: 'bg-accent2/10 text-accent2', // Example: accent2
+  product: 'bg-accent1/10 text-accent1', // Example: accent1
+  program: 'bg-accent3/10 text-accent3', // Example: accent3
   service: 'bg-accent4/10 text-accent4', // Example: accent4
 };
 

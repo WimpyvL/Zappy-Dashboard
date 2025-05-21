@@ -45,6 +45,7 @@ import PharmacyManagement from '../pages/pharmacy/PharmacyManagement';
 
 // Products
 import ProductManagement from '../pages/products/ProductManagement';
+import PlanComparisonView from '../pages/products/PlanComparisonView';
 
 // Providers
 import ProviderManagement from '../pages/providers/ProviderManagement';
@@ -300,6 +301,18 @@ const AppRoutes = () => {
           <ProtectedRoute>
             <MainLayout>
               <ProductSubscriptionManagement />
+            </MainLayout>
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Plan Comparison View Route */}
+      <Route
+        path="/plan-comparison"
+        element={
+          <ProtectedRoute>
+            <MainLayout>
+              <PlanComparisonView />
             </MainLayout>
           </ProtectedRoute>
         }

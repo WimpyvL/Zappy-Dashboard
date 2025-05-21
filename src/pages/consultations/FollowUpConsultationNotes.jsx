@@ -564,51 +564,7 @@ const FollowUpConsultationNotes = ({
           </div>
         );
       default:
-        return (
-          <div className="pt-2 mt-2">
-            <div className="flex justify-between items-center mb-2">
-              <h4 className="text-sm font-medium text-gray-700">Treatment Progress</h4>
-              <button
-                className="p-1 bg-green-500 hover:bg-green-600 text-white rounded-full flex items-center justify-center"
-                onClick={async () => {
-                  // Simulate AI generation
-                  setIsGeneratingAI(true);
-                  toast.info("Generating treatment progress notes...");
-                  
-                  // In a real implementation, this would call an API
-                  await new Promise(resolve => setTimeout(resolve, 1500));
-                  
-                  // Generate content based on patient data and service type
-                  const primaryService = Object.keys(activeServices)[0] || '';
-                  let generatedContent = '';
-                  
-                  if (primaryService === 'pc') {
-                    generatedContent = `Patient reports overall improvement in general health. Vital signs stable. No new complaints.`;
-                  } else if (primaryService === 'mh') {
-                    generatedContent = `Patient reports ${Math.random() > 0.5 ? 'improved' : 'stable'} mood and sleep patterns. Continuing with current treatment plan.`;
-                  } else {
-                    generatedContent = `Patient reports ${Math.random() > 0.5 ? 'good' : 'satisfactory'} progress with current treatment regimen. No significant adverse effects reported.`;
-                  }
-                  
-                  setIntervalHistory(generatedContent);
-                  setIsGeneratingAI(false);
-                  toast.success("Treatment progress notes generated");
-                }}
-              >
-                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M4 4V9H4.58152M19.9381 11C19.446 7.05369 16.0796 4 12 4C8.64262 4 5.76829 6.06817 4.58152 9M4.58152 9H9M20 20V15H19.4185M19.4185 15C18.2317 17.9318 15.3574 20 12 20C7.92038 20 4.55399 16.9463 4.06189 13M19.4185 15H15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-              </button>
-            </div>
-            <textarea
-              rows={3}
-              className="block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-              placeholder="Document patient's progress here..."
-              value={intervalHistory}
-              onChange={(e) => setIntervalHistory(e.target.value)}
-            ></textarea>
-          </div>
-        );
+        return null;
     }
   };
   
@@ -703,49 +659,16 @@ const FollowUpConsultationNotes = ({
       toast.info(`${serviceName} service removed.`);
     }
   };
-  
-  // Toggle resource selection
-  const toggleResource = (resourceId) => {
-    setSelectedResources(prev => {
-      if (prev.includes(resourceId)) {
-        return prev.filter(id => id !== resourceId);
-      } else {
-        return [...prev, resourceId];
-      }
-    });
-  };
-  
-  // Toggle more resources panel
-  const toggleMoreResources = () => {
-    setShowMoreResources(!showMoreResources);
-  };
-  
-  // Follow-up period selection
-  const selectFollowupPeriod = (period) => {
-    setSelectedFollowUpPeriod(period);
-    
-    // Update display text
-    let displayText = '';
-    switch (period) {
-      case '2w': displayText = '2 weeks'; break;
-      case '4w': displayText = '4 weeks'; break;
-      case '6w': displayText = '6 weeks'; break;
-      case '8w': displayText = '8 weeks'; break;
-      case '12w': displayText = '12 weeks'; break;
-      default: displayText = '4 weeks';
-    }
-    
-    setFollowUpDisplayText(displayText);
-    setFollowUpPlan(displayText);
-  };
-  
-  // Loading state
-  const isLoading = isLoadingConsultation || updateSessionMutation.isLoading || createNoteMutation.isLoading;
-  
-  if (isLoading) {
-    return <div className="bg-white flex items-center justify-center h-full"><Loader2 className="h-16 w-16 animate-spin text-indigo-600" /></div>;
+
+  // Main render logic
+  if (isGeneratingAI || isLoadingConsultation || updateSessionMutation.isLoading || createNoteMutation.isLoading) {
+    return (
+      <div className="bg-white flex items-center justify-center h-full">
+        <Loader2 className="h-16 w-16 animate-spin text-indigo-600" />
+      </div>
+    );
   }
-  
+
   return (
     <div className="consultation-notes-container">
       {/* Header */}
@@ -754,7 +677,7 @@ const FollowUpConsultationNotes = ({
         activeServices={activeServices}
         toggleServicePanel={toggleServicePanel}
         removeServiceTag={removeServiceTag}
-        title="Follow-up Visit" // Changed from "Initial Visit" to "Follow-up Visit"
+        title="Follow-up Visit"
       />
 
       {/* Service Panel */}
@@ -766,139 +689,19 @@ const FollowUpConsultationNotes = ({
         addServiceTag={addServiceTag}
       />
 
-      {/* Subscription plans removed as requested */}
-
       {/* Main Content */}
       <div className="container">
         <div className="main-grid">
           {/* Left Column */}
           <div>
-            {/* Treatment Progress Card - Only showing this section as requested */}
+            {/* Treatment Progress Card */}
             <div className="bg-white shadow rounded-lg overflow-hidden mb-4">
-              <div style={{ 
-                padding: '10px 14px',
-                borderBottom: '1px solid #e5e7eb',
-                fontWeight: 500,
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                fontSize: '15px',
-                backgroundColor: '#4f46e5'
-              }}>
-                <span style={{ color: 'white' }}>Treatment Progress</span>
-                <div style={{ display: 'flex', gap: '8px', fontSize: '14px' }}>
-                  <button
-                    onClick={async () => {
-                      // Simulate AI generation
-                      setIsGeneratingAI(true);
-                      toast.info("Generating progress notes...");
-                      
-                      // In a real implementation, this would call an API
-                      await new Promise(resolve => setTimeout(resolve, 1500));
-                      
-                      // Generate content based on patient data and service type
-                      const primaryService = Object.keys(activeServices)[0] || '';
-                      let generatedContent = '';
-                      
-                      if (primaryService === 'wm') {
-                        if (currentWeight && previousWeight) {
-                          const weightDiff = currentWeight - previousWeight;
-                          const percentChange = previousWeight ? Math.abs((weightDiff / previousWeight) * 100).toFixed(1) : 0;
-                          
-                          if (weightDiff < 0) {
-                            generatedContent = `Patient has lost ${Math.abs(weightDiff)} pounds (${percentChange}%) since last visit. ${
-                              medicationData.semaglutide ? 
-                              `Continuing ${medicationData.semaglutide.name} ${medicationDosages.semaglutide} with good response.` : 
-                              'Current weight management plan is effective.'
-                            } Patient reports ${Math.random() > 0.5 ? 'increased energy levels' : 'improved sleep patterns'} and ${
-                              Math.random() > 0.5 ? 'better adherence to dietary recommendations' : 'more consistent exercise routine'
-                            }.`;
-                          } else if (weightDiff > 0) {
-                            generatedContent = `Patient has gained ${weightDiff} pounds (${percentChange}%) since last visit. ${
-                              medicationData.semaglutide ? 
-                              `May need to adjust ${medicationData.semaglutide.name} dosage or review adherence.` : 
-                              'Current weight management plan may need adjustment.'
-                            } Patient reports ${Math.random() > 0.5 ? 'some difficulty with dietary adherence' : 'challenges maintaining exercise routine'} due to ${
-                              Math.random() > 0.5 ? 'work stress' : 'family obligations'
-                            }.`;
-                          } else {
-                            generatedContent = `Patient's weight has remained stable since last visit. ${
-                              medicationData.semaglutide ? 
-                              `Continuing ${medicationData.semaglutide.name} ${medicationDosages.semaglutide} with stable response.` : 
-                              'Current weight management plan is maintaining stability.'
-                            } Patient reports ${Math.random() > 0.5 ? 'consistent adherence to plan' : 'satisfaction with current regimen'}.`;
-                          }
-                        } else {
-                          generatedContent = `Patient reports feeling ${
-                            Math.random() > 0.5 ? 'better' : 'about the same'
-                          } since last visit. ${
-                            medicationData.semaglutide ? 
-                            `Has been taking ${medicationData.semaglutide.name} as prescribed with ${
-                              Math.random() > 0.5 ? 'no' : 'minimal'
-                            } side effects.` : ''
-                          }`;
-                        }
-                      } else if (primaryService === 'ed') {
-                        generatedContent = `Patient reports ${
-                          Math.random() > 0.5 ? 'improvement' : 'stable results'
-                        } with current ED treatment. No significant side effects noted. Continuing current medication regimen.`;
-                      } else if (primaryService === 'pc') {
-                        generatedContent = `Patient reports overall improvement in general health. Vital signs stable. No new complaints.`;
-                      } else if (primaryService === 'mh') {
-                        generatedContent = `Patient reports ${Math.random() > 0.5 ? 'improved' : 'stable'} mood and sleep patterns. Continuing with current treatment plan.`;
-                      } else {
-                        generatedContent = `Patient reports ${Math.random() > 0.5 ? 'good' : 'satisfactory'} progress with current treatment regimen. No significant adverse effects reported.`;
-                      }
-                      
-                      setIntervalHistory(generatedContent);
-                      setIsGeneratingAI(false);
-                      toast.success("Progress notes generated");
-                    }}
-                    style={{
-                      background: '#a855f7', // Purple-500
-                      color: 'white',
-                      padding: '2px 4px',
-                      borderRadius: '4px',
-                      border: 'none',
-                      display: 'flex',
-                      alignItems: 'center',
-                      cursor: 'pointer',
-                      fontSize: '12px',
-                      fontWeight: 'normal'
-                    }}
-                  >
-                    <svg width="12" height="12" className="mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M5 3v4M3 5h4M6 17v4M4 19h4M13 3l4 4L3 21l4-4L13 3z" />
-                    </svg>
-                    AI Compose
-                  </button>
-                  <button
-                    onClick={() => {
-                      // Edit action
-                      console.log("Edit clicked");
-                    }}
-                    style={{
-                      background: '#3b82f6', // Blue-500
-                      color: 'white',
-                      padding: '2px 4px',
-                      borderRadius: '4px',
-                      border: 'none',
-                      display: 'flex',
-                      alignItems: 'center',
-                      cursor: 'pointer',
-                      fontSize: '12px',
-                      fontWeight: 'normal'
-                    }}
-                  >
-                    <svg width="12" height="12" className="mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M11 4H4C2.89543 4 2 4.89543 2 6V20C2 21.1046 2.89543 22 4 22H18C19.1046 22 20 21.1046 20 20V13M18.5 2.5C19.3284 3.32843 19.3284 4.67157 18.5 5.5L10 14L6 15L7 11L15.5 2.5C16.3284 1.67157 17.6716 1.67157 18.5 2.5Z" />
-                    </svg>
-                    Edit
-                  </button>
+              <div className="bg-[#4f46e5] px-4 py-3 text-white flex justify-between items-center">
+                <div className="flex items-center">
+                  <h3 className="font-medium">Treatment Progress</h3>
                 </div>
               </div>
               <div className="p-4">
-                {/* Only render the service-specific progress section */}
                 {renderServiceSpecificProgress()}
               </div>
             </div>
@@ -971,24 +774,45 @@ const FollowUpConsultationNotes = ({
           
           {/* Right Column */}
           <div>
-            {/* Communication Card - Fixed with required props */}
+            {/* Communication Card */}
             <CommunicationCard 
               patient={patient}
               session={session}
               selectedFollowUpPeriod={selectedFollowUpPeriod}
               followUpDisplayText={followUpDisplayText}
-              selectFollowupPeriod={selectFollowupPeriod}
+              selectFollowupPeriod={(period) => {
+                setSelectedFollowUpPeriod(period);
+                let displayText = '';
+                switch (period) {
+                  case '2w': displayText = '2 weeks'; break;
+                  case '4w': displayText = '4 weeks'; break;
+                  case '6w': displayText = '6 weeks'; break;
+                  case '8w': displayText = '8 weeks'; break;
+                  case '12w': displayText = '12 weeks'; break;
+                  default: displayText = '4 weeks';
+                }
+                setFollowUpDisplayText(displayText);
+                setFollowUpPlan(displayText);
+              }}
               resourceOptions={resourceOptions}
               selectedResources={selectedResources}
-              toggleResource={toggleResource}
+              toggleResource={(resourceId) => {
+                setSelectedResources(prev => {
+                  if (prev.includes(resourceId)) {
+                    return prev.filter(id => id !== resourceId);
+                  } else {
+                    return [...prev, resourceId];
+                  }
+                });
+              }}
               showMoreResources={showMoreResources}
-              toggleMoreResources={toggleMoreResources}
+              toggleMoreResources={() => setShowMoreResources(!showMoreResources)}
               medicationData={medicationData}
               medicationDosages={medicationDosages}
               serviceCategory={Object.keys(activeServices)[0] || 'general'}
             />
             
-            {/* Assessment & Plan Card - Moved under Communication Card */}
+            {/* Assessment & Plan Card */}
             <AssessmentPlanCard 
               assessmentPlan={hpi}
               setAssessmentPlan={setHpi}

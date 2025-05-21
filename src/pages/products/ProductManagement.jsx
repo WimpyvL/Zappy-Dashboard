@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react'; // Added useEffect back
+import { Link } from 'react-router-dom';
 import {
   // Search, // Removed unused import
   Plus,
   Edit,
   Trash2,
-  // Eye, // Removed unused import
+  Eye, // Re-added for Compare Plans button
   // AlertCircle, // Removed unused import
   Filter,
   Tag,
@@ -300,7 +301,7 @@ const ProductManagement = () => {
   // Initial form state - Product (Added stripePriceId fields)
   const initialProductFormData = {
     name: '',
-    type: 'medication',
+    type: 'product',
     description: '',
     price: 0, // For non-med one-time
     oneTimePurchasePrice: 0, // For med one-time
@@ -331,7 +332,16 @@ const ProductManagement = () => {
      popularity: 'medium',
      requiresConsultation: true,
      additionalBenefits: [],
-     stripePriceId: '' // Added Stripe Price ID for the plan itself
+     stripePriceId: '', // Added Stripe Price ID for the plan itself
+     isDefault: false, // Whether this is the default recommended plan
+     isFeatured: false, // Whether this plan should be highlighted in comparisons
+     comparisonOrder: 0, // Order in comparison view (lower numbers first)
+     availabilityRules: {
+       userGroups: [], // User groups that can access this plan
+       regions: [], // Regions where this plan is available
+       minAge: 0, // Minimum age requirement (0 = no restriction)
+       maxAge: 0, // Maximum age requirement (0 = no restriction)
+     }
    };
    const [planFormData, setPlanFormData] = useState(initialPlanFormData);
 
@@ -389,7 +399,7 @@ const ProductManagement = () => {
     setCurrentProduct(product);
     setProductFormData({
       name: product.name || '',
-      type: product.type || 'medication',
+      type: product.type || 'product',
       description: product.description || '',
       price: product.price || 0,
       oneTimePurchasePrice: product.oneTimePurchasePrice || 0,
@@ -413,7 +423,7 @@ const ProductManagement = () => {
           : false,
       fulfillmentSource:
         product.fulfillmentSource ||
-        (product.type === 'medication'
+        (product.requiresPrescription
           ? 'compounding_pharmacy'
           : 'internal_supplement'),
        // Load stripe price IDs into form state
@@ -432,15 +442,25 @@ const ProductManagement = () => {
 
   const handleEditPlan = (plan) => {
     setEditMode(true);
-     setCurrentPlan(plan);
-     // Ensure allowedProductDoses is initialized correctly and load stripePriceId
-     setPlanFormData({
-       ...plan,
-       allowedProductDoses: Array.isArray(plan.allowedProductDoses) ? [...plan.allowedProductDoses] : [],
-       additionalBenefits: Array.isArray(plan.additionalBenefits) ? [...plan.additionalBenefits] : [], // Keep this line
-       stripePriceId: plan.stripePriceId || '' // Load plan's stripePriceId
-     });
-     setShowPlanModal(true);
+    setCurrentPlan(plan);
+    // Ensure all fields are initialized correctly
+    setPlanFormData({
+      ...plan,
+      allowedProductDoses: Array.isArray(plan.allowedProductDoses) ? [...plan.allowedProductDoses] : [],
+      additionalBenefits: Array.isArray(plan.additionalBenefits) ? [...plan.additionalBenefits] : [],
+      stripePriceId: plan.stripePriceId || '',
+      // Initialize new fields with defaults if not present
+      isDefault: plan.isDefault !== undefined ? plan.isDefault : false,
+      isFeatured: plan.isFeatured !== undefined ? plan.isFeatured : false,
+      comparisonOrder: plan.comparisonOrder !== undefined ? plan.comparisonOrder : 0,
+      availabilityRules: plan.availabilityRules || {
+        userGroups: [],
+        regions: [],
+        minAge: 0,
+        maxAge: 0,
+      }
+    });
+    setShowPlanModal(true);
   };
 
   const handleProductInputChange = (e) => {
@@ -508,8 +528,8 @@ const ProductManagement = () => {
   // Submit handlers using mutations
   const handleProductSubmit = () => {
     const submissionData = { ...productFormData };
-    // Clean up data based on type
-    if (submissionData.type !== 'medication') {
+    // Clean up data based on type and prescription requirement
+    if (submissionData.type === 'program' || !submissionData.requiresPrescription) {
       delete submissionData.doses;
       delete submissionData.oneTimePurchasePrice;
     } else {
@@ -552,8 +572,42 @@ const ProductManagement = () => {
       ? submissionData.allowedProductDoses
       : [];
     delete submissionData.allowedProducts; // Remove old field if present
+    
     // Ensure stripePriceId is included
     submissionData.stripePriceId = submissionData.stripePriceId || '';
+    
+    // Process additionalBenefits if it's a string
+    if (typeof submissionData.additionalBenefits === 'string') {
+      submissionData.additionalBenefits = submissionData.additionalBenefits
+        .split(',')
+        .map((item) => item.trim())
+        .filter(Boolean);
+    }
+    
+    // Ensure availabilityRules is properly formatted
+    if (submissionData.availabilityRules) {
+      // Convert minAge and maxAge to numbers
+      submissionData.availabilityRules.minAge = parseInt(submissionData.availabilityRules.minAge) || 0;
+      submissionData.availabilityRules.maxAge = parseInt(submissionData.availabilityRules.maxAge) || 0;
+      
+      // Ensure regions and userGroups are arrays
+      if (typeof submissionData.availabilityRules.regions === 'string') {
+        submissionData.availabilityRules.regions = submissionData.availabilityRules.regions
+          .split(',')
+          .map(item => item.trim())
+          .filter(Boolean);
+      }
+      
+      if (typeof submissionData.availabilityRules.userGroups === 'string') {
+        submissionData.availabilityRules.userGroups = submissionData.availabilityRules.userGroups
+          .split(',')
+          .map(item => item.trim())
+          .filter(Boolean);
+      }
+    }
+    
+    // Ensure comparisonOrder is a number
+    submissionData.comparisonOrder = parseInt(submissionData.comparisonOrder) || 0;
 
     if (editMode && currentPlan) {
       updatePlanMutation.mutate({
@@ -684,8 +738,8 @@ const ProductManagement = () => {
                   onChange: setTypeFilter,
                   options: [
                     { value: 'all', label: 'All Types' },
-                    { value: 'medication', label: 'Medications' },
-                    { value: 'supplement', label: 'Supplements' },
+                    { value: 'product', label: 'Products' },
+                    { value: 'program', label: 'Programs' },
                     { value: 'service', label: 'Services' },
                   ],
                   icon: Filter,
@@ -724,13 +778,24 @@ const ProductManagement = () => {
         ]}
       >
         {/* Use primary color for Add button */}
-        <button
-          className="px-4 py-2 bg-primary text-white rounded-md flex items-center hover:bg-primary/90"
-          onClick={activeTab === 'products' ? handleAddProduct : handleAddPlan}
-        >
-          <Plus className="h-5 w-5 mr-2" />
-          {activeTab === 'products' ? 'Add Product' : 'Add Plan'}
-        </button>
+        <div className="flex space-x-2">
+          {activeTab === 'plans' && (
+            <Link
+              to="/plan-comparison"
+              className="px-4 py-2 bg-blue-100 text-blue-700 rounded-md flex items-center hover:bg-blue-200"
+            >
+              <Eye className="h-5 w-5 mr-2" />
+              Compare Plans
+            </Link>
+          )}
+          <button
+            className="px-4 py-2 bg-primary text-white rounded-md flex items-center hover:bg-primary/90"
+            onClick={activeTab === 'products' ? handleAddProduct : handleAddPlan}
+          >
+            <Plus className="h-5 w-5 mr-2" />
+            {activeTab === 'products' ? 'Add Product' : 'Add Plan'}
+          </button>
+        </div>
       </SearchAndFilters>
 
       {/* Products Tab */}
@@ -770,7 +835,8 @@ const ProductManagement = () => {
                 {filteredProducts
                   .flatMap((product) => {
                     if (
-                      product.type !== 'medication' ||
+                      product.type === 'program' ||
+                      !product.requiresPrescription ||
                       !Array.isArray(product.doses) ||
                       product.doses.length === 0
                     ) {
@@ -805,11 +871,13 @@ const ProductManagement = () => {
                       <td className="px-6 py-4 whitespace-nowrap">
                         <Badge
                           className={
-                            product.type === 'medication'
-                              ? 'bg-blue-100 text-blue-800'
-                              : product.type === 'supplement'
-                                ? 'bg-green-100 text-green-800'
-                                : 'bg-purple-100 text-purple-800'
+                            product.type === 'product'
+                              ? product.requiresPrescription
+                                ? 'bg-blue-100 text-blue-800'
+                                : 'bg-green-100 text-green-800'
+                              : product.type === 'program'
+                                ? 'bg-purple-100 text-purple-800'
+                                : 'bg-gray-100 text-gray-800'
                           }
                         >
                           {product.type ? product.type.charAt(0).toUpperCase() + product.type.slice(1) : 'N/A'}
@@ -942,15 +1010,27 @@ const ProductManagement = () => {
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                 {filteredPlans.map((plan) => (
-                  <tr key={plan.id} className="hover:bg-gray-50">
+                  <tr key={plan.id} className={`hover:bg-gray-50 ${plan.isFeatured ? 'bg-yellow-50' : ''}`}>
                     <td className="px-6 py-4">
-                      <div className="text-sm font-medium text-gray-900">
-                        {plan.name}
+                      <div className="flex items-center">
+                        <div className="text-sm font-medium text-gray-900">
+                          {plan.name}
+                        </div>
+                        {plan.isDefault && (
+                          <Badge className="ml-2 bg-blue-100 text-blue-800">
+                            Default
+                          </Badge>
+                        )}
+                        {plan.isFeatured && (
+                          <Badge className="ml-2 bg-yellow-100 text-yellow-800">
+                            Featured
+                          </Badge>
+                        )}
                       </div>
                       <div className="text-xs text-gray-500 truncate mt-1">
                         {plan.description}
                       </div>
-                      <div className="mt-1">
+                      <div className="mt-1 flex flex-wrap gap-1">
                         <Badge
                           className={
                             plan.active
@@ -960,6 +1040,16 @@ const ProductManagement = () => {
                         >
                           {plan.active ? 'Active' : 'Inactive'}
                         </Badge>
+                        {plan.comparisonOrder > 0 && (
+                          <Badge className="bg-purple-100 text-purple-800">
+                            Order: {plan.comparisonOrder}
+                          </Badge>
+                        )}
+                        {plan.availabilityRules?.regions?.length > 0 && (
+                          <Badge className="bg-indigo-100 text-indigo-800">
+                            {plan.availabilityRules.regions.length} Region{plan.availabilityRules.regions.length !== 1 ? 's' : ''}
+                          </Badge>
+                        )}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -1081,8 +1171,8 @@ const ProductManagement = () => {
               value={productFormData.type}
               onChange={handleProductInputChange}
               options={[
-                { value: 'medication', label: 'Medication' },
-                { value: 'supplement', label: 'Supplement' },
+                { value: 'product', label: 'Product' },
+                { value: 'program', label: 'Program' },
                 { value: 'service', label: 'Service' },
               ]}
             />
@@ -1121,7 +1211,7 @@ const ProductManagement = () => {
               onChange={handleProductInputChange}
               rows={3}
             />
-            {productFormData.type !== 'medication' && (
+            {(productFormData.type === 'program' || !productFormData.requiresPrescription) && (
               <div className="mb-4"> {/* Added wrapper div */}
                 <FormInput
                   label="Price (One-Time)"
@@ -1133,7 +1223,7 @@ const ProductManagement = () => {
                     onChange={handleProductInputChange}
                     prefix="$"
                   />
-                 {/* Stripe Price ID for One-Time Purchase (Non-Medication) */}
+                 {/* Stripe Price ID for One-Time Purchase (Non-Prescription) */}
                  <div className="mt-2">
                     <label className="block text-xs font-medium text-gray-500 mb-1">Stripe Price ID (One-Time)</label>
                     <input
@@ -1147,14 +1237,14 @@ const ProductManagement = () => {
                  </div>
                </div>
              )}
-             {productFormData.type === 'medication' && (
+             {productFormData.type === 'product' && productFormData.requiresPrescription && (
               <div className="mb-4">
                 <label className="block text-sm font-medium text-gray-700 mb-1">One-Time Purchase Price</label>
                 <div className="relative rounded-md shadow-sm">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"><span className="text-gray-500 sm:text-sm">$</span></div>
                   <input type="number" name="oneTimePurchasePrice" min="0" step="0.01" className="block w-full pl-7 pr-3 py-2 text-base border-gray-300 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm rounded-md" value={productFormData.oneTimePurchasePrice} onChange={handleProductInputChange}/>
                  </div>
-                 {/* Stripe Price ID for One-Time Purchase (Medication) */}
+                 {/* Stripe Price ID for One-Time Purchase (Prescription) */}
                  <div className="mt-2">
                     <label className="block text-xs font-medium text-gray-500 mb-1">Stripe Price ID (One-Time)</label>
                     <input
@@ -1171,7 +1261,7 @@ const ProductManagement = () => {
           </div>
           {/* Right Column */}
           <div className="col-span-7">
-            {productFormData.type === 'medication' ? (
+            {productFormData.type === 'product' && productFormData.requiresPrescription ? (
               <DosesFormSection
                 doses={productFormData.doses || []}
                 onChange={handleDosesChange}
@@ -1219,7 +1309,7 @@ const ProductManagement = () => {
                   { value: 'backorder', label: 'On Backorder' },
                 ]}
               />
-              {productFormData.type === 'medication' && (
+              {productFormData.type === 'product' && productFormData.requiresPrescription && (
                 <FormTextarea
                   label="Interaction Warnings"
                   name="interactionWarnings"
@@ -1281,7 +1371,7 @@ const ProductManagement = () => {
                   checked={productFormData.requiresPrescription}
                   onChange={handleProductInputChange}
                 />
-                {productFormData.type !== 'medication' && (
+                {(productFormData.type === 'product' && !productFormData.requiresPrescription) && (
                   <FormCheckbox
                     label="Allow One-Time Purchase"
                     name="allowOneTimePurchase"
@@ -1395,52 +1485,156 @@ const ProductManagement = () => {
             {' '}
             {/* Right Column */}
             <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Included Product Doses
-              </label>
+              <div className="flex justify-between items-center mb-1">
+                <label className="block text-sm font-medium text-gray-700">
+                  Included Product Doses
+                </label>
+                <button
+                  type="button"
+                  onClick={() => {
+                    // Get all available product doses
+                    const allAvailableDoses = allProducts
+                      .filter(p => p.type === 'product' && p.requiresPrescription && p.doses?.length > 0)
+                      .flatMap(product =>
+                        (product.doses || []).map(dose => ({
+                          productId: product.id,
+                          doseId: dose.id
+                        }))
+                      );
+                    
+                    // Check if all doses are already selected
+                    const allSelected = allAvailableDoses.length > 0 &&
+                      allAvailableDoses.every(dose =>
+                        planFormData.allowedProductDoses?.some(
+                          d => d.productId === dose.productId && d.doseId === dose.doseId
+                        )
+                      );
+                    
+                    if (allSelected) {
+                      // Deselect all doses
+                      setPlanFormData(prev => ({
+                        ...prev,
+                        allowedProductDoses: []
+                      }));
+                    } else {
+                      // Select all doses
+                      setPlanFormData(prev => ({
+                        ...prev,
+                        allowedProductDoses: allAvailableDoses
+                      }));
+                    }
+                  }}
+                  className={`text-xs px-2 py-1 rounded font-medium ${
+                    planFormData.allowedProductDoses?.length === 0
+                      ? 'bg-blue-100 text-blue-700 hover:bg-blue-200'
+                      : 'bg-purple-100 text-purple-700 hover:bg-purple-200'
+                  }`}
+                >
+                  {planFormData.allowedProductDoses?.length === 0
+                    ? 'Select All Products'
+                    : 'Toggle All Products'}
+                </button>
+              </div>
               <div className="border border-gray-300 rounded-md p-2 h-64 overflow-y-auto space-y-2">
                 {allProducts
-                  .filter((p) => p.type === 'medication' && p.doses?.length > 0)
-                  .map((product) => (
-                    <div key={product.id}>
-                      <h4 className="text-xs font-semibold text-gray-600 mb-1">
-                        {product.name}
-                      </h4>
-                      <div className="pl-2 space-y-1">
-                        {product.doses.map((dose) => (
-                          <div key={dose.id} className="flex items-center">
-                            <input
-                              type="checkbox"
-                              id={`dose-select-${product.id}-${dose.id}`}
-                              checked={
-                                planFormData.allowedProductDoses?.some(
-                                  (d) =>
-                                    d.productId === product.id &&
-                                    d.doseId === dose.id
-                                ) || false
-                              }
-                              onChange={() =>
-                                handleDoseSelectionChange(product.id, dose.id)
-                              }
-                              className="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded"
-                            />
-                            <label
-                              htmlFor={`dose-select-${product.id}-${dose.id}`}
-                              className="ml-2 text-sm text-gray-700"
+                  .filter((p) => p.type === 'product' && p.requiresPrescription && p.doses?.length > 0)
+                  .map((product) => {
+                    // Check if all doses of this product are selected
+                    const productDoses = product.doses || [];
+                    const selectedDosesForProduct = planFormData.allowedProductDoses?.filter(
+                      d => d.productId === product.id
+                    ) || [];
+                    const allSelected = productDoses.length > 0 &&
+                      productDoses.length === selectedDosesForProduct.length;
+                    const someSelected = selectedDosesForProduct.length > 0;
+                    
+                    // Handler for selecting/deselecting all doses for this product
+                    const handleToggleAllDoses = () => {
+                      if (allSelected) {
+                        // Deselect all doses for this product
+                        setPlanFormData(prev => ({
+                          ...prev,
+                          allowedProductDoses: prev.allowedProductDoses.filter(
+                            d => d.productId !== product.id
+                          )
+                        }));
+                      } else {
+                        // Select all doses for this product
+                        const currentDoses = planFormData.allowedProductDoses?.filter(
+                          d => d.productId !== product.id
+                        ) || [];
+                        
+                        const newDoses = [
+                          ...currentDoses,
+                          ...productDoses.map(dose => ({
+                            productId: product.id,
+                            doseId: dose.id
+                          }))
+                        ];
+                        
+                        setPlanFormData(prev => ({
+                          ...prev,
+                          allowedProductDoses: newDoses
+                        }));
+                      }
+                    };
+                    
+                    return (
+                      <div key={product.id}>
+                        <div className="flex justify-between items-center mb-1">
+                          <h4 className="text-xs font-semibold text-gray-600">
+                            {product.name}
+                          </h4>
+                          <div className="flex space-x-1">
+                            <button
+                              type="button"
+                              onClick={handleToggleAllDoses}
+                              className={`text-xs px-2 py-0.5 rounded ${
+                                allSelected
+                                  ? 'bg-red-100 text-red-700 hover:bg-red-200'
+                                  : 'bg-blue-100 text-blue-700 hover:bg-blue-200'
+                              }`}
                             >
-                              {dose.value}{' '}
-                              {dose.description ? `(${dose.description})` : ''}
-                            </label>
+                              {allSelected ? 'Deselect All' : 'Select All'}
+                            </button>
                           </div>
-                        ))}
+                        </div>
+                        <div className="pl-2 space-y-1">
+                          {product.doses.map((dose) => (
+                            <div key={dose.id} className="flex items-center">
+                              <input
+                                type="checkbox"
+                                id={`dose-select-${product.id}-${dose.id}`}
+                                checked={
+                                  planFormData.allowedProductDoses?.some(
+                                    (d) =>
+                                      d.productId === product.id &&
+                                      d.doseId === dose.id
+                                  ) || false
+                                }
+                                onChange={() =>
+                                  handleDoseSelectionChange(product.id, dose.id)
+                                }
+                                className="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded"
+                              />
+                              <label
+                                htmlFor={`dose-select-${product.id}-${dose.id}`}
+                                className="ml-2 text-sm text-gray-700"
+                              >
+                                {dose.value}{' '}
+                                {dose.description ? `(${dose.description})` : ''}
+                              </label>
+                            </div>
+                          ))}
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 {allProducts.filter(
-                  (p) => p.type === 'medication' && p.doses?.length > 0
+                  (p) => p.type === 'product' && p.requiresPrescription && p.doses?.length > 0
                 ).length === 0 && (
                   <p className="text-xs text-gray-500">
-                    No medication products with doses available.
+                    No prescription products with doses available.
                   </p>
                 )}
               </div>
@@ -1457,7 +1651,8 @@ const ProductManagement = () => {
                placeholder="price_..."
                className="text-xs" // Smaller text for ID field
              />
-            <div className="grid grid-cols-2 gap-4 mt-4"> {/* Added margin top */}
+            {/* Plan Status Settings */}
+            <div className="grid grid-cols-2 gap-4 mt-4">
               <FormCheckbox
                 label="Active"
                 name="active"
@@ -1471,6 +1666,232 @@ const ProductManagement = () => {
                 onChange={handlePlanInputChange}
               />
             </div>
+            
+            {/* Plan Comparison Settings */}
+            <div className="mt-4 p-3 bg-blue-50 rounded-md">
+              <h4 className="text-sm font-medium text-blue-800 mb-2">Plan Comparison Settings</h4>
+              <div className="grid grid-cols-2 gap-4">
+                <FormCheckbox
+                  label="Default Plan (Recommended)"
+                  name="isDefault"
+                  checked={planFormData.isDefault}
+                  onChange={handlePlanInputChange}
+                />
+                <FormCheckbox
+                  label="Featured Plan (Highlighted)"
+                  name="isFeatured"
+                  checked={planFormData.isFeatured}
+                  onChange={handlePlanInputChange}
+                />
+              </div>
+              <div className="mt-2">
+                <FormInput
+                  label="Comparison Display Order"
+                  name="comparisonOrder"
+                  type="number"
+                  min="0"
+                  value={planFormData.comparisonOrder}
+                  onChange={handlePlanInputChange}
+                  helperText="Lower numbers appear first in comparison views"
+                />
+              </div>
+            </div>
+            
+            {/* Plan Availability Rules */}
+            <div className="mt-4 p-3 bg-green-50 rounded-md">
+              <h4 className="text-sm font-medium text-green-800 mb-2">Plan Availability Rules</h4>
+              <div className="grid grid-cols-2 gap-4">
+                <FormInput
+                  label="Minimum Age (0 = no limit)"
+                  name="availabilityRules.minAge"
+                  type="number"
+                  min="0"
+                  value={planFormData.availabilityRules?.minAge || 0}
+                  onChange={(e) => {
+                    const value = parseInt(e.target.value) || 0;
+                    setPlanFormData((prev) => ({
+                      ...prev,
+                      availabilityRules: {
+                        ...prev.availabilityRules,
+                        minAge: value
+                      }
+                    }));
+                  }}
+                />
+                <FormInput
+                  label="Maximum Age (0 = no limit)"
+                  name="availabilityRules.maxAge"
+                  type="number"
+                  min="0"
+                  value={planFormData.availabilityRules?.maxAge || 0}
+                  onChange={(e) => {
+                    const value = parseInt(e.target.value) || 0;
+                    setPlanFormData((prev) => ({
+                      ...prev,
+                      availabilityRules: {
+                        ...prev.availabilityRules,
+                        maxAge: value
+                      }
+                    }));
+                  }}
+                />
+              </div>
+              <div className="mt-2">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Available Regions (comma-separated)
+                </label>
+                <input
+                  type="text"
+                  value={(planFormData.availabilityRules?.regions || []).join(', ')}
+                  onChange={(e) => {
+                    const regions = e.target.value.split(',').map(r => r.trim()).filter(Boolean);
+                    setPlanFormData((prev) => ({
+                      ...prev,
+                      availabilityRules: {
+                        ...prev.availabilityRules,
+                        regions
+                      }
+                    }));
+                  }}
+                  placeholder="e.g., CA, NY, TX (empty = all regions)"
+                  className="block w-full pl-3 pr-3 py-2 text-sm border-gray-300 focus:outline-none focus:ring-primary focus:border-primary rounded-md"
+                />
+              </div>
+              <div className="mt-2">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  User Groups (comma-separated)
+                </label>
+                <input
+                  type="text"
+                  value={(planFormData.availabilityRules?.userGroups || []).join(', ')}
+                  onChange={(e) => {
+                    const userGroups = e.target.value.split(',').map(g => g.trim()).filter(Boolean);
+                    setPlanFormData((prev) => ({
+                      ...prev,
+                      availabilityRules: {
+                        ...prev.availabilityRules,
+                        userGroups
+                      }
+                    }));
+                  }}
+                  placeholder="e.g., premium, returning (empty = all users)"
+                  className="block w-full pl-3 pr-3 py-2 text-sm border-gray-300 focus:outline-none focus:ring-primary focus:border-primary rounded-md"
+                />
+              </div>
+            </div>
+            {/* Plan Comparison Settings */}
+            <div className="mt-4 p-3 bg-blue-50 rounded-md">
+              <h4 className="text-sm font-medium text-blue-800 mb-2">Plan Comparison Settings</h4>
+              <div className="grid grid-cols-2 gap-4">
+                <FormCheckbox
+                  label="Default Plan (Recommended)"
+                  name="isDefault"
+                  checked={planFormData.isDefault}
+                  onChange={handlePlanInputChange}
+                />
+                <FormCheckbox
+                  label="Featured Plan (Highlighted)"
+                  name="isFeatured"
+                  checked={planFormData.isFeatured}
+                  onChange={handlePlanInputChange}
+                />
+              </div>
+              <div className="mt-2">
+                <FormInput
+                  label="Comparison Display Order"
+                  name="comparisonOrder"
+                  type="number"
+                  min="0"
+                  value={planFormData.comparisonOrder}
+                  onChange={handlePlanInputChange}
+                  helperText="Lower numbers appear first in comparison views"
+                />
+              </div>
+            </div>
+            
+            {/* Plan Availability Rules */}
+            <div className="mt-4 p-3 bg-green-50 rounded-md">
+              <h4 className="text-sm font-medium text-green-800 mb-2">Plan Availability Rules</h4>
+              <div className="grid grid-cols-2 gap-4">
+                <FormInput
+                  label="Minimum Age (0 = no limit)"
+                  name="availabilityRules.minAge"
+                  type="number"
+                  min="0"
+                  value={planFormData.availabilityRules?.minAge || 0}
+                  onChange={(e) => {
+                    const value = parseInt(e.target.value) || 0;
+                    setPlanFormData((prev) => ({
+                      ...prev,
+                      availabilityRules: {
+                        ...prev.availabilityRules,
+                        minAge: value
+                      }
+                    }));
+                  }}
+                />
+                <FormInput
+                  label="Maximum Age (0 = no limit)"
+                  name="availabilityRules.maxAge"
+                  type="number"
+                  min="0"
+                  value={planFormData.availabilityRules?.maxAge || 0}
+                  onChange={(e) => {
+                    const value = parseInt(e.target.value) || 0;
+                    setPlanFormData((prev) => ({
+                      ...prev,
+                      availabilityRules: {
+                        ...prev.availabilityRules,
+                        maxAge: value
+                      }
+                    }));
+                  }}
+                />
+              </div>
+              <div className="mt-2">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Available Regions (comma-separated)
+                </label>
+                <input
+                  type="text"
+                  value={(planFormData.availabilityRules?.regions || []).join(', ')}
+                  onChange={(e) => {
+                    const regions = e.target.value.split(',').map(r => r.trim()).filter(Boolean);
+                    setPlanFormData((prev) => ({
+                      ...prev,
+                      availabilityRules: {
+                        ...prev.availabilityRules,
+                        regions
+                      }
+                    }));
+                  }}
+                  placeholder="e.g., CA, NY, TX (empty = all regions)"
+                  className="block w-full pl-3 pr-3 py-2 text-sm border-gray-300 focus:outline-none focus:ring-primary focus:border-primary rounded-md"
+                />
+              </div>
+              <div className="mt-2">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  User Groups (comma-separated)
+                </label>
+                <input
+                  type="text"
+                  value={(planFormData.availabilityRules?.userGroups || []).join(', ')}
+                  onChange={(e) => {
+                    const userGroups = e.target.value.split(',').map(g => g.trim()).filter(Boolean);
+                    setPlanFormData((prev) => ({
+                      ...prev,
+                      availabilityRules: {
+                        ...prev.availabilityRules,
+                        userGroups
+                      }
+                    }));
+                  }}
+                  placeholder="e.g., premium, returning (empty = all users)"
+                  className="block w-full pl-3 pr-3 py-2 text-sm border-gray-300 focus:outline-none focus:ring-primary focus:border-primary rounded-md"
+                />
+              </div>
+            </div>
+            
             <FormTextarea
               label="Additional Benefits"
               name="additionalBenefits"

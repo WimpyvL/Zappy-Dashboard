@@ -21,14 +21,20 @@ export const CartProvider = ({ children }) => {
     let itemPrice = 0;
     let isPurchasable = false;
 
-    if (product.type === 'medication') {
-      // For medications, check the specific dose
+    if (product.type === 'program') {
+      // Programs have their own pricing logic
+      if (product.allowOneTimePurchase) {
+        isPurchasable = true;
+        itemPrice = product.price || 0;
+      }
+    } else if (product.requiresPrescription) {
+      // For products requiring prescription, check the specific dose
       if (dose && dose.allowOneTimePurchase) {
         isPurchasable = true;
         itemPrice = product.oneTimePurchasePrice || 0; // Use product-level one-time price
       }
     } else {
-      // For non-medications (supplements, services), check the product itself
+      // For standard products, check the product itself
       if (product.allowOneTimePurchase) {
         isPurchasable = true;
         itemPrice = product.price || 0; // Use product-level price
@@ -68,8 +74,9 @@ export const CartProvider = ({ children }) => {
              price: itemPrice, // Use the correctly determined price
              quantity: quantity,
              type: product.type, // Store type for potential future use
+             requiresPrescription: product.requiresPrescription, // Add requiresPrescription flag
              // Store relevant Stripe Price IDs
-             stripePriceId: product.type === 'medication' ? product.stripeOneTimePriceId : product.stripePriceId, // One-time purchase Price ID
+             stripePriceId: product.requiresPrescription ? product.stripeOneTimePriceId : product.stripePriceId, // One-time purchase Price ID
              stripeSubscriptionPriceId: dose?.stripePriceId, // Subscription Price ID (from dose)
              // Add other relevant product details if needed
           },

@@ -12,6 +12,7 @@ import IDVerificationStep from './steps/IDVerificationStep';
 import HealthHistoryStep from './steps/HealthHistoryStep';
 import TreatmentPreferencesStep from './steps/TreatmentPreferencesStep';
 import ReviewStep from './steps/ReviewStep';
+import ShippingAddressStep from './steps/ShippingAddressStep';
 import CheckoutStep from './steps/CheckoutStep';
 import OrderConfirmationStep from './steps/OrderConfirmationStep';
 
@@ -58,6 +59,7 @@ const IntakeFormPage = () => {
     'health_history',
     'treatment_preferences',
     'review',
+    'shipping_address',
     'checkout',
     'confirmation'
   ];
@@ -88,6 +90,13 @@ const IntakeFormPage = () => {
     },
     treatmentPreferences: {
       selectedProductId: prescriptionItems.length > 0 ? prescriptionItems[0].id : ''
+    },
+    shippingAddress: {
+      street: '',
+      street2: '',
+      city: '',
+      state: '',
+      zip: ''
     },
     checkout: {
       paymentMethodId: ''
@@ -153,12 +162,7 @@ const IntakeFormPage = () => {
           }
         ],
         formSubmissionId: formSubmission.id,
-        shippingAddress: {
-          street: user?.address?.street || '123 Main St',
-          city: user?.address?.city || 'San Francisco',
-          state: user?.address?.state || 'CA',
-          zip: user?.address?.zip || '94105'
-        },
+        shippingAddress: formData.shippingAddress,
         paymentMethodId: formData.checkout.paymentMethodId
       });
       
@@ -245,9 +249,18 @@ const IntakeFormPage = () => {
             onPrevious={handlePrevious}
           />
         );
+      case 'shipping_address':
+        return (
+          <ShippingAddressStep
+            formData={formData}
+            updateFormData={updateFormData}
+            onNext={handleNext}
+            onPrevious={handlePrevious}
+          />
+        );
       case 'checkout':
         return (
-          <CheckoutStep 
+          <CheckoutStep
             formData={formData}
             updateFormData={updateFormData}
             prescriptionItems={prescriptionItems}

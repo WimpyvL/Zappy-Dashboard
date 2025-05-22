@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Eye, EyeOff, Check, X } from 'lucide-react';
 // import apiService from '../../utils/apiService'; // Removed apiService import
-import { useAuth } from '../../context/AuthContext'; // Import useAuth
+import { useAuth } from '../../contexts/auth/AuthContext'; // Import useAuth
 
 const Signup = () => {
   const navigate = useNavigate();

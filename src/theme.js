@@ -5,7 +5,7 @@ module.exports = {
     extend: {
       colors: {
         // Primary Brand Colors - Updated
-        'zappy-blue': '#2D7FF9',
+        'zappy-blue': '#4f46e5', // Updated to indigo-600
         'zappy-yellow': '#FFD100',
         'zappy-teal': '#0d9488', // New primary teal (Tailwind teal-600)
         
@@ -21,7 +21,7 @@ module.exports = {
         'success': '#10b981', // Updated to Tailwind green-600
         'warning': '#f59e0b', // Updated to Tailwind amber-500
         'error': '#EF4444',
-        'info': '#2D7FF9',
+        'info': '#4f46e5', // Updated to match primary
         
         // Category/Section Colors - Updated
         'weight-teal': '#0d9488', // Updated to match primary teal

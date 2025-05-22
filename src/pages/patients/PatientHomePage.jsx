@@ -14,7 +14,7 @@ import {
 
 // Import the data hook and auth context
 import usePatientServicesData from '../../hooks/usePatientServicesData';
-import { useAuth } from '../../context/AuthContext';
+import { useAuth } from '../../contexts/auth/AuthContext';
 
 // Get patientId from auth context
 const usePatientId = () => {
@@ -739,10 +739,7 @@ const PatientHomePage = () => {
     <div className="max-w-md mx-auto bg-slate-50 min-h-screen">
       {/* Header with improved gradient - more compact */}
       <header className="header-gradient pt-6 pb-4 px-6">
-        <div className="flex justify-between items-center">
-          <div>
-            <h1 className="text-lg font-bold text-white">Good morning, <span className="inline">Michel</span></h1>
-          </div>
+        <div className="flex justify-end items-center">
           <div className="flex items-center gap-2">
             <div className="relative">
               <button 

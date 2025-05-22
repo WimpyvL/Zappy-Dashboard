@@ -1,7 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../../lib/supabase'; // Use the correct Supabase client
 import { toast } from 'react-toastify';
-import { useAuth } from '../../context/AuthContext'; // Import useAuth to update context
+import { useAuth } from '../../contexts/auth/AuthContext'; // Import useAuth to update context
 
 // Define query keys (optional for auth, but good practice)
 const queryKeys = {

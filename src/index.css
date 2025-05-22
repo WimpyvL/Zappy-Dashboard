@@ -5,19 +5,22 @@
 @tailwind utilities;
 
 :root {
-  --primary: #F85C5C;
+  --primary: #4f46e5; /* Indigo-600 for admin app */
   --accent1: #FFB347; /* Orange */
   --accent2: #82D173; /* Green */
-  --accent3: #5DA9E9; /* Blue */
+  --accent3: #4f46e5; /* Using the same indigo as primary for consistency */
   --accent4: #AC8FE9; /* Purple */
   --bg-light: #F9FAFB;
   --card-bg: #FFFFFF;
-  --text-dark: #111827;
+  --text-dark: #1f2937; /* Updated to match theme.js */
+  --text-medium: #4b5563; /* Added to match theme.js */
+  --text-light: #9ca3af; /* Added to match theme.js */
 }
 
 body {
   margin: 0;
-  font-family: 'Inter', sans-serif;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
   background-color: var(--bg-light);
   color: var(--text-dark);
   -webkit-font-smoothing: antialiased;
@@ -80,6 +83,7 @@ code {
 }
 
 /* Navigation item styles */
+/* Legacy nav-item styles - kept for backward compatibility */
 .nav-item {
   @apply flex items-center p-4 rounded-xl mb-3 cursor-pointer transition-all bg-white shadow hover:translate-y-[-2px] hover:shadow-md;
 }
@@ -90,6 +94,35 @@ code {
 
 .nav-item i, .nav-item svg {
   @apply text-xl mr-4 w-6 text-center;
+}
+
+/* Ultra-minimal sidebar styles */
+.sidebar-section-title {
+  @apply text-xs font-semibold text-text-medium uppercase tracking-wider px-5 mb-2;
+  letter-spacing: 0.05em;
+}
+
+.sidebar-nav-item {
+  @apply flex items-center py-2 px-5 text-sm transition-colors;
+  font-weight: 500;
+}
+
+.sidebar-nav-item.active {
+  @apply text-primary font-medium border-l-2 border-primary;
+  font-weight: 600;
+}
+
+.sidebar-nav-item:not(.active) {
+  @apply text-text-dark hover:text-primary border-l-2 border-transparent;
+}
+
+/* Icon styles for sidebar */
+.sidebar-nav-item i, 
+.sidebar-nav-item svg {
+  @apply mr-3 text-current;
+  width: 16px; /* Fixed width for alignment */
+  text-align: center;
+  font-size: 0.9em;
 }
 
 /* Status badge styles */

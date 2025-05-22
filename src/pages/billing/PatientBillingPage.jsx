@@ -1,5 +1,5 @@
 import React from 'react';
-import { useAuth } from '../../context/AuthContext';
+import { useAuth } from '../../contexts/auth/AuthContext';
 // Import necessary hooks including useMySubscription
 import { useMyInvoices, useMySubscription, useCreateCustomerPortalSession } from '../../apis/subscriptionPlans/hooks'; 
 import { Link } from 'react-router-dom';

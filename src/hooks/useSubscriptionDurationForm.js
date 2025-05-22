@@ -1,74 +1,98 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState } from 'react';
 
-const useSubscriptionDurationForm = (initialData) => {
-  const [formData, setFormData] = useState(initialData);
+/**
+ * Custom hook for managing subscription duration form state and validation
+ * @param {Object} initialData - Initial form data
+ * @returns {Object} Form state and handlers
+ */
+const useSubscriptionDurationForm = (initialData = {}) => {
+  const [formData, setFormData] = useState({
+    name: initialData.name || '',
+    duration_months: initialData.duration_months || 1,
+    duration_days: initialData.duration_days || null,
+    discount_percent: initialData.discount_percent || 0
+  });
+
   const [errors, setErrors] = useState({});
 
-  useEffect(() => {
-    setFormData(initialData);
-  }, [initialData]);
-
-  // Handle input changes
-  const handleInputChange = useCallback((e) => {
-    const { name, value, type, checked } = e.target;
-    const newValue = type === 'checkbox' ? checked : value;
-
-    setFormData(prev => ({ ...prev, [name]: newValue }));
-
-    // Clear error for this field if it exists
-    if (errors[name]) {
-      setErrors(prev => {
-        const newErrors = { ...prev };
-        delete newErrors[name];
-        return newErrors;
-      });
-    }
-  }, [errors]); // Added errors to dependency array
-
-  // Handle numeric field changes
-  const handleNumericChange = useCallback((e) => {
+  /**
+   * Handle text input changes
+   * @param {Event} e - Input change event
+   */
+  const handleInputChange = (e) => {
     const { name, value } = e.target;
-    const numericValue = value === '' ? '' : parseFloat(value);
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+    
+    // Clear error when field is edited
+    if (errors[name]) {
+      setErrors(prev => ({
+        ...prev,
+        [name]: null
+      }));
+    }
+  };
 
+  /**
+   * Handle numeric input changes
+   * @param {Event} e - Input change event
+   */
+  const handleNumericChange = (e) => {
+    const { name, value } = e.target;
+    const numericValue = value === '' ? '' : Number(value);
+    
     setFormData(prev => ({
       ...prev,
       [name]: numericValue
     }));
-
-    // Clear error for this field if it exists
+    
+    // Clear error when field is edited
     if (errors[name]) {
-      setErrors(prev => {
-        const newErrors = { ...prev };
-        delete newErrors[name];
-        return newErrors;
-      });
+      setErrors(prev => ({
+        ...prev,
+        [name]: null
+      }));
     }
-  }, [errors]); // Added errors to dependency array
+  };
 
-  // Validate form before submission
-  const validateForm = useCallback(() => {
+  /**
+   * Validate the form data
+   * @returns {boolean} True if form is valid
+   */
+  const validateForm = () => {
     const newErrors = {};
-
-    if (!formData.name?.trim()) {
+    
+    // Validate name
+    if (!formData.name || formData.name.trim() === '') {
       newErrors.name = 'Name is required';
     }
-
-    if ((formData.duration_months === undefined || formData.duration_months <= 0) && (formData.duration_days === undefined || formData.duration_days <= 0)) {
-       newErrors.duration = 'At least one duration type (months or days) must be greater than 0.';
+    
+    // Validate duration
+    if (
+      (formData.duration_months === 0 || formData.duration_months === null || formData.duration_months === '') && 
+      (formData.duration_days === 0 || formData.duration_days === null || formData.duration_days === '')
+    ) {
+      newErrors.duration = 'Either months or days duration must be specified';
     }
-
-
+    
+    // Validate discount percent
+    if (formData.discount_percent < 0 || formData.discount_percent > 100) {
+      newErrors.discount_percent = 'Discount must be between 0 and 100%';
+    }
+    
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
-  }, [formData]); // Added formData to dependency array
+  };
 
   return {
     formData,
     errors,
+    setFormData,
     handleInputChange,
     handleNumericChange,
-    validateForm,
-    setFormData // Expose setFormData for initial state setting in the component
+    validateForm
   };
 };
 

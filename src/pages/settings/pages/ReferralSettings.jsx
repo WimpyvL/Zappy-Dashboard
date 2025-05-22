@@ -15,7 +15,7 @@ import {
 } from 'antd';
 import { CopyOutlined } from '@ant-design/icons';
 // import { useAppContext } from '../../../context/AppContext'; // Context might not be needed directly if using AuthContext
-import { useAuth } from '../../../context/AuthContext'; // Assuming AuthContext provides user role
+import { useAuth } from '../../../contexts/auth/AuthContext'; // Assuming AuthContext provides user role
 // Import the new referral hooks
 import { 
   useReferralSettings, 

@@ -189,6 +189,15 @@ const VirtualizedTable = memo(({
   Row.displayName = 'VirtualizedRow';
 
   return (
+<<<<<<< HEAD
+    <span className={`${baseClasses} ${statusClasses}`}>
+      {status === 'followup' && <Calendar className="h-3 w-3 mr-1" />}
+      {status === 'reviewed' && <CheckCircle className="h-3 w-3 mr-1" />}
+      {status === 'pending' && <Clock className="h-3 w-3 mr-1" />}
+      {status === 'archived' && <Archive className="h-3 w-3 mr-1" />}
+      {status ? status.charAt(0).toUpperCase() + status.slice(1) : 'Unknown'} {/* Capitalize first letter */}
+    </span>
+=======
     <div className="flex-1 min-h-[400px]">
       <AutoSizer>
         {({ height, width }) => (
@@ -203,6 +212,7 @@ const VirtualizedTable = memo(({
         )}
       </AutoSizer>
     </div>
+>>>>>>> a087814b715110cb6e31d9569a5ee74a779b4d23
   );
 });
 

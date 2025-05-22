@@ -310,26 +310,26 @@ const PatientInfoCard = ({ patient, patientHistory, onSaveHistory, toggleIntakeF
       boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
       overflow: 'hidden',
       marginBottom: '8px',
-      borderLeft: '3px solid #3b82f6'
+      border: '1px solid #e5e7eb'
     }}>
       <div style={{ 
         padding: '10px 14px',
         borderBottom: '1px solid #e5e7eb',
-        fontWeight: 600,
+        fontWeight: 500,
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center',
         fontSize: '15px',
-        backgroundColor: '#f9fafb'
+        backgroundColor: '#4f46e5'
       }}>
-        Patient Information
+        <span style={{ color: 'white' }}>Patient Information</span>
         <div style={{ display: 'flex', gap: '8px', fontSize: '14px' }}>
           <button
             onClick={toggleIntakeForm}
             style={{
               background: 'none',
               border: 'none',
-              color: '#3b82f6',
+              color: 'white',
               display: 'flex',
               alignItems: 'center',
               cursor: 'pointer',
@@ -364,11 +364,11 @@ const PatientInfoCard = ({ patient, patientHistory, onSaveHistory, toggleIntakeF
               <button
                 onClick={handleCancelHistory}
                 style={{
-                  background: '#f3f4f6',
-                  color: '#374151',
+                  background: '#6b7280', // Gray-500
+                  color: 'white',
                   padding: '2px 6px',
                   borderRadius: '4px',
-                  border: '1px solid #e5e7eb',
+                  border: 'none',
                   display: 'flex',
                   alignItems: 'center',
                   cursor: 'pointer',
@@ -387,37 +387,37 @@ const PatientInfoCard = ({ patient, patientHistory, onSaveHistory, toggleIntakeF
                 <button
                   onClick={() => setShowPromptInput(!showPromptInput)}
                   style={{
-                    background: '#ede9fe', // Light purple background
-                    color: '#5b21b6', // Purple text
-                    padding: '2px 6px',
+                    background: '#a855f7', // Purple-500
+                    color: 'white',
+                    padding: '2px 4px',
                     borderRadius: '4px',
-                    border: '1px solid #ddd6fe', // Purple border
+                    border: 'none',
                     display: 'flex',
                     alignItems: 'center',
                     cursor: 'pointer',
-                    fontSize: '14px',
+                    fontSize: '12px',
                     fontWeight: 'normal'
                   }}
                 >
-                  <Sparkles size={14} className="mr-1" />
+                  <Sparkles size={12} style={{ marginRight: '4px' }} />
                   AI Compose
                 </button>
                 <button
                   onClick={handleEditHistoryClick}
                   style={{
-                    background: '#f3f4f6',
-                    color: '#374151',
-                    padding: '2px 6px',
+                    background: '#3b82f6', // Blue-500
+                    color: 'white',
+                    padding: '2px 4px',
                     borderRadius: '4px',
-                    border: '1px solid #e5e7eb',
+                    border: 'none',
                     display: 'flex',
                     alignItems: 'center',
                     cursor: 'pointer',
-                    fontSize: '14px',
+                    fontSize: '12px',
                     fontWeight: 'normal'
                   }}
                 >
-                  <Edit size={14} className="mr-1" />
+                  <Edit size={12} style={{ marginRight: '4px' }} />
                   Edit
                 </button>
               </div>
@@ -450,7 +450,7 @@ const PatientInfoCard = ({ patient, patientHistory, onSaveHistory, toggleIntakeF
                   border: '1px solid #ddd6fe',
                   borderRadius: '4px',
                   fontSize: '14px',
-                  backgroundColor: '#f9fafb'
+                  backgroundColor: 'white'
                 }}
               />
               <div style={{
@@ -496,7 +496,7 @@ const PatientInfoCard = ({ patient, patientHistory, onSaveHistory, toggleIntakeF
         
         {/* Intake Form Data Section */}
         {patient?.intakeData && (
-          <div style={{ marginBottom: '8px', padding: '8px', backgroundColor: '#f9fafb', borderRadius: '4px' }}>
+          <div style={{ marginBottom: '8px', padding: '8px', backgroundColor: '#4f46e5', borderRadius: '4px' }}>
             <h4 style={{ fontSize: '15px', fontWeight: '600', marginBottom: '8px' }}>Intake Form Data</h4>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', fontSize: '14px' }}>
               {patient.intakeData.basicInfo && (
@@ -528,38 +528,9 @@ const PatientInfoCard = ({ patient, patientHistory, onSaveHistory, toggleIntakeF
           <div style={{ 
             fontWeight: '600', 
             fontSize: '14px', 
-            marginBottom: '4px',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center'
+            marginBottom: '4px'
           }}>
-            <span>Patient History:</span>
-            {!isEditingHistory && (
-              <button
-                onClick={() => {
-                  // Auto-generate without showing prompt input
-                  setCustomPrompt('');
-                  handleAIGenerate();
-                }}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  color: '#0369a1',
-                  cursor: 'pointer',
-                  padding: '0',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  width: '20px',
-                  height: '20px'
-                }}
-                title="Refresh with AI"
-              >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
-                </svg>
-              </button>
-            )}
+            Patient History:
           </div>
           {isEditingHistory ? (
             isGeneratingAI ? (
@@ -610,13 +581,44 @@ const PatientInfoCard = ({ patient, patientHistory, onSaveHistory, toggleIntakeF
           ) : (
             <div style={{ 
               padding: '8px', 
-              backgroundColor: '#f9fafb', 
+              backgroundColor: 'white', 
               borderRadius: '4px',
               fontSize: '14px',
               marginBottom: '8px',
-              whiteSpace: 'pre-line'
+              whiteSpace: 'pre-line',
+              border: '1px solid #e5e7eb',
+              position: 'relative'
             }}>
               {patientHistory || 'No history provided.'}
+              {!isEditingHistory && (
+                <button
+                  onClick={() => {
+                    // Auto-generate without showing prompt input
+                    setCustomPrompt('');
+                    handleAIGenerate();
+                  }}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    color: '#0369a1',
+                    cursor: 'pointer',
+                    padding: '0',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    width: '20px',
+                    height: '20px',
+                    position: 'absolute',
+                    top: '8px',
+                    right: '8px'
+                  }}
+                  title="Refresh with AI"
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                  </svg>
+                </button>
+              )}
             </div>
           )}
         </div>

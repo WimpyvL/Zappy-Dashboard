@@ -1,18 +1,19 @@
 import { supabase } from '../lib/supabase';
 
 /**
- * Fetches all medications (products that require prescriptions)
- * @returns {Promise<Array>} Array of medication objects
+ * Fetches all prescription products
+ * @returns {Promise<Array>} Array of prescription product objects
  */
 export const fetchMedications = async () => {
   const { data, error } = await supabase
     .from('products')
     .select('*')
-    .eq('requires_prescription', true);
+    .eq('requires_prescription', true)
+    .neq('type', 'program'); // Exclude program type products
     
   if (error) throw error;
   
-  // Transform products into medication format
+  // Transform products into a consistent format
   return data.map(product => ({
     id: product.id,
     name: product.name,
@@ -29,11 +30,11 @@ export const fetchMedications = async () => {
 };
 
 /**
- * Fetches medications for a specific category
+ * Fetches prescription products for a specific category
  * @param {string} categoryId - The category ID to filter by
- * @returns {Promise<Array>} Array of medication objects for the category
+ * @returns {Promise<Array>} Array of prescription product objects for the category
  */
 export const fetchMedicationsByCategory = async (categoryId) => {
-  const medications = await fetchMedications();
-  return medications.filter(med => med.category === categoryId);
+  const prescriptionProducts = await fetchMedications();
+  return prescriptionProducts.filter(product => product.category === categoryId);
 };

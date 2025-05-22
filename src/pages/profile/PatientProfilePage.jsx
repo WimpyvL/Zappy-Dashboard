@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useAuth } from '../../context/AuthContext';
+import { useAuth } from '../../contexts/auth/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
 import { 
   Loader2, AlertTriangle, User, Bell, Lock, Edit, 

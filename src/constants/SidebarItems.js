@@ -16,6 +16,7 @@ import {
   MessageSquare,
   History,
   Map,
+  Palette,
   // Patient view icons
   LayoutDashboard as PatientDashboardIcon,
   // User as PatientProfileIcon, // Removed unused
@@ -33,132 +34,177 @@ import {
   ShoppingBag, // For Marketplace
   BookOpen, // For Resources
   Layers, // For My Services
-  Heart, // For Health page
 } from 'lucide-react';
 
 import { paths } from './paths'; // Ensure paths are imported
 
-export const sidebarItems = [
+// Group admin sidebar items into sections
+export const adminSidebarSections = [
   {
-    title: 'Dashboard',
-    path: '/dashboard', // Changed from '/' to '/dashboard'
-    icon: Home,
-    color: 'primary', // Added color
+    title: "Overview",
+    items: [
+      {
+        title: 'Dashboard',
+        path: '/dashboard',
+        icon: Home,
+        color: 'primary',
+      },
+    ]
   },
   {
-    title: 'Patients',
-    path: '/patients',
-    icon: Users,
-    color: 'accent1', // Added color
+    title: "Patient Care",
+    items: [
+      {
+        title: 'Patients',
+        path: '/patients',
+        icon: Users,
+        color: 'accent1',
+      },
+      {
+        title: 'Consultations',
+        path: '/consultations',
+        icon: UserPlus,
+        color: 'accent2',
+      },
+      {
+        title: 'Sessions',
+        path: '/sessions',
+        icon: Calendar,
+        color: 'accent3',
+      },
+    ]
   },
   {
-    title: 'Consultations',
-    path: '/consultations',
-    icon: UserPlus,
-    color: 'accent2', // Added color
+    title: "Orders & Billing",
+    items: [
+      {
+        title: 'Orders',
+        path: '/orders',
+        icon: Package,
+        color: 'accent4',
+      },
+      {
+        title: 'Invoices',
+        path: '/invoices',
+        icon: FileText,
+        color: 'accent2',
+      },
+      {
+        title: 'Discounts',
+        path: '/discounts',
+        icon: Percent,
+        color: 'accent1',
+      },
+    ]
   },
   {
-    title: 'Sessions',
-    path: '/sessions',
-    icon: Calendar,
-    color: 'accent3', // Added color
+    title: "Management",
+    items: [
+      {
+        title: 'Tasks',
+        path: '/tasks',
+        icon: ClipboardList,
+        color: 'accent3',
+      },
+      {
+        title: 'Providers',
+        path: '/providers',
+        icon: UserPlus,
+        color: 'accent4',
+      },
+      {
+        title: 'Pharmacies',
+        path: '/pharmacies',
+        icon: Building,
+        color: 'primary',
+      },
+      {
+        title: 'Insurance',
+        path: '/insurance',
+        icon: FileText,
+        color: 'accent1',
+      },
+      {
+        title: 'Tags',
+        path: '/tags',
+        icon: Hash,
+        color: 'accent3',
+      },
+      {
+        title: 'Messages',
+        path: '/messages',
+        icon: MessageSquare,
+        color: 'accent4',
+      },
+    ]
   },
   {
-    title: 'Orders',
-    path: '/orders',
-    icon: Package,
-    color: 'accent4', // Added color
-  },
-  // Products are now managed through the unified Products & Subscriptions page
-  {
-    title: 'Discounts',
-    path: '/discounts',
-    icon: Percent,
-    color: 'accent1', // Added color
-  },
-  {
-    title: 'Invoices',
-    path: '/invoices',
-    icon: FileText,
-    color: 'accent2', // Added color
-  },
-  {
-    title: 'Tasks',
-    path: '/tasks',
-    icon: ClipboardList,
-    color: 'accent3', // Added color
+    title: "Products & Content",
+    items: [
+      {
+        title: 'Products & Subscriptions',
+        path: '/admin/product-subscription',
+        icon: Package,
+        color: 'primary',
+        isAdmin: true,
+      },
+      {
+        title: 'Educational Resources',
+        path: '/admin/resources',
+        icon: BookOpen,
+        color: 'accent3',
+        isAdmin: true,
+      },
+    ]
   },
   {
-    title: 'Providers',
-    path: '/providers',
-    icon: UserPlus,
-    color: 'accent4', // Added color
-  },
-  {
-    title: 'Pharmacies',
-    path: '/pharmacies',
-    icon: Building,
-    color: 'primary', // Added color
-  },
-  {
-    title: 'Insurance',
-    path: '/insurance',
-    icon: FileText,
-    color: 'accent1', // Added color
-  },
-  // Services are now managed through the unified Products & Subscriptions page
-  {
-    title: 'Tags',
-    path: '/tags',
-    icon: Hash,
-    color: 'accent3', // Added color
-  },
-  {
-    title: 'Messages',
-    path: '/messages',
-    icon: MessageSquare,
-    color: 'accent4', // Added color
-  },
-  {
-    title: 'Products & Subscriptions',
-    path: '/admin/product-subscription',
-    icon: Package,
-    color: 'primary',
-    isAdmin: true,
-  },
-  // Treatment Packages functionality has been consolidated into Products & Subscriptions
-  {
-    title: 'Subscription Durations',
-    path: '/admin/subscription-durations',
-    icon: Calendar,
-    color: 'accent2',
-  },
-  {
-    title: 'Educational Resources',
-    path: '/admin/resources',
-    icon: BookOpen,
-    color: 'accent3',
-    isAdmin: true,
-  },
+    title: "System",
+    items: [
+      {
+        title: 'Settings',
+        path: paths.settings,
+        icon: Settings,
+        color: 'accent1',
+      },
+      {
+        title: 'Audit Log',
+        path: paths.auditlog,
+        icon: History,
+        color: 'accent2',
+      },
+      {
+        title: 'UI Components',
+        path: paths.ui_components,
+        icon: Palette,
+        color: 'accent3',
+      },
+    ]
+  }
 ];
 
-// Define settings items separately
-export const settingsItems = [
+// Patient sidebar sections
+export const patientSidebarSections = [
   {
-    title: 'Settings',
-    path: paths.settings,
-    icon: Settings,
-    color: 'accent1', // Added color
+    title: "My Health",
+    items: [
+      { title: 'New Home', path: '/patient-home-v2', icon: Home, color: 'primary' },
+      { title: 'My Services', path: '/my-services', icon: Layers, color: 'primary' },
+    ]
   },
   {
-    title: 'Audit Log',
-    path: paths.auditlog,
-    icon: History,
-    color: 'accent2', // Added color
-  },
-  // AI Prompts are now managed through the Settings page
-  // Note Templates are now managed through the Settings page
+    title: "Shop & Programs",
+    items: [
+      { title: 'Shop', path: '/shop', icon: ShoppingBag, color: 'primary' },
+      { title: 'Programs', path: '/programs', icon: PatientProgramIcon, color: 'primary' },
+    ]
+  }
 ];
+
+// For backward compatibility, flatten the sections into arrays
+export const sidebarItems = adminSidebarSections.flatMap(section => section.items);
+export const settingsItems = adminSidebarSections
+  .find(section => section.title === "System")?.items || [];
+export const patientSidebarItems = patientSidebarSections.flatMap(section => section.items);
 
 // Export the logout item
 export const logoutItem = {
@@ -166,14 +212,6 @@ export const logoutItem = {
   icon: LogOut,
   action: () => console.log('Logging out...'),
 };
-
-// Define patient sidebar items (Further Simplified View)
-export const patientSidebarItems = [
-  { title: 'Home', path: '/', icon: Home, color: 'primary' }, // Updated to Home page
-  { title: 'Health', path: '/health', icon: Heart, color: 'primary' }, // Updated to Health page
-  { title: 'Shop', path: '/shop', icon: ShoppingBag, color: 'primary' }, // Shop page replacing Marketplace
-  { title: 'Programs', path: '/programs', icon: PatientProgramIcon, color: 'primary' }, // Patient programs
-];
 
 // Define profile dropdown menu items (Simplified)
 export const profileMenuItems = [

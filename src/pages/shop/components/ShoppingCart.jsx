@@ -1,10 +1,12 @@
-import React from 'react';
+import React, { useRef, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useCart } from '../../../contexts/cart/CartContext';
 import { redirectToPaymentCheckout } from '../../../utils/stripeCheckout';
 import { X, Trash2, Plus, Minus, ShoppingCart as CartIcon } from 'lucide-react';
 import { message } from 'antd';
 
 const ShoppingCart = ({ isOpen, onClose }) => {
+  const navigate = useNavigate();
   const {
     cartItems,
     removeItem,
@@ -19,7 +21,24 @@ const ShoppingCart = ({ isOpen, onClose }) => {
       message.warning('Your cart is empty.');
       return;
     }
+    
     try {
+      // Separate prescription and non-prescription items
+      const prescriptionItems = cartItems.filter(item => item.requiresPrescription);
+      const nonPrescriptionItems = cartItems.filter(item => !item.requiresPrescription);
+      
+      // If there are prescription items, redirect to intake form
+      if (prescriptionItems.length > 0) {
+        navigate('/intake-form', { 
+          state: { 
+            prescriptionItems
+          } 
+        });
+        onClose(); // Close the cart drawer
+        return;
+      }
+      
+      // For non-prescription items, proceed with Stripe checkout
       // In a real app, you might pass the logged-in user's ID if available
       // const patientId = getCurrentUserId(); // Placeholder
       await redirectToPaymentCheckout(cartItems /*, patientId */);
@@ -34,14 +53,37 @@ const ShoppingCart = ({ isOpen, onClose }) => {
     const item = cartItems.find((i) => i.doseId === doseId);
     if (item) {
       updateQuantity(doseId, item.quantity + change);
+      message.success(`Updated quantity of ${item.productName}`);
     }
   };
+
+  // Create a ref for the cart container
+  const cartRef = useRef(null);
+
+  // Handle clicks outside the cart to close it
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (cartRef.current && !cartRef.current.contains(event.target)) {
+        onClose();
+      }
+    };
+
+    // Add event listener when the cart is open
+    if (isOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    // Clean up the event listener
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isOpen, onClose]);
 
   if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 z-40 flex justify-end">
-      <div className="bg-white w-full max-w-md h-full shadow-xl flex flex-col">
+      <div ref={cartRef} className="bg-white w-full max-w-md h-full shadow-xl flex flex-col">
         {/* Header */}
         <div className="flex justify-between items-center p-4 border-b border-gray-200">
           <h2 className="text-lg font-semibold text-gray-800">Shopping Cart</h2>
@@ -76,6 +118,11 @@ const ShoppingCart = ({ isOpen, onClose }) => {
                     {item.productName}
                   </p>
                   <p className="text-xs text-gray-500">{item.doseValue}</p>
+              {item.requiresPrescription && (
+                <span className="inline-block px-2 py-1 bg-blue-100 text-blue-800 text-xs font-medium rounded mt-1">
+                  Requires Prescription
+                </span>
+              )}
                   <p className="text-sm font-semibold text-indigo-600 mt-1">
                     ${item.price.toFixed(2)}
                   </p>

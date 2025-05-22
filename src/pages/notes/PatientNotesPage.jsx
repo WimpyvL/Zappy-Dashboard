@@ -1,5 +1,5 @@
 import React from 'react';
-import { useAuth } from '../../context/AuthContext';
+import { useAuth } from '../../contexts/auth/AuthContext';
 import { useNotes } from '../../apis/notes/hooks';
 import { Loader2, AlertTriangle, FileText, Calendar, User, Download } from 'lucide-react'; // Added Download icon
 import { useParams } from 'react-router-dom'; // Import useParams

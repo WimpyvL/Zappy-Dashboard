@@ -1,0 +1,1118 @@
+import React, { useState, useEffect } from 'react';
+import { toast } from 'react-toastify';
+import { useAuth } from '../../contexts/auth/AuthContext';
+import { useUpdateSession } from '../../apis/sessions/hooks';
+import { useCreateNote } from '../../apis/notes/hooks';
+import { useConsultationById } from '../../apis/consultations/hooks';
+import { Loader2 } from 'lucide-react';
+
+// Import components
+import {
+  ServiceTagsHeader,
+  ServicePanel,
+  CommunicationCard,
+  AssessmentPlanCard,
+  ConsultationFooter,
+  AIComposition,
+  AIPanel
+} from './components/consultation-notes';
+import FollowUpMedicationsCard from './components/consultation-notes/FollowUpMedicationsCard';
+
+// Import CSS
+import './InitialConsultationNotes.css';
+
+const FollowUpConsultationNotes = ({
+  patient,
+  session,
+  onClose,
+  readOnly = false
+}) => {
+  // Get current provider from auth context
+  const { currentUser } = useAuth();
+  
+  // State for validation errors
+  const [validationErrors, setValidationErrors] = useState({});
+  
+  // State hooks
+  const [hpi, setHpi] = useState(session?.session_notes || '');
+  const [assessmentPlan, setAssessmentPlan] = useState('');
+  const [followUpPlan, setFollowUpPlan] = useState('4 weeks');
+  
+  // Service state
+  const [activeServices, setActiveServices] = useState({});
+  const [showServicePanel, setShowServicePanel] = useState(false);
+  
+  // Medication state
+  const [medicationData, setMedicationData] = useState({});
+  const [medicationDosages, setMedicationDosages] = useState({});
+  const [previousMedicationDosages, setPreviousMedicationDosages] = useState({});
+  const [showMoreMeds, setShowMoreMeds] = useState(false);
+  
+  // Follow-up specific state
+  const [intervalHistory, setIntervalHistory] = useState('');
+  const [currentWeight, setCurrentWeight] = useState(patient?.currentWeight || 0);
+  const [previousWeight, setPreviousWeight] = useState(patient?.previousWeight || 0);
+  const [selectedFollowUpPeriod, setSelectedFollowUpPeriod] = useState('4w');
+  const [followUpDisplayText, setFollowUpDisplayText] = useState('4 weeks');
+  
+  // New state for service-specific progress
+  const [a1c, setA1c] = useState(patient?.lastA1c || 0);
+  const [bloodPressure, setBloodPressure] = useState(patient?.lastBloodPressure || '');
+  const [effectivenessRating, setEffectivenessRating] = useState('');
+  const [sideEffects, setSideEffects] = useState([]);
+  const [frequencyOfUse, setFrequencyOfUse] = useState('');
+  
+  // AI generation state
+  const [isGeneratingAI, setIsGeneratingAI] = useState(false);
+  const [showAIPanel, setShowAIPanel] = useState(false);
+  
+  // New state for patient subscriptions
+  const [patientSubscriptions, setPatientSubscriptions] = useState([]);
+  
+  // Patient Education Resources State
+  const [selectedResources, setSelectedResources] = useState([]);
+  const [showMoreResources, setShowMoreResources] = useState(false);
+  
+  // Resource Options
+  const resourceOptions = [
+    { id: 'glp1', name: 'GLP-1 Guide', category: 'wm', dotClass: 'wm-dot' },
+    { id: 'ed', name: 'ED Guide', category: 'ed', dotClass: 'ed-dot' },
+    { id: 'diet', name: 'Diet Plan', category: '', dotClass: '' },
+    { id: 'exercise', name: 'Exercise Plan', category: '', dotClass: '' },
+    { id: 'safety', name: 'Safety Info', category: '', dotClass: '' }
+  ];
+  
+  // Fetch the patient's most recent consultation
+  const { data: consultationData, isLoading: isLoadingConsultation } = useConsultationById(
+    session?.consultation_id || patient?.last_consultation_id,
+    { enabled: !!(session?.consultation_id || patient?.last_consultation_id) }
+  );
+  
+  // Effect to load medications from previous consultation
+  useEffect(() => {
+    if (consultationData) {
+      try {
+        // Extract medications from consultation data
+        const medications = {};
+        const dosages = {};
+        const previousDosages = {};
+        
+        // Check if medication_order exists and has medications
+        if (consultationData.medication_order && Array.isArray(consultationData.medication_order.medications)) {
+          consultationData.medication_order.medications.forEach(med => {
+            // Create medication data structure
+            medications[med.id] = {
+              name: med.name,
+              brandName: med.brandName || '',
+              category: med.category || 'wm', // Default to weight management if not specified
+              frequency: med.frequency || 'dly',
+              instructions: med.instructions || [],
+              selected: true, // Pre-select medications from previous consultation
+              approach: med.approach || 'Maintenance',
+              supportedApproaches: ['Maint.', 'Escalation', 'PRN'],
+              dosageOptions: []
+            };
+            
+            // Set current dosage (will be updated by user)
+            dosages[med.id] = med.dosage;
+            
+            // Store previous dosage for reference
+            previousDosages[med.id] = med.dosage;
+            
+            // Add dosage options based on medication type
+            if (med.id === 'semaglutide') {
+              medications[med.id].dosageOptions = [
+                { value: '0.25mg', label: '0.25' },
+                { value: '0.5mg', label: '0.5' },
+                { value: '1mg', label: '1.0' },
+                { value: '1.7mg', label: '1.7' },
+                { value: '2.4mg', label: '2.4' }
+              ];
+            } else if (med.id === 'metformin') {
+              medications[med.id].dosageOptions = [
+                { value: '500mg', label: '500' },
+                { value: '850mg', label: '850' },
+                { value: '1000mg', label: '1000' },
+                { value: '1500mg', label: '1500' },
+                { value: '2000mg', label: '2000' }
+              ];
+            } else if (med.id === 'sildenafil' || med.id === 'tadalafil') {
+              medications[med.id].dosageOptions = [
+                { value: '25mg', label: '25' },
+                { value: '50mg', label: '50' },
+                { value: '100mg', label: '100' }
+              ];
+            } else {
+              // Generic dosage options for other medications
+              medications[med.id].dosageOptions = [
+                { value: '10mg', label: '10' },
+                { value: '20mg', label: '20' },
+                { value: '40mg', label: '40' }
+              ];
+            }
+          });
+        }
+        
+        // Update state with medication data
+        setMedicationData(medications);
+        setMedicationDosages(dosages);
+        setPreviousMedicationDosages(previousDosages);
+        
+      } catch (error) {
+        console.error('Error processing medication data:', error);
+      }
+    }
+  }, [consultationData]);
+  
+  // Add a template semaglutide medication if none exists (for demo purposes)
+  useEffect(() => {
+    if (Object.keys(medicationData).length === 0) {
+      // Add template semaglutide for testing
+      setMedicationData({
+        semaglutide: {
+          name: 'Semaglutide',
+          brandName: 'Wegovy',
+          category: 'wm',
+          frequency: 'wkly',
+          dosageOptions: [
+            { value: '0.25mg', label: '0.25' },
+            { value: '0.5mg', label: '0.5' },
+            { value: '1mg', label: '1.0' },
+            { value: '1.7mg', label: '1.7' },
+            { value: '2.4mg', label: '2.4' }
+          ],
+          instructions: [
+            '• Inject SC once wkly.',
+            '• Rotate sites.'
+          ],
+          selected: true,
+          approach: 'Escalation',
+          supportedApproaches: ['Maint.', 'Escalation']
+        }
+      });
+      
+      setMedicationDosages({
+        semaglutide: '0.5mg'
+      });
+      
+      setPreviousMedicationDosages({
+        semaglutide: '0.25mg'
+      });
+    }
+  }, [medicationData]);
+  
+  // Mutations
+  const updateSessionMutation = useUpdateSession();
+  const createNoteMutation = useCreateNote();
+  
+  // Effect to populate form with session data if available
+  useEffect(() => {
+    if (session) {
+      // Set active service based on session type
+      if (session.type) {
+        setActiveServices({
+          [session.type.toLowerCase()]: { 
+            name: session.type, 
+            dotClass: `${session.type.toLowerCase()}-dot` 
+          }
+        });
+      }
+      
+      // Set notes from session
+      setHpi(session.session_notes || '');
+    }
+  }, [session]);
+  
+  // Fetch patient subscriptions
+  useEffect(() => {
+    if (patient?.id) {
+      // Import the subscription service
+      const fetchPatientSubscriptions = async () => {
+        try {
+          const { getPatientSubscriptions } = await import('../../services/subscriptionService');
+          const subscriptions = await getPatientSubscriptions(patient.id);
+          setPatientSubscriptions(subscriptions);
+          
+          // Set active services based on subscription categories
+          const serviceMap = {
+            'wm': { name: 'Weight Management', dotClass: 'wm-dot' },
+            'ed': { name: 'ED', dotClass: 'ed-dot' },
+            'pc': { name: 'Primary Care', dotClass: 'pc-dot' },
+            'mh': { name: 'Mental Health', dotClass: 'mh-dot' },
+            'wh': { name: 'Women\'s Health', dotClass: 'wh-dot' },
+            'derm': { name: 'Dermatology', dotClass: 'derm-dot' },
+            'hair': { name: 'Hair Loss', dotClass: 'hair-dot' }
+          };
+          
+          // Create active services object from subscriptions
+          const newActiveServices = {};
+          subscriptions.forEach(sub => {
+            if (sub.category && serviceMap[sub.category]) {
+              newActiveServices[sub.category] = serviceMap[sub.category];
+            }
+          });
+          
+          // Only update if we found subscriptions with valid categories
+          if (Object.keys(newActiveServices).length > 0) {
+            setActiveServices(newActiveServices);
+          }
+        } catch (error) {
+          console.error('Error fetching patient subscriptions:', error);
+        }
+      };
+      
+      fetchPatientSubscriptions();
+    }
+  }, [patient]);
+  
+  // Toggle AI Panel
+  const toggleAIPanel = () => {
+    setShowAIPanel(!showAIPanel);
+  };
+  
+  // State for Treatment Progress editing
+  const [isEditingProgress, setIsEditingProgress] = useState(false);
+  const [editedProgressContent, setEditedProgressContent] = useState(intervalHistory);
+  const [isGeneratingProgressAI, setIsGeneratingProgressAI] = useState(false);
+  
+  // Handle AI Compose for Treatment Progress
+  const handleProgressAICompose = async () => {
+    setIsGeneratingProgressAI(true);
+    toast.info("Generating treatment progress...");
+    
+    // Simulate AI generation
+    await new Promise(resolve => setTimeout(resolve, 1500));
+    const aiContent = "AI-generated treatment progress summary for this interval.\n\n- Patient is making steady progress.\n- No significant side effects reported.\n- Continue current plan and monitor closely.";
+    setEditedProgressContent(aiContent);
+    setIsGeneratingProgressAI(false);
+    setIsEditingProgress(true);
+    
+    toast.success("Treatment progress generated");
+  };
+  
+  // Handle Edit for Treatment Progress
+  const handleProgressEdit = () => {
+    setIsEditingProgress(true);
+    setEditedProgressContent(intervalHistory);
+  };
+  
+  // Handle Save for Treatment Progress
+  const handleProgressSave = () => {
+    setIntervalHistory(editedProgressContent);
+    setIsEditingProgress(false);
+  };
+  
+  // Handle Cancel for Treatment Progress
+  const handleProgressCancel = () => {
+    setIsEditingProgress(false);
+    setEditedProgressContent(intervalHistory);
+  };
+  
+  // Service-specific progress rendering function
+  const renderServiceSpecificProgress = () => {
+    // Get primary service category
+    const primaryService = Object.keys(activeServices)[0] || '';
+    
+    switch (primaryService) {
+      case 'wm':
+        return (
+          <div className="pt-2 mt-2">
+            <div className="flex justify-between items-center mb-3">
+              <h4 className="text-sm font-medium text-gray-700">Weight Management Progress</h4>
+              <button
+                className="p-1 bg-blue-500 hover:bg-blue-600 text-white rounded-full flex items-center justify-center"
+                onClick={async () => {
+                  // Simulate AI generation
+                  setIsGeneratingAI(true);
+                  toast.info("Generating progress notes...");
+                  
+                  // In a real implementation, this would call an API
+                  await new Promise(resolve => setTimeout(resolve, 1500));
+                  
+                  // Generate content based on weight data
+                  let generatedContent = '';
+                  
+                  if (currentWeight && previousWeight) {
+                    const weightDiff = currentWeight - previousWeight;
+                    const percentChange = previousWeight ? Math.abs((weightDiff / previousWeight) * 100).toFixed(1) : 0;
+                    
+                    if (weightDiff < 0) {
+                      generatedContent = `Patient has lost ${Math.abs(weightDiff)} pounds (${percentChange}%) since last visit. ${
+                        medicationData.semaglutide ? 
+                        `Continuing ${medicationData.semaglutide.name} ${medicationDosages.semaglutide} with good response.` : 
+                        'Current weight management plan is effective.'
+                      } Patient reports ${Math.random() > 0.5 ? 'increased energy levels' : 'improved sleep patterns'} and ${
+                        Math.random() > 0.5 ? 'better adherence to dietary recommendations' : 'more consistent exercise routine'
+                      }.`;
+                    } else if (weightDiff > 0) {
+                      generatedContent = `Patient has gained ${weightDiff} pounds (${percentChange}%) since last visit. ${
+                        medicationData.semaglutide ? 
+                        `May need to adjust ${medicationData.semaglutide.name} dosage or review adherence.` : 
+                        'Current weight management plan may need adjustment.'
+                      } Patient reports ${Math.random() > 0.5 ? 'some difficulty with dietary adherence' : 'challenges maintaining exercise routine'} due to ${
+                        Math.random() > 0.5 ? 'work stress' : 'family obligations'
+                      }.`;
+                    } else {
+                      generatedContent = `Patient's weight has remained stable since last visit. ${
+                        medicationData.semaglutide ? 
+                        `Continuing ${medicationData.semaglutide.name} ${medicationDosages.semaglutide} with stable response.` : 
+                        'Current weight management plan is maintaining stability.'
+                      } Patient reports ${Math.random() > 0.5 ? 'consistent adherence to plan' : 'satisfaction with current regimen'}.`;
+                    }
+                  } else {
+                    generatedContent = `Weight management progress assessment pending complete data. ${
+                      medicationData.semaglutide ? 
+                      `Patient is currently on ${medicationData.semaglutide.name} ${medicationDosages.semaglutide}.` : 
+                      'No current weight management medications noted.'
+                    } Recommend comprehensive review of weight history and treatment plan at this visit.`;
+                  }
+                  
+                  setIntervalHistory(generatedContent);
+                  setIsGeneratingAI(false);
+                  toast.success("Progress notes generated");
+                }}
+              >
+                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M4 4V9H4.58152M19.9381 11C19.446 7.05369 16.0796 4 12 4C8.64262 4 5.76829 6.06817 4.58152 9M4.58152 9H9M20 20V15H19.4185M19.4185 15C18.2317 17.9318 15.3574 20 12 20C7.92038 20 4.55399 16.9463 4.06189 13M19.4185 15H15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </button>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4 mb-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Current Weight (lbs)
+                </label>
+                <input
+                  type="number"
+                  className="block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                  value={currentWeight}
+                  onChange={(e) => setCurrentWeight(parseFloat(e.target.value) || 0)}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Previous Weight (lbs)
+                </label>
+                <input
+                  type="number"
+                  className="block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                  value={previousWeight}
+                  onChange={(e) => setPreviousWeight(parseFloat(e.target.value) || 0)}
+                />
+              </div>
+            </div>
+            
+            {(currentWeight - previousWeight) !== 0 && (
+              <div className={`p-3 rounded-md mb-4 ${(currentWeight - previousWeight) < 0 ? 'bg-green-50 text-green-700' : 'bg-yellow-50 text-yellow-700'}`}>
+                <p className="text-sm font-medium">
+                  Weight change: {(currentWeight - previousWeight) > 0 ? '+' : ''}{(currentWeight - previousWeight)} lbs 
+                  ({previousWeight ? Math.abs(((currentWeight - previousWeight) / previousWeight) * 100).toFixed(1) : 0}%)
+                </p>
+              </div>
+            )}
+            
+            <div className="grid grid-cols-2 gap-4 mb-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  A1C (%)
+                </label>
+                <input
+                  type="number"
+                  step="0.1"
+                  className="block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                  value={a1c}
+                  onChange={(e) => setA1c(parseFloat(e.target.value) || 0)}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Blood Pressure
+                </label>
+                <input
+                  type="text"
+                  placeholder="120/80"
+                  className="block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                  value={bloodPressure}
+                  onChange={(e) => setBloodPressure(e.target.value)}
+                />
+              </div>
+            </div>
+          </div>
+        );
+      case 'ed':
+        return (
+          <div className="pt-2 mt-2">
+            <div className="flex justify-between items-center mb-3">
+              <h4 className="text-sm font-medium text-gray-700">ED Treatment Progress</h4>
+              <button
+                className="p-1 bg-pink-500 hover:bg-pink-600 text-white rounded-full flex items-center justify-center"
+                onClick={async () => {
+                  // Simulate AI generation
+                  setIsGeneratingAI(true);
+                  toast.info("Generating ED progress notes...");
+                  
+                  // In a real implementation, this would call an API
+                  await new Promise(resolve => setTimeout(resolve, 1500));
+                  
+                  // Generate content based on ED treatment data
+                  let generatedContent = '';
+                  
+                  // Use the effectiveness rating if available
+                  if (effectivenessRating) {
+                    if (effectivenessRating === 'very_effective') {
+                      generatedContent = `Patient reports excellent results with current ED treatment. ${
+                        frequencyOfUse ? `Has used medication ${
+                          frequencyOfUse === 'not_used' ? 'infrequently' :
+                          frequencyOfUse === '1-2_times' ? '1-2 times' :
+                          frequencyOfUse === '3-5_times' ? '3-5 times' : 'more than 5 times'
+                        } since last visit.` : ''
+                      } ${
+                        sideEffects.length > 0 ? 
+                        `Reports ${sideEffects.includes('None') ? 'no side effects' : `side effects including ${sideEffects.join(', ')}`}.` : 
+                        'No side effects reported.'
+                      } Patient is satisfied with current regimen and wishes to continue.`;
+                    } else if (effectivenessRating === 'somewhat_effective') {
+                      generatedContent = `Patient reports partial improvement with current ED treatment. ${
+                        frequencyOfUse ? `Has used medication ${
+                          frequencyOfUse === 'not_used' ? 'infrequently' :
+                          frequencyOfUse === '1-2_times' ? '1-2 times' :
+                          frequencyOfUse === '3-5_times' ? '3-5 times' : 'more than 5 times'
+                        } since last visit.` : ''
+                      } ${
+                        sideEffects.length > 0 ? 
+                        `Reports ${sideEffects.includes('None') ? 'no side effects' : `side effects including ${sideEffects.join(', ')}`}.` : 
+                        'No side effects reported.'
+                      } May benefit from dosage adjustment or alternative medication.`;
+                    } else {
+                      generatedContent = `Patient reports minimal to no improvement with current ED treatment. ${
+                        frequencyOfUse ? `Has used medication ${
+                          frequencyOfUse === 'not_used' ? 'infrequently' :
+                          frequencyOfUse === '1-2_times' ? '1-2 times' :
+                          frequencyOfUse === '3-5_times' ? '3-5 times' : 'more than 5 times'
+                        } since last visit.` : ''
+                      } ${
+                        sideEffects.length > 0 ? 
+                        `Reports ${sideEffects.includes('None') ? 'no side effects' : `side effects including ${sideEffects.join(', ')}`}.` : 
+                        'No side effects reported.'
+                      } Recommend reassessment of treatment approach and possible medication change.`;
+                    }
+                  } else {
+                    generatedContent = `Patient follow-up for ED treatment. Assessment of treatment efficacy pending complete data. ${
+                      Object.values(medicationData).some(med => med.category === 'ed') ?
+                      `Currently prescribed ED medication(s): ${
+                        Object.values(medicationData)
+                          .filter(med => med.category === 'ed')
+                          .map(med => `${med.name} ${medicationDosages[med.id] || ''}`)
+                          .join(', ')
+                      }.` :
+                      'No current ED medications noted.'
+                    } Recommend comprehensive review of treatment plan at this visit.`;
+                  }
+                  
+                  setIntervalHistory(generatedContent);
+                  setIsGeneratingAI(false);
+                  toast.success("ED progress notes generated");
+                }}
+              >
+                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M4 4V9H4.58152M19.9381 11C19.446 7.05369 16.0796 4 12 4C8.64262 4 5.76829 6.06817 4.58152 9M4.58152 9H9M20 20V15H19.4185M19.4185 15C18.2317 17.9318 15.3574 20 12 20C7.92038 20 4.55399 16.9463 4.06189 13M19.4185 15H15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </button>
+            </div>
+            
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                How effective has your treatment been?
+              </label>
+              <div className="grid grid-cols-3 gap-2">
+                {[
+                  { value: 'very_effective', label: 'Very Effective' },
+                  { value: 'somewhat_effective', label: 'Somewhat Effective' },
+                  { value: 'not_effective', label: 'Not Effective' }
+                ].map(option => (
+                  <button
+                    key={option.value}
+                    className={`py-2 px-3 text-sm rounded-md ${
+                      effectivenessRating === option.value
+                        ? 'bg-indigo-100 text-indigo-700 border border-indigo-300'
+                        : 'bg-gray-50 text-gray-700 border border-gray-300 hover:bg-gray-100'
+                    }`}
+                    onClick={() => setEffectivenessRating(option.value)}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+            
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                How often have you used the medication?
+              </label>
+              <div className="grid grid-cols-2 gap-2">
+                {[
+                  { value: 'not_used', label: 'Not Used' },
+                  { value: '1-2_times', label: '1-2 Times' },
+                  { value: '3-5_times', label: '3-5 Times' },
+                  { value: 'more_than_5', label: 'More Than 5 Times' }
+                ].map(option => (
+                  <button
+                    key={option.value}
+                    className={`py-2 px-3 text-sm rounded-md ${
+                      frequencyOfUse === option.value
+                        ? 'bg-indigo-100 text-indigo-700 border border-indigo-300'
+                        : 'bg-gray-50 text-gray-700 border border-gray-300 hover:bg-gray-100'
+                    }`}
+                    onClick={() => setFrequencyOfUse(option.value)}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+            
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Have you experienced any side effects?
+              </label>
+              <div className="grid grid-cols-3 gap-2">
+                {[
+                  'Headache',
+                  'Flushing',
+                  'Upset Stomach',
+                  'Vision Changes',
+                  'Muscle Pain',
+                  'None'
+                ].map(effect => (
+                  <div key={effect} className="flex items-center">
+                    <input
+                      type="checkbox"
+                      id={`side-effect-${effect}`}
+                      checked={sideEffects.includes(effect)}
+                      onChange={() => {
+                        if (sideEffects.includes(effect)) {
+                          setSideEffects(sideEffects.filter(e => e !== effect));
+                        } else {
+                          setSideEffects([...sideEffects, effect]);
+                        }
+                      }}
+                      className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                    />
+                    <label htmlFor={`side-effect-${effect}`} className="ml-2 text-sm text-gray-700">
+                      {effect}
+                    </label>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        );
+      default:
+        return (
+          <TreatmentProgressBox
+            intervalHistory={intervalHistory}
+            isEditing={isEditingProgress}
+            isGeneratingAI={isGeneratingProgressAI}
+            editedContent={editedProgressContent}
+            onEditChange={setEditedProgressContent}
+            onSave={handleProgressSave}
+            onCancel={handleProgressCancel}
+            onAICompose={handleProgressAICompose}
+            onEdit={handleProgressEdit}
+          />
+        );
+    }
+  };
+  
+  // Handle save
+  const handleSave = () => {
+    // Validate form
+    const errors = {};
+    if (!hpi.trim()) errors.hpi = 'Session notes are required';
+    
+    if (Object.keys(errors).length > 0) {
+      setValidationErrors(errors);
+      Object.values(errors).forEach(error => toast.error(error));
+      return;
+    }
+    
+    // Update session notes
+    updateSessionMutation.mutate({
+      id: session.id,
+      sessionData: {
+        session_notes: hpi,
+        followUpNeeded: false // Mark as addressed
+      }
+    }, {
+      onSuccess: () => {
+        // Create a follow-up note
+        createNoteMutation.mutate({
+          patientId: patient?.id,
+          title: `Follow-up Visit - ${new Date().toLocaleDateString()}`,
+          content: hpi,
+          note_type: 'follow-up',
+          createdBy: currentUser?.name || 'Provider',
+          data: {
+            intervalHistory,
+            currentWeight,
+            previousWeight,
+            weightChange: currentWeight - previousWeight,
+            assessmentPlan,
+            followUpPlan,
+            sessionId: session?.id,
+            services: Object.keys(activeServices).map(key => ({
+              id: key,
+              name: activeServices[key].name
+            }))
+          }
+        }, {
+          onSuccess: () => {
+            toast.success('Follow-up note saved successfully!');
+            if (onClose) onClose();
+          }
+        });
+      }
+    });
+  };
+  
+  // Service options
+  const serviceOptions = [
+    { id: 'wm', name: 'Weight Management', dotClass: 'wm-dot' },
+    { id: 'ed', name: 'ED', dotClass: 'ed-dot' },
+    { id: 'pc', name: 'Primary Care', dotClass: 'pc-dot' },
+    { id: 'mh', name: 'Mental Health', dotClass: 'mh-dot' },
+    { id: 'wh', name: 'Women\'s Health', dotClass: 'wh-dot' },
+    { id: 'derm', name: 'Dermatology', dotClass: 'derm-dot' },
+    { id: 'hair', name: 'Hair Loss', dotClass: 'hair-dot' }
+  ];
+  
+  // Toggle service panel
+  const toggleServicePanel = () => {
+    setShowServicePanel(!showServicePanel);
+  };
+  
+  // Add service tag
+  const addServiceTag = (id, name, dotClass) => {
+    if (!activeServices[id]) {
+      setActiveServices(prev => ({
+        ...prev,
+        [id]: { name, dotClass }
+      }));
+      toast.info(`${name} service added.`);
+    }
+  };
+  
+  // Remove service tag
+  const removeServiceTag = (id, event) => {
+    event.stopPropagation();
+    if (activeServices[id]) {
+      const serviceName = activeServices[id].name;
+      setActiveServices(prev => {
+        const newServices = { ...prev };
+        delete newServices[id];
+        return newServices;
+      });
+      toast.info(`${serviceName} service removed.`);
+    }
+  };
+
+  // Main render logic
+  if (isGeneratingAI || isLoadingConsultation || updateSessionMutation.isLoading || createNoteMutation.isLoading) {
+    return (
+      <div className="bg-white flex items-center justify-center h-full">
+        <Loader2 className="h-16 w-16 animate-spin text-indigo-600" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="consultation-notes-container">
+      {/* Header */}
+      <ServiceTagsHeader
+        patientName={patient?.name}
+        activeServices={activeServices}
+        toggleServicePanel={toggleServicePanel}
+        removeServiceTag={removeServiceTag}
+        toggleAIPanel={toggleAIPanel}
+        title="Follow-up Visit"
+      />
+
+      {/* Service Panel */}
+      <ServicePanel 
+        showServicePanel={showServicePanel}
+        toggleServicePanel={toggleServicePanel}
+        serviceOptions={serviceOptions}
+        activeServices={activeServices}
+        addServiceTag={addServiceTag}
+      />
+
+      {/* Main Content */}
+      <div className="container">
+        <div className="main-grid">
+          {/* Left Column */}
+          <div>
+            {/* Treatment Progress Card */}
+            <div className="bg-white shadow rounded-lg overflow-hidden mb-4">
+              <div className="bg-[#4f46e5] px-4 py-3 text-white flex justify-between items-center">
+                <div className="flex items-center">
+                  <h3 className="font-medium">Treatment Progress</h3>
+                </div>
+                {Object.keys(activeServices).length === 0 && (
+                  <div className="flex gap-2">
+                    <button
+                      onClick={handleProgressAICompose}
+                      className="px-2 py-1 text-xs rounded bg-purple-500 text-white hover:bg-purple-600"
+                      disabled={isGeneratingProgressAI}
+                    >
+                      AI Compose
+                    </button>
+                    <button
+                      onClick={handleProgressEdit}
+                      className="px-2 py-1 text-xs rounded bg-blue-500 text-white hover:bg-blue-600"
+                    >
+                      Edit
+                    </button>
+                  </div>
+                )}
+              </div>
+              <div className="p-4">
+                {renderServiceSpecificProgress()}
+              </div>
+            </div>
+            
+            {/* Medications Card */}
+            <FollowUpMedicationsCard 
+              medicationData={medicationData}
+              medicationDosages={medicationDosages}
+              previousMedicationDosages={previousMedicationDosages}
+              toggleMedication={(medId) => {
+                const updatedData = { ...medicationData };
+                updatedData[medId].selected = !updatedData[medId].selected;
+                setMedicationData(updatedData);
+              }}
+              selectDosage={(medId, dosage) => {
+                setMedicationDosages(prev => ({
+                  ...prev,
+                  [medId]: dosage
+                }));
+              }}
+              updateApproach={(medId, approach) => {
+                const updatedData = { ...medicationData };
+                if (updatedData[medId]) {
+                  updatedData[medId].approach = approach;
+                  setMedicationData(updatedData);
+                }
+              }}
+              showMoreMeds={showMoreMeds}
+              toggleMoreMeds={() => setShowMoreMeds(!showMoreMeds)}
+              addListedMed={(medId) => {
+                // Handle adding a new medication
+                if (medId === 'semaglutide') {
+                  const newMed = {
+                    name: 'Semaglutide',
+                    brandName: 'Wegovy',
+                    category: 'wm',
+                    frequency: 'wkly',
+                    dosageOptions: [
+                      { value: '0.25mg', label: '0.25' },
+                      { value: '0.5mg', label: '0.5' },
+                      { value: '1mg', label: '1.0' },
+                      { value: '1.7mg', label: '1.7' },
+                      { value: '2.4mg', label: '2.4' }
+                    ],
+                    instructions: [
+                      '• Inject SC once wkly.',
+                      '• Rotate sites.'
+                    ],
+                    selected: true,
+                    approach: 'Escalation',
+                    supportedApproaches: ['Maint.', 'Escalation']
+                  };
+                  
+                  setMedicationData(prev => ({
+                    ...prev,
+                    [medId]: newMed
+                  }));
+                  
+                  setMedicationDosages(prev => ({
+                    ...prev,
+                    [medId]: '0.25mg'
+                  }));
+                  
+                  toast.success(`Added ${newMed.name}`);
+                }
+              }}
+              validationErrors={validationErrors}
+            />
+          </div>
+          
+          {/* Right Column */}
+          <div>
+            {/* Communication Card */}
+            <CommunicationCard 
+              patient={patient}
+              session={session}
+              selectedFollowUpPeriod={selectedFollowUpPeriod}
+              followUpDisplayText={followUpDisplayText}
+              selectFollowupPeriod={(period) => {
+                setSelectedFollowUpPeriod(period);
+                let displayText = '';
+                switch (period) {
+                  case '2w': displayText = '2 weeks'; break;
+                  case '4w': displayText = '4 weeks'; break;
+                  case '6w': displayText = '6 weeks'; break;
+                  case '8w': displayText = '8 weeks'; break;
+                  case '12w': displayText = '12 weeks'; break;
+                  default: displayText = '4 weeks';
+                }
+                setFollowUpDisplayText(displayText);
+                setFollowUpPlan(displayText);
+              }}
+              resourceOptions={resourceOptions}
+              selectedResources={selectedResources}
+              toggleResource={(resourceId) => {
+                setSelectedResources(prev => {
+                  if (prev.includes(resourceId)) {
+                    return prev.filter(id => id !== resourceId);
+                  } else {
+                    return [...prev, resourceId];
+                  }
+                });
+              }}
+              showMoreResources={showMoreResources}
+              toggleMoreResources={() => setShowMoreResources(!showMoreResources)}
+              medicationData={medicationData}
+              medicationDosages={medicationDosages}
+              serviceCategory={Object.keys(activeServices)[0] || 'general'}
+            />
+            
+            {/* Assessment & Plan Card */}
+            <AssessmentPlanCard 
+              assessmentPlan={hpi}
+              setAssessmentPlan={setHpi}
+              followUpPlan={followUpPlan}
+              setFollowUpPlan={setFollowUpPlan}
+              validationErrors={validationErrors}
+            />
+          </div>
+        </div>
+      </div>
+      
+      {/* Footer */}
+      <ConsultationFooter
+        onSave={handleSave}
+        onCancel={onClose}
+        isSaving={updateSessionMutation.isLoading || createNoteMutation.isLoading}
+      />
+      
+      {/* AI Panel */}
+      <AIPanel
+        showAIPanel={showAIPanel}
+        toggleAIPanel={toggleAIPanel}
+        consultationId={session?.consultation_id}
+        formData={consultationData?.form_data}
+        categoryId={Object.keys(activeServices)[0] || 'general'}
+        isFollowUp={true}
+      />
+    </div>
+  );
+};
+
+// Treatment Progress Box Component styled like AssessmentPlanCard
+const TreatmentProgressBox = ({ 
+  intervalHistory, 
+  isEditing, 
+  isGeneratingAI, 
+  editedContent, 
+  onEditChange, 
+  onSave, 
+  onCancel,
+  onAICompose,
+  onEdit
+}) => {
+  return (
+    <div style={{ 
+      background: 'white',
+      borderRadius: '6px',
+      boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
+      overflow: 'hidden',
+      marginBottom: '8px',
+      border: '1px solid #e5e7eb'
+    }}>
+      <div style={{ 
+        padding: '10px 14px',
+        borderBottom: '1px solid #e5e7eb',
+        fontWeight: 500,
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        fontSize: '15px',
+        backgroundColor: '#4f46e5'
+      }}>
+        <span style={{ color: 'white' }}>Treatment Progress</span>
+        <div style={{ display: 'flex', gap: '8px', fontSize: '14px' }}>
+          {isEditing ? (
+            <>
+              <button
+                onClick={onSave}
+                style={{
+                  background: '#d1fae5', // Light green background
+                  color: '#065f46', // Dark green text
+                  padding: '2px 6px',
+                  borderRadius: '4px',
+                  border: '1px solid #a7f3d0', // Green border
+                  display: 'flex',
+                  alignItems: 'center',
+                  cursor: 'pointer',
+                  fontSize: '14px',
+                  fontWeight: 'normal'
+                }}
+                disabled={isGeneratingAI}
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: '4px' }}>
+                  <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"></path>
+                  <polyline points="17 21 17 13 7 13 7 21"></polyline>
+                  <polyline points="7 3 7 8 15 8"></polyline>
+                </svg>
+                Save
+              </button>
+              <button
+                onClick={onCancel}
+                style={{
+                  background: '#6b7280', // Gray-500
+                  color: 'white',
+                  padding: '2px 6px',
+                  borderRadius: '4px',
+                  border: 'none',
+                  display: 'flex',
+                  alignItems: 'center',
+                  cursor: 'pointer',
+                  fontSize: '14px',
+                  fontWeight: 'normal'
+                }}
+                disabled={isGeneratingAI}
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: '4px' }}>
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+                Cancel
+              </button>
+            </>
+          ) : (
+            <>
+              <button
+                onClick={onAICompose}
+                style={{
+                  background: '#a855f7', // Purple-500
+                  color: 'white',
+                  padding: '2px 4px',
+                  borderRadius: '4px',
+                  border: 'none',
+                  display: 'flex',
+                  alignItems: 'center',
+                  cursor: 'pointer',
+                  fontSize: '12px',
+                  fontWeight: 'normal'
+                }}
+              >
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: '4px' }}>
+                  <path d="M12 3v5m0 0v5m0-5h5m-5 0H7"></path>
+                  <path d="M12 18.5c-1.2-1-2-1.8-2-2.8 0-1.5 1.5-2.7 2-3.2 .5.5 2 1.7 2 3.2 0 1-.8 1.8-2 2.8z"></path>
+                </svg>
+                AI Compose
+              </button>
+              <button
+                onClick={onEdit}
+                style={{
+                  background: '#3b82f6', // Blue-500
+                  color: 'white',
+                  padding: '2px 4px',
+                  borderRadius: '4px',
+                  border: 'none',
+                  display: 'flex',
+                  alignItems: 'center',
+                  cursor: 'pointer',
+                  fontSize: '12px',
+                  fontWeight: 'normal'
+                }}
+              >
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: '4px' }}>
+                  <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"></path>
+                  <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                </svg>
+                Edit
+              </button>
+            </>
+          )}
+        </div>
+      </div>
+      <div style={{ padding: '10px 14px', fontSize: '14px' }}>
+        {isEditing ? (
+          isGeneratingAI ? (
+            <div style={{ 
+              display: 'flex', 
+              flexDirection: 'column',
+              alignItems: 'center', 
+              justifyContent: 'center', 
+              padding: '20px',
+              minHeight: '150px'
+            }}>
+              <div style={{ 
+                width: '24px', 
+                height: '24px', 
+                border: '3px solid #ddd6fe', 
+                borderTopColor: '#8b5cf6',
+                borderRadius: '50%',
+                animation: 'spin 1s linear infinite',
+                marginBottom: '12px'
+              }} />
+              <div style={{ color: '#5b21b6', fontWeight: '500' }}>
+                AI is composing treatment progress...
+              </div>
+              <style>{`
+                @keyframes spin {
+                  to { transform: rotate(360deg); }
+                }
+              `}</style>
+            </div>
+          ) : (
+            <textarea
+              value={editedContent}
+              onChange={(e) => onEditChange(e.target.value)}
+              style={{
+                width: '100%',
+                minHeight: '150px',
+                padding: '6px',
+                border: '1px solid #e5e7eb',
+                borderRadius: '4px',
+                fontSize: '14px',
+                fontFamily: 'inherit',
+                resize: 'vertical'
+              }}
+              placeholder="Enter treatment progress notes here..."
+            />
+          )
+        ) : (
+          <div style={{ 
+            padding: '8px', 
+            backgroundColor: 'white', 
+            borderRadius: '4px',
+            fontSize: '14px',
+            marginBottom: '8px',
+            whiteSpace: 'pre-line',
+            border: '1px solid #e5e7eb'
+          }}>
+            {intervalHistory ? 
+              intervalHistory : 
+              <span style={{ color: '#6b7280', fontStyle: 'italic' }}>No treatment progress notes yet.</span>
+            }
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default FollowUpConsultationNotes;

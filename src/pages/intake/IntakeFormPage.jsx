@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { useAuth } from '../../context/AuthContext';
+import { useAuth } from '../../contexts/auth/AuthContext';
 import { useSubmitForm } from '../../apis/formSubmissions/hooks';
 import { useCreateOrder } from '../../apis/orders/hooks';
 import { toast } from 'react-toastify';
+import { useConsultationService } from '../../hooks/useConsultationService';
 
 // Import steps
 import IntroductionStep from './steps/IntroductionStep';
@@ -12,6 +13,7 @@ import IDVerificationStep from './steps/IDVerificationStep';
 import HealthHistoryStep from './steps/HealthHistoryStep';
 import TreatmentPreferencesStep from './steps/TreatmentPreferencesStep';
 import ReviewStep from './steps/ReviewStep';
+import ShippingAddressStep from './steps/ShippingAddressStep';
 import CheckoutStep from './steps/CheckoutStep';
 import OrderConfirmationStep from './steps/OrderConfirmationStep';
 
@@ -21,6 +23,7 @@ const IntakeFormPage = () => {
   const navigate = useNavigate();
   const submitFormMutation = useSubmitForm();
   const createOrderMutation = useCreateOrder();
+  const { createConsultation, isCreating: isCreatingConsultation } = useConsultationService();
   
   // Get data from location state
   const prescriptionItems = location.state?.prescriptionItems || [];
@@ -58,6 +61,7 @@ const IntakeFormPage = () => {
     'health_history',
     'treatment_preferences',
     'review',
+    'shipping_address',
     'checkout',
     'confirmation'
   ];
@@ -89,12 +93,21 @@ const IntakeFormPage = () => {
     treatmentPreferences: {
       selectedProductId: prescriptionItems.length > 0 ? prescriptionItems[0].id : ''
     },
+    shippingAddress: {
+      street: '',
+      street2: '',
+      city: '',
+      state: '',
+      zip: ''
+    },
     checkout: {
       paymentMethodId: ''
     }
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  // isSubmitting will be true if any of the submission processes are in progress
   const [orderId, setOrderId] = useState(null);
+  const [consultationId, setConsultationId] = useState(null);
   
   // Update form data
   const updateFormData = (section, data) => {
@@ -153,17 +166,23 @@ const IntakeFormPage = () => {
           }
         ],
         formSubmissionId: formSubmission.id,
-        shippingAddress: {
-          street: user?.address?.street || '123 Main St',
-          city: user?.address?.city || 'San Francisco',
-          state: user?.address?.state || 'CA',
-          zip: user?.address?.zip || '94105'
-        },
+        shippingAddress: formData.shippingAddress,
         paymentMethodId: formData.checkout.paymentMethodId
       });
       
-      // Set order ID for confirmation step
+      // Create consultation using our new hook
+      const consultation = await createConsultation({
+        patientId: user?.id || 'p1',
+        formSubmissionId: formSubmission.id,
+        formData: formData,
+        categoryId: productCategory,
+        orderId: order.id,
+        productName: selectedProduct.name
+      });
+      
+      // Set IDs for confirmation step
       setOrderId(order.id);
+      setConsultationId(consultation.id);
       
       // Move to confirmation step
       handleNext();
@@ -245,9 +264,18 @@ const IntakeFormPage = () => {
             onPrevious={handlePrevious}
           />
         );
+      case 'shipping_address':
+        return (
+          <ShippingAddressStep
+            formData={formData}
+            updateFormData={updateFormData}
+            onNext={handleNext}
+            onPrevious={handlePrevious}
+          />
+        );
       case 'checkout':
         return (
-          <CheckoutStep 
+          <CheckoutStep
             formData={formData}
             updateFormData={updateFormData}
             prescriptionItems={prescriptionItems}
@@ -261,6 +289,7 @@ const IntakeFormPage = () => {
         return (
           <OrderConfirmationStep 
             orderId={orderId}
+            consultationId={consultationId}
             navigateToHome={navigateToHome}
             navigateToOrderDetails={navigateToOrderDetails}
           />

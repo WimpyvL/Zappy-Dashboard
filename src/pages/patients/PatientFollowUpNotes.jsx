@@ -4,7 +4,7 @@ import {
   useCreateNote, // Changed from useAddNote to useCreateNote
   useUpdateNote,
 } from '../../apis/notes/hooks'; // Import note hooks
-import { useAuth } from '../../context/AuthContext'; // To get current user
+import { useAuth } from '../../contexts/auth/AuthContext'; // To get current user
 import {
   Check,
   Edit,

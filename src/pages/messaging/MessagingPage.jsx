@@ -19,7 +19,7 @@ import {
   EllipsisOutlined
 } from '@ant-design/icons';
 import { format } from 'date-fns';
-import { useAuth } from '../../context/AuthContext';
+import { useAuth } from '../../contexts/auth/AuthContext';
 import { toast } from 'react-toastify';
 import NewConversationModal from './components/NewConversationModal';
 import MessageTemplateModal from './components/MessageTemplateModal';

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Eye, EyeOff, AlertCircle, CheckCircle } from 'lucide-react';
 import { useForm } from 'react-hook-form';
-import { useAuth } from '../../context/AuthContext'; // Keep useAuth
+import { useAuth } from '../../contexts/auth/AuthContext'; // Keep useAuth
 // Removed useMutation and apiService imports
 
 const Login = () => {

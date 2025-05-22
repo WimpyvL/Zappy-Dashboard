@@ -237,19 +237,19 @@ Medications:
       boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
       overflow: 'hidden',
       marginBottom: '8px',
-      borderLeft: '3px solid #ec4899' // Pink color for assessment/plan
+      border: '1px solid #e5e7eb'
     }}>
       <div style={{ 
         padding: '10px 14px',
         borderBottom: '1px solid #e5e7eb',
-        fontWeight: 600,
+        fontWeight: 500,
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center',
         fontSize: '15px',
-        backgroundColor: '#f9fafb'
+        backgroundColor: '#4f46e5'
       }}>
-        Assessment & Plan
+        <span style={{ color: 'white' }}>Assessment & Plan</span>
         <div style={{ display: 'flex', gap: '8px', fontSize: '14px' }}>
           {isEditing ? (
             <>
@@ -275,11 +275,11 @@ Medications:
               <button
                 onClick={handleCancel}
                 style={{
-                  background: '#f3f4f6',
-                  color: '#374151',
+                  background: '#6b7280', // Gray-500
+                  color: 'white',
                   padding: '2px 6px',
                   borderRadius: '4px',
-                  border: '1px solid #e5e7eb',
+                  border: 'none',
                   display: 'flex',
                   alignItems: 'center',
                   cursor: 'pointer',
@@ -298,37 +298,37 @@ Medications:
                 <button
                   onClick={() => setShowPromptInput(!showPromptInput)}
                   style={{
-                    background: '#ede9fe', // Light purple background
-                    color: '#5b21b6', // Purple text
-                    padding: '2px 6px',
+                    background: '#a855f7', // Purple-500
+                    color: 'white',
+                    padding: '2px 4px',
                     borderRadius: '4px',
-                    border: '1px solid #ddd6fe', // Purple border
+                    border: 'none',
                     display: 'flex',
                     alignItems: 'center',
                     cursor: 'pointer',
-                    fontSize: '14px',
+                    fontSize: '12px',
                     fontWeight: 'normal'
                   }}
                 >
-                  <Sparkles size={14} className="mr-1" />
+                  <Sparkles size={12} style={{ marginRight: '4px' }} />
                   AI Compose
                 </button>
                 <button
                   onClick={handleEditClick}
                   style={{
-                    background: '#f3f4f6',
-                    color: '#374151',
-                    padding: '2px 6px',
+                    background: '#3b82f6', // Blue-500
+                    color: 'white',
+                    padding: '2px 4px',
                     borderRadius: '4px',
-                    border: '1px solid #e5e7eb',
+                    border: 'none',
                     display: 'flex',
                     alignItems: 'center',
                     cursor: 'pointer',
-                    fontSize: '14px',
+                    fontSize: '12px',
                     fontWeight: 'normal'
                   }}
                 >
-                  <Edit size={14} className="mr-1" />
+                  <Edit size={12} style={{ marginRight: '4px' }} />
                   Edit
                 </button>
               </div>
@@ -361,7 +361,7 @@ Medications:
                   border: '1px solid #ddd6fe',
                   borderRadius: '4px',
                   fontSize: '14px',
-                  backgroundColor: '#f9fafb'
+                  backgroundColor: '#4f46e5'
                 }}
               />
               <div style={{
@@ -454,11 +454,12 @@ Medications:
         ) : (
           <div style={{ 
             padding: '8px', 
-            backgroundColor: '#f9fafb', 
+            backgroundColor: 'white', 
             borderRadius: '4px',
             fontSize: '14px',
             marginBottom: '8px',
-            whiteSpace: 'pre-line'
+            whiteSpace: 'pre-line',
+            border: '1px solid #e5e7eb'
           }}>
             <div>
               {/* Medications Summary - More compact */}
@@ -530,17 +531,20 @@ Medications:
                       fontSize: '14px', 
                       marginBottom: '4px', 
                       display: 'flex', 
-                      alignItems: 'center' 
+                      alignItems: 'center',
+                      borderBottom: '1px solid #e5e7eb',
+                      paddingBottom: '2px'
                     }}>
                       <span className={`service-dot ${category}-dot`} style={{ 
-                        width: '8px', 
-                        height: '8px', 
+                        width: '10px', 
+                        height: '10px', 
                         borderRadius: '50%', 
                         display: 'inline-block', 
                         marginRight: '8px', 
                         backgroundColor: category === 'wm' ? '#3b82f6' : 
                                         category === 'ed' ? '#ec4899' : 
-                                        '#6b7280' 
+                                        category === 'pc' ? '#10b981' :
+                                        category === 'mh' ? '#8b5cf6' : '#6b7280'
                       }}></span>
                       {categoryNames[category] || category}
                     </div>

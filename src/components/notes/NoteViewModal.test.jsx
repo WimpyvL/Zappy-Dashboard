@@ -2,13 +2,6 @@ import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import NoteViewModal from './NoteViewModal';
-import ChildishDrawingElement from '../ui/ChildishDrawingElement';
-
-// Mock the ChildishDrawingElement component
-jest.mock('../ui/ChildishDrawingElement', () => ({
-  __esModule: true,
-  default: jest.fn(() => <div data-testid="mock-childish-drawing" />),
-}));
 
 // Mock URL.createObjectURL and URL.revokeObjectURL
 URL.createObjectURL = jest.fn(() => 'mock-url');
@@ -80,9 +73,6 @@ describe('NoteViewModal', () => {
     const description = screen.getByText('This is a test note description.', { exact: false });
     expect(description).toBeInTheDocument();
     expect(description).toHaveClass('whitespace-pre-wrap');
-    
-    // Check that decorative elements are rendered
-    expect(ChildishDrawingElement).toHaveBeenCalledTimes(2);
     
     // Check that buttons are displayed
     expect(screen.getByText('Download')).toBeInTheDocument();

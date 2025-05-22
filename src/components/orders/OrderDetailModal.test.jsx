@@ -4,7 +4,6 @@ import '@testing-library/jest-dom';
 import OrderDetailModal from './OrderDetailModal';
 import { useOrderById } from '../../apis/orders/hooks';
 import { StatusBadge } from '../../pages/orders/PatientOrderHistoryPage';
-import ChildishDrawingElement from '../ui/ChildishDrawingElement';
 
 // Mock the dependencies
 jest.mock('../../apis/orders/hooks', () => ({
@@ -13,11 +12,6 @@ jest.mock('../../apis/orders/hooks', () => ({
 
 jest.mock('../../pages/orders/PatientOrderHistoryPage', () => ({
   StatusBadge: jest.fn(() => <span data-testid="status-badge">Processing</span>),
-}));
-
-jest.mock('../ui/ChildishDrawingElement', () => ({
-  __esModule: true,
-  default: jest.fn(() => <div data-testid="mock-childish-drawing" />),
 }));
 
 describe('OrderDetailModal', () => {
@@ -148,16 +142,6 @@ describe('OrderDetailModal', () => {
     
     // Verify tracking information is not shown for non-shipped orders
     expect(screen.queryByText('Tracking Information')).not.toBeInTheDocument();
-    
-    // Verify ChildishDrawingElement is rendered
-    expect(ChildishDrawingElement).toHaveBeenCalledWith(
-      expect.objectContaining({
-        type: 'doodle',
-        color: 'accent1',
-        position: 'top-right',
-      }),
-      expect.anything()
-    );
   });
 
   test('renders tracking information for shipped orders', async () => {

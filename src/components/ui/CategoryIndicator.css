@@ -1,0 +1,69 @@
+/* Category Indicator System
+   Colored dots that indicate different categories of content
+   based on the design mockup
+*/
+
+.category-indicator {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+  margin-right: 0.5rem;
+  flex-shrink: 0;
+}
+
+/* Weight Management - Teal */
+.category-indicator.weight-management {
+  background-color: #0d9488;
+}
+
+/* ED - Purple */
+.category-indicator.ed {
+  background-color: #8b5cf6;
+}
+
+/* Hair Loss - Amber */
+.category-indicator.hair-loss {
+  background-color: #a16207;
+}
+
+/* Wellness - Green */
+.category-indicator.wellness {
+  background-color: #10b981;
+}
+
+/* Mental Health - Amber */
+.category-indicator.mental-health {
+  background-color: #f59e0b;
+}
+
+/* Primary Care - Blue */
+.category-indicator.primary-care {
+  background-color: #2D7FF9;
+}
+
+/* Women's Health - Pink */
+.category-indicator.womens-health {
+  background-color: #ec4899;
+}
+
+/* Dermatology - Indigo */
+.category-indicator.dermatology {
+  background-color: #6366f1;
+}
+
+/* Default - Gray */
+.category-indicator.default {
+  background-color: #6b7280;
+}
+
+/* Category with label */
+.category-with-label {
+  display: flex;
+  align-items: center;
+}
+
+.category-label {
+  font-size: 0.875rem;
+  color: #1f2937;
+}

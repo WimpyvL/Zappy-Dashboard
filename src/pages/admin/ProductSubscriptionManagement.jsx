@@ -1,11 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Package, Tag, Box, Briefcase, Plus, Edit, Trash2, Search, Loader2, Layers
+  Package, Tag, Box, Briefcase, Plus, Edit, Trash2, Search, Loader2, Layers, Calendar
 } from 'lucide-react';
 
 // API Hooks
 import { useTreatmentPackages } from '../../apis/treatmentPackages/hooks';
-import { useSubscriptionDurations } from '../../apis/subscriptionDurations/hooks';
+import { 
+  useSubscriptionDurations,
+  useCreateSubscriptionDuration,
+  useUpdateSubscriptionDuration,
+  useDeleteSubscriptionDuration
+} from '../../apis/subscriptionDurations/hooks';
 import { useServices } from '../../apis/services/hooks';
 import {
   useProducts,
@@ -32,6 +37,7 @@ import LoadingSpinner from '../../components/ui/LoadingSpinner';
 import StatusBadge from '../../components/ui/StatusBadge';
 import ProductModal from '../../components/admin/ProductModal';
 import SubscriptionPlanModal from '../../components/admin/SubscriptionPlanModal';
+import SubscriptionDurationModal from '../../components/admin/SubscriptionDurationModal';
 import BundleModal from '../../components/admin/BundleModal';
 import ServiceModal from '../../components/admin/ServiceModal';
 import CategoryModal from '../../components/admin/CategoryModal';
@@ -48,6 +54,7 @@ const ProductSubscriptionManagement = () => {
   // Modal states
   const [showProductModal, setShowProductModal] = useState(false);
   const [showPlanModal, setShowPlanModal] = useState(false);
+  const [showDurationModal, setShowDurationModal] = useState(false);
   const [showBundleModal, setShowBundleModal] = useState(false);
   const [showServiceModal, setShowServiceModal] = useState(false);
   const [showCategoryModal, setShowCategoryModal] = useState(false);
@@ -196,6 +203,36 @@ const ProductSubscriptionManagement = () => {
     }
   });
 
+  // Subscription Duration mutations
+  const createDurationMutation = useCreateSubscriptionDuration({
+    onSuccess: () => {
+      toast.success('Billing cycle created successfully');
+      setShowDurationModal(false);
+    },
+    onError: (error) => {
+      toast.error(`Error creating billing cycle: ${error.message}`);
+    }
+  });
+
+  const updateDurationMutation = useUpdateSubscriptionDuration({
+    onSuccess: () => {
+      toast.success('Billing cycle updated successfully');
+      setShowDurationModal(false);
+    },
+    onError: (error) => {
+      toast.error(`Error updating billing cycle: ${error.message}`);
+    }
+  });
+
+  const deleteDurationMutation = useDeleteSubscriptionDuration({
+    onSuccess: () => {
+      toast.success('Billing cycle deleted successfully');
+    },
+    onError: (error) => {
+      toast.error(`Error deleting billing cycle: ${error.message}`);
+    }
+  });
+
   // Set loading state
   useEffect(() => {
     if (!isLoadingServices && !isLoadingPackages && !isLoadingDurations &&
@@ -223,6 +260,9 @@ const ProductSubscriptionManagement = () => {
       case 'subscriptionPlans':
         setShowPlanModal(true);
         break;
+      case 'subscriptionDurations':
+        setShowDurationModal(true);
+        break;
       case 'bundles':
         setShowBundleModal(true);
         break;
@@ -247,6 +287,9 @@ const ProductSubscriptionManagement = () => {
         break;
       case 'subscriptionPlans':
         setShowPlanModal(true);
+        break;
+      case 'subscriptionDurations':
+        setShowDurationModal(true);
         break;
       case 'bundles':
         setShowBundleModal(true);
@@ -273,6 +316,9 @@ const ProductSubscriptionManagement = () => {
         break;
       case 'subscriptionPlans':
         deletePlanMutation.mutate(item.id);
+        break;
+      case 'subscriptionDurations':
+        deleteDurationMutation.mutate(item.id);
         break;
       case 'bundles':
         // Handle bundle deletion (mock for now)
@@ -338,6 +384,17 @@ const ProductSubscriptionManagement = () => {
     }
   };
 
+  const handleDurationSubmit = (durationData) => {
+    if (isEditMode && currentItem) {
+      updateDurationMutation.mutate({
+        id: currentItem.id,
+        durationData
+      });
+    } else {
+      createDurationMutation.mutate(durationData);
+    }
+  };
+
   // Get unique categories from all items
   const allCategories = [...new Set([
     ...products.map(p => p.category),
@@ -392,6 +449,13 @@ const ProductSubscriptionManagement = () => {
           >
             <Tag className="h-4 w-4 inline-block mr-1" />
             Subscription Plans
+          </button>
+          <button
+            className={`tab px-6 py-3 font-medium ${activeTab === 'subscriptionDurations' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
+            onClick={() => setActiveTab('subscriptionDurations')}
+          >
+            <Calendar className="h-4 w-4 inline-block mr-1" />
+            Billing Cycles
           </button>
           <button
             className={`tab px-6 py-3 font-medium ${activeTab === 'bundles' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
@@ -530,6 +594,64 @@ const ProductSubscriptionManagement = () => {
               </table>
               <p className="text-sm text-gray-500 mt-4">
                 {filteredProducts.length} products found
+              </p>
+            </div>
+          )}
+
+          {activeTab === 'subscriptionDurations' && (
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Duration (Months)</th>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Duration (Days)</th>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Discount (%)</th>
+                    <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {durationsData?.map((duration) => (
+                    <tr key={duration.id} className="hover:bg-gray-50">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm font-medium text-gray-900">{duration.name}</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-500">{duration.duration_months}</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-500">{duration.duration_days || '-'}</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-500">{duration.discount_percent || 0}%</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        <button
+                          className="text-blue-600 hover:text-blue-900 mr-3"
+                          onClick={() => handleEdit(duration)}
+                        >
+                          <Edit className="h-5 w-5" />
+                        </button>
+                        <button
+                          className="text-red-600 hover:text-red-900"
+                          onClick={() => handleDelete(duration)}
+                        >
+                          <Trash2 className="h-5 w-5" />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                  {!durationsData || durationsData.length === 0 && (
+                    <tr>
+                      <td colSpan="5" className="px-6 py-4 text-center text-sm text-gray-500">
+                        No billing cycles found
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+              <p className="text-sm text-gray-500 mt-4">
+                {durationsData?.length || 0} billing cycles found
               </p>
             </div>
           )}
@@ -866,6 +988,14 @@ const ProductSubscriptionManagement = () => {
         category={isEditMode ? currentItem : null}
         isSubmitting={createCategoryMutation.isLoading || updateCategoryMutation.isLoading}
         productCount={isEditMode && currentItem ? currentItem.productCount || 0 : 0}
+      />
+
+      <SubscriptionDurationModal
+        isOpen={showDurationModal}
+        onClose={() => setShowDurationModal(false)}
+        onSubmit={handleDurationSubmit}
+        duration={isEditMode ? currentItem : null}
+        isSubmitting={createDurationMutation.isLoading || updateDurationMutation.isLoading}
       />
     </div>
   );

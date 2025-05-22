@@ -1,14 +1,12 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Modal from '../ui/Modal';
-import useProductForm from '../../hooks/useProductForm';
 import {
   FormInput,
   FormSelect,
   FormTextarea,
   FormCheckbox,
   FormSection,
-  TagInput,
-  DosesFormSection
+  TagInput
 } from '../ui/FormComponents';
 
 const ProductModal = ({
@@ -21,128 +19,222 @@ const ProductModal = ({
 }) => {
   const isEditMode = !!product;
 
-  // Initial form state definition (can be kept here or moved to hook)
+  // Simplified initial form state
   const initialFormData = {
     name: '',
-    type: 'medication',
     description: '',
     price: 0,
-    oneTimePurchasePrice: 0,
     active: true,
-    requiresPrescription: true,
-    category: 'hair',
-    associatedServiceIds: [],
-    stockStatus: 'in-stock',
+    requiresPrescription: false,
+    isProgram: false,
+    category: 'weight-management',
     interactionWarnings: [],
     doses: [],
-    allowOneTimePurchase: false,
-    fulfillmentSource: 'compounding_pharmacy',
-    stripePriceId: '',
-    stripeOneTimePriceId: '',
-    // Additional fields from the HTML mockup
-    discreetPackaging: true,
-    eligibleForShipping: true,
-    temperatureControlled: false,
-    shippingRestrictions: false,
-    restrictedStates: [],
-    telemedicineAvailable: true,
-    acceptExternalPrescriptions: true,
     drugClass: '',
     ndcCode: '',
     indications: [],
     contraindications: [],
-    educationalMaterials: []
+    // Program-specific fields
+    programContent: '',
+    programDuration: '',
+    educationalContentId: '',
+    // Keep these for compatibility
+    associatedServiceIds: [],
+    stripePriceId: ''
   };
 
-  const {
-    formData,
-    errors,
-    handleInputChange,
-    handleServiceSelectionChange,
-    handleTagsChange,
-    handleDosesChange,
-    validateForm,
-    toggleShippingRestrictions,
-    toggleStateRestriction,
-  } = useProductForm(product, services, initialFormData);
+  // Initialize state directly in component
+  const [formData, setFormData] = useState(initialFormData);
+  
+  // Update form data when product prop changes
+  useEffect(() => {
+    if (product) {
+      setFormData({
+        name: product.name || '',
+        description: product.description || '',
+        price: product.price || product.oneTimePurchasePrice || 0,
+        active: product.active !== undefined ? product.active : true,
+        requiresPrescription: product.requiresPrescription || false,
+        isProgram: product.isProgram || false,
+        category: product.category || 'weight-management',
+        interactionWarnings: Array.isArray(product.interactionWarnings) ? [...product.interactionWarnings] : [],
+        doses: Array.isArray(product.doses) ? [...product.doses] : [],
+        drugClass: product.drugClass || '',
+        ndcCode: product.ndcCode || '',
+        indications: Array.isArray(product.indications) ? [...product.indications] : [],
+        contraindications: Array.isArray(product.contraindications) ? [...product.contraindications] : [],
+        // Program-specific fields
+        programContent: product.programContent || '',
+        programDuration: product.programDuration || '',
+        educationalContentId: product.educationalContentId || '',
+        associatedServiceIds: Array.isArray(product.associatedServiceIds) ? [...product.associatedServiceIds] : [],
+        stripePriceId: product.stripePriceId || product.stripeOneTimePriceId || ''
+      });
+    } else {
+      setFormData(initialFormData);
+    }
+  }, [product]);
+  
+  const [errors, setErrors] = useState({});
+  const [newDosage, setNewDosage] = useState('');
+  const [newWarning, setNewWarning] = useState('');
+
+  // Handle input changes
+  const handleInputChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    const newValue = type === 'checkbox' ? checked : 
+                    (type === 'number' || name === 'price') ? parseFloat(value) || 0 : value;
+    
+    setFormData(prev => ({ ...prev, [name]: newValue }));
+    
+    // Clear error for this field if it exists
+    if (errors[name]) {
+      setErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors[name];
+        return newErrors;
+      });
+    }
+  };
+
+  // Handle category selection
+  const handleCategorySelect = (category) => {
+    setFormData(prev => ({ ...prev, category }));
+  };
+
+
+  // Handle tags change
+  const handleTagsChange = (field, tags) => {
+    setFormData(prev => ({ ...prev, [field]: tags }));
+  };
+
+  // Handle dosage management
+  const addDosage = () => {
+    if (!newDosage.trim()) return;
+    
+    setFormData(prev => ({
+      ...prev,
+      doses: [...prev.doses, { 
+        id: `temp_${Date.now()}`,
+        value: newDosage,
+        allowOneTimePurchase: true
+      }]
+    }));
+    setNewDosage('');
+  };
+
+  const removeDosage = (index) => {
+    setFormData(prev => ({
+      ...prev,
+      doses: prev.doses.filter((_, i) => i !== index)
+    }));
+  };
+
+  // Handle warnings management
+  const addWarning = () => {
+    if (!newWarning.trim()) return;
+    
+    setFormData(prev => ({
+      ...prev,
+      interactionWarnings: [...prev.interactionWarnings, newWarning]
+    }));
+    setNewWarning('');
+  };
+
+  const removeWarning = (index) => {
+    setFormData(prev => ({
+      ...prev,
+      interactionWarnings: prev.interactionWarnings.filter((_, i) => i !== index)
+    }));
+  };
+
+  // Validate form
+  const validateForm = () => {
+    const newErrors = {};
+    
+    if (!formData.name.trim()) {
+      newErrors.name = 'Product name is required';
+    }
+    
+    if (formData.price <= 0) {
+      newErrors.price = 'Price must be greater than 0';
+    }
+    
+    if (formData.requiresPrescription && formData.doses.length === 0) {
+      newErrors.doses = 'At least one dosage is required for prescription products';
+    }
+    
+    // Validate program-specific fields
+    if (formData.isProgram) {
+      if (!formData.programContent.trim()) {
+        newErrors.programContent = 'Program summary is required';
+      }
+      
+      if (!formData.programDuration.trim()) {
+        newErrors.programDuration = 'Program duration is required';
+      }
+      
+      if (!formData.educationalContentId.trim()) {
+        newErrors.educationalContentId = 'Educational content ID is required';
+      }
+    }
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
   // Handle form submission
   const handleSubmit = () => {
     if (validateForm()) {
+      // Prepare submission data
       const submissionData = { ...formData };
-
-      // Clean up data based on type
-      if (submissionData.type !== 'medication') {
-        delete submissionData.doses;
+      
+      // Set type based on isProgram only - simplify to just 'program' or 'product'
+      submissionData.type = formData.isProgram ? 'program' : 'product';
+      
+      // Keep the requiresPrescription flag for products that need prescriptions
+      submissionData.requiresPrescription = !formData.isProgram && formData.requiresPrescription;
+      
+      // Add default shipping settings
+      submissionData.eligibleForShipping = !formData.isProgram; // Programs don't need shipping
+      submissionData.discreetPackaging = formData.requiresPrescription; // Only use discreet packaging for prescriptions
+      
+      // Map price to appropriate field based on prescription requirement
+      if (formData.requiresPrescription && !formData.isProgram) {
+        submissionData.oneTimePurchasePrice = submissionData.price;
+        submissionData.stripeOneTimePriceId = submissionData.stripePriceId;
+        delete submissionData.price;
+      } else {
         delete submissionData.oneTimePurchasePrice;
         delete submissionData.stripeOneTimePriceId;
-        delete submissionData.requiresPrescription;
+      }
+      
+      // Clean up data based on product type
+      if (!submissionData.requiresPrescription) {
+        delete submissionData.doses;
         delete submissionData.drugClass;
         delete submissionData.ndcCode;
-        delete submissionData.telemedicineAvailable;
-        delete submissionData.acceptExternalPrescriptions;
-      } else {
-        delete submissionData.price;
-        delete submissionData.stripePriceId;
-
-        // Ensure doses have valid structure
-        submissionData.doses = (submissionData.doses || []).map(dose => ({
-          value: dose.value,
-          description: dose.description,
-          allowOneTimePurchase: !!dose.allowOneTimePurchase,
-          stripePriceId: dose.stripePriceId,
-          form: dose.form,
-          // Remove temporary ID if backend assigns its own
-          id: typeof dose.id === 'string' && dose.id.startsWith('temp_') ? undefined : dose.id
-        }));
+        delete submissionData.indications;
+        delete submissionData.contraindications;
       }
-
+      
+      if (!submissionData.isProgram) {
+        delete submissionData.programContent;
+        delete submissionData.programDuration;
+        delete submissionData.educationalContentId;
+      }
+      
       onSubmit(submissionData);
     }
   };
 
-  // Product type options
-  const productTypeOptions = [
-    { value: 'medication', label: 'Medication' },
-    { value: 'supplement', label: 'Supplement' },
-    { value: 'service', label: 'Service' }
-  ];
-
   // Category options
-  const categoryOptions = [
-    { value: 'hair', label: 'Hair' },
-    { value: 'ed', label: 'ED' },
-    { value: 'weight-management', label: 'Weight Management' },
-    { value: 'skin', label: 'Skin' },
-    { value: 'general-health', label: 'General Health' }
-  ];
-
-  // Fulfillment source options
-  const fulfillmentOptions = [
-    { value: 'compounding_pharmacy', label: 'Compounding Pharmacy' },
-    { value: 'retail_pharmacy', label: 'Retail Pharmacy' },
-    { value: 'internal_supplement', label: 'Internal (Supplement)' },
-    { value: 'internal_service', label: 'Internal (Service)' }
-  ];
-
-  // Stock status options
-  const stockStatusOptions = [
-    { value: 'in-stock', label: 'In Stock' },
-    { value: 'limited', label: 'Limited Stock' },
-    { value: 'out-of-stock', label: 'Out of Stock' },
-    { value: 'backorder', label: 'On Backorder' }
-  ];
-
-  // US States for shipping restrictions
-  const usStates = [
-    'Alabama', 'Alaska', 'Arizona', 'Arkansas', 'California', 'Colorado', 'Connecticut',
-    'Delaware', 'Florida', 'Georgia', 'Hawaii', 'Idaho', 'Illinois', 'Indiana', 'Iowa',
-    'Kansas', 'Kentucky', 'Louisiana', 'Maine', 'Maryland', 'Massachusetts', 'Michigan',
-    'Minnesota', 'Mississippi', 'Missouri', 'Montana', 'Nebraska', 'Nevada', 'New Hampshire',
-    'New Jersey', 'New Mexico', 'New York', 'North Carolina', 'North Dakota', 'Ohio',
-    'Oklahoma', 'Oregon', 'Pennsylvania', 'Rhode Island', 'South Carolina', 'South Dakota',
-    'Tennessee', 'Texas', 'Utah', 'Vermont', 'Virginia', 'Washington', 'West Virginia',
-    'Wisconsin', 'Wyoming'
+  const categories = [
+    { id: 'weight-management', label: 'Weight Management' },
+    { id: 'ed', label: 'ED' },
+    { id: 'hair', label: 'Hair' },
+    { id: 'skin', label: 'Skin' },
+    { id: 'general-health', label: 'General Health' }
   ];
 
   return (
@@ -153,314 +245,297 @@ const ProductModal = ({
       onSubmit={handleSubmit}
       submitText={isEditMode ? 'Save Changes' : 'Add Product'}
       isSubmitting={isSubmitting}
-      size="xl"
+      size="lg"
     >
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Left Column - Basic Information */}
-        <div>
-          <FormSection title="Basic Information">
+      <div className="space-y-6">
+        {/* Basic Information */}
+        <FormSection title="Basic Information">
+          <FormInput
+            label="Product Name"
+            name="name"
+            value={formData.name}
+            onChange={handleInputChange}
+            required
+            error={errors.name}
+          />
+
+          {/* Category Selection */}
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
+            <div className="flex flex-wrap gap-2">
+              {categories.map(category => (
+                <button
+                  key={category.id}
+                  type="button"
+                  className={`px-3 py-1 text-sm rounded-md ${
+                    formData.category === category.id
+                      ? 'bg-blue-100 text-blue-800 border-blue-300 border'
+                      : 'bg-gray-100 text-gray-800 border-gray-200 border'
+                  }`}
+                  onClick={() => handleCategorySelect(category.id)}
+                >
+                  {category.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <FormTextarea
+            label="Description"
+            name="description"
+            value={formData.description}
+            onChange={handleInputChange}
+            rows={3}
+          />
+
+          <FormInput
+            label="Price"
+            name="price"
+            type="number"
+            min="0"
+            step="0.01"
+            value={formData.price}
+            onChange={handleInputChange}
+            prefix="$"
+            error={errors.price}
+            required
+          />
+
+          <FormInput
+            label="Stripe Price ID"
+            name="stripePriceId"
+            value={formData.stripePriceId}
+            onChange={handleInputChange}
+            placeholder="price_..."
+          />
+
+          <div className="flex space-x-6 mt-4">
+            <FormCheckbox
+              label="Active"
+              name="active"
+              checked={formData.active}
+              onChange={handleInputChange}
+            />
+            <FormCheckbox
+              label="Requires Prescription"
+              name="requiresPrescription"
+              checked={formData.requiresPrescription}
+              onChange={handleInputChange}
+              disabled={formData.isProgram}
+            />
+            <FormCheckbox
+              label="Is Program"
+              name="isProgram"
+              checked={formData.isProgram}
+              onChange={(e) => {
+                const isProgram = e.target.checked;
+                setFormData(prev => ({
+                  ...prev,
+                  isProgram,
+                  // If it's a program, it can't require a prescription
+                  requiresPrescription: isProgram ? false : prev.requiresPrescription
+                }));
+              }}
+            />
+          </div>
+        </FormSection>
+
+        {/* Prescription Details (conditional) */}
+        {formData.requiresPrescription && (
+          <FormSection title="Prescription Details">
+            <div className="grid grid-cols-2 gap-4 mb-4">
+              <FormInput
+                label="Drug Class"
+                name="drugClass"
+                value={formData.drugClass}
+                onChange={handleInputChange}
+                placeholder="e.g. 5α-reductase inhibitor"
+              />
+
+              <FormInput
+                label="NDC Code"
+                name="ndcCode"
+                value={formData.ndcCode}
+                onChange={handleInputChange}
+                placeholder="National Drug Code"
+              />
+            </div>
+            
+            {/* Dosages */}
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-1">Dosages</label>
+              
+              {formData.doses.map((dose, index) => (
+                <div key={index} className="flex items-center space-x-2 mb-2">
+                  <input
+                    type="text"
+                    value={dose.value}
+                    readOnly
+                    className="flex-grow p-2 border rounded bg-white"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => removeDosage(index)}
+                    className="px-3 py-2 text-sm text-red-600 hover:text-red-800"
+                  >
+                    Remove
+                  </button>
+                </div>
+              ))}
+              
+              <div className="flex items-center space-x-2 mt-2">
+                <input
+                  type="text"
+                  value={newDosage}
+                  onChange={(e) => setNewDosage(e.target.value)}
+                  placeholder="Add new dosage (e.g., 10mg)"
+                  className="flex-grow p-2 border rounded"
+                />
+                <button
+                  type="button"
+                  onClick={addDosage}
+                  className="px-3 py-2 text-sm bg-blue-600 text-white rounded hover:bg-blue-700"
+                >
+                  Add
+                </button>
+              </div>
+              
+              {errors.doses && (
+                <p className="text-sm text-red-600 mt-1">{errors.doses}</p>
+              )}
+            </div>
+            
+            {/* Indications */}
+            <TagInput
+              label="Indications"
+              value={formData.indications}
+              onChange={(tags) => handleTagsChange('indications', tags)}
+              placeholder="Add indication..."
+            />
+            
+            {/* Contraindications */}
+            <TagInput
+              label="Contraindications"
+              value={formData.contraindications}
+              onChange={(tags) => handleTagsChange('contraindications', tags)}
+              placeholder="Add contraindication..."
+            />
+            
+            {/* Interaction Warnings */}
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-1">Interaction Warnings</label>
+              
+              <div className="flex items-center space-x-2">
+                <input
+                  type="text"
+                  value={newWarning}
+                  onChange={(e) => setNewWarning(e.target.value)}
+                  placeholder="Add interaction warning..."
+                  className="flex-grow p-2 border rounded"
+                />
+                <button
+                  type="button"
+                  onClick={addWarning}
+                  className="px-3 py-2 text-sm bg-blue-600 text-white rounded hover:bg-blue-700"
+                >
+                  Add
+                </button>
+              </div>
+              
+              {formData.interactionWarnings.length > 0 && (
+                <div className="mt-2">
+                  <p className="text-sm font-medium text-gray-700 mb-1">Current warnings:</p>
+                  <ul className="space-y-1">
+                    {formData.interactionWarnings.map((warning, index) => (
+                      <li key={index} className="flex items-center text-sm">
+                        <span className="mr-2">•</span>
+                        {warning}
+                        <button
+                          type="button"
+                          onClick={() => removeWarning(index)}
+                          className="ml-2 text-red-600 hover:text-red-800"
+                        >
+                          ×
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          </FormSection>
+        )}
+
+        {/* Program Details (conditional) */}
+        {formData.isProgram && (
+          <FormSection title="Program Details">
             <FormInput
-              label="Product Name"
-              name="name"
-              value={formData.name}
+              label="Program Duration"
+              name="programDuration"
+              value={formData.programDuration}
               onChange={handleInputChange}
-              required
-              error={errors.name}
+              placeholder="e.g., 8 weeks, 3 months"
+              error={errors.programDuration}
             />
-
-            <FormSelect
-              label="Product Type"
-              name="type"
-              value={formData.type}
+            
+            <FormInput
+              label="Educational Content ID"
+              name="educationalContentId"
+              value={formData.educationalContentId}
               onChange={handleInputChange}
-              options={productTypeOptions}
+              placeholder="Enter the ID of the associated educational content"
+              help="Link this program to existing educational content instead of defining content here"
             />
-
-            <FormSelect
-              label="Category"
-              name="category"
-              value={formData.category}
-              onChange={handleInputChange}
-              options={categoryOptions}
-            />
-
+            
             <FormTextarea
-              label="Description"
-              name="description"
-              value={formData.description}
+              label="Program Summary"
+              name="programContent"
+              value={formData.programContent}
               onChange={handleInputChange}
               rows={3}
+              placeholder="Brief summary of what this program includes"
+              error={errors.programContent}
             />
-
-            {formData.type !== 'medication' && (
-              <FormInput
-                label="Price"
-                name="price"
-                type="number"
-                min="0"
-                step="0.01"
-                value={formData.price}
-                onChange={handleInputChange}
-                prefix="$"
-                error={errors.price}
-              />
-            )}
-
-            {formData.type !== 'medication' && (
-              <FormInput
-                label="Stripe Price ID"
-                name="stripePriceId"
-                value={formData.stripePriceId}
-                onChange={handleInputChange}
-                placeholder="price_..."
-              />
-            )}
-
-            {formData.type === 'medication' && (
-              <FormInput
-                label="One-Time Purchase Price"
-                name="oneTimePurchasePrice"
-                type="number"
-                min="0"
-                step="0.01"
-                value={formData.oneTimePurchasePrice}
-                onChange={handleInputChange}
-                prefix="$"
-              />
-            )}
-
-            {formData.type === 'medication' && (
-              <FormInput
-                label="Stripe One-Time Price ID"
-                name="stripeOneTimePriceId"
-                value={formData.stripeOneTimePriceId}
-                onChange={handleInputChange}
-                placeholder="price_..."
-              />
-            )}
-          </FormSection>
-
-          <FormSection title="Shipping & Packaging">
-            <div className="space-y-3">
-              <FormCheckbox
-                label="Eligible for shipping"
-                name="eligibleForShipping"
-                checked={formData.eligibleForShipping}
-                onChange={handleInputChange}
-              />
-
-              <FormCheckbox
-                label="Discreet packaging"
-                name="discreetPackaging"
-                checked={formData.discreetPackaging}
-                onChange={handleInputChange}
-              />
-
-              <FormCheckbox
-                label="Temperature controlled shipping required"
-                name="temperatureControlled"
-                checked={formData.temperatureControlled}
-                onChange={handleInputChange}
-              />
-
-              <FormCheckbox
-                label="Restrict shipping to specific states"
-                name="shippingRestrictions"
-                checked={formData.shippingRestrictions}
-                onChange={toggleShippingRestrictions}
-              />
-
-              {formData.shippingRestrictions && (
-                <div className="mt-3 border border-gray-200 rounded-md p-3">
-                  <div className="text-sm font-medium mb-2">Select restricted states:</div>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-40 overflow-y-auto">
-                    {usStates.map(state => (
-                      <FormCheckbox
-                        key={state}
-                        label={state}
-                        name={`state-${state}`}
-                        checked={formData.restrictedStates.includes(state)}
-                        onChange={() => toggleStateRestriction(state)}
-                      />
-                    ))}
-                  </div>
-                </div>
-              )}
+            
+            <div className="mt-4 bg-blue-50 p-3 rounded-md">
+              <p className="text-sm text-blue-800">
+                <strong>Note:</strong> For detailed program content, please use the Educational Resources section.
+                This product should reference existing educational content rather than defining it here.
+              </p>
             </div>
           </FormSection>
+        )}
 
-          <FormSection title="Status">
-            <div className="flex space-x-6">
-              <FormCheckbox
-                label="Active"
-                name="active"
-                checked={formData.active}
-                onChange={handleInputChange}
-              />
-
-              {formData.type !== 'medication' && (
-                <FormCheckbox
-                  label="Allow One-Time Purchase"
-                  name="allowOneTimePurchase"
-                  checked={formData.allowOneTimePurchase}
-                  onChange={handleInputChange}
-                />
-              )}
-            </div>
-          </FormSection>
-        </div>
-
-        {/* Right Column - Type-specific Information */}
-        <div>
-          {formData.type === 'medication' && (
-            <>
-              <FormSection title="Medication Details">
-                <FormCheckbox
-                  label="Requires Prescription"
-                  name="requiresPrescription"
-                  checked={formData.requiresPrescription}
-                  onChange={handleInputChange}
-                />
-
-                <div className="mt-3 space-y-3">
-                  <FormCheckbox
-                    label="Telemedicine consultation available"
-                    name="telemedicineAvailable"
-                    checked={formData.telemedicineAvailable}
-                    onChange={handleInputChange}
-                  />
-
-                  <FormCheckbox
-                    label="Accept external prescriptions"
-                    name="acceptExternalPrescriptions"
-                    checked={formData.acceptExternalPrescriptions}
-                    onChange={handleInputChange}
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-4 mt-4">
-                  <FormInput
-                    label="Drug Class"
-                    name="drugClass"
-                    value={formData.drugClass}
-                    onChange={handleInputChange}
-                    placeholder="e.g. 5α-reductase inhibitor"
-                  />
-
-                  <FormInput
-                    label="NDC Code"
-                    name="ndcCode"
-                    value={formData.ndcCode}
-                    onChange={handleInputChange}
-                    placeholder="National Drug Code"
-                  />
-                </div>
-
-                <TagInput
-                  label="Indications"
-                  value={formData.indications}
-                  onChange={(tags) => handleTagsChange('indications', tags)}
-                  placeholder="Add indication..."
-                />
-
-                <TagInput
-                  label="Contraindications"
-                  value={formData.contraindications}
-                  onChange={(tags) => handleTagsChange('contraindications', tags)}
-                  placeholder="Add contraindication..."
-                />
-
-                <TagInput
-                  label="Interaction Warnings"
-                  value={formData.interactionWarnings}
-                  onChange={(tags) => handleTagsChange('interactionWarnings', tags)}
-                  placeholder="Add warning..."
-                />
-              </FormSection>
-
-              <DosesFormSection
-                doses={formData.doses}
-                onChange={handleDosesChange}
-              />
-              {errors.doses && (
-                <p className="mt-1 text-sm text-red-600">{errors.doses}</p>
-              )}
-            </>
-          )}
-
-          <FormSection title="Associated Services">
-            <div className="border border-gray-300 rounded-md p-2 h-40 overflow-y-auto space-y-1">
-              {services.length > 0 ? (
-                services.map(service => (
-                  <div key={service.id} className="flex items-center">
-                    <input
-                      type="checkbox"
-                      id={`service-assoc-${service.id}`}
-                      checked={formData.associatedServiceIds?.includes(service.id) || false}
-                      onChange={() => handleServiceSelectionChange(service.id)}
-                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                    />
-                    <label
-                      htmlFor={`service-assoc-${service.id}`}
-                      className="ml-2 text-sm text-gray-700"
-                    >
-                      {service.name}
-                    </label>
-                  </div>
-                ))
-              ) : (
-                <p className="text-xs text-gray-500">No services available</p>
-              )}
-            </div>
-          </FormSection>
-
-          <FormSection title="Associated Content">
-            <div className="space-y-3">
-              <div className="text-sm text-gray-500 mb-2">
-                Select educational materials to associate with this product
-              </div>
-
-              <FormCheckbox
-                label="Product Information Sheet"
-                name="educationalMaterial-info"
-                checked={formData.educationalMaterials.includes('Product Information Sheet')}
-                onChange={() => {
-                  const materials = formData.educationalMaterials || [];
-                  const newMaterials = materials.includes('Product Information Sheet')
-                    ? materials.filter(m => m !== 'Product Information Sheet')
-                    : [...materials, 'Product Information Sheet'];
-                  handleTagsChange('educationalMaterials', newMaterials);
-                }}
-              />
-
-              <FormCheckbox
-                label="Usage Instructions"
-                name="educationalMaterial-usage"
-                checked={formData.educationalMaterials.includes('Usage Instructions')}
-                onChange={() => {
-                  const materials = formData.educationalMaterials || [];
-                  const newMaterials = materials.includes('Usage Instructions')
-                    ? materials.filter(m => m !== 'Usage Instructions')
-                    : [...materials, 'Usage Instructions'];
-                  handleTagsChange('educationalMaterials', newMaterials);
-                }}
-              />
-
-              <FormCheckbox
-                label="Side Effect Management Guide"
-                name="educationalMaterial-sideEffects"
-                checked={formData.educationalMaterials.includes('Side Effect Management Guide')}
-                onChange={() => {
-                  const materials = formData.educationalMaterials || [];
-                  const newMaterials = materials.includes('Side Effect Management Guide')
-                    ? materials.filter(m => m !== 'Side Effect Management Guide')
-                    : [...materials, 'Side Effect Management Guide'];
-                  handleTagsChange('educationalMaterials', newMaterials);
-                }}
-              />
-            </div>
-          </FormSection>
-        </div>
+        {/* Associated Services */}
+        <FormSection title="Associated Services">
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Select services related to this product
+          </label>
+          <select
+            multiple
+            className="w-full h-32 border rounded p-2"
+            value={formData.associatedServiceIds.map(id => id.toString())}
+            onChange={(e) => {
+              const selectedOptions = Array.from(
+                e.target.selectedOptions,
+                option => parseInt(option.value, 10)
+              );
+              setFormData(prev => ({
+                ...prev,
+                associatedServiceIds: selectedOptions
+              }));
+            }}
+          >
+            {services.map(service => (
+              <option key={service.id} value={service.id}>
+                {service.name}
+              </option>
+            ))}
+          </select>
+          <p className="mt-1 text-xs text-gray-500">
+            This helps organize products by related services in the admin interface.
+          </p>
+        </FormSection>
       </div>
     </Modal>
   );

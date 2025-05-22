@@ -2,282 +2,395 @@ import { supabase } from '../../lib/supabase';
 
 // Fetch all AI prompts
 export const fetchPrompts = async () => {
-  const { data, error } = await supabase
-    .from('ai_prompts')
-    .select('*')
-    .order('category')
-    .order('name');
-  
-  if (error) throw error;
-  return data;
+  try {
+    const { data, error } = await supabase
+      .from('ai_prompts')
+      .select('*')
+      .order('created_at', { ascending: false });
+    
+    if (error) {
+      console.error('Error fetching prompts:', error);
+      throw new Error(error.message);
+    }
+    
+    return data || [];
+  } catch (error) {
+    console.error('Error in fetchPrompts:', error);
+    throw error;
+  }
 };
 
-// Fetch a single prompt by ID
-export const fetchPromptById = async (promptId) => {
-  const { data, error } = await supabase
-    .from('ai_prompts')
-    .select('*')
-    .eq('id', promptId)
-    .single();
-  
-  if (error) throw error;
-  return data;
+// Fetch a single AI prompt by ID
+export const fetchPrompt = async (promptId) => {
+  try {
+    const { data, error } = await supabase
+      .from('ai_prompts')
+      .select('*')
+      .eq('id', promptId)
+      .single();
+    
+    if (error) {
+      console.error(`Error fetching prompt ${promptId}:`, error);
+      throw new Error(error.message);
+    }
+    
+    return data;
+  } catch (error) {
+    console.error('Error in fetchPrompt:', error);
+    throw error;
+  }
 };
 
-// Create a new prompt
+// Create a new AI prompt
 export const createPrompt = async (promptData) => {
-  const { data, error } = await supabase
-    .from('ai_prompts')
-    .insert([{
-      ...promptData,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    }])
-    .select();
-  
-  if (error) throw error;
-  return data[0];
+  try {
+    const { data, error } = await supabase
+      .from('ai_prompts')
+      .insert({
+        name: promptData.name,
+        prompt: promptData.prompt,
+        category: promptData.category,
+        prompt_type: promptData.prompt_type,
+        section: promptData.section,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      })
+      .select()
+      .single();
+    
+    if (error) {
+      console.error('Error creating prompt:', error);
+      throw new Error(error.message);
+    }
+    
+    return data;
+  } catch (error) {
+    console.error('Error in createPrompt:', error);
+    throw error;
+  }
 };
 
-// Update an existing prompt
-export const updatePrompt = async ({ id, ...promptData }) => {
-  const { data, error } = await supabase
-    .from('ai_prompts')
-    .update({
-      ...promptData,
-      updated_at: new Date().toISOString()
-    })
-    .eq('id', id)
-    .select();
-  
-  if (error) throw error;
-  return data[0];
+// Update an existing AI prompt
+export const updatePrompt = async (promptData) => {
+  try {
+    const { data, error } = await supabase
+      .from('ai_prompts')
+      .update({
+        name: promptData.name,
+        prompt: promptData.prompt,
+        category: promptData.category,
+        prompt_type: promptData.prompt_type,
+        section: promptData.section,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', promptData.id)
+      .select()
+      .single();
+    
+    if (error) {
+      console.error(`Error updating prompt ${promptData.id}:`, error);
+      throw new Error(error.message);
+    }
+    
+    return data;
+  } catch (error) {
+    console.error('Error in updatePrompt:', error);
+    throw error;
+  }
 };
 
-// Delete a prompt
+// Delete an AI prompt
 export const deletePrompt = async (promptId) => {
-  const { error } = await supabase
-    .from('ai_prompts')
-    .delete()
-    .eq('id', promptId);
-  
-  if (error) throw error;
-  return { success: true };
+  try {
+    const { error } = await supabase
+      .from('ai_prompts')
+      .delete()
+      .eq('id', promptId);
+    
+    if (error) {
+      console.error(`Error deleting prompt ${promptId}:`, error);
+      throw new Error(error.message);
+    }
+    
+    return { success: true, id: promptId };
+  } catch (error) {
+    console.error('Error in deletePrompt:', error);
+    throw error;
+  }
 };
 
-// Test a prompt
-export const testPrompt = async (promptId) => {
-  // Fetch the prompt
-  const { data: prompt, error: promptError } = await supabase
-    .from('ai_prompts')
-    .select('*')
-    .eq('id', promptId)
-    .single();
-  
-  if (promptError) throw promptError;
-  
-  // Fetch AI settings
-  const { data: settings, error: settingsError } = await supabase
-    .from('ai_settings')
-    .select('*')
-    .single();
-  
-  if (settingsError && settingsError.code !== 'PGRST116') throw settingsError;
-  
-  // Generate sample parameters
-  const sampleParams = {};
-  if (prompt.parameters && prompt.parameters.length > 0) {
-    prompt.parameters.forEach(param => {
-      sampleParams[param.name] = `[Sample ${param.name}]`;
+// Test an AI prompt
+export const testPrompt = async (testData) => {
+  try {
+    const { promptId, testInput } = testData;
+    
+    // Fetch the prompt
+    const prompt = await fetchPrompt(promptId);
+    
+    if (!prompt) {
+      throw new Error(`Prompt with ID ${promptId} not found`);
+    }
+    
+    // Fetch AI settings
+    const { data: settings, error: settingsError } = await supabase
+      .from('ai_settings')
+      .select('*')
+      .single();
+    
+    if (settingsError) {
+      console.error('Error fetching AI settings:', settingsError);
+      throw new Error('Failed to fetch AI settings');
+    }
+    
+    // Call the AI service
+    const response = await fetch('/api/ai/test-prompt', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        prompt: prompt.prompt,
+        input: testInput,
+        model: settings.model,
+        temperature: settings.temperature,
+        max_tokens: settings.max_tokens
+      }),
     });
+    
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || `Request failed with status ${response.status}`);
+    }
+    
+    const result = await response.json();
+    
+    // Log the test
+    await supabase
+      .from('ai_logs')
+      .insert({
+        prompt_id: promptId,
+        input: testInput,
+        output: result.output,
+        tokens_used: result.tokens_used,
+        duration_ms: result.duration_ms,
+        status: 'success',
+        created_at: new Date().toISOString()
+      });
+    
+    return result;
+  } catch (error) {
+    console.error('Error in testPrompt:', error);
+    
+    // Log the error
+    if (testData && testData.promptId) {
+      await supabase
+        .from('ai_logs')
+        .insert({
+          prompt_id: testData.promptId,
+          input: testData.testInput,
+          status: 'error',
+          error: error.message,
+          created_at: new Date().toISOString()
+        });
+    }
+    
+    throw error;
   }
-  
-  // Call the AI service
-  const response = await fetch('/api/ai/test-prompt', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({
-      prompt: prompt.prompt_text,
-      parameters: sampleParams,
-      settings: settings || {
-        model: 'gpt-4',
-        temperature: 0.7,
-        max_tokens: 1000
-      }
-    })
-  });
-  
-  if (!response.ok) {
-    const errorData = await response.json();
-    throw new Error(errorData.message || 'Failed to test prompt');
-  }
-  
-  const result = await response.json();
-  
-  // Log the test
-  await supabase
-    .from('ai_logs')
-    .insert([{
-      prompt_id: promptId,
-      input: { parameters: sampleParams },
-      output: result.text,
-      tokens_used: result.usage?.total_tokens || 0,
-      duration_ms: result.duration_ms || 0,
-      status: 'success',
-      created_at: new Date().toISOString()
-    }]);
-  
-  return result;
 };
 
 // Fetch AI settings
 export const fetchAISettings = async () => {
-  const { data, error } = await supabase
-    .from('ai_settings')
-    .select('*')
-    .single();
-  
-  if (error && error.code !== 'PGRST116') throw error;
-  
-  return data || {
-    api_provider: 'openai',
-    model: 'gpt-4',
-    temperature: 0.7,
-    max_tokens: 1000,
-    enable_consultation_summaries: true,
-    enable_product_recommendations: true,
-    enable_program_recommendations: true
-  };
+  try {
+    const { data, error } = await supabase
+      .from('ai_settings')
+      .select('*')
+      .single();
+    
+    if (error) {
+      console.error('Error fetching AI settings:', error);
+      throw new Error(error.message);
+    }
+    
+    return data;
+  } catch (error) {
+    console.error('Error in fetchAISettings:', error);
+    throw error;
+  }
 };
 
 // Update AI settings
 export const updateAISettings = async (settingsData) => {
-  // Check if settings exist
-  const { data: existingSettings, error: checkError } = await supabase
-    .from('ai_settings')
-    .select('id')
-    .single();
-  
-  if (checkError && checkError.code !== 'PGRST116') throw checkError;
-  
-  if (existingSettings) {
-    // Update existing settings
-    const { data, error } = await supabase
+  try {
+    // Check if settings exist
+    const { data: existingSettings, error: checkError } = await supabase
       .from('ai_settings')
-      .update({
-        ...settingsData,
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', existingSettings.id)
-      .select();
+      .select('id')
+      .single();
     
-    if (error) throw error;
-    return data[0];
-  } else {
-    // Create new settings
-    const { data, error } = await supabase
-      .from('ai_settings')
-      .insert([{
-        ...settingsData,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      }])
-      .select();
+    if (checkError && checkError.code !== 'PGRST116') {
+      console.error('Error checking AI settings:', checkError);
+      throw new Error(checkError.message);
+    }
     
-    if (error) throw error;
-    return data[0];
+    let result;
+    
+    if (existingSettings) {
+      // Update existing settings
+      const { data, error } = await supabase
+        .from('ai_settings')
+        .update({
+          ...settingsData,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', existingSettings.id)
+        .select()
+        .single();
+      
+      if (error) {
+        console.error('Error updating AI settings:', error);
+        throw new Error(error.message);
+      }
+      
+      result = data;
+    } else {
+      // Insert new settings
+      const { data, error } = await supabase
+        .from('ai_settings')
+        .insert({
+          ...settingsData,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        })
+        .select()
+        .single();
+      
+      if (error) {
+        console.error('Error creating AI settings:', error);
+        throw new Error(error.message);
+      }
+      
+      result = data;
+    }
+    
+    return result;
+  } catch (error) {
+    console.error('Error in updateAISettings:', error);
+    throw error;
   }
 };
 
 // Fetch AI logs
 export const fetchAILogs = async (options = {}) => {
-  const { limit = 100, offset = 0, promptId } = options;
-  
-  let query = supabase
-    .from('ai_logs')
-    .select(`
-      *,
-      prompt:prompt_id (name, category)
-    `)
-    .order('created_at', { ascending: false })
-    .range(offset, offset + limit - 1);
-  
-  if (promptId) {
-    query = query.eq('prompt_id', promptId);
+  try {
+    const { limit = 100, offset = 0, promptId } = options;
+    
+    let query = supabase
+      .from('ai_logs')
+      .select('*, ai_prompts(name)')
+      .order('created_at', { ascending: false })
+      .range(offset, offset + limit - 1);
+    
+    if (promptId) {
+      query = query.eq('prompt_id', promptId);
+    }
+    
+    const { data, error, count } = await query;
+    
+    if (error) {
+      console.error('Error fetching AI logs:', error);
+      throw new Error(error.message);
+    }
+    
+    return {
+      logs: data || [],
+      totalLogs: count || 0
+    };
+  } catch (error) {
+    console.error('Error in fetchAILogs:', error);
+    throw error;
   }
-  
-  const { data, error } = await query;
-  
-  if (error) throw error;
-  return data;
 };
 
 // Fetch AI metrics
 export const fetchAIMetrics = async () => {
-  // Get total prompts count
-  const { count: promptsCount, error: promptsError } = await supabase
-    .from('ai_prompts')
-    .select('id', { count: 'exact', head: true });
-  
-  if (promptsError) throw promptsError;
-  
-  // Get total logs count
-  const { count: logsCount, error: logsError } = await supabase
-    .from('ai_logs')
-    .select('id', { count: 'exact', head: true });
-  
-  if (logsError) throw logsError;
-  
-  // Get logs by category
-  const { data: logsByCategory, error: categoryError } = await supabase
-    .from('ai_logs')
-    .select(`
-      prompt:prompt_id (category)
-    `);
-  
-  if (categoryError) throw categoryError;
-  
-  // Process category data
-  const categories = {};
-  logsByCategory.forEach(log => {
-    if (log.prompt && log.prompt.category) {
-      const category = log.prompt.category;
-      categories[category] = (categories[category] || 0) + 1;
+  try {
+    // Get total prompts count
+    const { count: promptsCount, error: promptsError } = await supabase
+      .from('ai_prompts')
+      .select('*', { count: 'exact', head: true });
+    
+    if (promptsError) {
+      console.error('Error fetching prompts count:', promptsError);
+      throw new Error(promptsError.message);
     }
-  });
-  
-  // Get logs by day (last 30 days)
-  const thirtyDaysAgo = new Date();
-  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-  
-  const { data: recentLogs, error: recentLogsError } = await supabase
-    .from('ai_logs')
-    .select('created_at, tokens_used')
-    .gte('created_at', thirtyDaysAgo.toISOString());
-  
-  if (recentLogsError) throw recentLogsError;
-  
-  // Process daily data
-  const dailyData = {};
-  let totalTokens = 0;
-  
-  recentLogs.forEach(log => {
-    const date = new Date(log.created_at).toISOString().split('T')[0];
-    if (!dailyData[date]) {
-      dailyData[date] = { count: 0, tokens: 0 };
+    
+    // Get total logs count
+    const { count: logsCount, error: logsError } = await supabase
+      .from('ai_logs')
+      .select('*', { count: 'exact', head: true });
+    
+    if (logsError) {
+      console.error('Error fetching logs count:', logsError);
+      throw new Error(logsError.message);
     }
-    dailyData[date].count += 1;
-    dailyData[date].tokens += log.tokens_used || 0;
-    totalTokens += log.tokens_used || 0;
-  });
-  
-  return {
-    totalPrompts: promptsCount,
-    totalLogs: logsCount,
-    totalTokens,
-    categoryCounts: categories,
-    dailyData
-  };
+    
+    // Get total tokens used
+    const { data: tokensData, error: tokensError } = await supabase
+      .from('ai_logs')
+      .select('tokens_used');
+    
+    if (tokensError) {
+      console.error('Error fetching tokens used:', tokensError);
+      throw new Error(tokensError.message);
+    }
+    
+    const totalTokens = tokensData.reduce((sum, log) => sum + (log.tokens_used || 0), 0);
+    
+    // Get success rate
+    const { data: statusData, error: statusError } = await supabase
+      .from('ai_logs')
+      .select('status');
+    
+    if (statusError) {
+      console.error('Error fetching status data:', statusError);
+      throw new Error(statusError.message);
+    }
+    
+    const successCount = statusData.filter(log => log.status === 'success').length;
+    const successRate = statusData.length > 0 ? (successCount / statusData.length) * 100 : 0;
+    
+    return {
+      promptsCount,
+      logsCount,
+      totalTokens,
+      successRate,
+      // Add more metrics as needed
+    };
+  } catch (error) {
+    console.error('Error in fetchAIMetrics:', error);
+    throw error;
+  }
+};
+
+// Get prompt by category, type, and section
+export const getPromptByCategoryTypeAndSection = async (category, type, section) => {
+  try {
+    const { data, error } = await supabase
+      .from('ai_prompts')
+      .select('*')
+      .eq('category', category)
+      .eq('prompt_type', type)
+      .eq('section', section)
+      .single();
+    
+    if (error) {
+      console.error(`Error fetching prompt for ${category}/${type}/${section}:`, error);
+      return null;
+    }
+    
+    return data;
+  } catch (error) {
+    console.error('Error in getPromptByCategoryTypeAndSection:', error);
+    throw error;
+  }
 };

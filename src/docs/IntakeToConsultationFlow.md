@@ -1,96 +1,159 @@
 # Intake Form to Consultation Flow
 
-This document describes the flow from patient intake form submission to provider consultation.
+This document describes the flow from a patient completing an intake form to a provider reviewing a consultation.
 
 ## Overview
 
-When a patient selects a prescription product, they are directed to an intake form. After completing the form, a consultation is automatically created and assigned to a provider who is licensed in the patient's state. The provider reviews the consultation, which is prepopulated with the patient's intake form responses, and makes a decision on the prescription.
+When a patient selects a prescription product from the shop, they are directed to an intake form. After completing the form, a consultation is automatically created and assigned to a provider. The provider can then review the consultation, which includes AI-generated insights based on the intake form data.
 
 ## Components
 
 ### 1. Intake Form
 
-The intake form collects patient information, health history, and treatment preferences. It is implemented in `src/pages/intake/IntakeFormPage.jsx`.
+The intake form (`src/pages/intake/IntakeFormPage.jsx`) is a multi-step process that collects:
 
-Key features:
-- Multi-step form with progress tracking
-- Dynamic fields based on product category
-- Address collection for provider assignment
-- Payment information collection
+- Basic information (height, weight, etc.)
+- ID verification
+- Health history
+- Treatment preferences
+- Shipping address
+- Payment information
 
-### 2. Form Submission
+### 2. Consultation Service
 
-When the patient submits the form, the following happens:
-1. Form data is saved via `useSubmitForm` hook
-2. An order is created via `useCreateOrder` hook
-3. A consultation is created via `useCreateConsultation` hook
-4. A provider is assigned via `useAssignProvider` hook
+The consultation service (`src/services/consultationService.js`) handles:
 
-### 3. Provider Assignment
+- Transforming intake form data to consultation format
+- Generating AI summaries using the AI summarization feature
+- Assigning providers using a round-robin approach
+- Creating consultations in the database
 
-Providers are assigned based on:
-1. State licensing (provider must be licensed in patient's state)
-2. Specialization (provider should have expertise in the relevant category)
-3. Workload (providers with fewer active consultations are prioritized)
+### 3. AI Summarization
 
-### 4. Webhook Backup
+The AI summarization feature (`src/apis/ai/summaryService.js`) generates:
 
-A webhook handler ensures consultations are created even if the frontend logic fails:
-- Located in `src/server/webhooks/formSubmissionWebhook.js`
-- Triggered whenever a form submission is created
-- Creates a consultation if one doesn't already exist
-- Assigns a provider based on the same criteria as the frontend
+- Treatment recommendations with confidence scores
+- Reasoning for the recommendations
+- Assessment and plan based on the intake form data
+
+## Flow
+
+1. **Product Selection**:
+   - Patient selects a prescription product from the shop
+   - System determines the product category (weight management, ED, hair loss, etc.)
+   - Patient is directed to the intake form
+
+2. **Intake Form Completion**:
+   - Patient completes the multi-step intake form
+   - Form data is submitted and saved to the database
+
+3. **Order Creation**:
+   - System creates an order for the selected product
+   - Order status is set to "pending" until the consultation is approved
+
+4. **Consultation Creation**:
+   - System transforms the intake form data to consultation format
+   - AI summarization feature generates recommendations and reasoning
+   - Provider is assigned using round-robin approach
+   - Consultation is created in the database with "pending_review" status
+
+5. **Provider Review**:
+   - Provider sees the new consultation in their queue
+   - Provider reviews the patient's information and AI-generated insights
+   - Provider approves or rejects the consultation
+
+6. **Post-Approval Flow**:
+   - If approved, an invoice is generated for the patient
+   - When the invoice is paid, the order is processed
+   - Medication is shipped to the patient
 
 ## Implementation Details
 
-### Frontend Components
+### Intake Form Submission
 
-- `IntakeFormPage.jsx`: Main intake form component
-- `OrderConfirmationStep.jsx`: Confirmation page showing consultation status
+```javascript
+// Submit form data
+const formSubmission = await submitFormMutation.mutateAsync({
+  patientId: user?.id,
+  categoryId: productCategory,
+  formData: formData,
+});
+```
 
-### Backend Components
+### Order Creation
 
-- `formSubmissionWebhook.js`: Webhook handler for form submissions
-- `server.js`: Express server with webhook routes
+```javascript
+// Create order
+const order = await createOrderMutation.mutateAsync({
+  patientId: user?.id,
+  items: [
+    {
+      productId: selectedProduct.id,
+      productName: selectedProduct.name,
+      quantity: 1,
+      price: selectedProduct.price,
+      dosage: selectedProduct.dosage,
+      frequency: selectedProduct.frequency
+    }
+  ],
+  formSubmissionId: formSubmission.id,
+  shippingAddress: formData.shippingAddress,
+  paymentMethodId: formData.checkout.paymentMethodId
+});
+```
 
-### API Hooks
+### Consultation Creation
 
-- `useSubmitForm`: Submits form data
-- `useCreateOrder`: Creates an order
-- `useCreateConsultation`: Creates a consultation
-- `useAssignProvider`: Assigns a provider based on state and specialty
+```javascript
+// Create consultation
+const consultation = await createConsultation({
+  patientId: user?.id,
+  formSubmissionId: formSubmission.id,
+  formData: formData,
+  categoryId: productCategory,
+  orderId: order.id,
+  productName: selectedProduct.name
+});
+```
 
-## How to Test
+### Provider Assignment
 
-1. Start the server:
-   ```
-   cd src/server
-   npm install
-   npm run dev
-   ```
+The provider assignment uses a round-robin approach to distribute consultations evenly among eligible providers:
 
-2. Start the frontend:
-   ```
-   npm start
-   ```
+```javascript
+// Implement round-robin selection
+lastAssignedProviderIndex = (lastAssignedProviderIndex + 1) % eligibleProviders.length;
+const selectedProvider = eligibleProviders[lastAssignedProviderIndex];
+```
 
-3. Navigate to the shop page and select a prescription product
-4. Complete the intake form
-5. Verify that a consultation is created and assigned to a provider
+### AI Summarization
 
-## Troubleshooting
+The AI summarization feature generates recommendations and reasoning based on the intake form data:
 
-If a consultation is not created:
-1. Check the browser console for errors
-2. Verify that the webhook server is running
-3. Check the server logs for webhook errors
-4. Ensure the patient's state is provided in the shipping address
-5. Verify that there are providers licensed in the patient's state
+```javascript
+// Generate AI summary
+const aiSummary = await generateIntakeSummary(formData, categoryId, 'initial');
+```
+
+## Database Schema
+
+The flow involves the following database tables:
+
+- `form_submissions`: Stores the intake form data
+- `orders`: Stores the order information
+- `consultations`: Stores the consultation information
+- `ai_summaries`: Stores the AI-generated summaries
 
 ## Future Improvements
 
-1. Add real-time notifications for patients when their consultation status changes
-2. Implement provider availability scheduling
-3. Add support for video consultations
-4. Improve load balancing algorithm for provider assignment
-5. Add analytics to track conversion rates from intake to consultation
+1. **Enhanced Provider Assignment**:
+   - Consider provider workload and expertise
+   - Allow patients to select preferred providers
+
+2. **Real-time Notifications**:
+   - Notify providers of new consultations
+   - Notify patients of consultation status changes
+
+3. **Automated Follow-ups**:
+   - Schedule follow-up consultations automatically
+   - Send reminders to patients for follow-ups

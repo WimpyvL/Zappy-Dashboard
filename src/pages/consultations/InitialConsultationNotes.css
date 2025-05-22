@@ -747,7 +747,24 @@
     background-color: #1d4ed8; 
 }
 
-.ai-panel { 
+.button-green {
+    background-color: #10b981;
+    border: 1px solid #059669;
+    color: white;
+}
+
+.button-green:hover {
+    background-color: #059669;
+}
+
+.button-green:disabled {
+    background-color: #d1d5db;
+    border-color: #9ca3af;
+    color: #6b7280;
+    cursor: not-allowed;
+}
+
+.ai-panel {
     position: fixed; 
     top: 0;
     left: 0;

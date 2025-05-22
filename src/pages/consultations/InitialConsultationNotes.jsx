@@ -4,12 +4,16 @@ import { useServices } from '../../apis/services/hooks';
 import { useSubscriptionPlans } from '../../apis/subscriptionPlans/hooks';
 import { useProducts } from '../../apis/products/hooks';
 import { useCategories } from '../../apis/categories/hooks';
-import { useCreateConsultation } from '../../apis/consultations/hooks';
+import { useCreateConsultation, useUpdateConsultationStatus } from '../../apis/consultations/hooks';
 import { usePatientFormSubmissions } from '../../apis/formSubmissions/hooks';
 import { useScheduleFollowUp, useFollowUpTemplatesByCategoryAndPeriod } from '../../apis/followUps/hooks';
 import { useCreateInvoice } from '../../apis/invoices/hooks';
+import { useConsultationApproval } from '../../hooks/useConsultationApproval';
 import { useAuth } from '../../contexts/auth/AuthContext'; // Import auth context
-import { Loader2, AlertTriangle } from 'lucide-react';
+import { Loader2, AlertTriangle, CheckCircle, FileCheck } from 'lucide-react';
+
+// Import ApprovalNotesModal
+import ApprovalNotesModal from './components/ApprovalNotesModal';
 
 // Import components
 import {
@@ -34,7 +38,6 @@ const InitialConsultationNotes = ({
   consultationData,
   consultationId,
   readOnly = false,
-  updateStatusMutation,
 }) => {
   // Get current provider from auth context
   const { currentUser } = useAuth();
@@ -55,6 +58,8 @@ const InitialConsultationNotes = ({
       console.error("Error creating new consultation:", error);
     }
   });
+  const updateStatusMutation = useUpdateConsultationStatus();
+  const { approveConsultation, isProcessing: isApprovingConsultation } = useConsultationApproval();
 
   // --- Mock Data ---
   const mockServicesWithPlans = [
@@ -86,6 +91,9 @@ const InitialConsultationNotes = ({
   const [showAIPanel, setShowAIPanel] = useState(false);
   const [showIntakeForm, setShowIntakeForm] = useState(false);
   const [adjustFollowUp, setAdjustFollowUp] = useState(true);
+  const [approvalNotes, setApprovalNotes] = useState('');
+  const [isApproved, setIsApproved] = useState(false);
+  const [showApprovalModal, setShowApprovalModal] = useState(false);
   
   // --- Medication Controls State ---
   const [openMedicationControls, setOpenMedicationControls] = useState({});
@@ -145,7 +153,7 @@ const InitialConsultationNotes = ({
       { id: 'mh', name: 'Mental Health', dotClass: 'mh-dot' },
       { id: 'wh', name: 'Women\'s Health', dotClass: 'wh-dot' },
       { id: 'derm', name: 'Dermatology', dotClass: 'derm-dot' },
-      { id: 'hair', name: 'Hair Loss', dotClass: 'hair-dot' }
+      { id: 'hair', dotClass: 'hair-dot' }
     ];
     
     // If categories data is available, use it; otherwise use fallback
@@ -609,17 +617,15 @@ const InitialConsultationNotes = ({
       return newDosages;
     });
 
-    setOpenMedicationControls(prev => {
-      const newControls = { ...prev };
-      delete newControls[medId];
-      return newControls;
-    });
+    setOpenMedicationControls(prev => ({
+      ...prev,
+      [medId]: !prev[medId]
+    }));
 
-    setOpenMedicationInstructions(prev => {
-      const newInstructions = { ...prev };
-      delete newInstructions[medId];
-      return newInstructions;
-    });
+    setOpenMedicationInstructions(prev => ({
+      ...prev,
+      [medId]: !prev[medId]
+    }));
 
     // Update medicationData to toggle selected state
     setMedicationData(prev => {
@@ -818,6 +824,7 @@ const InitialConsultationNotes = ({
           noteId: result.id,
           templateId: getNotificationTemplate(consultationData)
         });
+        
 
         if (notificationResult.success) {
           console.log('Patient notification sent successfully:', notificationResult);
@@ -861,6 +868,49 @@ const InitialConsultationNotes = ({
     onClose
   ]);
 
+  // Show approval modal
+  const showApprovalConfirmation = useCallback(() => {
+    if (!consultationId) {
+      toast.error('Cannot approve: No consultation ID found');
+      return;
+    }
+
+    if (!currentUser?.id) {
+      toast.error('Cannot approve: Provider ID not available');
+      return;
+    }
+
+    setShowApprovalModal(true);
+  }, [consultationId, currentUser?.id]);
+
+  // Handle consultation approval
+  const handleApproveConsultation = useCallback(async (notes) => {
+    try {
+      // Approve the consultation and generate invoice
+      await approveConsultation({
+        consultationId,
+        approverId: currentUser.id,
+        approvalData: {
+          notes: notes
+        }
+      });
+
+      // Update local state to reflect approval
+      setIsApproved(true);
+      setApprovalNotes(notes);
+      setShowApprovalModal(false);
+      toast.success('Consultation approved and invoice generated');
+
+      // Close the consultation after a short delay
+      setTimeout(() => {
+        if (onClose) onClose();
+      }, 2000);
+    } catch (error) {
+      console.error('Error approving consultation:', error);
+      toast.error('Failed to approve consultation');
+    }
+  }, [consultationId, currentUser?.id, approveConsultation, onClose]);
+
   // --- Loading & Error States ---
   // Don't block on categories loading, as we have fallback options
   const isLoading = isLoadingServices || isLoadingPlans || isLoadingProducts;
@@ -883,7 +933,7 @@ const InitialConsultationNotes = ({
   return (
     <div className="consultation-notes-container">
       {/* Header */}
-      <ServiceTagsHeader 
+      <ServiceTagsHeader
         patientName={patient?.name}
         activeServices={activeServices}
         toggleServicePanel={toggleServicePanel}
@@ -973,17 +1023,30 @@ const InitialConsultationNotes = ({
                     frequency: medicationData[medId].frequency,
                     category: medicationData[medId].category
                   }))}
-              />
+      />
           </div>
         </div>
       </div>
 
       {/* Footer */}
-      <ConsultationFooter 
+      <ConsultationFooter
         onClose={onClose}
         handleSave={handleSave}
         handleSubmit={handleSubmit}
+        handleApprove={showApprovalConfirmation}
+        isApproved={isApproved}
+        isApprovingConsultation={isApprovingConsultation}
         readOnly={readOnly}
+        consultationId={consultationId}
+        consultationStatus={consultationData?.status || 'pending_review'}
+      />
+
+      {/* Approval Notes Modal */}
+      <ApprovalNotesModal
+        isOpen={showApprovalModal}
+        onClose={() => setShowApprovalModal(false)}
+        onApprove={handleApproveConsultation}
+        isProcessing={isApprovingConsultation}
       />
 
       {/* AI Panel */}

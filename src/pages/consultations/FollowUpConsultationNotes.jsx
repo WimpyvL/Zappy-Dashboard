@@ -270,6 +270,44 @@ const FollowUpConsultationNotes = ({
     setShowAIPanel(!showAIPanel);
   };
   
+  // State for Treatment Progress editing
+  const [isEditingProgress, setIsEditingProgress] = useState(false);
+  const [editedProgressContent, setEditedProgressContent] = useState(intervalHistory);
+  const [isGeneratingProgressAI, setIsGeneratingProgressAI] = useState(false);
+  
+  // Handle AI Compose for Treatment Progress
+  const handleProgressAICompose = async () => {
+    setIsGeneratingProgressAI(true);
+    toast.info("Generating treatment progress...");
+    
+    // Simulate AI generation
+    await new Promise(resolve => setTimeout(resolve, 1500));
+    const aiContent = "AI-generated treatment progress summary for this interval.\n\n- Patient is making steady progress.\n- No significant side effects reported.\n- Continue current plan and monitor closely.";
+    setEditedProgressContent(aiContent);
+    setIsGeneratingProgressAI(false);
+    setIsEditingProgress(true);
+    
+    toast.success("Treatment progress generated");
+  };
+  
+  // Handle Edit for Treatment Progress
+  const handleProgressEdit = () => {
+    setIsEditingProgress(true);
+    setEditedProgressContent(intervalHistory);
+  };
+  
+  // Handle Save for Treatment Progress
+  const handleProgressSave = () => {
+    setIntervalHistory(editedProgressContent);
+    setIsEditingProgress(false);
+  };
+  
+  // Handle Cancel for Treatment Progress
+  const handleProgressCancel = () => {
+    setIsEditingProgress(false);
+    setEditedProgressContent(intervalHistory);
+  };
+  
   // Service-specific progress rendering function
   const renderServiceSpecificProgress = () => {
     // Get primary service category
@@ -571,7 +609,19 @@ const FollowUpConsultationNotes = ({
           </div>
         );
       default:
-        return null;
+        return (
+          <TreatmentProgressBox
+            intervalHistory={intervalHistory}
+            isEditing={isEditingProgress}
+            isGeneratingAI={isGeneratingProgressAI}
+            editedContent={editedProgressContent}
+            onEditChange={setEditedProgressContent}
+            onSave={handleProgressSave}
+            onCancel={handleProgressCancel}
+            onAICompose={handleProgressAICompose}
+            onEdit={handleProgressEdit}
+          />
+        );
     }
   };
   
@@ -708,6 +758,23 @@ const FollowUpConsultationNotes = ({
                 <div className="flex items-center">
                   <h3 className="font-medium">Treatment Progress</h3>
                 </div>
+                {Object.keys(activeServices).length === 0 && (
+                  <div className="flex gap-2">
+                    <button
+                      onClick={handleProgressAICompose}
+                      className="px-2 py-1 text-xs rounded bg-purple-500 text-white hover:bg-purple-600"
+                      disabled={isGeneratingProgressAI}
+                    >
+                      AI Compose
+                    </button>
+                    <button
+                      onClick={handleProgressEdit}
+                      className="px-2 py-1 text-xs rounded bg-blue-500 text-white hover:bg-blue-600"
+                    >
+                      Edit
+                    </button>
+                  </div>
+                )}
               </div>
               <div className="p-4">
                 {renderServiceSpecificProgress()}
@@ -848,6 +915,202 @@ const FollowUpConsultationNotes = ({
         categoryId={Object.keys(activeServices)[0] || 'general'}
         isFollowUp={true}
       />
+    </div>
+  );
+};
+
+// Treatment Progress Box Component styled like AssessmentPlanCard
+const TreatmentProgressBox = ({ 
+  intervalHistory, 
+  isEditing, 
+  isGeneratingAI, 
+  editedContent, 
+  onEditChange, 
+  onSave, 
+  onCancel,
+  onAICompose,
+  onEdit
+}) => {
+  return (
+    <div style={{ 
+      background: 'white',
+      borderRadius: '6px',
+      boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
+      overflow: 'hidden',
+      marginBottom: '8px',
+      border: '1px solid #e5e7eb'
+    }}>
+      <div style={{ 
+        padding: '10px 14px',
+        borderBottom: '1px solid #e5e7eb',
+        fontWeight: 500,
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        fontSize: '15px',
+        backgroundColor: '#4f46e5'
+      }}>
+        <span style={{ color: 'white' }}>Treatment Progress</span>
+        <div style={{ display: 'flex', gap: '8px', fontSize: '14px' }}>
+          {isEditing ? (
+            <>
+              <button
+                onClick={onSave}
+                style={{
+                  background: '#d1fae5', // Light green background
+                  color: '#065f46', // Dark green text
+                  padding: '2px 6px',
+                  borderRadius: '4px',
+                  border: '1px solid #a7f3d0', // Green border
+                  display: 'flex',
+                  alignItems: 'center',
+                  cursor: 'pointer',
+                  fontSize: '14px',
+                  fontWeight: 'normal'
+                }}
+                disabled={isGeneratingAI}
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: '4px' }}>
+                  <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"></path>
+                  <polyline points="17 21 17 13 7 13 7 21"></polyline>
+                  <polyline points="7 3 7 8 15 8"></polyline>
+                </svg>
+                Save
+              </button>
+              <button
+                onClick={onCancel}
+                style={{
+                  background: '#6b7280', // Gray-500
+                  color: 'white',
+                  padding: '2px 6px',
+                  borderRadius: '4px',
+                  border: 'none',
+                  display: 'flex',
+                  alignItems: 'center',
+                  cursor: 'pointer',
+                  fontSize: '14px',
+                  fontWeight: 'normal'
+                }}
+                disabled={isGeneratingAI}
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: '4px' }}>
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+                Cancel
+              </button>
+            </>
+          ) : (
+            <>
+              <button
+                onClick={onAICompose}
+                style={{
+                  background: '#a855f7', // Purple-500
+                  color: 'white',
+                  padding: '2px 4px',
+                  borderRadius: '4px',
+                  border: 'none',
+                  display: 'flex',
+                  alignItems: 'center',
+                  cursor: 'pointer',
+                  fontSize: '12px',
+                  fontWeight: 'normal'
+                }}
+              >
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: '4px' }}>
+                  <path d="M12 3v5m0 0v5m0-5h5m-5 0H7"></path>
+                  <path d="M12 18.5c-1.2-1-2-1.8-2-2.8 0-1.5 1.5-2.7 2-3.2 .5.5 2 1.7 2 3.2 0 1-.8 1.8-2 2.8z"></path>
+                </svg>
+                AI Compose
+              </button>
+              <button
+                onClick={onEdit}
+                style={{
+                  background: '#3b82f6', // Blue-500
+                  color: 'white',
+                  padding: '2px 4px',
+                  borderRadius: '4px',
+                  border: 'none',
+                  display: 'flex',
+                  alignItems: 'center',
+                  cursor: 'pointer',
+                  fontSize: '12px',
+                  fontWeight: 'normal'
+                }}
+              >
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: '4px' }}>
+                  <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"></path>
+                  <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                </svg>
+                Edit
+              </button>
+            </>
+          )}
+        </div>
+      </div>
+      <div style={{ padding: '10px 14px', fontSize: '14px' }}>
+        {isEditing ? (
+          isGeneratingAI ? (
+            <div style={{ 
+              display: 'flex', 
+              flexDirection: 'column',
+              alignItems: 'center', 
+              justifyContent: 'center', 
+              padding: '20px',
+              minHeight: '150px'
+            }}>
+              <div style={{ 
+                width: '24px', 
+                height: '24px', 
+                border: '3px solid #ddd6fe', 
+                borderTopColor: '#8b5cf6',
+                borderRadius: '50%',
+                animation: 'spin 1s linear infinite',
+                marginBottom: '12px'
+              }} />
+              <div style={{ color: '#5b21b6', fontWeight: '500' }}>
+                AI is composing treatment progress...
+              </div>
+              <style>{`
+                @keyframes spin {
+                  to { transform: rotate(360deg); }
+                }
+              `}</style>
+            </div>
+          ) : (
+            <textarea
+              value={editedContent}
+              onChange={(e) => onEditChange(e.target.value)}
+              style={{
+                width: '100%',
+                minHeight: '150px',
+                padding: '6px',
+                border: '1px solid #e5e7eb',
+                borderRadius: '4px',
+                fontSize: '14px',
+                fontFamily: 'inherit',
+                resize: 'vertical'
+              }}
+              placeholder="Enter treatment progress notes here..."
+            />
+          )
+        ) : (
+          <div style={{ 
+            padding: '8px', 
+            backgroundColor: 'white', 
+            borderRadius: '4px',
+            fontSize: '14px',
+            marginBottom: '8px',
+            whiteSpace: 'pre-line',
+            border: '1px solid #e5e7eb'
+          }}>
+            {intervalHistory ? 
+              intervalHistory : 
+              <span style={{ color: '#6b7280', fontStyle: 'italic' }}>No treatment progress notes yet.</span>
+            }
+          </div>
+        )}
+      </div>
     </div>
   );
 };

@@ -1,7 +1,17 @@
 import React from 'react';
-import { X, Save, CheckCircle, ArrowRight } from 'lucide-react';
+import { X, Save, CheckCircle, ArrowRight, FileCheck } from 'lucide-react';
 
-const ConsultationFooter = ({ onClose, handleSave, handleSubmit, readOnly }) => {
+const ConsultationFooter = ({
+  onClose,
+  handleSave,
+  handleSubmit,
+  handleApprove,
+  isApproved,
+  isApprovingConsultation,
+  readOnly,
+  consultationId,
+  consultationStatus
+}) => {
   return (
     <footer className="consultation-footer">
       <div style={{ display: 'flex', alignItems: 'center', fontSize: '14px', color: '#6b7280' }}>
@@ -30,7 +40,17 @@ const ConsultationFooter = ({ onClose, handleSave, handleSubmit, readOnly }) => 
             </button>
           </>
         )}
-        {readOnly && (
+        {readOnly && consultationId && consultationStatus === 'pending_review' && (
+          <button
+            className="button button-green"
+            onClick={handleApprove}
+            disabled={isApproved || isApprovingConsultation}
+          >
+            <FileCheck size={14} className="mr-1" />
+            {isApprovingConsultation ? 'Approving...' : isApproved ? 'Approved' : 'Approve & Generate Invoice'}
+          </button>
+        )}
+        {readOnly && (consultationStatus !== 'pending_review' || !consultationId) && (
           <button className="button button-blue">
             <ArrowRight size={14} className="mr-1" />
             Next Patient

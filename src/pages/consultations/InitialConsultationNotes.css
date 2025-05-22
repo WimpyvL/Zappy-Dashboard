@@ -13,7 +13,7 @@
 }
 
 .consultation-header {
-    background-color: #4f46e5;
+    background-color: #4f46e5; /* Updated to indigo-600 */
     color: white;
     padding: 8px 16px; 
     display: flex;
@@ -728,23 +728,23 @@
 }
 
 .button-primary { 
-    background-color: #4f46e5; 
-    border: 1px solid #4338ca; 
+    background-color: #4f46e5; /* Updated to indigo-600 */
+    border: 1px solid #4338ca; /* Indigo-700 border */
     color: white; 
 }
 
 .button-primary:hover { 
-    background-color: #4338ca; 
+    background-color: #4338ca; /* Indigo-700 hover state */
 }
 
 .button-blue { 
-    background-color: #2563eb; 
-    border: 1px solid #1d4ed8; 
+    background-color: #4f46e5; /* Updated to indigo-600 */
+    border: 1px solid #4338ca; /* Indigo-700 border */
     color: white; 
 }
 
 .button-blue:hover { 
-    background-color: #1d4ed8; 
+    background-color: #4338ca; /* Indigo-700 hover state */
 }
 
 .button-green {
@@ -814,7 +814,7 @@
     bottom: 16px;
     right: 16px;
     padding: 8px 12px;
-    background-color: #4f46e5;
+    background-color: #4f46e5; /* Updated to indigo-600 */
     color: white;
     border-radius: 4px;
     font-size: 15px;

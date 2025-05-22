@@ -4,6 +4,8 @@
  */
 
 export const paths = {
+  // Developer tools
+  ui_components: '/ui-components',
   // Authentication
   login: '/login',
   signup: '/signup',
@@ -26,6 +28,7 @@ export const paths = {
   services: '/services',
   discounts: '/discounts',
   tags: '/tags',
+  subscription_durations: '/subscription-durations',
 
   // Other routes
   settings: '/settings',

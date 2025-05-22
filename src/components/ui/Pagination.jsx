@@ -2,16 +2,9 @@ import React from 'react';
 
 const Pagination = ({ currentPage, totalPages, onPageChange }) => {
   const maxDisplayedPages = 5; // Maximum number of page buttons to display
-
-  // Define reusable button classes
-  const baseButtonClasses = "relative inline-flex items-center px-4 py-2 border text-sm font-medium";
-  const inactivePageClasses = "bg-white border-gray-300 text-gray-700 hover:bg-gray-50";
-  const activePageClasses = "z-10 bg-indigo-50 border-indigo-500 text-indigo-600";
-  const disabledButtonClasses = "text-gray-300 cursor-not-allowed";
-  const enabledButtonClasses = "text-gray-500 hover:bg-gray-50";
-
+  
   if (totalPages <= 1) return null;
-
+  
   // Calculate range of pages to show
   let startPage = Math.max(1, currentPage - Math.floor(maxDisplayedPages / 2));
   let endPage = Math.min(totalPages, startPage + maxDisplayedPages - 1);
@@ -51,12 +44,12 @@ const Pagination = ({ currentPage, totalPages, onPageChange }) => {
           <>
             <button
               onClick={() => onPageChange(1)}
-              className={`${baseButtonClasses} ${inactivePageClasses}`}
+              className="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50"
             >
               1
             </button>
             {startPage > 2 && (
-              <span className={`${baseButtonClasses} text-gray-700`}>
+              <span className="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700">
                 ...
               </span>
             )}
@@ -68,10 +61,10 @@ const Pagination = ({ currentPage, totalPages, onPageChange }) => {
           <button
             key={page}
             onClick={() => onPageChange(page)}
-            className={`${baseButtonClasses} ${
+            className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
               page === currentPage
-                ? activePageClasses
-                : inactivePageClasses
+                ? 'z-10 bg-blue-50 border-blue-500 text-blue-600'
+                : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
             }`}
           >
             {page}
@@ -82,13 +75,13 @@ const Pagination = ({ currentPage, totalPages, onPageChange }) => {
         {endPage < totalPages && (
           <>
             {endPage < totalPages - 1 && (
-              <span className={`${baseButtonClasses} text-gray-700`}>
+              <span className="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700">
                 ...
               </span>
             )}
             <button
               onClick={() => onPageChange(totalPages)}
-              className={`${baseButtonClasses} ${inactivePageClasses}`}
+              className="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50"
             >
               {totalPages}
             </button>
@@ -101,8 +94,8 @@ const Pagination = ({ currentPage, totalPages, onPageChange }) => {
           disabled={currentPage === totalPages}
           className={`relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium ${
             currentPage === totalPages 
-              ? disabledButtonClasses 
-              : enabledButtonClasses
+              ? 'text-gray-300 cursor-not-allowed' 
+              : 'text-gray-500 hover:bg-gray-50'
           }`}
         >
           <span className="sr-only">Next</span>

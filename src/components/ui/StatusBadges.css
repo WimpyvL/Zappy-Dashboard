@@ -1,0 +1,70 @@
+/* Status Badge System
+   A refined badge system for displaying status information
+   with subtle backgrounds, borders, and appropriate text colors
+*/
+
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.5rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+/* Pending status - yellow/amber theme */
+.status-badge.pending {
+  background-color: rgba(255, 209, 0, 0.15);
+  color: #b78e00;
+  border: 1px solid rgba(255, 209, 0, 0.3);
+}
+
+/* Approved status - green theme */
+.status-badge.approved {
+  background-color: rgba(16, 185, 129, 0.15);
+  color: #047857;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+/* Rejected status - red theme */
+.status-badge.rejected {
+  background-color: rgba(248, 92, 92, 0.15);
+  color: #be3a3a;
+  border: 1px solid rgba(248, 92, 92, 0.3);
+}
+
+/* Follow-up status - blue theme */
+.status-badge.followup {
+  background-color: rgba(45, 127, 249, 0.15);
+  color: #1a56db;
+  border: 1px solid rgba(45, 127, 249, 0.3);
+}
+
+/* In progress status - purple theme */
+.status-badge.in-progress {
+  background-color: rgba(172, 143, 233, 0.15);
+  color: #7c3aed;
+  border: 1px solid rgba(172, 143, 233, 0.3);
+}
+
+/* Completed status - teal theme */
+.status-badge.completed {
+  background-color: rgba(13, 148, 136, 0.15);
+  color: #0f766e;
+  border: 1px solid rgba(13, 148, 136, 0.3);
+}
+
+/* Cancelled status - gray theme */
+.status-badge.cancelled {
+  background-color: rgba(107, 114, 128, 0.15);
+  color: #4b5563;
+  border: 1px solid rgba(107, 114, 128, 0.3);
+}
+
+/* Optional icon styling for badges with icons */
+.status-badge .icon {
+  margin-right: 0.25rem;
+  width: 0.875rem;
+  height: 0.875rem;
+}

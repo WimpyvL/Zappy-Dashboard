@@ -1,353 +1,206 @@
-import React, { useState } from 'react';
-import {
+import React, { useState, useEffect } from 'react';
+import { Calendar, Plus, Edit, Trash2, Search, Loader2 } from 'lucide-react';
+import { 
   useSubscriptionDurations,
-  useUpdateSubscriptionDuration,
   useCreateSubscriptionDuration,
+  useUpdateSubscriptionDuration,
   useDeleteSubscriptionDuration
 } from '../../apis/subscriptionDurations/hooks';
-import { toast } from 'react-toastify';
-
-// Components
 import PageHeader from '../../components/ui/PageHeader';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
-import useSubscriptionDurationForm from '../../hooks/useSubscriptionDurationForm';
+import SubscriptionDurationModal from '../../components/admin/SubscriptionDurationModal';
+import { toast } from 'react-toastify';
 
 const SubscriptionDurationsPage = () => {
-  const [editingDurationId, setEditingDurationId] = useState(null);
-  const [isCreating, setIsCreating] = useState(false);
+  const [showModal, setShowModal] = useState(false);
+  const [currentDuration, setCurrentDuration] = useState(null);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
 
-  // Fetch all durations
-  const { data: durations, isLoading, refetch } = useSubscriptionDurations();
+  // Fetch data
+  const { data: durationsData, isLoading } = useSubscriptionDurations();
+  const durations = durationsData || [];
 
-  // Update duration mutation
-  const { mutate: updateDuration, isLoading: isUpdating } = useUpdateSubscriptionDuration({
+  // Mutations
+  const createDurationMutation = useCreateSubscriptionDuration({
     onSuccess: () => {
-      toast.success('Subscription duration updated successfully');
-      setEditingDurationId(null);
-      refetch();
+      toast.success('Billing cycle created successfully');
+      setShowModal(false);
+    },
+    onError: (error) => {
+      toast.error(`Error creating billing cycle: ${error.message}`);
     }
   });
 
-  // Create duration mutation
-  const { mutate: createDuration, isLoading: isCreatingDuration } = useCreateSubscriptionDuration({
+  const updateDurationMutation = useUpdateSubscriptionDuration({
     onSuccess: () => {
-      toast.success('Subscription duration created successfully');
-      setIsCreating(false);
-      refetch();
+      toast.success('Billing cycle updated successfully');
+      setShowModal(false);
+    },
+    onError: (error) => {
+      toast.error(`Error updating billing cycle: ${error.message}`);
     }
   });
 
-  // Delete duration mutation
-  const { mutate: deleteDuration, isLoading: isDeleting } = useDeleteSubscriptionDuration({
+  const deleteDurationMutation = useDeleteSubscriptionDuration({
     onSuccess: () => {
-      toast.success('Subscription duration deleted successfully');
-      refetch();
+      toast.success('Billing cycle deleted successfully');
+    },
+    onError: (error) => {
+      toast.error(`Error deleting billing cycle: ${error.message}`);
     }
   });
 
-  // Hook for the create form
-  const {
-    formData: newDuration,
-    errors: createErrors,
-    handleInputChange: handleCreateFieldChange,
-    handleNumericChange: handleCreateNumericChange,
-    validateForm: validateCreateForm,
-    setFormData: setNewDuration,
-  } = useSubscriptionDurationForm({
-    name: '',
-    duration_months: 1,
-    duration_days: null,
-    discount_percent: 0
-  });
+  // Filter durations based on search term
+  const filteredDurations = durations.filter(duration => 
+    duration.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
-  // Hook for the edit form
-  const editingDuration = durations?.find(d => d.id === editingDurationId);
-  const {
-    formData: editFormData,
-    errors: editErrors,
-    handleInputChange: handleEditFieldChange,
-    handleNumericChange: handleEditNumericChange,
-    validateForm: validateEditForm,
-    setFormData: setEditFormData,
-  } = useSubscriptionDurationForm(editingDuration || {
-    name: '',
-    duration_months: 1,
-    duration_days: null,
-    discount_percent: 0
-  });
-
-  // Handle edit mode toggle
-  const handleEditToggle = (duration) => {
-    if (editingDurationId === duration.id) {
-      setEditingDurationId(null);
-    } else {
-      setEditingDurationId(duration.id);
-    }
+  // Handle actions
+  const handleAddNew = () => {
+    setIsEditMode(false);
+    setCurrentDuration(null);
+    setShowModal(true);
   };
 
-  // Handle create mode toggle
-  const handleCreateToggle = () => {
-    setIsCreating(!isCreating);
-    // Reset new duration form when toggling off
-    if (isCreating) {
-       setNewDuration({
-        name: '',
-        duration_months: 1,
-        duration_days: null,
-        discount_percent: 0
-      });
-    }
+  const handleEdit = (duration) => {
+    setIsEditMode(true);
+    setCurrentDuration(duration);
+    setShowModal(true);
   };
 
-  // Handle update submission
-  const handleUpdateSubmit = () => {
-    if (validateEditForm()) {
-      updateDuration({
-        id: editingDurationId,
-        durationData: {
-          name: editFormData.name,
-          duration_months: editFormData.duration_months,
-          duration_days: editFormData.duration_days,
-          discount_percent: editFormData.discount_percent || 0
-        }
+  const handleDelete = (duration) => {
+    if (!window.confirm(`Are you sure you want to delete the "${duration.name}" billing cycle?`)) {
+      return;
+    }
+    deleteDurationMutation.mutate(duration.id);
+  };
+
+  const handleSubmit = (durationData) => {
+    if (isEditMode && currentDuration) {
+      updateDurationMutation.mutate({
+        id: currentDuration.id,
+        durationData
       });
     } else {
-       toast.error(editErrors.duration || editErrors.name || 'Validation failed.');
-    }
-  };
-
-  // Handle create submission
-  const handleCreateSubmit = () => {
-    if (validateCreateForm()) {
-      createDuration(newDuration, {
-        onError: (error) => {
-          console.error('Detailed error:', error);
-          toast.error(`Failed to create: ${error.message || 'Unknown error'}`);
-        }
-      });
-    } else {
-       toast.error(createErrors.duration || createErrors.name || 'Validation failed.');
-    }
-  };
-
-  // Handle delete
-  const handleDelete = (id) => {
-    if (window.confirm('Are you sure you want to delete this subscription duration? This action cannot be undone.')) {
-      deleteDuration(id);
+      createDurationMutation.mutate(durationData);
     }
   };
 
   if (isLoading) {
     return (
       <div className="container mx-auto px-4 py-6">
-        <PageHeader title="Subscription Durations" />
-        <LoadingSpinner />
+        <PageHeader title="Subscription Billing Cycles" />
+        <div className="flex justify-center items-center h-64">
+          <LoadingSpinner />
+        </div>
       </div>
     );
   }
 
   return (
     <div className="container mx-auto px-4 py-6">
-      <PageHeader
-        title="Subscription Durations"
-        actionButton={{
-          label: isCreating ? "Cancel" : "Add Duration",
-          onClick: handleCreateToggle
-        }}
-      />
+      {/* Page Header */}
+      <div className="flex justify-between items-center mb-6">
+        <PageHeader title="Subscription Billing Cycles" />
+        <button
+          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md flex items-center"
+          onClick={handleAddNew}
+        >
+          <Plus className="h-5 w-5 mr-2" />
+          Add New Billing Cycle
+        </button>
+      </div>
 
-      <div className="bg-white shadow rounded-lg overflow-hidden mb-6">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Duration (Months)</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Duration (Days)</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Discount (%)</th>
-              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            {isCreating && (
-              <tr className="bg-blue-50">
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <input
-                    type="text"
-                    className="w-full p-2 border rounded"
-                    placeholder="e.g., Quarterly"
-                    value={newDuration.name}
-                    onChange={handleCreateFieldChange}
-                    name="name"
-                  />
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <input
-                    type="number"
-                    min="1"
-                    className="w-full p-2 border rounded"
-                    value={newDuration.duration_months}
-                    onChange={handleCreateNumericChange}
-                    name="duration_months"
-                  />
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <input
-                    type="number"
-                    min="1"
-                    className="w-full p-2 border rounded"
-                    value={newDuration.duration_days || ''}
-                    placeholder="Optional"
-                    onChange={handleCreateNumericChange}
-                    name="duration_days"
-                  />
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <input
-                    type="number"
-                    min="0"
-                    max="100"
-                    className="w-full p-2 border rounded"
-                    value={newDuration.discount_percent}
-                    onChange={handleCreateNumericChange}
-                    name="discount_percent"
-                  />
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-right">
-                  <button
-                    onClick={handleCreateSubmit}
-                    disabled={isCreatingDuration}
-                    className="bg-green-600 hover:bg-green-700 text-white py-1 px-3 rounded mr-2"
-                  >
-                    {isCreatingDuration ? 'Saving...' : 'Save'}
-                  </button>
-                  <button
-                    onClick={handleCreateToggle}
-                    className="bg-gray-600 hover:bg-gray-700 text-white py-1 px-3 rounded"
-                  >
-                    Cancel
-                  </button>
-                </td>
+      {/* Main Content */}
+      <div className="bg-white shadow-md rounded-lg overflow-hidden mb-6">
+        {/* Search */}
+        <div className="p-4 border-b border-gray-200">
+          <div className="relative max-w-md">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <Search className="h-5 w-5 text-gray-400" />
+            </div>
+            <input
+              type="text"
+              className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+              placeholder="Search billing cycles..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+        </div>
+
+        {/* Table */}
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50">
+              <tr>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Duration (Months)</th>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Duration (Days)</th>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Discount (%)</th>
+                <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
               </tr>
-            )}
-
-            {durations?.length > 0 ? (
-              durations.map(duration => (
-                <tr key={duration.id} className={`hover:bg-gray-50 ${editingDurationId === duration.id ? 'bg-yellow-50' : ''}`}>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {filteredDurations.map((duration) => (
+                <tr key={duration.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4 whitespace-nowrap">
-                    {editingDurationId === duration.id ? (
-                      <input
-                        type="text"
-                        className="w-full p-2 border rounded"
-                        value={editFormData.name}
-                        onChange={handleEditFieldChange}
-                        name="name"
-                      />
-                    ) : (
-                      <div className="font-medium text-gray-900">{duration.name}</div>
-                    )}
+                    <div className="flex items-center">
+                      <Calendar className="h-5 w-5 text-gray-500 mr-2" />
+                      <div className="text-sm font-medium text-gray-900">{duration.name}</div>
+                    </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    {editingDurationId === duration.id ? (
-                      <input
-                        type="number"
-                        min="1"
-                        className="w-full p-2 border rounded"
-                        value={editFormData.duration_months}
-                        onChange={handleEditNumericChange}
-                        name="duration_months"
-                      />
-                    ) : (
-                      duration.duration_months
-                    )}
+                    <div className="text-sm text-gray-500">{duration.duration_months}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    {editingDurationId === duration.id ? (
-                      <input
-                        type="number"
-                        min="1"
-                        className="w-full p-2 border rounded"
-                        value={editFormData.duration_days || ''}
-                        placeholder="Optional"
-                        onChange={handleEditNumericChange}
-                        name="duration_days"
-                      />
-                    ) : (
-                      duration.duration_days || '-'
-                    )}
+                    <div className="text-sm text-gray-500">{duration.duration_days || '-'}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    {editingDurationId === duration.id ? (
-                      <input
-                        type="number"
-                        min="0"
-                        max="100"
-                        className="w-full p-2 border rounded"
-                        value={editFormData.discount_percent}
-                        onChange={handleEditNumericChange}
-                        name="discount_percent"
-                      />
-                    ) : (
-                      `${duration.discount_percent || 0}%`
-                    )}
+                    <div className="text-sm text-gray-500">{duration.discount_percent || 0}%</div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right">
-                    {editingDurationId === duration.id ? (
-                      <>
-                        <button
-                          onClick={handleUpdateSubmit}
-                          disabled={isUpdating}
-                          className="bg-green-600 hover:bg-green-700 text-white py-1 px-3 rounded mr-2"
-                        >
-                          {isUpdating ? 'Saving...' : 'Save'}
-                        </button>
-                        <button
-                          onClick={() => setEditingDurationId(null)}
-                          className="bg-gray-600 hover:bg-gray-700 text-white py-1 px-3 rounded"
-                        >
-                          Cancel
-                        </button>
-                      </>
-                    ) : (
-                      <>
-                        <button
-                          onClick={() => handleEditToggle(duration)}
-                          className="text-blue-600 hover:text-blue-900 mr-4"
-                        >
-                          Edit
-                        </button>
-                        <button
-                          onClick={() => handleDelete(duration.id)}
-                          disabled={isDeleting}
-                          className="text-red-600 hover:text-red-900"
-                        >
-                          Delete
-                        </button>
-                      </>
-                    )}
+                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                    <button
+                      className="text-blue-600 hover:text-blue-900 mr-3"
+                      onClick={() => handleEdit(duration)}
+                    >
+                      <Edit className="h-5 w-5" />
+                    </button>
+                    <button
+                      className="text-red-600 hover:text-red-900"
+                      onClick={() => handleDelete(duration)}
+                    >
+                      <Trash2 className="h-5 w-5" />
+                    </button>
                   </td>
                 </tr>
-              ))
-            ) : (
-              <tr>
-                <td colSpan="4" className="px-6 py-4 text-center">
-                  No subscription durations found
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+              ))}
+              {filteredDurations.length === 0 && (
+                <tr>
+                  <td colSpan="5" className="px-6 py-4 text-center text-sm text-gray-500">
+                    {searchTerm ? 'No billing cycles found matching your search' : 'No billing cycles found. Click "Add New Billing Cycle" to create one.'}
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+        <div className="px-6 py-4 border-t border-gray-200">
+          <p className="text-sm text-gray-500">
+            {filteredDurations.length} billing cycles found
+          </p>
+        </div>
       </div>
 
-      <div className="bg-blue-50 border-l-4 border-blue-500 text-blue-700 p-4 mb-6">
-        <h3 className="font-bold">About Subscription Durations</h3>
-        <p>Subscription durations determine the length and discount for each billing cycle option.</p>
-        <ul className="list-disc pl-5 mt-2">
-          <li>Set up durations like Monthly (28 days), Quarterly, Semi-Annual, and Annual</li>
-          <li>Use either months or exact days for precise billing periods</li>
-          <li>Configure discounts to incentivize longer commitments</li>
-          <li>All treatment packages will use these durations for subscription options</li>
-        </ul>
-      </div>
+      {/* Modal */}
+      <SubscriptionDurationModal
+        isOpen={showModal}
+        onClose={() => setShowModal(false)}
+        onSubmit={handleSubmit}
+        duration={isEditMode ? currentDuration : null}
+        isSubmitting={createDurationMutation.isLoading || updateDurationMutation.isLoading}
+      />
     </div>
   );
 };

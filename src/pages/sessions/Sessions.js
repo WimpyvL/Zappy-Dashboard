@@ -9,7 +9,6 @@ import { useSessions, useUpdateSessionStatus, useCreateSession } from '../../api
 import { useGetUsers } from '../../apis/users/hooks';
 import { useForms } from '../../apis/forms/hooks'; // Import forms hook
 import PatientFollowUpNotes from '../patients/PatientFollowUpNotes'; // Import PatientFollowUpNotes component
-import FollowUpConsultationNotes from '../../pages/consultations/FollowUpConsultationNotes'; // Import FollowUpConsultationNotes component
 import {
   Search,
   Filter,
@@ -104,7 +103,6 @@ const Sessions = () => {
   });
   const [showNoteModal, setShowNoteModal] = useState(false);
   const [selectedSessionNote, setSelectedSessionNote] = useState(null);
-  const [showFollowUpConsultation, setShowFollowUpConsultation] = useState(false);
   // State for follow-up notes modal
   const [showFollowupNotes, setShowFollowupNotes] = useState(false);
   const [selectedSession, setSelectedSession] = useState(null);
@@ -606,15 +604,8 @@ const Sessions = () => {
                         <button
                           className="text-gray-600 hover:text-gray-900"
                           onClick={() => {
-                            // Get patient data from session
-                            const patient = {
-                              id: session.patientId,
-                              name: session.patientName,
-                              // Add other patient data if available
-                            };
-                            setSelectedPatient(patient);
-                            setSelectedSession(session);
-                            setShowFollowUpConsultation(true);
+                            setSelectedSessionNote(session.session_notes || 'No notes for this session.');
+                            setShowNoteModal(true);
                           }}
                         >
                           Review Note
@@ -856,18 +847,22 @@ const Sessions = () => {
         </div>
       )}
 
-      {/* Follow-up Consultation Notes Modal - Full Screen */}
-      {showFollowUpConsultation && selectedPatient && selectedSession && (
-        <div className="fixed inset-0 bg-white z-50">
-          <FollowUpConsultationNotes
-            patient={selectedPatient}
-            session={selectedSession}
-            onClose={() => {
-              setShowFollowUpConsultation(false);
-              setSelectedSession(null);
-              setSelectedPatient(null);
-            }}
-          />
+      {/* Session Note Modal */}
+      {showNoteModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-xl max-w-lg w-full p-6 relative">
+            <h2 className="text-lg font-semibold mb-4">Session Note</h2>
+            <div className="mb-6 whitespace-pre-line text-gray-800">
+              {selectedSessionNote}
+            </div>
+            <button
+              className="absolute top-3 right-3 text-gray-400 hover:text-gray-600"
+              onClick={() => setShowNoteModal(false)}
+              aria-label="Close"
+            >
+              <XCircle className="h-5 w-5" />
+            </button>
+          </div>
         </div>
       )}
     </div>

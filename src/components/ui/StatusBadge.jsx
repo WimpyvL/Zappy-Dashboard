@@ -1,21 +1,39 @@
 import React from 'react';
+import './StatusBadges.css';
 
-const StatusBadge = ({ status, type }) => {
-  // Define styles based on type
-  const styles = {
-    success: 'bg-green-100 text-green-800 border-green-200',
-    warning: 'bg-yellow-100 text-yellow-800 border-yellow-200',
-    danger: 'bg-red-100 text-red-800 border-red-200',
-    info: 'bg-blue-100 text-blue-800 border-blue-200',
-    default: 'bg-gray-100 text-gray-800 border-gray-200'
-  };
-
-  // Get the appropriate style or fall back to default
-  const badgeStyle = styles[type] || styles.default;
-
+/**
+ * StatusBadge Component
+ * 
+ * A reusable component for displaying status information with consistent styling.
+ * 
+ * @param {Object} props
+ * @param {string} props.status - The status to display (pending, approved, rejected, followup, in-progress, completed, cancelled)
+ * @param {React.ReactNode} props.icon - Optional icon to display before the status text
+ * @param {string} props.label - Optional custom label (if not provided, will capitalize the status)
+ * @param {string} props.className - Optional additional CSS classes
+ */
+const StatusBadge = ({ status, icon, label, className = '' }) => {
+  // Default statuses
+  const validStatuses = [
+    'pending', 
+    'approved', 
+    'rejected', 
+    'followup', 
+    'in-progress', 
+    'completed', 
+    'cancelled'
+  ];
+  
+  // Use a default status if the provided one is not valid
+  const badgeStatus = validStatuses.includes(status) ? status : 'pending';
+  
+  // Generate the display label (capitalize first letter)
+  const displayLabel = label || status.charAt(0).toUpperCase() + status.slice(1);
+  
   return (
-    <span className={`px-2 py-1 text-xs font-medium rounded-full border ${badgeStyle}`}>
-      {status}
+    <span className={`status-badge ${badgeStatus} ${className}`}>
+      {icon && <span className="icon">{icon}</span>}
+      {displayLabel}
     </span>
   );
 };

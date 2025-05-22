@@ -1,168 +1,107 @@
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import productsApi from './api';
+
 /**
- * @deprecated This API is not deprecated itself, but should be accessed through the unified Products & Subscriptions management system.
- * See DEPRECATED.md for more information.
+ * Hook to fetch all products
+ * @returns {Object} Query result with products data
  */
-
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '../../lib/supabase';
-import { toast } from 'react-toastify';
-
-// Removed console warning as it's now documented in the hook comments
-// and was causing unnecessary console noise for legitimate uses of the API
-
-// Define query keys
-const queryKeys = {
-  all: ['products'],
-  lists: (params = {}) => [...queryKeys.all, 'list', { params }],
-  details: (id) => [...queryKeys.all, 'detail', id],
-};
-
-// Hook for fetching all products
-export const useProducts = (options = {}) => {
+export const useProducts = () => {
   return useQuery({
-    queryKey: queryKeys.lists(),
+    queryKey: ['products'],
     queryFn: async () => {
-      const { data, error, count } = await supabase
-        .from('products')
-        .select('*', { count: 'exact' })
-        .order('name', { ascending: true });
-
-      if (error) {
-        console.error('Error fetching products:', error);
-        toast.error(`Error fetching products: ${error.message}`);
-        throw new Error(error.message);
-      }
-      
-      return { data: data || [], count };
+      const products = await productsApi.getAllProducts();
+      return products;
     },
-    ...options,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    refetchOnWindowFocus: false,
   });
 };
 
-// Hook for fetching a single product by ID
-export const useProductById = (id, options = {}) => {
+/**
+ * Hook to fetch products by category
+ * @param {string} categoryId - Category ID
+ * @returns {Object} Query result with products in the category
+ */
+export const useProductsByCategory = (categoryId) => {
   return useQuery({
-    queryKey: queryKeys.details(id),
+    queryKey: ['products', 'category', categoryId],
     queryFn: async () => {
-      if (!id) return null;
-      
-      const { data, error } = await supabase
-        .from('products')
-        .select('*')
-        .eq('id', id)
-        .single();
-
-      if (error) {
-        console.error(`Error fetching product ${id}:`, error);
-        if (error.code === 'PGRST116') return null; // Not found
-        toast.error(`Error fetching product details: ${error.message}`);
-        throw new Error(error.message);
-      }
-      
-      return data;
+      const products = await productsApi.getProductsByCategory(categoryId);
+      return products;
     },
-    enabled: !!id,
-    ...options,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    refetchOnWindowFocus: false,
+    enabled: !!categoryId, // Only run the query if categoryId is provided
   });
 };
 
-// Hook for creating a product
-export const useCreateProduct = (options = {}) => {
+/**
+ * Hook to fetch all product categories
+ * @returns {Object} Query result with categories data
+ */
+export const useProductCategories = () => {
+  return useQuery({
+    queryKey: ['productCategories'],
+    queryFn: async () => {
+      const categories = await productsApi.getAllCategories();
+      return categories;
+    },
+    staleTime: 10 * 60 * 1000, // 10 minutes
+    refetchOnWindowFocus: false,
+  });
+};
+
+/**
+ * Hook to create a new product
+ * @returns {Object} Mutation result
+ */
+export const useCreateProduct = () => {
   const queryClient = useQueryClient();
   
   return useMutation({
     mutationFn: async (productData) => {
-      const { data, error } = await supabase
-        .from('products')
-        .insert(productData)
-        .select()
-        .single();
-
-      if (error) {
-        console.error('Error creating product:', error);
-        toast.error(`Error creating product: ${error.message}`);
-        throw new Error(error.message);
-      }
-      
-      return data;
+      return await productsApi.createProduct(productData);
     },
-    onSuccess: (data, variables, context) => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.lists() });
-      toast.success('Product created successfully');
-      options.onSuccess?.(data, variables, context);
+    onSuccess: () => {
+      // Invalidate products query to refetch the data
+      queryClient.invalidateQueries({ queryKey: ['products'] });
     },
-    onError: (error, variables, context) => {
-      toast.error(`Error creating product: ${error.message}`);
-      options.onError?.(error, variables, context);
-    },
-    ...options,
   });
 };
 
-// Hook for updating a product
-export const useUpdateProduct = (options = {}) => {
+/**
+ * Hook to update an existing product
+ * @returns {Object} Mutation result
+ */
+export const useUpdateProduct = () => {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: async ({ id, productData }) => {
-      const { data, error } = await supabase
-        .from('products')
-        .update(productData)
-        .eq('id', id)
-        .select()
-        .single();
-
-      if (error) {
-        console.error(`Error updating product ${id}:`, error);
-        toast.error(`Error updating product: ${error.message}`);
-        throw new Error(error.message);
-      }
-      
-      return data;
+    mutationFn: async (productData) => {
+      return await productsApi.updateProduct(productData);
     },
-    onSuccess: (data, variables, context) => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.lists() });
-      queryClient.invalidateQueries({ queryKey: queryKeys.details(variables.id) });
-      toast.success('Product updated successfully');
-      options.onSuccess?.(data, variables, context);
+    onSuccess: () => {
+      // Invalidate products query to refetch the data
+      queryClient.invalidateQueries({ queryKey: ['products'] });
     },
-    onError: (error, variables, context) => {
-      toast.error(`Error updating product: ${error.message}`);
-      options.onError?.(error, variables, context);
-    },
-    ...options,
   });
 };
 
-// Hook for deleting a product
-export const useDeleteProduct = (options = {}) => {
+/**
+ * Hook to delete a product
+ * @returns {Object} Mutation result
+ */
+export const useDeleteProduct = () => {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: async (id) => {
-      const { error } = await supabase
-        .from('products')
-        .delete()
-        .eq('id', id);
-
-      if (error) {
-        console.error(`Error deleting product ${id}:`, error);
-        toast.error(`Error deleting product: ${error.message}`);
-        throw new Error(error.message);
-      }
-      
-      return { id };
+    mutationFn: async (productId) => {
+      await productsApi.deleteProduct(productId);
+      return productId;
     },
-    onSuccess: (data, variables, context) => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.lists() });
-      queryClient.removeQueries({ queryKey: queryKeys.details(variables) });
-      toast.success('Product deleted successfully');
-      options.onSuccess?.(data, variables, context);
+    onSuccess: () => {
+      // Invalidate products query to refetch the data
+      queryClient.invalidateQueries({ queryKey: ['products'] });
     },
-    onError: (error, variables, context) => {
-      toast.error(`Error deleting product: ${error.message}`);
-      options.onError?.(error, variables, context);
-    },
-    ...options,
   });
 };

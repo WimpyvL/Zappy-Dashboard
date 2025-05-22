@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '../../contexts/auth/AuthContext';
+import { useAuth } from '../../context/AuthContext';
 import { useMySubscriptionDetails } from '../../apis/subscriptionPlans/hooks';
 import { toast } from 'react-toastify';
 

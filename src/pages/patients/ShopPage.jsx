@@ -1,32 +1,93 @@
-
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Dropdown, Button } from 'antd';
-import { Eye, ChevronDown, ShieldCheck, UserCheck, User, Settings, LogOut } from 'lucide-react';
+import { Dropdown, Button, Spin, message } from 'antd';
+import { 
+  Eye, 
+  ChevronDown, 
+  ShieldCheck, 
+  UserCheck, 
+  User, 
+  Settings, 
+  LogOut, 
+  ShoppingCart as CartIcon 
+} from 'lucide-react';
 import { useAppContext } from '../../contexts/app/AppContext';
+import { useCart } from '../../contexts/cart/CartContext';
 import SmartProductRecommendation from '../../components/patient/shop/SmartProductRecommendation';
+import ProductCard from '../../components/shop/ProductCard';
+import CategoryCard from '../../components/shop/CategoryCard';
+import ShoppingCart from '../../pages/shop/components/ShoppingCart';
+import { useProducts, useProductCategories } from '../../apis/products/hooks';
 import './shop/ShopPage.css';
 
+/**
+ * ShopPage component displays products for purchase
+ */
 const ShopPage = () => {
   const navigate = useNavigate();
   const { viewMode, setViewMode } = useAppContext();
-  const [cartCount, setCartCount] = useState(3);
+  const { getCartItemCount, addItem } = useCart();
+  const [cartCount, setCartCount] = useState(0);
+  const [isCartOpen, setIsCartOpen] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState(null);
+
+  // Fetch products and categories from API
+  const { 
+    data: products, 
+    isLoading: isLoadingProducts, 
+    error: productsError 
+  } = useProducts();
+  
+  const { 
+    data: categories, 
+    isLoading: isLoadingCategories, 
+    error: categoriesError 
+  } = useProductCategories();
+
+  // Update cart count from CartContext
+  useEffect(() => {
+    setCartCount(getCartItemCount());
+  }, [getCartItemCount]);
 
   // Handlers for cart and category navigation
   const openCart = () => {
-    console.log('Cart opened');
+    setIsCartOpen(true);
   };
 
-  const openCategory = (cat) => {
-    console.log('Category:', cat);
+  const closeCart = () => {
+    setIsCartOpen(false);
+  };
+
+  const openCategory = (categoryId) => {
+    setSelectedCategory(categoryId);
+    // In a real implementation, this would navigate to a category page
+    // or filter the current page
+    console.log('Category selected:', categoryId);
   };
 
   const handleViewBundle = () => {
+    // In a real implementation, this would navigate to the bundle page
+    // or open a modal with bundle details
     console.log('View bundle clicked');
   };
 
   const handleSkip = () => {
     console.log('Skip clicked');
+  };
+
+  const handleAddToCart = (product) => {
+    // In a real implementation, this would add the product to the cart
+    // For now, we'll just show a message
+    if (product.requiresPrescription) {
+      message.info(`${product.name} requires a prescription. Starting consultation flow.`);
+      // In a real implementation, this would navigate to the consultation flow
+    } else {
+      // Add to cart with default dose for simplicity
+      // In a real implementation, this would open a modal to select dose
+      const defaultDose = { id: 'default', value: 'Standard' };
+      addItem(product, defaultDose);
+      message.success(`${product.name} added to cart!`);
+    }
   };
 
   // Navigate to admin dashboard when viewMode changes to 'admin'
@@ -73,29 +134,7 @@ const ShopPage = () => {
         scroll.removeEventListener('wheel', handleWheel);
       };
     });
-  }, []);
-
-  // Modular: Section for a single product card
-  const ProductCard = ({ programClass, rx, icon, name, subtitle, price }) => (
-    <div className={`product-card ${programClass}`}>
-      {rx && <span className="product-rx-badge">Rx</span>}
-      <div className="product-icon-bg">{icon}</div>
-      <h4 className="product-name">{name}</h4>
-      <p className="product-subtitle">{subtitle}</p>
-      <p className="product-price">{price}</p>
-    </div>
-  );
-
-  // Modular: Section for a single category card
-  const CategoryCard = ({ image, title, subtitle, onClick }) => (
-    <div className="category-card" onClick={onClick}>
-      <img src={image} alt={title} className="category-image" />
-      <div className="card-overlay">
-        <h3 className="card-overlay-title">{title}</h3>
-        <p className="card-overlay-subtitle">{subtitle}</p>
-      </div>
-    </div>
-  );
+  }, [products, categories]);
 
   // SVG icons for product cards
   const icons = {
@@ -140,6 +179,68 @@ const ShopPage = () => {
       </svg>
     ),
   };
+
+  // Helper function to get icon based on product type
+  const getIconForProduct = (product) => {
+    const iconMap = {
+      'weight-loss': icons.glp1,
+      'sexual-health': icons.heart,
+      'hair-care': icons.hairkit,
+      'skin-care': icons.sun,
+      'womens-health': icons.heart,
+      'mental-health': icons.check,
+    };
+    
+    return iconMap[product.category] || icons.question;
+  };
+
+  // Helper function to get program class based on product category
+  const getProgramClass = (product) => {
+    const classMap = {
+      'weight-loss': 'program-weight',
+      'sexual-health': 'program-weight',
+      'hair-care': 'program-hair',
+      'skin-care': 'program-aging',
+      'womens-health': 'program-women',
+      'mental-health': 'program-mental',
+    };
+    
+    return classMap[product.category] || 'program-weight';
+  };
+
+  // Group products by category
+  const productsByCategory = products ? 
+    products.reduce((acc, product) => {
+      if (!acc[product.category]) {
+        acc[product.category] = [];
+      }
+      acc[product.category].push(product);
+      return acc;
+    }, {}) : {};
+
+  // Loading state
+  if (isLoadingProducts || isLoadingCategories) {
+    return (
+      <div className="max-w-md mx-auto bg-slate-50 min-h-screen flex justify-center items-center">
+        <Spin size="large" />
+      </div>
+    );
+  }
+
+  // Error state
+  if (productsError || categoriesError) {
+    return (
+      <div className="max-w-md mx-auto bg-slate-50 min-h-screen flex justify-center items-center flex-col p-6">
+        <h2 className="text-xl font-semibold text-red-600 mb-4">Error Loading Products</h2>
+        <p className="text-gray-700 mb-4">
+          {productsError?.message || categoriesError?.message || 'An error occurred while loading products.'}
+        </p>
+        <Button type="primary" onClick={() => window.location.reload()}>
+          Retry
+        </Button>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-md mx-auto bg-slate-50 min-h-screen">
@@ -239,6 +340,9 @@ const ShopPage = () => {
         <span className="cart-count">{cartCount}</span>
       </div>
       
+      {/* Shopping Cart Modal */}
+      {isCartOpen && <ShoppingCart isOpen={isCartOpen} onClose={closeCart} />}
+      
       {/* Header */}
       <header className="header pt-12 pb-6 px-6">
         <h1 className="text-xl font-bold text-white">Shop</h1>
@@ -293,27 +397,45 @@ const ShopPage = () => {
             />
             <ProductCard
               programClass="program-weight"
-              rx
+              requiresPrescription={true}
               icon={icons.glp1}
               name="Hard Mints"
               subtitle="Quick Dissolve"
               price="from $1.63/use"
+              onClick={() => handleAddToCart({
+                id: 'hard-mints',
+                name: 'Hard Mints',
+                requiresPrescription: true,
+                category: 'sexual-health'
+              })}
             />
             <ProductCard
               programClass="program-weight"
-              rx
+              requiresPrescription={true}
               icon={icons.heart}
               name="ED Treatment"
               subtitle="Fast Acting"
               price="$39/month"
+              onClick={() => handleAddToCart({
+                id: 'ed-treatment',
+                name: 'ED Treatment',
+                requiresPrescription: true,
+                category: 'sexual-health'
+              })}
             />
             <ProductCard
               programClass="program-weight"
-              rx
+              requiresPrescription={true}
               icon={icons.test}
               name="Testosterone"
               subtitle="Hormone Support"
               price="$89/month"
+              onClick={() => handleAddToCart({
+                id: 'testosterone',
+                name: 'Testosterone',
+                requiresPrescription: true,
+                category: 'sexual-health'
+              })}
             />
           </div>
         </div>
@@ -330,26 +452,45 @@ const ShopPage = () => {
             />
             <ProductCard
               programClass="program-hair"
-              rx
+              requiresPrescription={true}
               icon={icons.minoxidil}
               name="Minoxidil + Supplements"
               subtitle="Hair Growth"
               price="$39/month"
+              onClick={() => handleAddToCart({
+                id: 'minoxidil-supplements',
+                name: 'Minoxidil + Supplements',
+                requiresPrescription: true,
+                category: 'hair-care'
+              })}
             />
             <ProductCard
               programClass="program-hair"
-              rx
+              requiresPrescription={true}
               icon={icons.hairkit}
               name="Hair Loss Kit"
               subtitle="Complete Treatment"
               price="$37/month"
+              onClick={() => handleAddToCart({
+                id: 'hair-loss-kit',
+                name: 'Hair Loss Kit',
+                requiresPrescription: true,
+                category: 'hair-care'
+              })}
             />
             <ProductCard
               programClass="program-hair"
+              requiresPrescription={false}
               icon={icons.sun}
               name="Thickening Shampoo"
               subtitle="Volume Boost"
               price="$25/month"
+              onClick={() => handleAddToCart({
+                id: 'thickening-shampoo',
+                name: 'Thickening Shampoo',
+                requiresPrescription: false,
+                category: 'hair-care'
+              })}
             />
           </div>
         </div>
@@ -366,25 +507,45 @@ const ShopPage = () => {
             />
             <ProductCard
               programClass="program-aging"
-              rx
+              requiresPrescription={true}
               icon={icons.sun}
               name="Retinol Serum"
               subtitle="Anti-Aging Formula"
               price="$45/month"
+              onClick={() => handleAddToCart({
+                id: 'retinol-serum',
+                name: 'Retinol Serum',
+                requiresPrescription: true,
+                category: 'skin-care'
+              })}
             />
             <ProductCard
               programClass="program-aging"
+              requiresPrescription={false}
               icon={icons.question}
               name="Daily Moisturizer"
               subtitle="Hydration"
               price="$25/month"
+              onClick={() => handleAddToCart({
+                id: 'daily-moisturizer',
+                name: 'Daily Moisturizer',
+                requiresPrescription: false,
+                category: 'skin-care'
+              })}
             />
             <ProductCard
               programClass="program-aging"
+              requiresPrescription={false}
               icon={icons.sun}
               name="Vitamin C Serum"
               subtitle="Brightening"
               price="$30/month"
+              onClick={() => handleAddToCart({
+                id: 'vitamin-c-serum',
+                name: 'Vitamin C Serum',
+                requiresPrescription: false,
+                category: 'skin-care'
+              })}
             />
           </div>
         </div>
@@ -401,26 +562,45 @@ const ShopPage = () => {
             />
             <ProductCard
               programClass="program-women"
-              rx
+              requiresPrescription={true}
               icon={icons.heart}
               name="Birth Control"
               subtitle="Monthly Supply"
               price="$30/month"
+              onClick={() => handleAddToCart({
+                id: 'birth-control',
+                name: 'Birth Control',
+                requiresPrescription: true,
+                category: 'womens-health'
+              })}
             />
             <ProductCard
               programClass="program-women"
-              rx
+              requiresPrescription={true}
               icon={icons.sun}
               name="Hormone Support"
               subtitle="Balance & Wellness"
               price="$69/month"
+              onClick={() => handleAddToCart({
+                id: 'hormone-support',
+                name: 'Hormone Support',
+                requiresPrescription: true,
+                category: 'womens-health'
+              })}
             />
             <ProductCard
               programClass="program-women"
+              requiresPrescription={false}
               icon={icons.check}
               name="Fertility Support"
               subtitle="Conception Help"
               price="$49/month"
+              onClick={() => handleAddToCart({
+                id: 'fertility-support',
+                name: 'Fertility Support',
+                requiresPrescription: false,
+                category: 'womens-health'
+              })}
             />
           </div>
         </div>
@@ -437,26 +617,45 @@ const ShopPage = () => {
             />
             <ProductCard
               programClass="program-mental"
-              rx
+              requiresPrescription={true}
               icon={icons.sun}
               name="Anxiety Treatment"
               subtitle="Effective Relief"
               price="$49/month"
+              onClick={() => handleAddToCart({
+                id: 'anxiety-treatment',
+                name: 'Anxiety Treatment',
+                requiresPrescription: true,
+                category: 'mental-health'
+              })}
             />
             <ProductCard
               programClass="program-mental"
-              rx
+              requiresPrescription={true}
               icon={icons.sun}
               name="Depression Support"
               subtitle="Mental Wellness"
               price="$59/month"
+              onClick={() => handleAddToCart({
+                id: 'depression-support',
+                name: 'Depression Support',
+                requiresPrescription: true,
+                category: 'mental-health'
+              })}
             />
             <ProductCard
               programClass="program-mental"
+              requiresPrescription={false}
               icon={icons.check}
               name="Sleep Support"
               subtitle="Better Rest"
               price="$29/month"
+              onClick={() => handleAddToCart({
+                id: 'sleep-support',
+                name: 'Sleep Support',
+                requiresPrescription: false,
+                category: 'mental-health'
+              })}
             />
           </div>
         </div>

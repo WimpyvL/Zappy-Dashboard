@@ -10,14 +10,14 @@ module.exports = {
     extend: {
       colors: {
         // Primary Brand Colors
-        'zappy-blue': '#2D7FF9',
+        'zappy-blue': '#4f46e5', // Updated to indigo-600
         'zappy-yellow': '#FFD100',
         
         // Legacy colors (keeping for backward compatibility)
-        primary: '#2D7FF9', // Updated to Zappy Blue
+        primary: '#4f46e5', // Updated to indigo-600
         accent1: '#FFB347', // Orange
         accent2: '#82D173', // Green
-        accent3: '#5DA9E9', // Blue
+        accent3: '#4f46e5', // Updated to match primary
         accent4: '#AC8FE9', // Purple
         
         // Neutral Colors
@@ -41,6 +41,7 @@ module.exports = {
         'sexual-health-pink': '#FEE2E2',
       },
       fontFamily: {
+        sans: ['Inter', 'ui-sans-serif', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'Helvetica Neue', 'Arial', 'sans-serif'],
         handwritten: ['Caveat', 'cursive'],
       },
       opacity: {
@@ -49,7 +50,16 @@ module.exports = {
         '70': '0.70',
       },
       boxShadow: {
-        'card': '0 1px 3px rgba(0, 0, 0, 0.05)',
+        'card': '0 1px 3px rgba(0, 0, 0, 0.1)',
+        'card-hover': '0 4px 6px rgba(0, 0, 0, 0.1)',
+        'sm': '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
+      },
+      transitionProperty: {
+        'height': 'height',
+        'spacing': 'margin, padding',
+      },
+      borderRadius: {
+        'pill': '9999px',
       },
     },
   },
@@ -91,5 +101,19 @@ module.exports = {
     'bg-opacity-15', 'text-opacity-15',
     'bg-opacity-30', 'text-opacity-30',
     'bg-opacity-70', 'text-opacity-70',
+    
+    // Shadow variants
+    'shadow-card', 'shadow-card-hover', 'shadow-sm',
+    
+    // Border radius
+    'rounded-pill',
+    
+    // Transitions
+    'transition-all', 'transition-height', 'transition-spacing',
+    'hover:translate-y-[-2px]',
+    
+    // Category indicators
+    'weight-management', 'ed', 'hair-loss', 'wellness', 'mental-health',
+    'primary-care', 'womens-health', 'dermatology',
   ],
 };

@@ -13,7 +13,8 @@ import {
   CommunicationCard,
   AssessmentPlanCard,
   ConsultationFooter,
-  AIComposition
+  AIComposition,
+  AIPanel
 } from './components/consultation-notes';
 import FollowUpMedicationsCard from './components/consultation-notes/FollowUpMedicationsCard';
 
@@ -63,6 +64,7 @@ const FollowUpConsultationNotes = ({
   
   // AI generation state
   const [isGeneratingAI, setIsGeneratingAI] = useState(false);
+  const [showAIPanel, setShowAIPanel] = useState(false);
   
   // New state for patient subscriptions
   const [patientSubscriptions, setPatientSubscriptions] = useState([]);
@@ -262,6 +264,11 @@ const FollowUpConsultationNotes = ({
       fetchPatientSubscriptions();
     }
   }, [patient]);
+  
+  // Toggle AI Panel
+  const toggleAIPanel = () => {
+    setShowAIPanel(!showAIPanel);
+  };
   
   // Service-specific progress rendering function
   const renderServiceSpecificProgress = () => {
@@ -672,11 +679,12 @@ const FollowUpConsultationNotes = ({
   return (
     <div className="consultation-notes-container">
       {/* Header */}
-      <ServiceTagsHeader 
+      <ServiceTagsHeader
         patientName={patient?.name}
         activeServices={activeServices}
         toggleServicePanel={toggleServicePanel}
         removeServiceTag={removeServiceTag}
+        toggleAIPanel={toggleAIPanel}
         title="Follow-up Visit"
       />
 
@@ -825,10 +833,20 @@ const FollowUpConsultationNotes = ({
       </div>
       
       {/* Footer */}
-      <ConsultationFooter 
+      <ConsultationFooter
         onSave={handleSave}
         onCancel={onClose}
         isSaving={updateSessionMutation.isLoading || createNoteMutation.isLoading}
+      />
+      
+      {/* AI Panel */}
+      <AIPanel
+        showAIPanel={showAIPanel}
+        toggleAIPanel={toggleAIPanel}
+        consultationId={session?.consultation_id}
+        formData={consultationData?.form_data}
+        categoryId={Object.keys(activeServices)[0] || 'general'}
+        isFollowUp={true}
       />
     </div>
   );

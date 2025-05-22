@@ -54,6 +54,28 @@ const mockConsultations = [
   }
 ];
 
+// Mock providers data
+const mockProviders = [
+  { 
+    id: 'prov1', 
+    name: 'Dr. Smith', 
+    states: ['CA', 'NY', 'TX'],
+    specialties: ['weight_management', 'general']
+  },
+  { 
+    id: 'prov2', 
+    name: 'Dr. Johnson', 
+    states: ['FL', 'GA', 'NC'],
+    specialties: ['ed', 'hair_loss']
+  },
+  { 
+    id: 'prov3', 
+    name: 'Dr. Williams', 
+    states: ['CA', 'WA', 'OR'],
+    specialties: ['weight_management', 'ed', 'hair_loss']
+  }
+];
+
 // Define query keys
 const queryKeys = {
   all: ['consultations'],
@@ -228,7 +250,7 @@ export const useCreateConsultation = (options = {}) => {
     mutationFn: async (consultationData) => {
       const dataToInsert = {
         ...consultationData,
-        status: 'reviewed', // Set status to 'reviewed' by default when creating a consultation
+        status: consultationData.status || 'pending_review', // Default status
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       };
@@ -339,6 +361,93 @@ export const useDeleteConsultation = (options = {}) => {
       toast.error(
         `Error deleting consultation: ${error.message || 'Unknown error'}`
       );
+      options.onError?.(error, variables, context);
+    },
+    onSettled: options.onSettled,
+  });
+};
+
+// NEW HOOK: Assign provider based on patient state
+export const useAssignProvider = (options = {}) => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async ({ consultationId, patientState, categoryId }) => {
+      // In a real implementation, this would be an API call
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // Find providers licensed in the patient's state
+      const eligibleProviders = mockProviders.filter(
+        provider => provider.states.includes(patientState)
+      );
+      
+      if (eligibleProviders.length === 0) {
+        throw new Error(`No providers available for state: ${patientState}`);
+      }
+      
+      // Filter by specialty if category is provided
+      let specializedProviders = eligibleProviders;
+      if (categoryId) {
+        specializedProviders = eligibleProviders.filter(
+          provider => provider.specialties.includes(categoryId)
+        );
+        
+        // If no specialized providers, fall back to all eligible providers
+        if (specializedProviders.length === 0) {
+          specializedProviders = eligibleProviders;
+        }
+      }
+      
+      // Get provider workloads (in a real system, this would be from the database)
+      const providerWorkloads = {};
+      mockConsultations.forEach(consultation => {
+        if (consultation.provider_id) {
+          providerWorkloads[consultation.provider_id] = (providerWorkloads[consultation.provider_id] || 0) + 1;
+        }
+      });
+      
+      // Find provider with least workload
+      let leastBusyProvider = specializedProviders[0];
+      let lowestCount = Number.MAX_SAFE_INTEGER;
+      
+      specializedProviders.forEach(provider => {
+        const count = providerWorkloads[provider.id] || 0;
+        if (count < lowestCount) {
+          lowestCount = count;
+          leastBusyProvider = provider;
+        }
+      });
+      
+      // Update the consultation with the assigned provider
+      const consultationIndex = mockConsultations.findIndex(c => c.id === consultationId);
+      if (consultationIndex === -1) {
+        throw new Error('Consultation not found');
+      }
+      
+      const updatedConsultation = {
+        ...mockConsultations[consultationIndex],
+        provider_id: leastBusyProvider.id,
+        updated_at: new Date().toISOString()
+      };
+      
+      // In a real implementation, this would update the database
+      mockConsultations[consultationIndex] = updatedConsultation;
+      
+      return {
+        consultation: updatedConsultation,
+        provider: leastBusyProvider
+      };
+    },
+    onSuccess: (data, variables, context) => {
+      toast.success(`Provider ${data.provider.name} assigned to consultation`);
+      queryClient.invalidateQueries({ queryKey: queryKeys.lists() });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.details(variables.consultationId),
+      });
+      options.onSuccess?.(data, variables, context);
+    },
+    onError: (error, variables, context) => {
+      toast.error(`Error assigning provider: ${error.message || 'Unknown error'}`);
       options.onError?.(error, variables, context);
     },
     onSettled: options.onSettled,

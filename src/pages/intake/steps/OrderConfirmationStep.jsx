@@ -1,8 +1,9 @@
 import React from 'react';
-import { CheckCircle, Package, Calendar, FileText, Home } from 'lucide-react';
+import { CheckCircle, Package, Calendar, FileText, Home, MessageSquare } from 'lucide-react';
 
 const OrderConfirmationStep = ({ 
   orderId,
+  consultationId,
   navigateToHome,
   navigateToOrderDetails
 }) => {
@@ -16,6 +17,11 @@ const OrderConfirmationStep = ({
         <p className="text-gray-600 mt-2">
           Your order #{orderId} has been received and is being processed.
         </p>
+        {consultationId && (
+          <p className="text-blue-600 mt-1 text-sm">
+            Consultation #{consultationId} has been created for provider review.
+          </p>
+        )}
       </div>
       
       <div className="bg-white rounded-lg shadow-sm border p-6 mb-8 text-left">
@@ -35,6 +41,22 @@ const OrderConfirmationStep = ({
               </p>
             </div>
           </div>
+          
+          {consultationId && (
+            <div className="flex">
+              <div className="flex-shrink-0 mt-1">
+                <div className="flex items-center justify-center w-8 h-8 rounded-full bg-purple-100 text-purple-600">
+                  <MessageSquare className="h-4 w-4" />
+                </div>
+              </div>
+              <div className="ml-4">
+                <h4 className="font-medium">Provider Consultation</h4>
+                <p className="text-sm text-gray-600">
+                  A licensed provider in your state has been assigned to review your case. You may receive follow-up questions if needed.
+                </p>
+              </div>
+            </div>
+          )}
           
           <div className="flex">
             <div className="flex-shrink-0 mt-1">
@@ -82,18 +104,26 @@ const OrderConfirmationStep = ({
       
       <div className="bg-blue-50 rounded-lg p-4 mb-8 text-left">
         <p className="text-sm text-blue-800">
-          <strong>Note:</strong> You can track the status of your order in your account dashboard. 
+          <strong>Note:</strong> You can track the status of your order and consultation in your account dashboard. 
           If you have any questions, please contact our support team.
         </p>
       </div>
       
-      <div className="flex justify-center space-x-4">
+      <div className="flex flex-col sm:flex-row justify-center space-y-3 sm:space-y-0 sm:space-x-4">
         <button
           onClick={navigateToOrderDetails}
           className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
         >
           View Order Details
         </button>
+        {consultationId && (
+          <button
+            onClick={() => window.location.href = `/consultations/${consultationId}`}
+            className="px-6 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition-colors"
+          >
+            View Consultation
+          </button>
+        )}
         <button
           onClick={navigateToHome}
           className="px-6 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors"

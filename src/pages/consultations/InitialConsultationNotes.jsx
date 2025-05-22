@@ -987,9 +987,13 @@ const InitialConsultationNotes = ({
       />
 
       {/* AI Panel */}
-      <AIPanel 
+      <AIPanel
         showAIPanel={showAIPanel}
         toggleAIPanel={toggleAIPanel}
+        consultationId={consultationId}
+        formData={Object.values(latestSubmissions)[0]?.form_data}
+        categoryId={primaryServiceCategory}
+        isFollowUp={false}
       />
 
       {/* Intake Form Panel */}

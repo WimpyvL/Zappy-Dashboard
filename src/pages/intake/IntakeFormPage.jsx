@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/auth/AuthContext';
 import { useSubmitForm } from '../../apis/formSubmissions/hooks';
 import { useCreateOrder } from '../../apis/orders/hooks';
+import { useCreateConsultation, useAssignProvider } from '../../apis/consultations/hooks';
 import { toast } from 'react-toastify';
 
 // Import steps
@@ -22,6 +23,8 @@ const IntakeFormPage = () => {
   const navigate = useNavigate();
   const submitFormMutation = useSubmitForm();
   const createOrderMutation = useCreateOrder();
+  const createConsultationMutation = useCreateConsultation();
+  const assignProviderMutation = useAssignProvider();
   
   // Get data from location state
   const prescriptionItems = location.state?.prescriptionItems || [];
@@ -104,6 +107,7 @@ const IntakeFormPage = () => {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [orderId, setOrderId] = useState(null);
+  const [consultationId, setConsultationId] = useState(null);
   
   // Update form data
   const updateFormData = (section, data) => {
@@ -166,8 +170,41 @@ const IntakeFormPage = () => {
         paymentMethodId: formData.checkout.paymentMethodId
       });
       
-      // Set order ID for confirmation step
+      // Create consultation
+      const consultation = await createConsultationMutation.mutateAsync({
+        patient_id: user?.id || 'p1',
+        form_submission_id: formSubmission.id,
+        status: 'pending_review',
+        order_id: order.id,
+        category_id: productCategory,
+        notes: {
+          hpi: `Patient submitted intake form for ${selectedProduct.name}`,
+          pmh: formData.healthHistory.medicalConditions?.join(', ') || '',
+          contraindications: formData.healthHistory.allergiesText || 'None reported'
+        }
+      });
+      
+      // Assign provider based on patient's state
+      const patientState = formData.shippingAddress.state;
+      if (patientState) {
+        try {
+          const assignmentResult = await assignProviderMutation.mutateAsync({
+            consultationId: consultation.id,
+            patientState: patientState,
+            categoryId: productCategory
+          });
+          
+          console.log(`Consultation assigned to ${assignmentResult.provider.name}`);
+        } catch (assignError) {
+          console.error('Error assigning provider:', assignError);
+          // Don't fail the whole process if provider assignment fails
+          toast.warning('Provider assignment pending. A provider will be assigned shortly.');
+        }
+      }
+      
+      // Set IDs for confirmation step
       setOrderId(order.id);
+      setConsultationId(consultation.id);
       
       // Move to confirmation step
       handleNext();
@@ -274,6 +311,7 @@ const IntakeFormPage = () => {
         return (
           <OrderConfirmationStep 
             orderId={orderId}
+            consultationId={consultationId}
             navigateToHome={navigateToHome}
             navigateToOrderDetails={navigateToOrderDetails}
           />

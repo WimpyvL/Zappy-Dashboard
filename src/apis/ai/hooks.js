@@ -1,9 +1,10 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import {
-  fetchPrompts,
-  fetchPromptById,
-  createPrompt,
-  updatePrompt,
+import { toast } from 'react-toastify';
+import { 
+  fetchPrompts, 
+  fetchPrompt, 
+  createPrompt, 
+  updatePrompt, 
   deletePrompt,
   testPrompt,
   fetchAISettings,
@@ -12,29 +13,127 @@ import {
   fetchAIMetrics
 } from './api';
 
-// Define query keys
+// Query keys
 const queryKeys = {
-  all: ['ai'],
-  prompts: () => [...queryKeys.all, 'prompts'],
-  prompt: (id) => [...queryKeys.prompts(), id],
-  settings: () => [...queryKeys.all, 'settings'],
-  logs: (options) => [...queryKeys.all, 'logs', options],
-  metrics: () => [...queryKeys.all, 'metrics'],
+  prompts: {
+    all: ['ai', 'prompts'],
+    detail: (id) => [...queryKeys.prompts.all, id],
+    byCategory: (category) => [...queryKeys.prompts.all, 'category', category],
+    byType: (type) => [...queryKeys.prompts.all, 'type', type],
+    bySection: (section) => [...queryKeys.prompts.all, 'section', section],
+    byCategoryAndType: (category, type) => [...queryKeys.prompts.all, 'category', category, 'type', type],
+    byCategoryAndSection: (category, section) => [...queryKeys.prompts.all, 'category', category, 'section', section],
+    byTypeAndSection: (type, section) => [...queryKeys.prompts.all, 'type', type, 'section', section],
+    byCategoryTypeAndSection: (category, type, section) => [...queryKeys.prompts.all, 'category', category, 'type', type, 'section', section],
+  },
+  settings: () => ['ai', 'settings'],
+  logs: (options) => ['ai', 'logs', options],
+  metrics: () => ['ai', 'metrics'],
 };
 
 // Prompts hooks
 export const useAIPrompts = () => {
   return useQuery({
-    queryKey: queryKeys.prompts(),
+    queryKey: queryKeys.prompts.all,
     queryFn: fetchPrompts,
   });
 };
 
 export const useAIPrompt = (promptId) => {
   return useQuery({
-    queryKey: queryKeys.prompt(promptId),
-    queryFn: () => fetchPromptById(promptId),
+    queryKey: queryKeys.prompts.detail(promptId),
+    queryFn: () => fetchPrompt(promptId),
     enabled: !!promptId,
+  });
+};
+
+export const useAIPromptsByCategory = (category) => {
+  return useQuery({
+    queryKey: queryKeys.prompts.byCategory(category),
+    queryFn: async () => {
+      const prompts = await fetchPrompts();
+      return prompts.filter(prompt => prompt.category === category);
+    },
+    enabled: !!category,
+  });
+};
+
+export const useAIPromptsByType = (type) => {
+  return useQuery({
+    queryKey: queryKeys.prompts.byType(type),
+    queryFn: async () => {
+      const prompts = await fetchPrompts();
+      return prompts.filter(prompt => prompt.prompt_type === type);
+    },
+    enabled: !!type,
+  });
+};
+
+export const useAIPromptsBySection = (section) => {
+  return useQuery({
+    queryKey: queryKeys.prompts.bySection(section),
+    queryFn: async () => {
+      const prompts = await fetchPrompts();
+      return prompts.filter(prompt => prompt.section === section);
+    },
+    enabled: !!section,
+  });
+};
+
+export const useAIPromptsByCategoryAndType = (category, type) => {
+  return useQuery({
+    queryKey: queryKeys.prompts.byCategoryAndType(category, type),
+    queryFn: async () => {
+      const prompts = await fetchPrompts();
+      return prompts.filter(prompt => 
+        prompt.category === category && 
+        prompt.prompt_type === type
+      );
+    },
+    enabled: !!(category && type),
+  });
+};
+
+export const useAIPromptsByCategoryAndSection = (category, section) => {
+  return useQuery({
+    queryKey: queryKeys.prompts.byCategoryAndSection(category, section),
+    queryFn: async () => {
+      const prompts = await fetchPrompts();
+      return prompts.filter(prompt => 
+        prompt.category === category && 
+        prompt.section === section
+      );
+    },
+    enabled: !!(category && section),
+  });
+};
+
+export const useAIPromptsByTypeAndSection = (type, section) => {
+  return useQuery({
+    queryKey: queryKeys.prompts.byTypeAndSection(type, section),
+    queryFn: async () => {
+      const prompts = await fetchPrompts();
+      return prompts.filter(prompt => 
+        prompt.prompt_type === type && 
+        prompt.section === section
+      );
+    },
+    enabled: !!(type && section),
+  });
+};
+
+export const useAIPromptsByCategoryTypeAndSection = (category, type, section) => {
+  return useQuery({
+    queryKey: queryKeys.prompts.byCategoryTypeAndSection(category, type, section),
+    queryFn: async () => {
+      const prompts = await fetchPrompts();
+      return prompts.filter(prompt => 
+        prompt.category === category && 
+        prompt.prompt_type === type && 
+        prompt.section === section
+      );
+    },
+    enabled: !!(category && type && section),
   });
 };
 
@@ -44,7 +143,12 @@ export const useCreatePrompt = () => {
   return useMutation({
     mutationFn: createPrompt,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.prompts() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.prompts.all });
+      toast.success('Prompt created successfully');
+    },
+    onError: (error) => {
+      console.error('Error creating prompt:', error);
+      toast.error(`Failed to create prompt: ${error.message}`);
     },
   });
 };
@@ -55,8 +159,13 @@ export const useUpdatePrompt = () => {
   return useMutation({
     mutationFn: updatePrompt,
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.prompts() });
-      queryClient.invalidateQueries({ queryKey: queryKeys.prompt(data.id) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.prompts.all });
+      queryClient.invalidateQueries({ queryKey: queryKeys.prompts.detail(data.id) });
+      toast.success('Prompt updated successfully');
+    },
+    onError: (error) => {
+      console.error('Error updating prompt:', error);
+      toast.error(`Failed to update prompt: ${error.message}`);
     },
   });
 };
@@ -66,8 +175,14 @@ export const useDeletePrompt = () => {
   
   return useMutation({
     mutationFn: deletePrompt,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.prompts() });
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.prompts.all });
+      queryClient.removeQueries({ queryKey: queryKeys.prompts.detail(variables) });
+      toast.success('Prompt deleted successfully');
+    },
+    onError: (error) => {
+      console.error('Error deleting prompt:', error);
+      toast.error(`Failed to delete prompt: ${error.message}`);
     },
   });
 };
@@ -75,6 +190,13 @@ export const useDeletePrompt = () => {
 export const useTestPrompt = () => {
   return useMutation({
     mutationFn: testPrompt,
+    onSuccess: () => {
+      toast.success('Prompt tested successfully');
+    },
+    onError: (error) => {
+      console.error('Error testing prompt:', error);
+      toast.error(`Failed to test prompt: ${error.message}`);
+    },
   });
 };
 
@@ -93,6 +215,11 @@ export const useUpdateAISettings = () => {
     mutationFn: updateAISettings,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.settings() });
+      toast.success('AI settings updated successfully');
+    },
+    onError: (error) => {
+      console.error('Error updating AI settings:', error);
+      toast.error(`Failed to update AI settings: ${error.message}`);
     },
   });
 };

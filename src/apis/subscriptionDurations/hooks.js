@@ -8,10 +8,14 @@ const DURATIONS_KEY = 'subscription-durations';
  * Fetch all subscription durations
  * @returns {Object} Query result
  */
-export const useSubscriptionDurations = () => {
-  return useQuery(DURATIONS_KEY, async () => {
-    const response = await apiClient.get('/subscription-durations');
-    return response.data;
+export const useSubscriptionDurations = (options = {}) => {
+  return useQuery({
+    queryKey: DURATIONS_KEY,
+    queryFn: async () => {
+      const response = await apiClient.get('/subscription-durations');
+      return response.data;
+    },
+    ...options
   });
 };
 
@@ -20,12 +24,15 @@ export const useSubscriptionDurations = () => {
  * @param {string|number} id - Duration ID
  * @returns {Object} Query result
  */
-export const useSubscriptionDuration = (id) => {
-  return useQuery([DURATIONS_KEY, id], async () => {
-    const response = await apiClient.get(`/subscription-durations/${id}`);
-    return response.data;
-  }, {
-    enabled: !!id
+export const useSubscriptionDuration = (id, options = {}) => {
+  return useQuery({
+    queryKey: [DURATIONS_KEY, id],
+    queryFn: async () => {
+      const response = await apiClient.get(`/subscription-durations/${id}`);
+      return response.data;
+    },
+    enabled: !!id,
+    ...options
   });
 };
 
@@ -37,18 +44,17 @@ export const useSubscriptionDuration = (id) => {
 export const useCreateSubscriptionDuration = (options = {}) => {
   const queryClient = useQueryClient();
   
-  return useMutation(
-    async (durationData) => {
+  return useMutation({
+    mutationFn: async (durationData) => {
       const response = await apiClient.post('/subscription-durations', durationData);
       return response.data;
     },
-    {
-      onSuccess: () => {
-        queryClient.invalidateQueries(DURATIONS_KEY);
-      },
-      ...options
-    }
-  );
+    onSuccess: (data, variables, context) => {
+      queryClient.invalidateQueries({ queryKey: DURATIONS_KEY });
+      options.onSuccess?.(data, variables, context);
+    },
+    ...options
+  });
 };
 
 /**
@@ -59,18 +65,17 @@ export const useCreateSubscriptionDuration = (options = {}) => {
 export const useUpdateSubscriptionDuration = (options = {}) => {
   const queryClient = useQueryClient();
   
-  return useMutation(
-    async ({ id, durationData }) => {
+  return useMutation({
+    mutationFn: async ({ id, durationData }) => {
       const response = await apiClient.put(`/subscription-durations/${id}`, durationData);
       return response.data;
     },
-    {
-      onSuccess: () => {
-        queryClient.invalidateQueries(DURATIONS_KEY);
-      },
-      ...options
-    }
-  );
+    onSuccess: (data, variables, context) => {
+      queryClient.invalidateQueries({ queryKey: DURATIONS_KEY });
+      options.onSuccess?.(data, variables, context);
+    },
+    ...options
+  });
 };
 
 /**
@@ -81,16 +86,15 @@ export const useUpdateSubscriptionDuration = (options = {}) => {
 export const useDeleteSubscriptionDuration = (options = {}) => {
   const queryClient = useQueryClient();
   
-  return useMutation(
-    async (id) => {
+  return useMutation({
+    mutationFn: async (id) => {
       const response = await apiClient.delete(`/subscription-durations/${id}`);
       return response.data;
     },
-    {
-      onSuccess: () => {
-        queryClient.invalidateQueries(DURATIONS_KEY);
-      },
-      ...options
-    }
-  );
+    onSuccess: (data, variables, context) => {
+      queryClient.invalidateQueries({ queryKey: DURATIONS_KEY });
+      options.onSuccess?.(data, variables, context);
+    },
+    ...options
+  });
 };

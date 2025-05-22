@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useCart } from '../../context/CartContext';
+import { useCart } from '../../contexts/cart/CartContext';
 import {
   Package,
   Search,

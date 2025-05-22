@@ -38,8 +38,15 @@ export const CartProvider = ({ children }) => {
     // Only proceed if the item is actually purchasable one-time
     if (!isPurchasable) {
       console.warn(`Product ${product.name} ${dose ? `(${dose.value})` : ''} is not available for one-time purchase.`);
-      // Optionally show an alert to the user
-      // alert(`This item is not available for one-time purchase.`);
+      // Show a toast notification to the user
+      try {
+        // Try to use toast if available in the current context
+        const { toast } = require('react-toastify');
+        toast.error(`${product.name} ${dose ? `(${dose.value})` : ''} is not available for one-time purchase.`);
+      } catch (error) {
+        // Fallback to alert if toast is not available
+        alert(`${product.name} ${dose ? `(${dose.value})` : ''} is not available for one-time purchase.`);
+      }
       return; // Exit without modifying cart
     }
     // --- End Price Logic ---
@@ -68,6 +75,7 @@ export const CartProvider = ({ children }) => {
              price: itemPrice, // Use the correctly determined price
              quantity: quantity,
              type: product.type, // Store type for potential future use
+             requiresPrescription: product.requiresPrescription || false, // Add requiresPrescription flag
              // Store relevant Stripe Price IDs
              stripePriceId: product.type === 'medication' ? product.stripeOneTimePriceId : product.stripePriceId, // One-time purchase Price ID
              stripeSubscriptionPriceId: dose?.stripePriceId, // Subscription Price ID (from dose)

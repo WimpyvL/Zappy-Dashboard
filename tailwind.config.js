@@ -61,6 +61,16 @@ module.exports = {
       borderRadius: {
         'pill': '9999px',
       },
+      animation: {
+        'float': 'float 3s ease-in-out infinite',
+        'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+      },
+      keyframes: {
+        float: {
+          '0%, 100%': { transform: 'translateY(0)' },
+          '50%': { transform: 'translateY(-10px)' },
+        },
+      },
     },
   },
   plugins: [], // Add plugins if needed
@@ -112,8 +122,11 @@ module.exports = {
     'transition-all', 'transition-height', 'transition-spacing',
     'hover:translate-y-[-2px]',
     
+    // Animations
+    'animate-float', 'animate-pulse-slow',
+    
     // Category indicators
     'weight-management', 'ed', 'hair-loss', 'wellness', 'mental-health',
     'primary-care', 'womens-health', 'dermatology',
-  ],
+  ]
 };

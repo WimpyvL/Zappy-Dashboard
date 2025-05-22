@@ -60,7 +60,7 @@ export const StatusBadge = ({ status }) => {
   return (
     <span className={`flex items-center px-2.5 py-0.5 text-xs font-medium rounded-full ${bgColor} ${textColor}`}>
       <Icon className="h-3 w-3 mr-1.5" />
-      {status.charAt(0).toUpperCase() + status.slice(1)} {/* Capitalize status */}
+      {status ? status.charAt(0).toUpperCase() + status.slice(1) : 'Unknown'} {/* Capitalize status */}
     </span>
   );
 };

@@ -1,6 +1,44 @@
 import React, { useState, useEffect } from 'react';
 import { Sparkles, ArrowRight, AlertCircle } from 'lucide-react';
 import { useAuth } from '../../../contexts/auth/AuthContext';
+import { evaluateHealthProfile } from '../../../services/recommendationService';
+
+// Mock recommendation rules for development/testing
+const mockRules = [
+  {
+    id: '1',
+    name: 'Overweight BMI Rule',
+    description: 'Recommends weight management bundle for patients with BMI over 25',
+    condition_type: 'bmi',
+    condition_value: { operator: 'gt', value: 25 },
+    priority: 100,
+    product_title: 'Weight Management Bundle',
+    product_description: 'Includes GLP-1 medication, nutrition coaching, and progress tracking.',
+    reason_text: 'Based on your BMI, our weight management program could help you reach your health goals'
+  },
+  {
+    id: '2',
+    name: 'Heart Health Rule',
+    description: 'Recommends heart health bundle for patients with hypertension',
+    condition_type: 'condition',
+    condition_value: { operator: 'includes', value: 'hypertension' },
+    priority: 90,
+    product_title: 'Heart Health Bundle',
+    product_description: 'Includes blood pressure monitoring, medication management, and lifestyle coaching.',
+    reason_text: 'This bundle is designed to support your heart health needs'
+  },
+  {
+    id: '3',
+    name: 'Energy Boost Rule',
+    description: 'Recommends energy bundle for patients with energy goals',
+    condition_type: 'goal',
+    condition_value: { operator: 'includes', value: 'energy' },
+    priority: 80,
+    product_title: 'Energy Boost Bundle',
+    product_description: 'Includes vitamin B complex, iron supplements, and sleep improvement coaching.',
+    reason_text: 'This bundle is designed to help with your energy goals'
+  }
+];
 
 /**
  * SmartProductRecommendation component that provides personalized product recommendations
@@ -15,6 +53,10 @@ const SmartProductRecommendation = ({ handleViewBundle, handleSkip }) => {
   const [recommendation, setRecommendation] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  // Use mock rules for now - in production this would use useRecommendationRules()
+  const rules = mockRules;
+  const isLoadingRules = false;
 
   // Fetch user health profile and generate recommendation
   useEffect(() => {
@@ -34,8 +76,8 @@ const SmartProductRecommendation = ({ handleViewBundle, handleSkip }) => {
           age: 42
         };
         
-        // Generate recommendation based on health profile
-        const recommendation = generateRecommendation(healthProfile);
+        // Generate recommendation based on health profile and rules
+        const recommendation = evaluateHealthProfile(healthProfile, rules);
         setRecommendation(recommendation);
       } catch (err) {
         console.error('Error fetching health profile:', err);
@@ -45,9 +87,10 @@ const SmartProductRecommendation = ({ handleViewBundle, handleSkip }) => {
       }
     };
     
-    if (user) {
+    // Only fetch health profile if rules are loaded and user is logged in
+    if (user && !isLoadingRules) {
       fetchHealthProfile();
-    } else {
+    } else if (!user) {
       // Default recommendation for non-logged in users
       setRecommendation({
         title: 'Complete Weight Management Bundle',
@@ -56,41 +99,7 @@ const SmartProductRecommendation = ({ handleViewBundle, handleSkip }) => {
       });
       setLoading(false);
     }
-  }, [user]);
-  
-  /**
-   * Generate a recommendation based on health profile
-   * @param {Object} profile - User health profile
-   * @returns {Object} Recommendation object
-   */
-  const generateRecommendation = (profile) => {
-    // Logic to determine the best recommendation based on health profile
-    if (profile.bmi > 25 && profile.goals.includes('weight_loss')) {
-      return {
-        title: 'Complete Weight Management Bundle',
-        description: 'Includes GLP-1 medication, nutrition coaching, and progress tracking.',
-        reason: 'Based on your BMI and weight loss goals'
-      };
-    } else if (profile.conditions.includes('hypertension')) {
-      return {
-        title: 'Heart Health Bundle',
-        description: 'Includes blood pressure monitoring, supplements, and dietary guidance.',
-        reason: 'Tailored for your cardiovascular health needs'
-      };
-    } else if (profile.goals.includes('energy')) {
-      return {
-        title: 'Energy & Vitality Pack',
-        description: 'Includes vitamin B complex, adaptogenic herbs, and sleep improvement guide.',
-        reason: 'Designed to boost your energy levels'
-      };
-    } else {
-      return {
-        title: 'Wellness Essentials Bundle',
-        description: 'A comprehensive package for overall health maintenance.',
-        reason: 'Great for general wellness support'
-      };
-    }
-  };
+  }, [user, rules, isLoadingRules]);
 
   if (loading) {
     return (

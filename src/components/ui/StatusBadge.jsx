@@ -28,7 +28,7 @@ const StatusBadge = ({ status, icon, label, className = '' }) => {
   const badgeStatus = validStatuses.includes(status) ? status : 'pending';
   
   // Generate the display label (capitalize first letter)
-  const displayLabel = label || status.charAt(0).toUpperCase() + status.slice(1);
+  const displayLabel = label || (status ? status.charAt(0).toUpperCase() + status.slice(1) : 'Unknown');
   
   return (
     <span className={`status-badge ${badgeStatus} ${className}`}>

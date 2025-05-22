@@ -26,7 +26,7 @@ import './shop/ShopPage.css';
 const ShopPage = () => {
   const navigate = useNavigate();
   const { viewMode, setViewMode } = useAppContext();
-  const { getCartItemCount, addItem } = useCart();
+  const { getCartItemCount, addItem, cartItems } = useCart();
   const [cartCount, setCartCount] = useState(0);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState(null);
@@ -44,10 +44,10 @@ const ShopPage = () => {
     error: categoriesError 
   } = useProductCategories();
 
-  // Update cart count from CartContext
+  // Update cart count from CartContext whenever it changes
   useEffect(() => {
     setCartCount(getCartItemCount());
-  }, [getCartItemCount]);
+  }, [getCartItemCount, cartItems]);
 
   // Handlers for cart and category navigation
   const openCart = () => {
@@ -84,8 +84,21 @@ const ShopPage = () => {
     } else {
       // Add to cart with default dose for simplicity
       // In a real implementation, this would open a modal to select dose
-      const defaultDose = { id: 'default', value: 'Standard' };
-      addItem(product, defaultDose);
+      const defaultDose = { 
+        id: 'default', 
+        value: 'Standard',
+        allowOneTimePurchase: true 
+      };
+      
+      // Ensure the product has all required properties
+      const enhancedProduct = {
+        ...product,
+        allowOneTimePurchase: true,
+        price: parseFloat(product.price?.replace(/[^0-9.]/g, '')) || 25, // Extract numeric price or default to 25
+        type: product.type || 'standard'
+      };
+      
+      addItem(enhancedProduct, defaultDose);
       message.success(`${product.name} added to cart!`);
     }
   };

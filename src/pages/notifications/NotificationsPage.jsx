@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useNotifications, NOTIFICATION_TYPES } from '../../contexts/NotificationsContext';
-import { 
-  Bell, CheckCircle, AlertTriangle, Info, Calendar, 
-  FileText, Pill, CreditCard, Settings, ChevronRight, 
+import {
+  Bell, CheckCircle, AlertTriangle, Info, Calendar,
+  FileText, Pill, CreditCard, Settings, ChevronRight,
   Trash2, Filter, CheckCheck // Removed unused Clock, X
 } from 'lucide-react';
 import { format } from 'date-fns'; // Removed unused formatDistanceToNow
+import EmptyState from '../../components/ui/EmptyState';
 
 // Helper function to get icon based on notification type
 const getNotificationIcon = (type) => {
@@ -161,11 +162,16 @@ const NotificationItem = ({ notification, onMarkAsRead, onRemove }) => {
 
 // Empty state component
 const EmptyNotifications = () => (
-  <div className="py-12 text-center bg-white rounded-lg border border-gray-200 shadow-sm">
-    <Bell className="h-16 w-16 text-gray-300 mx-auto mb-3" />
-    <p className="text-gray-700 font-medium">No notifications</p>
-    <p className="text-sm text-gray-500 mt-1">You're all caught up!</p>
-  </div>
+  <EmptyState
+    icon={<Bell className="animate-pulse-slow" />}
+    title="All caught up!"
+    message="We'll notify you about new messages, prescription updates, and important health reminders."
+    action={
+      <button className="text-sm text-blue-600 hover:text-blue-700 font-medium">
+        Manage notification settings
+      </button>
+    }
+  />
 );
 
 // Demo notification generator

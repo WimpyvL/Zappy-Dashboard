@@ -34,7 +34,7 @@ const StatusBadge = ({ status }) => {
       {status === 'reviewed' && <CheckCircle className="h-3 w-3 mr-1" />}
       {status === 'pending' && <Clock className="h-3 w-3 mr-1" />}
       {status === 'archived' && <Archive className="h-3 w-3 mr-1" />}
-      {status.charAt(0).toUpperCase() + status.slice(1)} {/* Capitalize first letter */}
+      {status ? status.charAt(0).toUpperCase() + status.slice(1) : 'Unknown'} {/* Capitalize first letter */}
     </span>
   );
 };

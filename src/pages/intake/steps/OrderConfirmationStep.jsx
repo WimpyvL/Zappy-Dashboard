@@ -1,5 +1,41 @@
-import React from 'react';
-import { CheckCircle, Package, Calendar, FileText, Home, MessageSquare } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { CheckCircle, Package, Calendar, FileText, Home, MessageSquare, ShoppingCart } from 'lucide-react';
+import { useCart } from '../../../contexts/cart/CartContext';
+import { message } from 'antd';
+
+// Mock recommended products - in a real app, these would come from an API
+const mockRecommendedProducts = [
+  {
+    id: 'np1',
+    name: 'Daily Multivitamin',
+    description: 'Essential vitamins and minerals for daily health support.',
+    price: 19.99,
+    imageUrl: null,
+    requiresPrescription: false,
+    allowOneTimePurchase: true,
+    type: 'supplement'
+  },
+  {
+    id: 'np2',
+    name: 'Omega-3 Fish Oil',
+    description: 'Supports heart and brain health with essential fatty acids.',
+    price: 24.99,
+    imageUrl: null,
+    requiresPrescription: false,
+    allowOneTimePurchase: true,
+    type: 'supplement'
+  },
+  {
+    id: 'np3',
+    name: 'Vitamin D3 Supplement',
+    description: 'Supports bone health and immune function.',
+    price: 15.99,
+    imageUrl: null,
+    requiresPrescription: false,
+    allowOneTimePurchase: true,
+    type: 'supplement'
+  }
+];
 
 const OrderConfirmationStep = ({ 
   orderId,
@@ -7,6 +43,32 @@ const OrderConfirmationStep = ({
   navigateToHome,
   navigateToOrderDetails
 }) => {
+  const { addItem } = useCart();
+  const [recommendedProducts, setRecommendedProducts] = useState([]);
+  
+  // In a real app, you would fetch recommended products based on the ordered items
+  useEffect(() => {
+    // Simulate API call to get recommended products
+    const fetchRecommendedProducts = async () => {
+      // In a real app, this would be an API call
+      // For now, we'll use the mock data
+      setRecommendedProducts(mockRecommendedProducts);
+    };
+    
+    fetchRecommendedProducts();
+  }, []);
+  
+  const handleAddToCart = (product) => {
+    // Create a mock dose object since non-prescription products might not have doses
+    const mockDose = {
+      id: `dose-${product.id}`,
+      value: 'Standard',
+      allowOneTimePurchase: true
+    };
+    
+    addItem(product, mockDose, 1);
+    message.success(`${product.name} added to your cart!`);
+  };
   return (
     <div className="text-center">
       <div className="mb-6">
@@ -108,6 +170,50 @@ const OrderConfirmationStep = ({
           If you have any questions, please contact our support team.
         </p>
       </div>
+      
+      {/* Recommended Products Section */}
+      {recommendedProducts.length > 0 && (
+        <div className="bg-white rounded-lg shadow-sm border p-6 mb-8">
+          <h3 className="font-medium text-lg mb-4">Recommended Products</h3>
+          <p className="text-sm text-gray-600 mb-4">
+            These products complement your prescription and may help improve your results.
+          </p>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {recommendedProducts.map(product => (
+              <div key={product.id} className="border rounded-lg p-4 flex flex-col">
+                <div className="w-full h-32 bg-gray-100 rounded-md flex items-center justify-center mb-3">
+                  {product.imageUrl ? (
+                    <img 
+                      src={product.imageUrl} 
+                      alt={product.name} 
+                      className="max-h-full max-w-full object-contain"
+                    />
+                  ) : (
+                    <div className="text-gray-400">
+                      <Package size={32} />
+                    </div>
+                  )}
+                </div>
+                
+                <h4 className="font-medium text-gray-900">{product.name}</h4>
+                <p className="text-sm text-gray-600 mt-1 flex-grow">{product.description}</p>
+                
+                <div className="mt-3 flex justify-between items-center">
+                  <span className="font-semibold text-gray-900">${product.price.toFixed(2)}</span>
+                  <button
+                    onClick={() => handleAddToCart(product)}
+                    className="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 flex items-center"
+                  >
+                    <ShoppingCart size={14} className="mr-1" />
+                    Add to Cart
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
       
       <div className="flex flex-col sm:flex-row justify-center space-y-3 sm:space-y-0 sm:space-x-4">
         <button

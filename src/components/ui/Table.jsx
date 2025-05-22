@@ -1,6 +1,8 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import './Table.css';
+import EmptyState from './EmptyState';
+import { FileX } from 'lucide-react';
 
 /**
  * Table Component
@@ -19,6 +21,9 @@ import './Table.css';
  * @param {boolean} props.isEmpty - Whether the table has no data
  * @param {string} props.error - Error message to display
  * @param {string} props.emptyMessage - Message to display when table is empty
+ * @param {string} props.emptyTitle - Title to display when table is empty
+ * @param {React.ReactNode} props.emptyIcon - Icon to display when table is empty
+ * @param {React.ReactNode} props.emptyAction - Action button to display when table is empty
  * @param {string} props.loadingMessage - Message to display when table is loading
  * @param {React.ReactNode} props.footer - Custom footer content
  * @param {string} props.className - Additional CSS classes
@@ -34,6 +39,9 @@ const Table = ({
   isEmpty = false,
   error = null,
   emptyMessage = 'No data available',
+  emptyTitle = 'No data found',
+  emptyIcon = <FileX />,
+  emptyAction = null,
   loadingMessage = 'Loading data...',
   footer = null,
   className = '',
@@ -60,7 +68,12 @@ const Table = ({
   if (isEmpty || data.length === 0) {
     return (
       <div className="table-empty">
-        <p>{emptyMessage}</p>
+        <EmptyState
+          icon={emptyIcon}
+          title={emptyTitle}
+          message={emptyMessage}
+          action={emptyAction}
+        />
       </div>
     );
   }
@@ -148,6 +161,9 @@ Table.propTypes = {
   isEmpty: PropTypes.bool,
   error: PropTypes.string,
   emptyMessage: PropTypes.string,
+  emptyTitle: PropTypes.string,
+  emptyIcon: PropTypes.element,
+  emptyAction: PropTypes.node,
   loadingMessage: PropTypes.string,
   footer: PropTypes.node,
   className: PropTypes.string,

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Modal from '../ui/Modal';
 import {
   FormInput,
@@ -44,29 +44,36 @@ const ProductModal = ({
   };
 
   // Initialize state directly in component
-  const [formData, setFormData] = useState(
-    product ? {
-      name: product.name || '',
-      description: product.description || '',
-      price: product.price || product.oneTimePurchasePrice || 0,
-      active: product.active !== undefined ? product.active : true,
-      requiresPrescription: product.requiresPrescription || false,
-      isProgram: product.isProgram || false,
-      category: product.category || 'weight-management',
-      interactionWarnings: Array.isArray(product.interactionWarnings) ? [...product.interactionWarnings] : [],
-      doses: Array.isArray(product.doses) ? [...product.doses] : [],
-      drugClass: product.drugClass || '',
-      ndcCode: product.ndcCode || '',
-      indications: Array.isArray(product.indications) ? [...product.indications] : [],
-      contraindications: Array.isArray(product.contraindications) ? [...product.contraindications] : [],
-      // Program-specific fields
-      programContent: product.programContent || '',
-      programDuration: product.programDuration || '',
-      educationalContentId: product.educationalContentId || '',
-      associatedServiceIds: Array.isArray(product.associatedServiceIds) ? [...product.associatedServiceIds] : [],
-      stripePriceId: product.stripePriceId || product.stripeOneTimePriceId || ''
-    } : initialFormData
-  );
+  const [formData, setFormData] = useState(initialFormData);
+  
+  // Update form data when product prop changes
+  useEffect(() => {
+    if (product) {
+      setFormData({
+        name: product.name || '',
+        description: product.description || '',
+        price: product.price || product.oneTimePurchasePrice || 0,
+        active: product.active !== undefined ? product.active : true,
+        requiresPrescription: product.requiresPrescription || false,
+        isProgram: product.isProgram || false,
+        category: product.category || 'weight-management',
+        interactionWarnings: Array.isArray(product.interactionWarnings) ? [...product.interactionWarnings] : [],
+        doses: Array.isArray(product.doses) ? [...product.doses] : [],
+        drugClass: product.drugClass || '',
+        ndcCode: product.ndcCode || '',
+        indications: Array.isArray(product.indications) ? [...product.indications] : [],
+        contraindications: Array.isArray(product.contraindications) ? [...product.contraindications] : [],
+        // Program-specific fields
+        programContent: product.programContent || '',
+        programDuration: product.programDuration || '',
+        educationalContentId: product.educationalContentId || '',
+        associatedServiceIds: Array.isArray(product.associatedServiceIds) ? [...product.associatedServiceIds] : [],
+        stripePriceId: product.stripePriceId || product.stripeOneTimePriceId || ''
+      });
+    } else {
+      setFormData(initialFormData);
+    }
+  }, [product]);
   
   const [errors, setErrors] = useState({});
   const [newDosage, setNewDosage] = useState('');

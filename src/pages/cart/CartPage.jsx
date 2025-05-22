@@ -4,6 +4,8 @@ import { useAuth } from '../../contexts/auth/AuthContext';
 import useToast from '../../hooks/useToast';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
 import PageHeader from '../../components/ui/PageHeader';
+import EmptyState from '../../components/ui/EmptyState';
+import { ShoppingCart, ShoppingBag } from 'lucide-react';
 
 const CartPage = () => {
   const { user } = useAuth();
@@ -12,6 +14,11 @@ const CartPage = () => {
   const [cartItems, setCartItems] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [recommendedCategories, setRecommendedCategories] = useState([
+    { id: 'weight', name: 'Weight Management' },
+    { id: 'hair', name: 'Hair Care' },
+    { id: 'wellness', name: 'Wellness' }
+  ]);
 
   // Fetch cart items on component mount
   useEffect(() => {
@@ -20,7 +27,7 @@ const CartPage = () => {
         setIsLoading(true);
         // In a real implementation, this would fetch from an API
         // For now, we'll use localStorage to simulate cart persistence
-        const storedCart = localStorage.getItem('patientCart');
+        const storedCart = localStorage.getItem('shoppingCart');
         const parsedCart = storedCart ? JSON.parse(storedCart) : [];
         setCartItems(parsedCart);
       } catch (error) {
@@ -36,7 +43,7 @@ const CartPage = () => {
 
   // Update cart in localStorage when it changes
   useEffect(() => {
-    localStorage.setItem('patientCart', JSON.stringify(cartItems));
+    localStorage.setItem('shoppingCart', JSON.stringify(cartItems));
   }, [cartItems]);
 
   // Calculate total price
@@ -71,22 +78,45 @@ const CartPage = () => {
       const nonPrescriptionItems = cartItems.filter(item => !item.requiresPrescription);
       
       if (prescriptionItems.length > 0) {
-      // For prescription items, redirect to intake form
-      navigate('/intake-form', { 
-        state: { 
-          prescriptionItems
-        } 
-      });
+        // For prescription items, redirect to intake form
+        navigate('/intake-form', { 
+          state: { 
+            prescriptionItems
+          } 
+        });
         return;
       }
       
-      // For non-prescription items, proceed with checkout
-      // In a real implementation, this would call an API to create an order
-      await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API call
+      // For non-prescription items, proceed with checkout using Stripe
+      // Import the payment service dynamically to avoid circular dependencies
+      const { paymentService } = await import('../../services/paymentService');
       
-      showToast('success', 'Order placed successfully!');
-      setCartItems([]);
-      navigate('/order-confirmation');
+      // Create a checkout session
+      const session = await paymentService.createCheckoutSession(
+        nonPrescriptionItems,
+        { userId: user?.id },
+        {} // Additional options like discount codes would go here
+      );
+      
+      // In a real implementation with Stripe, we would redirect to the Stripe checkout page
+      // For now, we'll simulate a successful payment
+      const paymentResult = await paymentService.processPayment(
+        session.sessionId,
+        { paymentMethodId: 'pm_card_visa' }
+      );
+      
+      if (paymentResult.status === 'succeeded') {
+        showToast('success', 'Order placed successfully!');
+        setCartItems([]);
+        navigate('/order-confirmation', {
+          state: {
+            orderId: paymentResult.paymentIntentId,
+            items: nonPrescriptionItems
+          }
+        });
+      } else {
+        throw new Error('Payment failed');
+      }
     } catch (error) {
       console.error('Error during checkout:', error);
       showToast('error', 'Failed to process your order. Please try again.');
@@ -110,16 +140,37 @@ const CartPage = () => {
     return (
       <div className="container mx-auto px-4 py-6">
         <PageHeader title="Your Cart" />
-        <div className="bg-white rounded-lg shadow-md p-6 text-center">
-          <h2 className="text-xl font-semibold mb-4">Your cart is empty</h2>
-          <p className="text-gray-600 mb-6">Looks like you haven't added any items to your cart yet.</p>
-          <button
-            onClick={() => navigate('/shop')}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-          >
-            Browse Products
-          </button>
-        </div>
+        <EmptyState
+          icon={<ShoppingCart />}
+          title="Your cart is looking a bit lonely"
+          message="Ready to discover products that can help you feel your best?"
+          action={
+            <button
+              onClick={() => navigate('/shop')}
+              className="px-5 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all transform hover:scale-105"
+            >
+              Explore Products
+            </button>
+          }
+          secondaryAction={
+            recommendedCategories && recommendedCategories.length > 0 && (
+              <div className="mt-6 pt-6 border-t border-gray-100">
+                <p className="text-sm text-gray-500 mb-3">Popular categories to explore:</p>
+                <div className="flex flex-wrap justify-center gap-2">
+                  {recommendedCategories.map(category => (
+                    <button 
+                      key={category.id}
+                      onClick={() => navigate(`/shop/category/${category.id}`)}
+                      className="px-3 py-1.5 bg-gray-100 text-gray-700 rounded-full text-sm hover:bg-gray-200"
+                    >
+                      {category.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )
+          }
+        />
       </div>
     );
   }

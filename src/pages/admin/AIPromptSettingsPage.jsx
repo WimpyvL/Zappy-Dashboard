@@ -1,16 +1,31 @@
 import React, { useState, useEffect } from 'react';
 import { useAIPrompts, useCreatePrompt, useUpdatePrompt, useDeletePrompt } from '../../apis/ai/hooks';
+import { 
+  useRecommendationRules, 
+  useCreateRecommendationRule, 
+  useUpdateRecommendationRule, 
+  useDeleteRecommendationRule 
+} from '../../apis/productRecommendations/hooks';
 import { toast } from 'react-toastify';
-import { Loader2, Plus, Filter, Search } from 'lucide-react';
+import { Loader2, Plus, Filter, Search, Sparkles } from 'lucide-react';
 
 const AIPromptSettingsPage = () => {
+  // Tab state
+  const [activeTab, setActiveTab] = useState('prompts'); // 'prompts' or 'recommendations'
+  
   // State for prompts
-  const { data: promptsData, isLoading, error, refetch } = useAIPrompts();
+  const { data: promptsData, isLoading: isLoadingPrompts, error: promptsError, refetch: refetchPrompts } = useAIPrompts();
   const createPromptMutation = useCreatePrompt();
   const updatePromptMutation = useUpdatePrompt();
   const deletePromptMutation = useDeletePrompt();
   
-  // Form state
+  // State for recommendation rules
+  const { data: rulesData = [], isLoading: isLoadingRules, error: rulesError, refetch: refetchRules } = useRecommendationRules();
+  const createRuleMutation = useCreateRecommendationRule();
+  const updateRuleMutation = useUpdateRecommendationRule();
+  const deleteRuleMutation = useDeleteRecommendationRule();
+  
+  // Form state for prompts
   const [editingPromptId, setEditingPromptId] = useState(null);
   const [formPromptName, setFormPromptName] = useState('');
   const [formPromptContent, setFormPromptContent] = useState('');
@@ -18,12 +33,28 @@ const AIPromptSettingsPage = () => {
   const [formPromptType, setFormPromptType] = useState('initial');
   const [formPromptSection, setFormPromptSection] = useState('summary');
   
-  // Filter state
+  // Form state for recommendation rules
+  const [editingRuleId, setEditingRuleId] = useState(null);
+  const [formRuleName, setFormRuleName] = useState('');
+  const [formRuleDescription, setFormRuleDescription] = useState('');
+  const [formRuleConditionType, setFormRuleConditionType] = useState('bmi');
+  const [formRuleConditionValue, setFormRuleConditionValue] = useState({});
+  const [formRulePriority, setFormRulePriority] = useState(10);
+  const [formRuleProductTitle, setFormRuleProductTitle] = useState('');
+  const [formRuleProductDescription, setFormRuleProductDescription] = useState('');
+  const [formRuleReasonText, setFormRuleReasonText] = useState('');
+  
+  // Filter state for prompts
   const [filterCategory, setFilterCategory] = useState('all');
   const [filterType, setFilterType] = useState('all');
   const [filterSection, setFilterSection] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [showFilters, setShowFilters] = useState(false);
+  
+  // Filter state for recommendation rules
+  const [filterRuleConditionType, setFilterRuleConditionType] = useState('all');
+  const [searchRuleTerm, setSearchRuleTerm] = useState('');
+  const [showRuleFilters, setShowRuleFilters] = useState(false);
   
   // Categories
   const categories = [
@@ -215,25 +246,249 @@ const AIPromptSettingsPage = () => {
   // Get filtered prompts
   const filteredPrompts = getFilteredPrompts();
   
+  // Condition type options for recommendation rules
+  const conditionTypes = [
+    { id: 'bmi', name: 'BMI' },
+    { id: 'goal', name: 'Goal' },
+    { id: 'condition', name: 'Medical Condition' },
+    { id: 'age', name: 'Age' },
+    { id: 'combination', name: 'Combination' }
+  ];
+  
+  // Get filtered recommendation rules
+  const getFilteredRules = () => {
+    if (!rulesData) return [];
+    
+    return rulesData.filter(rule => {
+      // Apply condition type filter
+      if (filterRuleConditionType !== 'all' && rule.condition_type !== filterRuleConditionType) {
+        return false;
+      }
+      
+      // Apply search term
+      if (searchRuleTerm) {
+        const searchLower = searchRuleTerm.toLowerCase();
+        return (
+          rule.name.toLowerCase().includes(searchLower) ||
+          rule.description?.toLowerCase().includes(searchLower) ||
+          rule.product_title.toLowerCase().includes(searchLower) ||
+          rule.product_description.toLowerCase().includes(searchLower) ||
+          rule.reason_text.toLowerCase().includes(searchLower)
+        );
+      }
+      
+      return true;
+    });
+  };
+  
+  // Effect to populate form when editing a rule
+  useEffect(() => {
+    if (editingRuleId !== null && rulesData) {
+      const ruleToEdit = rulesData.find(r => r.id === editingRuleId);
+      if (ruleToEdit) {
+        setFormRuleName(ruleToEdit.name);
+        setFormRuleDescription(ruleToEdit.description || '');
+        setFormRuleConditionType(ruleToEdit.condition_type);
+        setFormRuleConditionValue(ruleToEdit.condition_value);
+        setFormRulePriority(ruleToEdit.priority);
+        setFormRuleProductTitle(ruleToEdit.product_title);
+        setFormRuleProductDescription(ruleToEdit.product_description);
+        setFormRuleReasonText(ruleToEdit.reason_text);
+      }
+    } else {
+      setFormRuleName('');
+      setFormRuleDescription('');
+      setFormRuleConditionType('bmi');
+      setFormRuleConditionValue({});
+      setFormRulePriority(10);
+      setFormRuleProductTitle('');
+      setFormRuleProductDescription('');
+      setFormRuleReasonText('');
+    }
+  }, [editingRuleId, rulesData]);
+  
+  // Handle adding a new rule
+  const handleAddRule = async () => {
+    if (!formRuleName || !formRuleProductTitle || !formRuleProductDescription || !formRuleReasonText) {
+      toast.error('Please fill in all required fields');
+      return;
+    }
+    
+    try {
+      await createRuleMutation.mutateAsync({
+        name: formRuleName,
+        description: formRuleDescription,
+        condition_type: formRuleConditionType,
+        condition_value: formRuleConditionValue,
+        priority: formRulePriority,
+        product_title: formRuleProductTitle,
+        product_description: formRuleProductDescription,
+        reason_text: formRuleReasonText
+      });
+      
+      toast.success('Recommendation rule added successfully');
+      setFormRuleName('');
+      setFormRuleDescription('');
+      setFormRuleConditionType('bmi');
+      setFormRuleConditionValue({});
+      setFormRulePriority(10);
+      setFormRuleProductTitle('');
+      setFormRuleProductDescription('');
+      setFormRuleReasonText('');
+    } catch (error) {
+      console.error('Error adding recommendation rule:', error);
+      toast.error('Failed to add recommendation rule');
+    }
+  };
+  
+  // Handle editing a rule
+  const handleEditRuleClick = (rule) => {
+    setEditingRuleId(rule.id);
+  };
+  
+  // Handle updating a rule
+  const handleUpdateRule = async () => {
+    if (!formRuleName || !formRuleProductTitle || !formRuleProductDescription || !formRuleReasonText || editingRuleId === null) {
+      toast.error('Please fill in all required fields');
+      return;
+    }
+    
+    try {
+      await updateRuleMutation.mutateAsync({
+        id: editingRuleId,
+        name: formRuleName,
+        description: formRuleDescription,
+        condition_type: formRuleConditionType,
+        condition_value: formRuleConditionValue,
+        priority: formRulePriority,
+        product_title: formRuleProductTitle,
+        product_description: formRuleProductDescription,
+        reason_text: formRuleReasonText
+      });
+      
+      toast.success('Recommendation rule updated successfully');
+      setEditingRuleId(null);
+      setFormRuleName('');
+      setFormRuleDescription('');
+      setFormRuleConditionType('bmi');
+      setFormRuleConditionValue({});
+      setFormRulePriority(10);
+      setFormRuleProductTitle('');
+      setFormRuleProductDescription('');
+      setFormRuleReasonText('');
+    } catch (error) {
+      console.error('Error updating recommendation rule:', error);
+      toast.error('Failed to update recommendation rule');
+    }
+  };
+  
+  // Handle canceling edit for rule
+  const handleCancelRuleEdit = () => {
+    setEditingRuleId(null);
+    setFormRuleName('');
+    setFormRuleDescription('');
+    setFormRuleConditionType('bmi');
+    setFormRuleConditionValue({});
+    setFormRulePriority(10);
+    setFormRuleProductTitle('');
+    setFormRuleProductDescription('');
+    setFormRuleReasonText('');
+  };
+  
+  // Handle deleting a rule
+  const handleDeleteRule = async (id) => {
+    if (window.confirm('Are you sure you want to delete this recommendation rule?')) {
+      try {
+        await deleteRuleMutation.mutateAsync(id);
+        toast.success('Recommendation rule deleted successfully');
+      } catch (error) {
+        console.error('Error deleting recommendation rule:', error);
+        toast.error('Failed to delete recommendation rule');
+      }
+    }
+  };
+  
+  // Reset rule filters
+  const resetRuleFilters = () => {
+    setFilterRuleConditionType('all');
+    setSearchRuleTerm('');
+  };
+  
+  // Get condition type name
+  const getConditionTypeName = (conditionTypeId) => {
+    const conditionType = conditionTypes.find(c => c.id === conditionTypeId);
+    return conditionType ? conditionType.name : conditionTypeId;
+  };
+  
+  // Get filtered rules
+  const filteredRules = getFilteredRules();
+  
   return (
     <div className="container mx-auto p-6">
       <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold">AI Prompt Settings</h2>
+        <h2 className="text-2xl font-bold">AI & Recommendation Settings</h2>
         <div className="flex space-x-2">
-          <button
-            onClick={() => setShowFilters(!showFilters)}
-            className="px-3 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 flex items-center"
-          >
-            <Filter className="h-4 w-4 mr-1" />
-            Filters
-          </button>
-          <button
-            onClick={refetch}
-            className="px-3 py-2 bg-blue-50 text-blue-600 rounded-md hover:bg-blue-100"
-          >
-            Refresh
-          </button>
+          {activeTab === 'prompts' ? (
+            <>
+              <button
+                onClick={() => setShowFilters(!showFilters)}
+                className="px-3 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 flex items-center"
+              >
+                <Filter className="h-4 w-4 mr-1" />
+                Filters
+              </button>
+              <button
+                onClick={refetchPrompts}
+                className="px-3 py-2 bg-blue-50 text-blue-600 rounded-md hover:bg-blue-100"
+              >
+                Refresh
+              </button>
+            </>
+          ) : (
+            <>
+              <button
+                onClick={() => setShowRuleFilters(!showRuleFilters)}
+                className="px-3 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 flex items-center"
+              >
+                <Filter className="h-4 w-4 mr-1" />
+                Filters
+              </button>
+              <button
+                onClick={refetchRules}
+                className="px-3 py-2 bg-blue-50 text-blue-600 rounded-md hover:bg-blue-100"
+              >
+                Refresh
+              </button>
+            </>
+          )}
         </div>
+      </div>
+      
+      {/* Tab Navigation */}
+      <div className="flex border-b border-gray-200 mb-6">
+        <button
+          className={`py-2 px-4 font-medium text-sm ${
+            activeTab === 'prompts'
+              ? 'border-b-2 border-blue-500 text-blue-600'
+              : 'text-gray-500 hover:text-gray-700'
+          }`}
+          onClick={() => setActiveTab('prompts')}
+        >
+          AI Prompts
+        </button>
+        <button
+          className={`py-2 px-4 font-medium text-sm ${
+            activeTab === 'recommendations'
+              ? 'border-b-2 border-blue-500 text-blue-600'
+              : 'text-gray-500 hover:text-gray-700'
+          }`}
+          onClick={() => setActiveTab('recommendations')}
+        >
+          <div className="flex items-center">
+            <Sparkles className="h-4 w-4 mr-1" />
+            Product Recommendations
+          </div>
+        </button>
       </div>
       
       {/* Filters */}
@@ -326,13 +581,13 @@ const AIPromptSettingsPage = () => {
       <div className="bg-white shadow rounded-lg p-6 mb-6">
         <h3 className="text-xl font-semibold mb-4">Existing Prompts</h3>
         
-        {isLoading ? (
+        {isLoadingPrompts ? (
           <div className="flex justify-center items-center py-8">
             <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
           </div>
-        ) : error ? (
+        ) : promptsError ? (
           <div className="text-red-500 py-4">
-            Error loading prompts: {error.message}
+            Error loading prompts: {promptsError.message}
           </div>
         ) : filteredPrompts.length === 0 ? (
           <p className="text-gray-500 py-4">

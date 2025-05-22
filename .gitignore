@@ -25,5 +25,5 @@ yarn-error.log*
 # Tempo
 
 node_modules/
-**/routes/tempobook.dynamic.*
-**/routes/tempobook.storyboards.*
+**/tempobook/dynamic/
+**/tempobook/storyboards/

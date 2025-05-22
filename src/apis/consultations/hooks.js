@@ -22,13 +22,7 @@ export const useConsultations = (params = {}, pageSize = 10) => {
     queryFn: async () => {
       let query = supabase
         .from('consultations')
-        .select(
-          `
-          *,
-          client_record ( id, first_name, last_name, date_of_birth )
-        `, // Join with 'client_record' table
-          { count: 'exact' }
-        )
+        .select('*', { count: 'exact' })
         .order('datesubmitted', { ascending: false }) // Revert to lowercase based on DB hint
         .range(rangeFrom, rangeTo);
 
@@ -41,10 +35,9 @@ export const useConsultations = (params = {}, pageSize = 10) => {
       }
       // Add server-side search filter
       if (searchTerm) {
-        // Search on joined client_record fields and potentially consultation notes
-        // Removed invalid 'provider' column search. Corrected 'email' to reference joined table.
+        // Search on consultation notes fields
         query = query.or(
-          `client_record.first_name.ilike.%${searchTerm}%,client_record.last_name.ilike.%${searchTerm}%,client_record.email.ilike.%${searchTerm}%,provider_notes.ilike.%${searchTerm}%,client_notes.ilike.%${searchTerm}%`
+          `provider_notes.ilike.%${searchTerm}%,client_notes.ilike.%${searchTerm}%`
         );
       }
       // Add other filters as needed based on otherFilters
@@ -60,10 +53,8 @@ export const useConsultations = (params = {}, pageSize = 10) => {
       const mappedData =
         data?.map((consult) => ({
           ...consult,
-          // Use the correct joined table name 'client_record'
-          patientName: consult.client_record 
-            ? `${consult.client_record.first_name || ''} ${consult.client_record.last_name || ''}`.trim()
-            : 'N/A',
+          // We'll need to fetch patient names separately or join in a different way
+          patientName: 'Patient ID: ' + consult.client_id,
         })) || [];
 
       return {
@@ -89,12 +80,7 @@ export const useConsultationById = (id, options = {}) => {
 
       const { data, error } = await supabase
         .from('consultations')
-        .select(
-          `
-          *,
-          client_record ( id, first_name, last_name )
-        ` // Join with 'client_record' table
-        )
+        .select('*')
         .eq('id', id)
         .single();
 
@@ -103,14 +89,12 @@ export const useConsultationById = (id, options = {}) => {
         if (error.code === 'PGRST116') return null; // Not found
         throw new Error(error.message);
       }
-       // Map data if needed
-       const mappedData = data
-         ? {
+      // Map data if needed
+      const mappedData = data
+        ? {
             ...data,
-            // Use the correct joined table name 'client_record'
-            patientName: data.client_record 
-              ? `${data.client_record.first_name || ''} ${data.client_record.last_name || ''}`.trim()
-              : 'N/A',
+            // We'll need to fetch patient name separately
+            patientName: 'Patient ID: ' + data.client_id,
           }
         : null;
 

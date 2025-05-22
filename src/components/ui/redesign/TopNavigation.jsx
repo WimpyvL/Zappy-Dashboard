@@ -1,35 +1,80 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { 
   Heart, Layers, Award, ShoppingBag, Bell, Menu, X
 } from 'lucide-react';
 
-const TopNavigation = ({ activePage }) => {
-  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
+/**
+ * Custom hook for handling window resize with debouncing
+ * @param {number} delay - Debounce delay in milliseconds
+ * @param {number} mobileBreakpoint - Width in pixels below which is considered mobile
+ * @returns {boolean} - Whether the current viewport is mobile size
+ */
+const useResponsiveBreakpoint = (delay = 250, mobileBreakpoint = 768) => {
+  const [isMobile, setIsMobile] = useState(window.innerWidth < mobileBreakpoint);
   
-  // Handle window resize
   useEffect(() => {
+    let timeoutId = null;
+    
     const handleResize = () => {
-      setIsMobile(window.innerWidth < 768);
+      clearTimeout(timeoutId);
+      
+      timeoutId = setTimeout(() => {
+        setIsMobile(window.innerWidth < mobileBreakpoint);
+      }, delay);
     };
     
     window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
+    
+    // Initial check
+    handleResize();
+    
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      clearTimeout(timeoutId);
+    };
+  }, [delay, mobileBreakpoint]);
   
-  const navItems = [
+  return isMobile;
+};
+
+/**
+ * TopNavigation component for the application header
+ * @param {Object} props - Component props
+ * @param {string} props.activePage - ID of the currently active page
+ * @returns {JSX.Element} - Rendered component
+ */
+const TopNavigation = ({ activePage }) => {
+  const isMobile = useResponsiveBreakpoint();
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  
+  // Memoize navigation items to prevent unnecessary re-renders
+  const navItems = useMemo(() => [
     { id: 'home', label: 'Home', icon: Heart, path: '/' },
     { id: 'health', label: 'Health', icon: Layers, path: '/health' },
     { id: 'learn', label: 'Learn', icon: Award, path: '/programs' },
     { id: 'shop', label: 'Shop', icon: ShoppingBag, path: '/shop' }
-  ];
+  ], []);
+
+  // Use useCallback for event handlers to prevent unnecessary re-renders
+  const toggleMenu = useCallback(() => {
+    setIsMenuOpen(prevState => !prevState);
+  }, []);
+  
+  const closeMenu = useCallback(() => {
+    setIsMenuOpen(false);
+  }, []);
+  
+  const handleSignOut = useCallback(() => {
+    closeMenu();
+    // Add logout logic here
+  }, [closeMenu]);
 
   // Mobile header with menu button
   if (isMobile) {
     return (
       <>
-        <div className="flex items-center justify-between bg-white border-b border-gray-200 px-4 py-3">
+        <header className="flex items-center justify-between bg-white border-b border-gray-200 px-4 py-3">
           <div className="flex items-center">
             <img 
               src="/logo.png" 
@@ -44,17 +89,28 @@ const TopNavigation = ({ activePage }) => {
           
           <div className="flex items-center gap-2">
             <button 
+<<<<<<< HEAD
               className="relative p-2 text-gray-500 hover:text-gray-700"
+=======
+              className="relative p-2 text-gray-500 hover:text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 rounded-md mr-2"
+>>>>>>> a087814b715110cb6e31d9569a5ee74a779b4d23
               aria-label="Notifications"
             >
               <Bell className="h-5 w-5" />
-              <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+              <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full" aria-hidden="true"></span>
             </button>
             
             <button 
+<<<<<<< HEAD
               className="w-8 h-8 bg-gray-100 rounded-full overflow-hidden focus:outline-none focus:ring-2 focus:ring-blue-500"
               onClick={() => setIsMenuOpen(!isMenuOpen)}
+=======
+              className="p-2 text-gray-500 hover:text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 rounded-md"
+              onClick={toggleMenu}
+>>>>>>> a087814b715110cb6e31d9569a5ee74a779b4d23
               aria-label={isMenuOpen ? "Close menu" : "Open menu"}
+              aria-expanded={isMenuOpen}
+              aria-controls="mobile-menu"
             >
               <img 
                 src="https://images.unsplash.com/photo-1607990281513-2c110a25bd8c?w=80&h=80&fit=crop&q=80" 
@@ -67,11 +123,15 @@ const TopNavigation = ({ activePage }) => {
               />
             </button>
           </div>
-        </div>
+        </header>
         
         {/* Mobile menu dropdown */}
         {isMenuOpen && (
-          <div className="absolute top-14 left-0 right-0 bg-white border-b border-gray-200 shadow-lg z-50">
+          <nav 
+            id="mobile-menu"
+            className="absolute top-14 left-0 right-0 bg-white border-b border-gray-200 shadow-lg z-50"
+            aria-label="Mobile navigation"
+          >
             <div className="py-2 px-4">
               {navItems.map((item) => {
                 const Icon = item.icon;
@@ -81,14 +141,15 @@ const TopNavigation = ({ activePage }) => {
                   <Link 
                     key={`mobile-nav-${item.id}`}
                     to={item.path} 
-                    className={`flex items-center py-3 ${
+                    className={`flex items-center py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 rounded-md ${
                       isActive 
-                        ? 'text-[#2D7FF9] font-medium' 
-                        : 'text-gray-600'
+                        ? 'text-blue-600 font-medium' 
+                        : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
                     }`}
-                    onClick={() => setIsMenuOpen(false)}
+                    onClick={closeMenu}
+                    aria-current={isActive ? 'page' : undefined}
                   >
-                    <Icon className="h-5 w-5 mr-3" />
+                    <Icon className="h-5 w-5 mr-3" aria-hidden="true" />
                     <span>{item.label}</span>
                   </Link>
                 );
@@ -97,30 +158,27 @@ const TopNavigation = ({ activePage }) => {
               <div className="border-t border-gray-100 mt-2 pt-2">
                 <Link 
                   to="/profile" 
-                  className="flex items-center py-3 text-gray-600"
-                  onClick={() => setIsMenuOpen(false)}
+                  className="flex items-center py-3 text-gray-600 hover:text-gray-900 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 rounded-md"
+                  onClick={closeMenu}
                 >
                   <span>My Profile</span>
                 </Link>
                 <Link 
                   to="/settings" 
-                  className="flex items-center py-3 text-gray-600"
-                  onClick={() => setIsMenuOpen(false)}
+                  className="flex items-center py-3 text-gray-600 hover:text-gray-900 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 rounded-md"
+                  onClick={closeMenu}
                 >
                   <span>Settings</span>
                 </Link>
                 <button 
-                  className="flex items-center py-3 text-gray-600 w-full text-left"
-                  onClick={() => {
-                    setIsMenuOpen(false);
-                    // Add logout logic here
-                  }}
+                  className="flex items-center py-3 text-gray-600 hover:text-gray-900 hover:bg-gray-50 w-full text-left focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 rounded-md"
+                  onClick={handleSignOut}
                 >
                   <span>Sign Out</span>
                 </button>
               </div>
             </div>
-          </div>
+          </nav>
         )}
       </>
     );
@@ -128,8 +186,11 @@ const TopNavigation = ({ activePage }) => {
 
   // Desktop navigation
   return (
-    <div className="hidden md:flex bg-white border-b border-gray-200 px-6 py-3 justify-center">
-      <div className="flex space-x-8">
+    <nav 
+      className="hidden md:flex bg-white border-b border-gray-200 px-6 py-3 justify-center"
+      aria-label="Main navigation"
+    >
+      <div className="flex space-x-8" role="menubar">
         {navItems.map((item) => {
           const Icon = item.icon;
           const isActive = activePage === item.id;
@@ -138,20 +199,22 @@ const TopNavigation = ({ activePage }) => {
             <Link 
               key={`top-nav-${item.id}`}
               to={item.path} 
-              className={`flex items-center px-3 py-2 rounded-md transition-colors ${
+              className={`flex items-center px-3 py-2 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 ${
                 isActive 
-                  ? 'text-[#2D7FF9] font-medium' 
+                  ? 'text-blue-600 font-medium' 
                   : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
               }`}
+              role="menuitem"
+              aria-current={isActive ? 'page' : undefined}
             >
-              <Icon className="h-5 w-5 mr-2" />
+              <Icon className="h-5 w-5 mr-2" aria-hidden="true" />
               <span>{item.label}</span>
             </Link>
           );
         })}
       </div>
-    </div>
+    </nav>
   );
 };
 
-export default TopNavigation;
+export default React.memo(TopNavigation);

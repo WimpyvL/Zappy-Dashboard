@@ -1,66 +1,108 @@
 import React, { Component } from 'react';
-import { AlertTriangle } from 'lucide-react';
+import PropTypes from 'prop-types';
 
+/**
+ * Error Boundary component to catch JavaScript errors in child components
+ * and display a fallback UI instead of crashing the whole application
+ */
 class ErrorBoundary extends Component {
   constructor(props) {
     super(props);
-    this.state = { hasError: false, error: null, errorInfo: null };
+    this.state = { 
+      hasError: false,
+      error: null,
+      errorInfo: null
+    };
   }
 
+  /**
+   * Update state when an error occurs
+   * @param {Error} error - The error that was thrown
+   * @returns {Object} - New state with error information
+   */
   static getDerivedStateFromError(error) {
-    // Update state so the next render will show the fallback UI
     return { hasError: true, error };
   }
 
+  /**
+   * Lifecycle method called when an error is caught
+   * @param {Error} error - The error that was thrown
+   * @param {Object} errorInfo - Component stack information
+   */
   componentDidCatch(error, errorInfo) {
-    // Log the error to an error reporting service
-    console.error('ErrorBoundary caught an error:', error, errorInfo);
     this.setState({ errorInfo });
     
-    // You could also send this to a logging service like Sentry
-    // if (window.Sentry) {
-    //   window.Sentry.captureException(error);
-    // }
+    // Log the error to an error reporting service
+    console.error('Error caught by ErrorBoundary:', error, errorInfo);
+    
+    // Call onError prop if provided
+    if (this.props.onError) {
+      this.props.onError(error, errorInfo);
+    }
   }
 
-  handleRetry = () => {
-    this.setState({ hasError: false, error: null, errorInfo: null });
+  /**
+   * Reset the error state
+   */
+  resetErrorBoundary = () => {
+    this.setState({
+      hasError: false,
+      error: null,
+      errorInfo: null
+    });
+    
+    // Call onReset prop if provided
+    if (this.props.onReset) {
+      this.props.onReset();
+    }
   };
 
   render() {
-    if (this.state.hasError) {
-      // Custom fallback UI
+    const { hasError, error, errorInfo } = this.state;
+    const { fallback, children } = this.props;
+
+    if (hasError) {
+      // If a custom fallback is provided, use it
+      if (fallback) {
+        return typeof fallback === 'function'
+          ? fallback({ error, errorInfo, resetErrorBoundary: this.resetErrorBoundary })
+          : fallback;
+      }
+
+      // Default fallback UI
       return (
-        <div className="p-8 text-center">
-          <div className="bg-red-50 border border-red-200 rounded-lg p-6 max-w-2xl mx-auto">
-            <div className="flex items-center justify-center mb-4">
-              <AlertTriangle className="h-12 w-12 text-red-500" />
-            </div>
-            <h2 className="text-xl font-semibold text-red-700 mb-2">
-              {this.props.title || 'Something went wrong'}
-            </h2>
-            <p className="text-gray-600 mb-4">
-              {this.props.message || 'An unexpected error occurred in this component.'}
-            </p>
-            {this.props.showError && (
-              <pre className="bg-gray-100 p-3 rounded text-left text-xs text-gray-700 overflow-auto max-h-32 mb-4">
-                {this.state.error?.toString() || 'Unknown error'}
+        <div className="p-4 border border-red-300 rounded-md bg-red-50">
+          <h2 className="text-lg font-semibold text-red-800 mb-2">Something went wrong</h2>
+          <p className="text-red-700 mb-4">
+            {error?.message || 'An unexpected error occurred'}
+          </p>
+          {process.env.NODE_ENV !== 'production' && errorInfo && (
+            <details className="mb-4">
+              <summary className="text-sm text-red-700 cursor-pointer">View technical details</summary>
+              <pre className="mt-2 p-2 text-xs bg-red-100 rounded overflow-auto">
+                {errorInfo.componentStack}
               </pre>
-            )}
-            <button
-              onClick={this.handleRetry}
-              className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700"
-            >
-              {this.props.retryLabel || 'Try Again'}
-            </button>
-          </div>
+            </details>
+          )}
+          <button
+            onClick={this.resetErrorBoundary}
+            className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors"
+          >
+            Try again
+          </button>
         </div>
       );
     }
 
-    // When there's no error, render children normally
-    return this.props.children;
+    return children;
   }
 }
+
+ErrorBoundary.propTypes = {
+  children: PropTypes.node.isRequired,
+  fallback: PropTypes.oneOfType([PropTypes.node, PropTypes.func]),
+  onError: PropTypes.func,
+  onReset: PropTypes.func
+};
 
 export default ErrorBoundary;

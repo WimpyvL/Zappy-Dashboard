@@ -7,7 +7,6 @@ import { formatDistanceToNow } from 'date-fns';
 
 // Mock dependencies
 jest.mock('../../contexts/NotificationsContext');
-jest.mock('../ui/ChildishDrawingElement', () => () => <div data-testid="mockDrawingElement" />);
 jest.mock('date-fns', () => ({
   formatDistanceToNow: jest.fn().mockReturnValue('5 minutes ago'),
 }));

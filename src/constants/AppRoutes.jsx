@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { Suspense } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom'; // Removed unused Link
 
 // Layout wrapper
@@ -73,6 +73,7 @@ import PatientProfilePage from '../pages/profile/PatientProfilePage.jsx'; // Imp
 import PatientServicesPage from '../pages/patients/PatientServicesPage.jsx'; // Import Patient Services Page
 import EditProfilePage from '../pages/profile/EditProfilePage.jsx'; // Import Edit Profile Page
 import FormsManagementV2 from '../pages/settings/pages/forms-v2/FormsManagementV2.jsx'; // Import Forms V2
+import IntakeFormSettings from '../pages/settings/pages/IntakeFormSettings.jsx'; // Import Intake Form Settings
 import PaymentMethodsPage from '../pages/payment/PaymentMethodsPage.jsx'; // Import Payment Methods Page
 import NotificationsPage from '../pages/notifications/NotificationsPage.jsx'; // Import Notifications Page
 import LandingPage from '../pages/LandingPage.jsx'; // Import Landing Page
@@ -96,6 +97,10 @@ import UIComponentsPage from '../pages/ui/UIComponentsPage';
 
 // Paths constants
 import { paths } from './paths.js';
+
+// Intake Forms - using lazy loading
+const IntakeFormPage = React.lazy(() => import('../pages/intake/IntakeFormPage.jsx'));
+const ModernIntakeFormPage = React.lazy(() => import('../pages/intake/ModernIntakeFormPage.jsx'));
 
 // Removed unused tempoRoutes definition and try...catch block
 
@@ -204,6 +209,29 @@ const AppRoutes = () => {
         element={
           <MainLayout>
             <InitialConsultations />
+          </MainLayout>
+        }
+      />
+
+      {/* Intake Form Routes */}
+      <Route
+        path={paths.intake}
+        element={
+          <MainLayout>
+            <Suspense fallback={<div className="p-8 text-center">Loading intake form...</div>}>
+              <IntakeFormPage />
+            </Suspense>
+          </MainLayout>
+        }
+      />
+
+      <Route
+        path={`${paths.intake}/modern`}
+        element={
+          <MainLayout>
+            <Suspense fallback={<div className="p-8 text-center">Loading modern intake form...</div>}>
+              <ModernIntakeFormPage />
+            </Suspense>
           </MainLayout>
         }
       />
@@ -461,6 +489,16 @@ const AppRoutes = () => {
         element={
           <MainLayout>
             <FormsManagementV2 />
+          </MainLayout>
+        }
+      />
+
+      {/* Intake Forms Settings Route */}
+      <Route
+        path="/settings/intake-forms" // Define the path for the intake forms settings page
+        element={
+          <MainLayout>
+            <IntakeFormSettings />
           </MainLayout>
         }
       />

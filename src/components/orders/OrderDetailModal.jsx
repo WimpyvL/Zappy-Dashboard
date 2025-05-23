@@ -1,7 +1,8 @@
 import React from 'react';
 import { useOrderById } from '../../apis/orders/hooks'; // Assuming hook path
-import { X, Package, MapPin, Truck, Info, Loader2, AlertTriangle } from 'lucide-react'; // Removed Calendar, DollarSign
+import { X, Package, MapPin, Truck, Info, Loader2, AlertTriangle, Pill } from 'lucide-react'; // Added Pill icon
 import { StatusBadge } from '../../pages/orders/PatientOrderHistoryPage'; // Reuse StatusBadge
+import PrescriptionStatusTimeline from './PrescriptionStatusTimeline'; // Import the timeline component
 
 // Helper function to format date
 const formatDate = (dateString) => {
@@ -104,7 +105,7 @@ const OrderDetailModal = ({ orderId, isOpen, onClose }) => {
 
         {/* Tracking Information */}
         {order.status?.toLowerCase() === 'shipped' && (
-          <div>
+          <div className="mb-6">
             <h3 className="text-md font-semibold mb-3 flex items-center"><Truck className="h-4 w-4 mr-2 text-accent2" /> Tracking Information</h3>
             <div className="bg-gray-50 p-3 rounded border border-gray-200 text-sm">
               {order.trackingNumber ? (
@@ -125,6 +126,23 @@ const OrderDetailModal = ({ orderId, isOpen, onClose }) => {
             </div>
           </div>
         )}
+
+        {/* Prescription Status Timeline (only shown for prescription orders) */}
+        {order.isPrescription || order.prescription_id || (order.items && order.items.some(item => item.isPrescription)) ? (
+          <div className="mb-6">
+            <h3 className="text-md font-semibold mb-3 flex items-center">
+              <Pill className="h-4 w-4 mr-2 text-accent1" /> Prescription Status
+            </h3>
+            <div className="bg-gray-50 p-4 rounded border border-gray-200">
+              <PrescriptionStatusTimeline 
+                prescriptionId={order.prescription_id || order.id}
+                status={order.prescription_status || order.status}
+                events={order.prescription_events || order.status_history || []}
+                compact={false}
+              />
+            </div>
+          </div>
+        ) : null}
       </>
     );
   };

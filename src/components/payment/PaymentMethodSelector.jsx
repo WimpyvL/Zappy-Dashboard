@@ -19,7 +19,12 @@ const PAYMENT_METHODS = {
     name: 'Apple Pay',
     icon: <div className="w-5 h-5 flex items-center justify-center text-black font-bold text-xs">A</div>,
     processor: 'stripe',
-    supported: () => window.ApplePaySession && ApplePaySession.canMakePayments()
+    supported: () => {
+      /* global ApplePaySession */
+      return typeof window !== 'undefined' && 
+             typeof window.ApplePaySession !== 'undefined' && 
+             window.ApplePaySession.canMakePayments();
+    }
   },
   GOOGLE_PAY: {
     id: 'google_pay',

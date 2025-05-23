@@ -1,4 +1,4 @@
-import { useQuery, useMutation, useQueryClient } from 'react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   fetchRecommendationRules,
   createRecommendationRule,
@@ -11,14 +11,12 @@ import {
  * @returns {Object} Query result
  */
 export const useRecommendationRules = () => {
-  return useQuery(
-    ['recommendationRules'],
-    fetchRecommendationRules,
-    {
-      staleTime: 5 * 60 * 1000, // 5 minutes
-      refetchOnWindowFocus: false
-    }
-  );
+  return useQuery({
+    queryKey: ['recommendationRules'],
+    queryFn: fetchRecommendationRules,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    refetchOnWindowFocus: false
+  });
 };
 
 /**
@@ -28,14 +26,12 @@ export const useRecommendationRules = () => {
 export const useCreateRecommendationRule = () => {
   const queryClient = useQueryClient();
   
-  return useMutation(
-    createRecommendationRule,
-    {
-      onSuccess: () => {
-        queryClient.invalidateQueries(['recommendationRules']);
-      }
+  return useMutation({
+    mutationFn: createRecommendationRule,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['recommendationRules'] });
     }
-  );
+  });
 };
 
 /**
@@ -45,14 +41,12 @@ export const useCreateRecommendationRule = () => {
 export const useUpdateRecommendationRule = () => {
   const queryClient = useQueryClient();
   
-  return useMutation(
-    updateRecommendationRule,
-    {
-      onSuccess: () => {
-        queryClient.invalidateQueries(['recommendationRules']);
-      }
+  return useMutation({
+    mutationFn: updateRecommendationRule,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['recommendationRules'] });
     }
-  );
+  });
 };
 
 /**
@@ -62,12 +56,10 @@ export const useUpdateRecommendationRule = () => {
 export const useDeleteRecommendationRule = () => {
   const queryClient = useQueryClient();
   
-  return useMutation(
-    deleteRecommendationRule,
-    {
-      onSuccess: () => {
-        queryClient.invalidateQueries(['recommendationRules']);
-      }
+  return useMutation({
+    mutationFn: deleteRecommendationRule,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['recommendationRules'] });
     }
-  );
+  });
 };

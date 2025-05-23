@@ -908,7 +908,7 @@ const PatientHomePage = () => {
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center">
-                    <span className="font-medium" id="priority-text">Complete your medical intake form</span>
+                    <span className="font-medium" id="priority-text">Complete your prescription questionnaire to get started</span>
                   </div>
                   <div className="flex items-center space-x-2">
                     <span className="text-xs bg-amber-600 text-white px-3 py-1.5 rounded-full font-medium">Required</span>

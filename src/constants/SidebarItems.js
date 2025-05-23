@@ -17,6 +17,7 @@ import {
   History,
   Map,
   Palette,
+  ClipboardCheck,
   // Patient view icons
   LayoutDashboard as PatientDashboardIcon,
   // User as PatientProfileIcon, // Removed unused
@@ -165,6 +166,12 @@ export const adminSidebarSections = [
         path: paths.settings,
         icon: Settings,
         color: 'accent1',
+      },
+      {
+        title: 'Intake Forms',
+        path: '/settings/intake-forms',
+        icon: ClipboardList,
+        color: 'accent4',
       },
       {
         title: 'Audit Log',

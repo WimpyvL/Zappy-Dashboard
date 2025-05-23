@@ -24,11 +24,11 @@ const StatusBadge = ({ status, icon, label, className = '' }) => {
     'cancelled'
   ];
   
-  // Use a default status if the provided one is not valid
-  const badgeStatus = validStatuses.includes(status) ? status : 'pending';
+  // Use a default status if the provided one is not valid or undefined
+  const badgeStatus = status && validStatuses.includes(status) ? status : 'pending';
   
   // Generate the display label (capitalize first letter)
-  const displayLabel = label || (status ? status.charAt(0).toUpperCase() + status.slice(1) : 'Unknown');
+  const displayLabel = label || (status && typeof status === 'string' ? status.charAt(0).toUpperCase() + status.slice(1) : 'Unknown');
   
   return (
     <span className={`status-badge ${badgeStatus} ${className}`}>

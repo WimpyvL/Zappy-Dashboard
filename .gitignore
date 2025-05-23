@@ -32,3 +32,7 @@ yarn-error.log*
 node_modules/
 **/routes/tempobook.dynamic.*
 **/routes/tempobook.storyboards.*
+
+.env.development.local
+.env.test.local
+.env.production.local

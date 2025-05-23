@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { 
-  Heart, Layers, Award, ShoppingBag, Bell, Menu, X
+  Heart, Layers, Award, ShoppingBag, Bell
 } from 'lucide-react';
 
 /**
@@ -86,28 +86,17 @@ const TopNavigation = ({ activePage }) => {
               }}
             />
           </div>
-          
-          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2">
             <button 
-<<<<<<< HEAD
-              className="relative p-2 text-gray-500 hover:text-gray-700"
-=======
               className="relative p-2 text-gray-500 hover:text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 rounded-md mr-2"
->>>>>>> a087814b715110cb6e31d9569a5ee74a779b4d23
               aria-label="Notifications"
             >
               <Bell className="h-5 w-5" />
               <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full" aria-hidden="true"></span>
             </button>
-            
-            <button 
-<<<<<<< HEAD
-              className="w-8 h-8 bg-gray-100 rounded-full overflow-hidden focus:outline-none focus:ring-2 focus:ring-blue-500"
-              onClick={() => setIsMenuOpen(!isMenuOpen)}
-=======
+              <button 
               className="p-2 text-gray-500 hover:text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 rounded-md"
               onClick={toggleMenu}
->>>>>>> a087814b715110cb6e31d9569a5ee74a779b4d23
               aria-label={isMenuOpen ? "Close menu" : "Open menu"}
               aria-expanded={isMenuOpen}
               aria-controls="mobile-menu"

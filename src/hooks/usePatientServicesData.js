@@ -39,7 +39,7 @@ const usePatientServicesData = (patientId) => {
     // Return the services with minimal processing
     // Note: For full data integration, use usePatientServicesDataEnhanced
     return patientServices.map(service => {
-      return processServiceData(service, [], [], [], []);
+      return processServiceData(service || {}, [], [], [], []);
     });
   }, [patientServices]);
 
@@ -73,31 +73,34 @@ export const usePatientServicesDataEnhanced = (patientId) => {
   // In a real app, we might want to fetch data for all service types
   // but that would require a more complex implementation
   const primaryServiceType = useMemo(() => {
-    if (!patientServices || patientServices.length === 0) return null;
+    if (!patientServices || patientServices.length === 0) return '';
     return patientServices[0].type;
   }, [patientServices]);
 
-  // Fetch data for the primary service type
+  // We need to ensure hooks are always called
+  // Using empty string as fallback to avoid conditional hooks
+  const safeServiceType = primaryServiceType || '';
+  
+  // Fetch data for the primary service type - always call hooks even if service type is empty
   const { 
     data: medications = [], 
     isLoading: isLoadingMeds 
-  } = useServiceMedications(primaryServiceType);
+  } = useServiceMedications(safeServiceType);
   
   const { 
     data: actionItems = [], 
     isLoading: isLoadingActions 
-  } = useServiceActionItems(primaryServiceType);
+  } = useServiceActionItems(safeServiceType);
   
   const { 
     data: resources = [], 
     isLoading: isLoadingResources 
-  } = useResourcesByServiceType(primaryServiceType);
+  } = useResourcesByServiceType(safeServiceType);
   
   const { 
     recommendedProducts: recommendations = [], 
     isLoading: isLoadingRecommendations 
-  } = useRecommendedProducts(patientId, primaryServiceType);
-
+  } = useRecommendedProducts(patientId, safeServiceType);
   // Process the services with their related data
   const processedServices = useMemo(() => {
     if (!patientServices || patientServices.length === 0) {
@@ -109,13 +112,13 @@ export const usePatientServicesDataEnhanced = (patientId) => {
     return patientServices.map(service => {
       // We're only fetching data for the primary service type,
       // so only include the detailed data for that service
-      if (service.type === primaryServiceType) {
+      if (service.type && service.type === primaryServiceType) {
         return processServiceData(
           service, 
-          medications, 
-          actionItems, 
-          resources, 
-          recommendations
+          medications || [], 
+          actionItems || [], 
+          resources || [], 
+          recommendations || []
         );
       } 
       
@@ -148,34 +151,37 @@ export default usePatientServicesData;
  * @param {string} patientId - The ID of the patient
  * @returns {Object} Object containing service data, loading state, and error state
  */
-export const useServiceData = (serviceId, serviceType, patientId) => {
+export const useServiceData = (serviceId, serviceType = '', patientId) => {
+  // Ensure serviceType is never undefined or null to avoid React Hooks issues
+  const safeServiceType = serviceType || '';
+  
   // Fetch medications for this service type
   const {
     data: medications = [],
     isLoading: isLoadingMedications,
     error: errorMedications
-  } = useServiceMedications(serviceType);
+  } = useServiceMedications(safeServiceType);
 
   // Fetch action items for this service type
   const {
     data: actionItems = [],
     isLoading: isLoadingActionItems,
     error: errorActionItems
-  } = useServiceActionItems(serviceType);
+  } = useServiceActionItems(safeServiceType);
 
   // Fetch educational resources for this service type
   const {
     data: resources = [],
     isLoading: isLoadingResources,
     error: errorResources
-  } = useResourcesByServiceType(serviceType);
+  } = useResourcesByServiceType(safeServiceType);
 
   // Fetch product recommendations for this service type
   const {
     recommendedProducts: recommendations = [],
     isLoading: isLoadingRecommendations,
     error: errorRecommendations
-  } = useRecommendedProducts(patientId, serviceType);
+  } = useRecommendedProducts(patientId || '', safeServiceType);
 
   // Combine loading and error states
   const isLoading = isLoadingMedications || isLoadingActionItems ||

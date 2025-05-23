@@ -15,7 +15,8 @@ import {
   getFeaturedResources,
   getRecentResources,
   getResourcesByCategory,
-  getResourcesByServiceType
+  getResourcesByServiceType,
+  getQuickGuides
 } from './api';
 
 // Define query keys
@@ -31,6 +32,7 @@ const queryKeys = {
   recent: (limit) => [...queryKeys.all, 'recent', { limit }],
   byCategory: (category, limit) => [...queryKeys.all, 'category', category, { limit }],
   byServiceType: (serviceType, limit) => [...queryKeys.all, 'service', serviceType, { limit }],
+  quickGuides: (limit) => [...queryKeys.all, 'quickGuides', { limit }],
 };
 
 // Hook to fetch all educational resources with optional filtering
@@ -38,6 +40,16 @@ export const useEducationalResources = (filters = {}, options = {}) => {
   return useQuery({
     queryKey: queryKeys.lists(filters),
     queryFn: () => getEducationalResources(filters),
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    ...options
+  });
+};
+
+// Hook to fetch quick guides
+export const useQuickGuides = (limit = 3, options = {}) => {
+  return useQuery({
+    queryKey: queryKeys.quickGuides(limit),
+    queryFn: () => getQuickGuides(limit),
     staleTime: 5 * 60 * 1000, // 5 minutes
     ...options
   });

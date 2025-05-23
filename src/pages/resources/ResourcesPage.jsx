@@ -2,9 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useCategories } from '../../apis/categories/hooks';
 import { 
-  useEducationalResources, 
+  useEducationalResources,
   useFeaturedResources,
-  useRecentResources 
+  useRecentResources,
+  useQuickGuides
 } from '../../apis/educationalResources/hooks';
 import PageHeader from '../../components/ui/PageHeader';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
@@ -48,6 +49,13 @@ const ResourcesPage = () => {
   
   // Get recent resources
   const { data: recentResources, isLoading: isLoadingRecent } = useRecentResources(4);
+
+  // Get quick guides
+  const { 
+    data: quickGuidesData, 
+    isLoading: isLoadingQuickGuides, 
+    error: errorQuickGuides 
+  } = useQuickGuides(3);
 
   // Update URL when filters change
   useEffect(() => {
@@ -157,8 +165,16 @@ const ResourcesPage = () => {
     }
   ];
 
+  // Determine quick guides to render
+  const currentQuickGuides = quickGuidesData || quickGuidesPlaceholder;
+
+
   // Render placeholder content if database tables don't exist yet
-  if (error && error.message.includes("relation") && error.message.includes("does not exist")) {
+  // Also check for quick guides error specifically for the placeholder section
+  const mainResourceError = error && error.message.includes("relation") && error.message.includes("does not exist");
+  const quickGuidesResourceError = errorQuickGuides && errorQuickGuides.message.includes("relation") && errorQuickGuides.message.includes("does not exist");
+
+  if (mainResourceError || quickGuidesResourceError) {
     return (
       <div className="bg-gray-50 text-gray-900 pb-20">
         {/* Top Navigation Bar */}
@@ -312,19 +328,25 @@ const ResourcesPage = () => {
           {/* Quick Guides */}
           <section className="mb-8">
             <h2 className="text-lg font-bold mb-3">Quick Guides</h2>
-            <div className="grid grid-cols-1 gap-4">
-              {quickGuides.map((guide, index) => (
-                <div key={index} className="bg-white rounded-lg shadow p-4 border border-gray-200 flex items-center">
-                  <div className={`flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-md ${getQuickGuideColor(index)} mr-4`}>
-                    {getQuickGuideIcon(index)}
+            {isLoadingQuickGuides && !quickGuidesResourceError ? (
+              <div className="flex justify-center items-center py-10">
+                <LoadingSpinner />
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 gap-4">
+                {currentQuickGuides.map((guide, index) => (
+                  <div key={guide.id || index} className="bg-white rounded-lg shadow p-4 border border-gray-200 flex items-center">
+                    <div className={`flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-md ${getQuickGuideColor(index)} mr-4`}>
+                      {getQuickGuideIcon(index)}
+                    </div>
+                    <div>
+                      <h3 className="text-base font-medium text-gray-900">{guide.title}</h3>
+                      <p className="text-sm text-gray-600">{guide.description}</p>
+                    </div>
                   </div>
-                  <div>
-                    <h3 className="text-base font-medium text-gray-900">{guide.title}</h3>
-                    <p className="text-sm text-gray-600">{guide.description}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </section>
         </main>
       </div>
@@ -541,23 +563,38 @@ const ResourcesPage = () => {
           {/* Quick Guides */}
           <section className="mb-10">
             <h2 className="text-lg font-bold mb-4">Quick Guides</h2>
-            <div className="grid grid-cols-1 gap-4">
-              {quickGuides.map((guide, index) => (
-                <Link 
-                  key={index}
-                  to={`/resources?type=quick_guide`}
-                  className="bg-white rounded-lg shadow p-4 border border-gray-200 flex items-center hover:shadow-md transition-shadow"
-                >
-                  <div className={`flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-md ${getQuickGuideColor(index)} mr-4`}>
-                    {getQuickGuideIcon(index)}
-                  </div>
-                  <div>
-                    <h3 className="text-base font-medium text-gray-900">{guide.title}</h3>
-                    <p className="text-sm text-gray-600">{guide.description}</p>
-                  </div>
-                </Link>
-              ))}
-            </div>
+            {isLoadingQuickGuides ? (
+              <div className="flex justify-center items-center py-10">
+                <LoadingSpinner />
+              </div>
+            ) : errorQuickGuides ? (
+              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md">
+                Error loading quick guides: {errorQuickGuides.message}
+              </div>
+            ) : currentQuickGuides?.length > 0 ? (
+              <div className="grid grid-cols-1 gap-4">
+                {currentQuickGuides.map((guide, index) => (
+                  <Link
+                    key={guide.id || index}
+                    // If actual data, link to the resource. Otherwise, use a generic link for placeholder.
+                    to={guide.id ? `/resources/${guide.id}` : `/resources?type=usage_guide&category=general`}
+                    className="bg-white rounded-lg shadow p-4 border border-gray-200 flex items-center hover:shadow-md transition-shadow"
+                  >
+                    <div className={`flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-md ${getQuickGuideColor(index)} mr-4`}>
+                      {getQuickGuideIcon(index)}
+                    </div>
+                    <div>
+                      <h3 className="text-base font-medium text-gray-900">{guide.title}</h3>
+                      <p className="text-sm text-gray-600 line-clamp-2">{guide.description}</p>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            ) : (
+              <div className="bg-gray-50 border border-gray-200 rounded-md p-6 text-center">
+                <p className="text-gray-600">No quick guides available.</p>
+              </div>
+            )}
           </section>
         </>
       )}

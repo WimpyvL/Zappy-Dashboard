@@ -1,22 +1,9 @@
 import { supabase } from '../../lib/supabase';
-import * as mockData from './mockData';
-
-// Flag to track if we've logged the mock data usage message
-let mockDataMessageLogged = false;
-
-// Helper function to log mock data usage message (only once)
-const logMockDataUsage = () => {
-  if (!mockDataMessageLogged) {
-    console.info('Using mock educational resources data. To use real data, apply the database migration.');
-    mockDataMessageLogged = true;
-  }
-};
 
 // Fetch educational resources by service type
 export const getResourcesByServiceType = async (serviceType, limit = 2) => {
-  try {
-    // Map service types to relevant categories and content types
-    const serviceTypeMapping = {
+  // Map service types to relevant categories and content types
+  const serviceTypeMapping = {
       'weight-management': {
         categories: ['weight'],
         contentTypes: ['medication_guide', 'usage_guide', 'condition_info']
@@ -57,10 +44,6 @@ export const getResourcesByServiceType = async (serviceType, limit = 2) => {
     }
 
     return data;
-  } catch (error) {
-    // If database error occurs, use mock data
-    logMockDataUsage();
-    return mockData.getResourcesByServiceType(serviceType);
   }
 };
 
@@ -112,25 +95,36 @@ export const getEducationalResources = async ({
   return data;
 };
 
+// Get quick guides
+export const getQuickGuides = async (limit = 3) => {
+  const { data, error } = await supabase
+    .from('educational_resources')
+    .select('*')
+    .eq('content_type', 'usage_guide')
+    .eq('category', 'general')
+    .eq('status', 'active')
+    .limit(limit);
+
+  if (error) {
+    throw new Error(`Error fetching quick guides: ${error.message}`);
+  }
+
+  return data;
+};
+
 // Fetch a single educational resource by ID
 export const getEducationalResourceById = async (id) => {
-  try {
-    const { data, error } = await supabase
-      .from('educational_resources')
-      .select('*')
-      .eq('id', id)
-      .single();
+  const { data, error } = await supabase
+    .from('educational_resources')
+    .select('*')
+    .eq('id', id)
+    .single();
 
-    if (error) {
-      throw new Error(`Error fetching educational resource: ${error.message}`);
-    }
-
-    return data;
-  } catch (error) {
-    // If database error occurs, use mock data
-    logMockDataUsage();
-    return mockData.getResourceById(id);
+  if (error) {
+    throw new Error(`Error fetching educational resource: ${error.message}`);
   }
+
+  return data;
 };
 
 // Fetch a single educational resource by content_id
@@ -330,66 +324,48 @@ export const addRelatedResource = async (resourceId, relatedResourceId, relation
 
 // Get featured resources
 export const getFeaturedResources = async (limit = 6) => {
-  try {
-    const { data, error } = await supabase
-      .from('educational_resources')
-      .select('*')
-      .eq('featured', true)
-      .eq('status', 'active')
-      .limit(limit);
+  const { data, error } = await supabase
+    .from('educational_resources')
+    .select('*')
+    .eq('featured', true)
+    .eq('status', 'active')
+    .limit(limit);
 
-    if (error) {
-      throw new Error(`Error fetching featured resources: ${error.message}`);
-    }
-
-    return data;
-  } catch (error) {
-    // If database error occurs, use mock data
-    logMockDataUsage();
-    return mockData.getFeaturedResources();
+  if (error) {
+    throw new Error(`Error fetching featured resources: ${error.message}`);
   }
+
+  return data;
 };
 
 // Get recent resources
 export const getRecentResources = async (limit = 10) => {
-  try {
-    const { data, error } = await supabase
-      .from('educational_resources')
-      .select('*')
-      .eq('status', 'active')
-      .order('created_at', { ascending: false })
-      .limit(limit);
+  const { data, error } = await supabase
+    .from('educational_resources')
+    .select('*')
+    .eq('status', 'active')
+    .order('created_at', { ascending: false })
+    .limit(limit);
 
-    if (error) {
-      throw new Error(`Error fetching recent resources: ${error.message}`);
-    }
-
-    return data;
-  } catch (error) {
-    // If database error occurs, use mock data
-    logMockDataUsage();
-    return mockData.getRecentArticles();
+  if (error) {
+    throw new Error(`Error fetching recent resources: ${error.message}`);
   }
+
+  return data;
 };
 
 // Get resources by category
 export const getResourcesByCategory = async (category, limit = 20) => {
-  try {
-    const { data, error } = await supabase
-      .from('educational_resources')
-      .select('*')
-      .eq('category', category)
-      .eq('status', 'active')
-      .limit(limit);
+  const { data, error } = await supabase
+    .from('educational_resources')
+    .select('*')
+    .eq('category', category)
+    .eq('status', 'active')
+    .limit(limit);
 
-    if (error) {
-      throw new Error(`Error fetching resources by category: ${error.message}`);
-    }
-
-    return data;
-  } catch (error) {
-    // If database error occurs, use mock data
-    logMockDataUsage();
-    return mockData.getResourcesByCategory(category);
+  if (error) {
+    throw new Error(`Error fetching resources by category: ${error.message}`);
   }
+
+  return data;
 };

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   Package, Tag, Box, Briefcase, Plus, Edit, Trash2, Search, Loader2, Layers, Calendar
 } from 'lucide-react';
@@ -32,7 +32,7 @@ import {
 } from '../../apis/categories/hooks';
 
 // Components
-import PageHeader from '../../components/ui/PageHeader';
+import { AdminLayout } from '../../components/admin/layout/AdminLayout';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
 import StatusBadge from '../../components/ui/StatusBadge';
 import ProductModal from '../../components/admin/ProductModal';
@@ -43,10 +43,10 @@ import ServiceModal from '../../components/admin/ServiceModal';
 import CategoryModal from '../../components/admin/CategoryModal';
 import { toast } from 'react-toastify';
 import { applyFilters } from '../../utils/filterUtils';
+import { useStandardizedData } from '../../hooks/useStandardizedData';
 
 const ProductSubscriptionManagement = () => {
   const [activeTab, setActiveTab] = useState('products');
-  const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -61,19 +61,13 @@ const ProductSubscriptionManagement = () => {
   const [currentItem, setCurrentItem] = useState(null);
   const [isEditMode, setIsEditMode] = useState(false);
 
-  // Fetch data
-  const { data: servicesData, isLoading: isLoadingServices } = useServices();
-  const { data: packagesData, isLoading: isLoadingPackages } = useTreatmentPackages();
+  // Fetch data using standardized hook
+  const { data: services, isLoading: isLoadingServices } = useStandardizedData(useServices);
+  const { data: packages, isLoading: isLoadingPackages } = useStandardizedData(useTreatmentPackages);
   const { data: durationsData, isLoading: isLoadingDurations } = useSubscriptionDurations();
-  const { data: productsData, isLoading: isLoadingProducts } = useProducts();
-  const { data: plansData, isLoading: isLoadingPlans } = useSubscriptionPlans();
-  const { data: categoriesData, isLoading: isLoadingCategories } = useCategories();
-
-  // Process fetched data
-  const services = servicesData?.data || servicesData || [];
-  const products = productsData?.data || productsData || [];
-  const subscriptionPlans = plansData?.data || plansData || [];
-  const categories = categoriesData?.data || categoriesData || [];
+  const { data: products, isLoading: isLoadingProducts } = useStandardizedData(useProducts);
+  const { data: subscriptionPlans, isLoading: isLoadingPlans } = useStandardizedData(useSubscriptionPlans);
+  const { data: categories, isLoading: isLoadingCategories } = useStandardizedData(useCategories);
 
   // Sample data for bundles (since we don't have a real API for them yet)
   const bundles = [
@@ -233,13 +227,9 @@ const ProductSubscriptionManagement = () => {
     }
   });
 
-  // Set loading state
-  useEffect(() => {
-    if (!isLoadingServices && !isLoadingPackages && !isLoadingDurations &&
-        !isLoadingProducts && !isLoadingPlans && !isLoadingCategories) {
-      setIsLoading(false);
-    }
-  }, [isLoadingServices, isLoadingPackages, isLoadingDurations, isLoadingProducts, isLoadingPlans, isLoadingCategories]);
+  // Check if any data is loading
+  const isLoading = isLoadingServices || isLoadingPackages || isLoadingDurations || 
+                   isLoadingProducts || isLoadingPlans || isLoadingCategories;
 
   // Apply all filters
   const filteredProducts = applyFilters(products, searchTerm, categoryFilter, statusFilter);
@@ -405,23 +395,21 @@ const ProductSubscriptionManagement = () => {
 
   if (isLoading) {
     return (
-      <div className="container mx-auto px-4 py-6">
-        <PageHeader title="Products & Subscriptions" />
+      <AdminLayout title="Products & Subscriptions">
         <div className="flex justify-center items-center h-64">
           <LoadingSpinner />
         </div>
-      </div>
+      </AdminLayout>
     );
   }
-
+  
   return (
-    <div className="container mx-auto px-4 py-6">
-      {/* Page Header */}
-      <div className="flex justify-between items-center mb-6">
-        <PageHeader title="Products & Subscriptions" />
+    <AdminLayout 
+      title="Products & Subscriptions"
+      actions={
         <button
-          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md flex items-center"
-          onClick={handleAddNew}
+          className="px-4 py-2 bg-primary text-white rounded-md flex items-center hover:bg-primary/90"
+          onClick={() => handleAddNew()}
         >
           <Plus className="h-5 w-5 mr-2" />
           {activeTab === 'products' && 'Add New Product'}
@@ -430,7 +418,8 @@ const ProductSubscriptionManagement = () => {
           {activeTab === 'services' && 'Add New Service'}
           {activeTab === 'categories' && 'Add New Category'}
         </button>
-      </div>
+      }
+    >
 
       {/* Main Content */}
       <div className="bg-white shadow-md rounded-lg overflow-hidden mb-6">
@@ -997,7 +986,7 @@ const ProductSubscriptionManagement = () => {
         duration={isEditMode ? currentItem : null}
         isSubmitting={createDurationMutation.isLoading || updateDurationMutation.isLoading}
       />
-    </div>
+    </AdminLayout>
   );
 };
 

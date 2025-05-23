@@ -8,6 +8,7 @@ import {
 } from '../../apis/productRecommendations/hooks';
 import { toast } from 'react-toastify';
 import { Loader2, Plus, Filter, Search, Sparkles } from 'lucide-react';
+import { AdminLayout } from '../../components/admin/layout/AdminLayout';
 
 const AIPromptSettingsPage = () => {
   // Tab state
@@ -424,9 +425,9 @@ const AIPromptSettingsPage = () => {
   const filteredRules = getFilteredRules();
   
   return (
-    <div className="container mx-auto p-6">
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold">AI & Recommendation Settings</h2>
+    <AdminLayout 
+      title="AI & Recommendation Settings"
+      actions={
         <div className="flex space-x-2">
           {activeTab === 'prompts' ? (
             <>
@@ -462,7 +463,8 @@ const AIPromptSettingsPage = () => {
             </>
           )}
         </div>
-      </div>
+      }
+    >
       
       {/* Tab Navigation */}
       <div className="flex border-b border-gray-200 mb-6">
@@ -791,7 +793,7 @@ const AIPromptSettingsPage = () => {
           </button>
         )}
       </div>
-    </div>
+    </AdminLayout>
   );
 };
 

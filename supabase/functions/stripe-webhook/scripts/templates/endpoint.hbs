@@ -1,0 +1,243 @@
+# {{title}}
+
+> {{method}} {{path}}
+
+{{description}}
+
+## Authentication
+
+{{#with authentication}}
+Requires {{type}} authentication via the `{{header}}` header:
+
+```http
+{{header}}: {{example}}
+```
+{{/with}}
+
+## Request
+
+### Headers
+
+| Header | Required | Description |
+|--------|----------|-------------|
+{{#each headers}}
+| `{{name}}` | {{required}} | {{description}} |
+{{/each}}
+
+### Path Parameters
+
+{{#if pathParams}}
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+{{#each pathParams}}
+| `{{name}}` | `{{type}}` | {{required}} | {{description}} |
+{{/each}}
+{{else}}
+No path parameters required.
+{{/if}}
+
+### Query Parameters
+
+{{#if queryParams}}
+| Parameter | Type | Required | Default | Description |
+|-----------|------|----------|---------|-------------|
+{{#each queryParams}}
+| `{{name}}` | `{{type}}` | {{required}} | `{{default}}` | {{description}} |
+{{/each}}
+{{else}}
+No query parameters required.
+{{/if}}
+
+### Request Body
+
+{{#if requestBody}}
+```typescript
+{{{requestSchema}}}
+```
+
+**Example:**
+```json
+{{{requestExample}}}
+```
+
+#### Properties
+
+| Property | Type | Required | Description |
+|----------|------|----------|-------------|
+{{#each requestBody.properties}}
+| `{{name}}` | `{{type}}` | {{required}} | {{description}} |
+{{/each}}
+{{else}}
+No request body required.
+{{/if}}
+
+## Response
+
+### Success Response
+
+**Status:** {{successStatus}}
+
+```typescript
+{{{responseSchema}}}
+```
+
+**Example:**
+```json
+{{{responseExample}}}
+```
+
+#### Properties
+
+| Property | Type | Description |
+|----------|------|-------------|
+{{#each response.properties}}
+| `{{name}}` | `{{type}}` | {{description}} |
+{{/each}}
+
+### Error Responses
+
+{{#each errors}}
+#### {{code}} {{name}}
+
+**Status:** {{status}}
+
+```json
+{{{example}}}
+```
+
+{{description}}
+
+{{#if resolution}}
+**Resolution:**
+{{resolution}}
+{{/if}}
+{{/each}}
+
+## Rate Limiting
+
+{{#with rateLimit}}
+- Limit: {{limit}} requests
+- Window: {{window}}
+- Key: {{key}}
+
+When rate limited, receives `429 Too Many Requests` with header:
+```http
+Retry-After: {{retryAfter}}
+```
+{{/with}}
+
+## Examples
+
+### cURL
+
+```bash
+{{{curlExample}}}
+```
+
+### TypeScript
+
+```typescript
+{{{typescriptExample}}}
+```
+
+### Python
+
+```python
+{{{pythonExample}}}
+```
+
+## Event Types
+
+{{#if events}}
+This endpoint processes the following Stripe event types:
+
+{{#each events}}
+### {{type}}
+
+{{description}}
+
+**Example payload:**
+```json
+{{{example}}}
+```
+{{/each}}
+{{else}}
+This endpoint does not process specific Stripe event types.
+{{/if}}
+
+## Database Impact
+
+{{#if database}}
+### Tables Affected
+
+{{#each database.tables}}
+#### {{name}}
+
+{{description}}
+
+**Operations:**
+{{#each operations}}
+- {{type}}: {{description}}
+{{/each}}
+{{/each}}
+
+### Sample Queries
+
+```sql
+{{{database.queries}}}
+```
+{{else}}
+This endpoint does not perform any database operations.
+{{/if}}
+
+## Monitoring
+
+### Metrics
+
+{{#each metrics}}
+#### {{name}}
+
+- Type: {{type}}
+- Labels: {{labels}}
+- Description: {{description}}
+{{/each}}
+
+### Alerts
+
+{{#each alerts}}
+#### {{name}}
+
+- Condition: {{condition}}
+- Severity: {{severity}}
+- Response: {{response}}
+{{/each}}
+
+## Testing
+
+### Unit Tests
+
+```typescript
+{{{unitTests}}}
+```
+
+### Integration Tests
+
+```typescript
+{{{integrationTests}}}
+```
+
+## Notes
+
+{{#each notes}}
+- {{this}}
+{{/each}}
+
+## See Also
+
+{{#each seeAlso}}
+- [{{name}}]({{url}})
+{{/each}}
+
+---
+
+Last updated: {{lastUpdated}}

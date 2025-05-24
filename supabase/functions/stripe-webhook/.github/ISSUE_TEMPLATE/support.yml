@@ -1,0 +1,105 @@
+name: Support Request
+description: Get help with the webhook handler
+title: "[SUPPORT] "
+labels: ["support", "triage"]
+assignees:
+  - support-team
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## Support Channels
+        
+        Before creating a support request, please check these resources:
+        
+        - 📚 [Documentation](https://docs.company.com/webhook)
+        - 💬 [Community Forum](https://community.company.com)
+        - 🔒 [Security Issues](https://security.company.com/report)
+        - 💼 [Enterprise Support](https://enterprise.company.com)
+        - 🆘 [Technical Support](https://support.company.com)
+
+  - type: dropdown
+    id: request-type
+    attributes:
+      label: Support Type
+      description: What kind of help do you need?
+      options:
+        - General Question
+        - Technical Issue
+        - Configuration Help
+        - Integration Support
+        - Documentation Help
+        - Other
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: Which version of the webhook handler are you using?
+      placeholder: e.g., v1.2.3
+    validations:
+      required: true
+
+  - type: dropdown
+    id: environment
+    attributes:
+      label: Environment
+      description: Where are you running the webhook handler?
+      options:
+        - Development
+        - Staging
+        - Production
+        - Local
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Issue Description
+      description: Please describe what you need help with
+      placeholder: Clear description of your question or issue
+    validations:
+      required: true
+
+  - type: textarea
+    id: attempted
+    attributes:
+      label: What have you tried?
+      description: What solutions have you already attempted?
+      placeholder: |
+        - Checked documentation
+        - Searched community forum
+        - Reviewed error logs
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant Logs
+      description: Please include any relevant logs or error messages
+      render: shell
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional Context
+      description: Any other context that might help us assist you
+      placeholder: Environment details, related issues, etc.
+
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: Support Agreement
+      description: Please confirm the following
+      options:
+        - label: I have checked the documentation and existing issues
+          required: true
+        - label: I have included all relevant information
+          required: true
+        - label: I understand this is a public support request
+          required: true

@@ -1,0 +1,165 @@
+name-template: 'v$RESOLVED_VERSION'
+tag-template: 'v$RESOLVED_VERSION'
+categories:
+  - title: '🚨 Breaking Changes'
+    labels:
+      - 'breaking'
+      - 'breaking-change'
+    
+  - title: '✨ New Features'
+    labels:
+      - 'feature'
+      - 'enhancement'
+    
+  - title: '🐛 Bug Fixes'
+    labels:
+      - 'fix'
+      - 'bugfix'
+      - 'bug'
+    
+  - title: '🔒 Security Updates'
+    labels:
+      - 'security'
+      - 'vulnerability'
+    
+  - title: '⚡ Performance Improvements'
+    labels:
+      - 'performance'
+      - 'optimization'
+    
+  - title: '📊 Monitoring Updates'
+    labels:
+      - 'monitoring'
+      - 'observability'
+      - 'metrics'
+    
+  - title: '🗃️ Database Changes'
+    labels:
+      - 'database'
+      - 'migration'
+    
+  - title: '📚 Documentation'
+    labels:
+      - 'documentation'
+      - 'docs'
+    
+  - title: '🧪 Testing'
+    labels:
+      - 'testing'
+      - 'test'
+      
+  - title: '🔧 Maintenance'
+    labels:
+      - 'chore'
+      - 'dependencies'
+      - 'maintenance'
+
+change-template: '- $TITLE (#$NUMBER) @$AUTHOR'
+
+change-title-escapes: '\<*_&'
+
+version-resolver:
+  major:
+    labels:
+      - 'breaking'
+      - 'breaking-change'
+  minor:
+    labels:
+      - 'feature'
+      - 'enhancement'
+  patch:
+    labels:
+      - 'bug'
+      - 'fix'
+      - 'bugfix'
+      - 'documentation'
+      - 'dependencies'
+  default: patch
+
+template: |
+  ## Changes in v$RESOLVED_VERSION
+  
+  $CHANGES
+  
+  ## 📋 Details
+  
+  **Released by:** @$AUTHOR
+  **Released on:** $RELEASE_DATE
+  
+  ## 🔍 Migration Guide
+  
+  $BODY
+  
+  ## 🧪 Testing Notes
+  
+  Please test the following areas after upgrading:
+  - Webhook event handling
+  - Database operations
+  - Error scenarios
+  - Performance monitoring
+  
+  ## 📦 Installation
+  
+  ```bash
+  npm install @company/webhook@$RESOLVED_VERSION
+  ```
+  
+  ## 🔒 Security Notes
+  
+  - Review security changelog
+  - Update dependencies
+  - Check configurations
+  
+  ## 📚 Documentation
+  
+  Full documentation available at:
+  https://docs.company.com/webhook/v$RESOLVED_VERSION
+  
+  ## 🚨 Breaking Changes
+  
+  $BREAKING_CHANGES
+  
+  ## ⚡ Performance Impact
+  
+  Performance metrics and impact analysis:
+  - Response time changes
+  - Resource utilization
+  - Scaling characteristics
+  
+  ## 🔄 Rollback Instructions
+  
+  If issues are encountered:
+  1. Revert to previous version
+  2. Apply rollback migrations
+  3. Reset configurations
+  
+  ## 🎯 Next Release
+  
+  Planned for:
+  - Features
+  - Improvements
+  - Fixes
+  
+  Track progress: https://github.com/orgs/company/projects/webhook
+
+sort-by: title
+sort-direction: ascending
+
+exclude-labels:
+  - 'skip-changelog'
+  - 'duplicate'
+  - 'invalid'
+  - 'wontfix'
+
+include-labels:
+  - '*'
+
+replacers:
+  - search: '/\[feature\]/g'
+    replace: '✨'
+  - search: '/\[bug\]/g'
+    replace: '🐛'
+  - search: '/\[security\]/g'
+    replace: '🔒'
+  - search: '/\[docs\]/g'
+    replace: '📚'

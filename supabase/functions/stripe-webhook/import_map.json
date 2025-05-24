@@ -1,0 +1,21 @@
+{
+  "imports": {
+    "stripe": "https://esm.sh/stripe@13.4.0",
+    "asserts": "https://deno.land/std@0.177.0/testing/asserts.ts",
+    "bdd": "https://deno.land/std@0.177.0/testing/bdd.ts",
+
+    "/": "./",
+    "@/": "./",
+    "@core/": "./",
+    "@test/": "./__tests__/",
+    "@types": "./types.ts",
+    "@logger": "./logger.ts",
+    "@handler": "./handler.ts",
+    "@config": "./config.ts"
+  },
+  "scopes": {
+    "./": {
+      "@test/": "./__tests__/"
+    }
+  }
+}

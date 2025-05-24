@@ -1,0 +1,204 @@
+openapi: 3.1.0
+info:
+  title: Stripe Webhook Handler
+  version: 1.0.0
+  description: |
+    API specification for the Stripe webhook handler.
+    Handles incoming webhook events and processes them securely.
+  contact:
+    name: API Support
+    email: api@company.com
+    url: https://docs.company.com/webhook
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: https://api.company.com/webhook
+    description: Production server
+  - url: https://staging-api.company.com/webhook
+    description: Staging server
+
+paths:
+  /stripe:
+    post:
+      summary: Handle Stripe webhook event
+      operationId: handleWebhook
+      tags:
+        - webhook
+      security:
+        - stripeSignature: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WebhookEvent'
+      responses:
+        '200':
+          description: Event processed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Invalid signature
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: Event processing failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '429':
+          description: Rate limit exceeded
+          headers:
+            Retry-After:
+              schema:
+                type: integer
+                description: Seconds to wait before retrying
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+webhooks:
+  stripeEvent:
+    post:
+      operationId: receiveStripeEvent
+      summary: Receive Stripe webhook event
+      security:
+        - stripeSignature: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WebhookEvent'
+      responses:
+        '200':
+          description: Event acknowledged
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+components:
+  schemas:
+    WebhookEvent:
+      type: object
+      required:
+        - id
+        - type
+        - data
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique event identifier
+          example: "evt_1234567890"
+        type:
+          type: string
+          description: Event type
+          example: "charge.succeeded"
+        data:
+          type: object
+          description: Event data
+          additionalProperties: true
+
+    SuccessResponse:
+      type: object
+      required:
+        - success
+        - message
+      properties:
+        success:
+          type: boolean
+          description: Operation success status
+          example: true
+        message:
+          type: string
+          description: Success message
+          example: "Event processed successfully"
+        eventId:
+          type: string
+          description: Processed event ID
+          example: "evt_1234567890"
+
+    ErrorResponse:
+      type: object
+      required:
+        - success
+        - error
+      properties:
+        success:
+          type: boolean
+          description: Operation success status
+          example: false
+        error:
+          type: object
+          required:
+            - code
+            - message
+          properties:
+            code:
+              type: string
+              description: Error code
+              example: "invalid_signature"
+            message:
+              type: string
+              description: Error message
+              example: "Invalid webhook signature"
+
+  securitySchemes:
+    stripeSignature:
+      type: apiKey
+      name: Stripe-Signature
+      in: header
+      description: Stripe webhook signature header
+
+  parameters:
+    idempotencyKey:
+      name: Idempotency-Key
+      in: header
+      description: Unique key for idempotent requests
+      required: false
+      schema:
+        type: string
+        format: uuid
+
+tags:
+  - name: webhook
+    description: Webhook endpoints
+
+x-webhooks:
+  - name: stripeWebhook
+    url: https://api.company.com/webhook/stripe
+    description: Endpoint for receiving Stripe webhook events
+
+x-examples:
+  successEvent:
+    value:
+      id: evt_1234567890
+      type: charge.succeeded
+      data:
+        object:
+          id: ch_1234567890
+          amount: 1000
+          currency: usd
+          status: succeeded

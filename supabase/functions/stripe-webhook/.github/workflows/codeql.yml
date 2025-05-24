@@ -1,0 +1,119 @@
+name: CodeQL Analysis
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+    paths-ignore:
+      - '**/*.md'
+      - 'docs/**'
+      - '.github/**'
+  schedule:
+    - cron: '0 0 * * 0'  # Run weekly on Sundays
+
+jobs:
+  analyze:
+    name: CodeQL Scan
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+
+    strategy:
+      fail-fast: false
+      matrix:
+        language: ['javascript']
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v2
+        with:
+          languages: ${{ matrix.language }}
+          queries: security-extended,security-and-quality
+          config-file: ./.github/codeql/codeql-config.yml
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build project
+        run: npm run build
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v2
+        with:
+          category: "/language:${{ matrix.language }}"
+
+      - name: Upload SARIF file
+        uses: github/codeql-action/upload-sarif@v2
+        if: success()
+        with:
+          sarif_file: results.sarif
+
+      - name: Generate Security Report
+        if: always()
+        run: |
+          echo "# CodeQL Security Analysis Report" > codeql-report.md
+          echo "## Summary" >> codeql-report.md
+          echo "Analysis completed at: $(date)" >> codeql-report.md
+          
+          if [ -f results.sarif ]; then
+            echo "### Findings" >> codeql-report.md
+            jq -r '.runs[].results[] | "- " + .message.text' results.sarif >> codeql-report.md
+          else
+            echo "No SARIF results found" >> codeql-report.md
+          fi
+
+      - name: Upload Report
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: codeql-report
+          path: |
+            codeql-report.md
+            results.sarif
+          retention-days: 30
+
+      - name: Create Issue on Failure
+        if: failure()
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const issue = await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: '🚨 CodeQL Analysis Failed',
+              body: 'CodeQL analysis detected security issues. Please review the security report.',
+              labels: ['security', 'needs-review']
+            });
+
+      - name: Update Check Run
+        if: always()
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const conclusion = '${{ job.status }}' === 'success' ? '✅ Passed' : '❌ Failed';
+            await github.rest.checks.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              name: 'CodeQL Security Analysis',
+              head_sha: context.sha,
+              status: 'completed',
+              conclusion: '${{ job.status }}',
+              output: {
+                title: `Security Analysis ${conclusion}`,
+                summary: 'CodeQL analysis completed. Check the report for details.'
+              }
+            });

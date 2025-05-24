@@ -1,0 +1,147 @@
+title: "[DISCUSS]: "
+labels: ["discussion"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        # Discussion Guidelines
+        
+        Thanks for starting a discussion! Please follow these guidelines:
+        - Be respectful and professional
+        - Provide clear context
+        - Consider different perspectives
+        - Focus on constructive solutions
+        - Link relevant resources
+
+  - type: dropdown
+    id: category
+    attributes:
+      label: Discussion Category
+      description: What type of discussion is this?
+      options:
+        - Architecture Decision
+        - Technical Design
+        - Best Practices
+        - Standards & Conventions
+        - Technology Choice
+        - Process Improvement
+        - Performance Optimization
+        - Security Consideration
+        - Development Workflow
+        - Future Planning
+    validations:
+      required: true
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Context & Background
+      description: Provide background information and context
+      placeholder: |
+        - Current situation
+        - Problem statement
+        - Relevant history
+        - Business context
+        - Technical constraints
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposal/Ideas
+      description: Share your thoughts and suggestions
+      placeholder: |
+        - Proposed approach
+        - Key benefits
+        - Potential challenges
+        - Alternative options
+        - Implementation considerations
+
+  - type: textarea
+    id: considerations
+    attributes:
+      label: Key Considerations
+      description: Important factors to consider
+      placeholder: |
+        Technical Aspects:
+        - Performance impact
+        - Security implications
+        - Scalability needs
+        - Maintainability
+        
+        Business Aspects:
+        - Resource requirements
+        - Timeline impact
+        - Cost considerations
+        - Business value
+
+  - type: textarea
+    id: examples
+    attributes:
+      label: Examples & References
+      description: Share relevant examples or references
+      placeholder: |
+        Code Examples:
+        ```typescript
+        // Implementation example
+        ```
+        
+        References:
+        - Documentation links
+        - Similar implementations
+        - Research papers
+        - Best practices guides
+
+  - type: textarea
+    id: questions
+    attributes:
+      label: Open Questions
+      description: List questions for discussion
+      placeholder: |
+        1. How should we handle...?
+        2. What are the trade-offs of...?
+        3. When should we consider...?
+        4. Who needs to be involved in...?
+
+  - type: textarea
+    id: next_steps
+    attributes:
+      label: Proposed Next Steps
+      description: Suggest how to move forward
+      placeholder: |
+        1. Research & Investigation
+           - Areas to explore
+           - Data needed
+        
+        2. Decision Making
+           - Key stakeholders
+           - Decision criteria
+        
+        3. Implementation Planning
+           - Timeline
+           - Resources
+           - Dependencies
+
+  - type: checkboxes
+    id: collaboration
+    attributes:
+      label: Collaboration
+      description: Ways to contribute
+      options:
+        - label: I can help research solutions
+        - label: I can help implement changes
+        - label: I can help review proposals
+        - label: I can help document decisions
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional Information
+      description: Any other relevant information
+      placeholder: |
+        - Related discussions
+        - Dependencies
+        - Constraints
+        - Deadlines
+        - Resources needed

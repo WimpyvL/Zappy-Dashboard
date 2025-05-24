@@ -1,0 +1,145 @@
+name: Documentation Issue
+description: Report documentation problems or suggest improvements
+title: "[DOCS]: "
+labels: ["documentation", "needs-review"]
+assignees:
+  - docs-team
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for helping improve our documentation! Before proceeding:
+        
+        1. Check our [contribution guidelines](CONTRIBUTING.md#documentation)
+        2. Review [existing documentation issues](https://github.com/company/webhook/issues?q=is%3Aissue+label%3Adocumentation)
+        3. Search the [documentation](https://docs.company.com/webhook) for existing content
+
+  - type: dropdown
+    id: type
+    attributes:
+      label: Documentation Issue Type
+      description: What type of documentation issue are you reporting?
+      options:
+        - Missing Documentation
+        - Incorrect Information
+        - Unclear Explanation
+        - Outdated Content
+        - Broken Links
+        - Code Example Issue
+        - Typo/Grammar
+        - Translation Issue
+        - Formatting Problem
+        - Other
+    validations:
+      required: true
+
+  - type: input
+    id: location
+    attributes:
+      label: Documentation Location
+      description: Where is the affected documentation?
+      placeholder: e.g., /docs/webhook/setup.md or API Reference
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Documentation Version
+      description: What version of the documentation are you viewing?
+      placeholder: e.g., v1.2.3 or Latest
+    validations:
+      required: true
+
+  - type: textarea
+    id: current
+    attributes:
+      label: Current Content
+      description: What does the current documentation say?
+      placeholder: |
+        Please quote or describe the current content.
+        Include problematic sections or unclear explanations.
+    validations:
+      required: true
+
+  - type: textarea
+    id: suggested
+    attributes:
+      label: Suggested Changes
+      description: How should the documentation be improved?
+      placeholder: |
+        - What should be changed?
+        - What should be added/removed?
+        - How could it be clearer?
+    validations:
+      required: true
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional Context
+      description: Why is this change needed?
+      placeholder: |
+        - Use cases this affects
+        - Common confusion points
+        - Related documentation
+        - Example scenarios
+    validations:
+      required: false
+
+  - type: textarea
+    id: examples
+    attributes:
+      label: Code Examples
+      description: Include any relevant code examples
+      render: typescript
+      placeholder: |
+        // Current example
+        const current = await webhook.handle();
+        
+        // Suggested example
+        const better = await webhook.handleEvent();
+    validations:
+      required: false
+
+  - type: dropdown
+    id: impact
+    attributes:
+      label: Documentation Impact
+      description: How significantly does this issue affect users?
+      options:
+        - Critical (Blocks Usage)
+        - High (Major Confusion)
+        - Medium (Could be Clearer)
+        - Low (Minor Improvement)
+    validations:
+      required: true
+
+  - type: dropdown
+    id: contribution
+    attributes:
+      label: Contribution Interest
+      description: Would you be willing to help improve the documentation?
+      options:
+        - Yes, I can submit a pull request
+        - Yes, I can help review changes
+        - Yes, I can provide feedback
+        - No, just reporting the issue
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: Documentation Guidelines
+      description: Please confirm the following
+      options:
+        - label: I have searched for existing documentation issues
+          required: true
+        - label: I have provided specific examples or quotes
+          required: true
+        - label: I am willing to help clarify if needed
+          required: true
+        - label: I have read the documentation guidelines
+          required: true

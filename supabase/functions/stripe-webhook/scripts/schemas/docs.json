@@ -1,0 +1,387 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Documentation Configuration Schema",
+  "description": "Schema for documentation generation configuration",
+  "type": "object",
+  "required": [
+    "project",
+    "paths",
+    "templates",
+    "generation",
+    "validation",
+    "output",
+    "versioning"
+  ],
+  "properties": {
+    "project": {
+      "type": "object",
+      "required": ["name", "version", "description", "repository", "license", "author"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Project name",
+          "minLength": 1
+        },
+        "version": {
+          "type": "string",
+          "description": "Project version",
+          "pattern": "^\\d+\\.\\d+\\.\\d+$"
+        },
+        "description": {
+          "type": "string",
+          "description": "Project description"
+        },
+        "repository": {
+          "type": "string",
+          "description": "Repository URL",
+          "format": "uri"
+        },
+        "homepage": {
+          "type": "string",
+          "description": "Documentation homepage",
+          "format": "uri"
+        },
+        "license": {
+          "type": "string",
+          "description": "Project license"
+        },
+        "author": {
+          "type": "object",
+          "required": ["name", "email"],
+          "properties": {
+            "name": {
+              "type": "string"
+            },
+            "email": {
+              "type": "string",
+              "format": "email"
+            },
+            "url": {
+              "type": "string",
+              "format": "uri"
+            }
+          }
+        }
+      }
+    },
+    "paths": {
+      "type": "object",
+      "required": ["docs", "source", "output", "templates"],
+      "properties": {
+        "docs": {
+          "type": "string",
+          "description": "Documentation directory"
+        },
+        "source": {
+          "type": "string",
+          "description": "Source code directory"
+        },
+        "output": {
+          "type": "object",
+          "required": ["typedoc", "openapi", "markdown", "types"],
+          "properties": {
+            "typedoc": {
+              "type": "string"
+            },
+            "openapi": {
+              "type": "string"
+            },
+            "markdown": {
+              "type": "string"
+            },
+            "types": {
+              "type": "string"
+            }
+          }
+        },
+        "templates": {
+          "type": "object",
+          "required": ["path", "data", "helpers"],
+          "properties": {
+            "path": {
+              "type": "string"
+            },
+            "data": {
+              "type": "string"
+            },
+            "helpers": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "templates": {
+      "type": "object",
+      "required": ["default", "templates"],
+      "properties": {
+        "default": {
+          "type": "string"
+        },
+        "templates": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["name", "path", "data", "output"],
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "path": {
+                "type": "string"
+              },
+              "data": {
+                "type": "string"
+              },
+              "output": {
+                "type": "string"
+              },
+              "helpers": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "generation": {
+      "type": "object",
+      "required": ["typedoc", "openapi", "markdown"],
+      "properties": {
+        "typedoc": {
+          "type": "object",
+          "required": ["entryPoints", "out", "theme"],
+          "properties": {
+            "entryPoints": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "out": {
+              "type": "string"
+            },
+            "theme": {
+              "type": "string"
+            },
+            "plugin": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "openapi": {
+          "type": "object",
+          "required": ["title", "version", "description"],
+          "properties": {
+            "title": {
+              "type": "string"
+            },
+            "version": {
+              "type": "string"
+            },
+            "description": {
+              "type": "string"
+            },
+            "servers": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["url", "description"],
+                "properties": {
+                  "url": {
+                    "type": "string",
+                    "format": "uri"
+                  },
+                  "description": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "markdown": {
+          "type": "object",
+          "required": ["include", "exclude"],
+          "properties": {
+            "include": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "exclude": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "plugins": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    },
+    "validation": {
+      "type": "object",
+      "required": ["links", "content", "code"],
+      "properties": {
+        "links": {
+          "type": "object",
+          "required": ["checkExternal", "timeout"],
+          "properties": {
+            "checkExternal": {
+              "type": "boolean"
+            },
+            "ignore": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "timeout": {
+              "type": "number",
+              "minimum": 0
+            }
+          }
+        },
+        "content": {
+          "type": "object",
+          "required": ["minWords", "maxWords", "requiredSections"],
+          "properties": {
+            "minWords": {
+              "type": "number",
+              "minimum": 0
+            },
+            "maxWords": {
+              "type": "number",
+              "minimum": 0
+            },
+            "requiredSections": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "code": {
+          "type": "object",
+          "required": ["lint", "test", "format"],
+          "properties": {
+            "lint": {
+              "type": "boolean"
+            },
+            "test": {
+              "type": "boolean"
+            },
+            "format": {
+              "type": "boolean"
+            }
+          }
+        }
+      }
+    },
+    "output": {
+      "type": "object",
+      "required": ["clean", "assets", "search"],
+      "properties": {
+        "clean": {
+          "type": "boolean"
+        },
+        "assets": {
+          "type": "object",
+          "required": ["from", "to", "include"],
+          "properties": {
+            "from": {
+              "type": "string"
+            },
+            "to": {
+              "type": "string"
+            },
+            "include": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "search": {
+          "type": "object",
+          "required": ["enabled", "output", "options"],
+          "properties": {
+            "enabled": {
+              "type": "boolean"
+            },
+            "output": {
+              "type": "string"
+            },
+            "options": {
+              "type": "object",
+              "required": ["fields", "boosts"],
+              "properties": {
+                "fields": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "boosts": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "number"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "versioning": {
+      "type": "object",
+      "required": ["enabled", "dir", "latest", "format", "archive"],
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "dir": {
+          "type": "string"
+        },
+        "latest": {
+          "type": "string"
+        },
+        "format": {
+          "type": "string"
+        },
+        "archive": {
+          "type": "object",
+          "required": ["enabled", "path", "keep"],
+          "properties": {
+            "enabled": {
+              "type": "boolean"
+            },
+            "path": {
+              "type": "string"
+            },
+            "keep": {
+              "type": "number",
+              "minimum": 1
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,165 @@
+name: ⚡ Performance Issue
+description: Report performance problems or bottlenecks
+title: "[PERF]: "
+labels: ["performance", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a performance issue!
+        Please provide detailed metrics and context to help us investigate.
+
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: What version are you using?
+      placeholder: e.g., v1.2.3
+    validations:
+      required: true
+
+  - type: dropdown
+    id: environment
+    attributes:
+      label: Environment
+      description: Where is this performance issue occurring?
+      options:
+        - Production
+        - Staging
+        - Development
+        - Testing
+    validations:
+      required: true
+
+  - type: dropdown
+    id: scale
+    attributes:
+      label: Scale
+      description: What's the scale of operation?
+      options:
+        - Low (<100 req/min)
+        - Medium (100-1000 req/min)
+        - High (1000-10000 req/min)
+        - Very High (>10000 req/min)
+    validations:
+      required: true
+
+  - type: textarea
+    id: metrics
+    attributes:
+      label: Performance Metrics
+      description: Provide relevant performance measurements
+      placeholder: |
+        - Response Time: xxx ms (p95)
+        - Throughput: xxx req/s
+        - Error Rate: xxx%
+        - CPU Usage: xxx%
+        - Memory Usage: xxx MB
+        - Database Load: xxx connections
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to Reproduce
+      description: How can we reproduce this performance issue?
+      placeholder: |
+        1. Configure webhook with '...'
+        2. Send xxx events per second
+        3. Observe response time increase
+    validations:
+      required: true
+
+  - type: textarea
+    id: profile
+    attributes:
+      label: Performance Profile
+      description: Attach relevant performance profiles or traces
+      placeholder: |
+        ```
+        # Profile data or link to trace
+        ```
+
+  - type: dropdown
+    id: impact
+    attributes:
+      label: Business Impact
+      description: What's the impact on operations?
+      options:
+        - Critical - Service degradation
+        - High - Notable slowdown
+        - Medium - Occasional issues
+        - Low - Minor impact
+    validations:
+      required: true
+
+  - type: textarea
+    id: analysis
+    attributes:
+      label: Initial Analysis
+      description: Share any analysis or investigation done
+      placeholder: |
+        - Observed patterns
+        - Potential bottlenecks
+        - System behavior
+        - Related factors
+
+  - type: textarea
+    id: configuration
+    attributes:
+      label: Configuration
+      description: Relevant configuration settings
+      render: yaml
+      placeholder: |
+        webhook:
+          timeout: 30s
+          maxRetries: 3
+          batchSize: 100
+
+  - type: textarea
+    id: system
+    attributes:
+      label: System Details
+      description: Provide system information
+      placeholder: |
+        - Infrastructure: AWS/GCP/Azure
+        - Instance Type: xxx
+        - Database: PostgreSQL x.x
+        - Node.js Version: x.x.x
+        - OS: Linux/Windows/macOS
+
+  - type: textarea
+    id: mitigation
+    attributes:
+      label: Attempted Mitigation
+      description: What steps have been tried to address this?
+      placeholder: |
+        - Scaled resources
+        - Optimized queries
+        - Added caching
+        - Updated configurations
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant Logs
+      description: Include relevant log entries
+      render: shell
+      placeholder: |
+        2025-05-24T07:45:09Z WARN Response time exceeded threshold...
+
+  - type: checkboxes
+    id: verification
+    attributes:
+      label: Verification
+      description: Please verify these items
+      options:
+        - label: This is a consistent performance issue
+          required: true
+        - label: I have included relevant metrics
+          required: true
+        - label: I have checked for related issues
+          required: true
+        - label: This affects multiple requests/users
+          required: true

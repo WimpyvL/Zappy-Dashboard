@@ -1,0 +1,236 @@
+# {{code}} Error
+
+> {{shortDescription}}
+
+{{description}}
+
+## Details
+
+| Property | Value |
+|----------|-------|
+| Error Code | `{{code}}` |
+| HTTP Status | {{httpStatus}} |
+| Error Type | {{type}} |
+| Severity | {{severity}} |
+| Retryable | {{retryable}} |
+
+## Error Response
+
+```json
+{{{errorExample}}}
+```
+
+## Causes
+
+{{#each causes}}
+### {{name}}
+
+{{description}}
+
+#### Example Scenario
+
+```typescript
+{{{example}}}
+```
+
+#### Detection
+
+{{detection}}
+
+{{#if prevention}}
+#### Prevention
+
+{{prevention}}
+{{/if}}
+{{/each}}
+
+## Handling
+
+### Client-Side
+
+```typescript
+try {
+  {{{clientExample}}}
+} catch (error) {
+  if (error.code === '{{code}}') {
+    {{{clientHandling}}}
+  }
+}
+```
+
+### Server-Side
+
+```typescript
+try {
+  {{{serverExample}}}
+} catch (error) {
+  if (error.code === '{{code}}') {
+    {{{serverHandling}}}
+  }
+}
+```
+
+## Resolution Steps
+
+1. {{#each resolutionSteps}}
+   {{this}}
+   {{/each}}
+
+## Validation
+
+### Request Validation
+
+```typescript
+{{{requestValidation}}}
+```
+
+### Response Validation
+
+```typescript
+{{{responseValidation}}}
+```
+
+## Monitoring
+
+### Metrics
+
+{{#each metrics}}
+#### {{name}}
+
+- Type: {{type}}
+- Labels: {{labels}}
+- Threshold: {{threshold}}
+{{/each}}
+
+### Alerts
+
+{{#each alerts}}
+#### {{name}}
+
+- Condition: `{{condition}}`
+- Severity: {{severity}}
+- Response: {{response}}
+{{/each}}
+
+### Logs
+
+#### Example Log Entry
+
+```json
+{{{logExample}}}
+```
+
+#### Log Query
+
+```sql
+{{{logQuery}}}
+```
+
+## Testing
+
+### Unit Tests
+
+```typescript
+{{{unitTests}}}
+```
+
+### Integration Tests
+
+```typescript
+{{{integrationTests}}}
+```
+
+## Recovery
+
+### Automatic Recovery
+
+{{#if automaticRecovery}}
+```typescript
+{{{automaticRecovery}}}
+```
+{{else}}
+No automatic recovery available for this error.
+{{/if}}
+
+### Manual Recovery
+
+{{#each manualRecovery}}
+1. {{this}}
+{{/each}}
+
+## Prevention
+
+### Code Examples
+
+#### What Not to Do
+
+```typescript
+{{{badExample}}}
+```
+
+#### Correct Implementation
+
+```typescript
+{{{goodExample}}}
+```
+
+### Best Practices
+
+{{#each bestPractices}}
+- {{this}}
+{{/each}}
+
+## Related Errors
+
+{{#each relatedErrors}}
+- [`{{code}}`]({{url}}) - {{description}}
+{{/each}}
+
+## Impact
+
+### Business Impact
+
+{{businessImpact}}
+
+### Technical Impact
+
+{{technicalImpact}}
+
+## Troubleshooting
+
+### Diagnostic Steps
+
+{{#each diagnosticSteps}}
+1. {{this}}
+{{/each}}
+
+### Common Solutions
+
+{{#each solutions}}
+#### {{name}}
+
+{{description}}
+
+```typescript
+{{{example}}}
+```
+{{/each}}
+
+## References
+
+{{#each references}}
+- [{{name}}]({{url}}) - {{description}}
+{{/each}}
+
+## Support
+
+If you need help resolving this error:
+
+1. Check the [Troubleshooting Guide](../troubleshooting)
+2. Search [GitHub Issues]({{repository}}/issues)
+3. Contact [Support]({{supportUrl}})
+
+---
+
+Last updated: {{lastUpdated}}  
+Report issues: [GitHub]({{repository}}/issues)

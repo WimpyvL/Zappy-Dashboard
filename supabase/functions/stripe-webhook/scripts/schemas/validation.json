@@ -1,0 +1,453 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Documentation Validation Configuration Schema",
+  "description": "Schema for documentation validation rules",
+  "type": "object",
+  "required": [
+    "content",
+    "structure",
+    "code",
+    "style",
+    "technical",
+    "metadata",
+    "links",
+    "files",
+    "reports"
+  ],
+  "properties": {
+    "content": {
+      "type": "object",
+      "required": ["words", "sections", "readability"],
+      "properties": {
+        "words": {
+          "type": "object",
+          "required": ["min", "max", "optimal"],
+          "properties": {
+            "min": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "max": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "optimal": {
+              "type": "integer",
+              "minimum": 0
+            }
+          }
+        },
+        "sections": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "readability": {
+          "type": "object",
+          "required": ["fleschKincaid", "gradeLevel", "complexity"],
+          "properties": {
+            "fleschKincaid": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 100
+            },
+            "gradeLevel": {
+              "type": "number",
+              "minimum": 0
+            },
+            "complexity": {
+              "type": "string",
+              "enum": ["low", "medium", "high"]
+            }
+          }
+        }
+      }
+    },
+    "structure": {
+      "type": "object",
+      "required": ["headings", "lists", "links"],
+      "properties": {
+        "headings": {
+          "type": "object",
+          "required": ["max_depth", "require_order", "spacing"],
+          "properties": {
+            "max_depth": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 6
+            },
+            "require_order": {
+              "type": "boolean"
+            },
+            "spacing": {
+              "type": "boolean"
+            }
+          }
+        },
+        "lists": {
+          "type": "object",
+          "required": ["max_depth", "require_marker"],
+          "properties": {
+            "max_depth": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "require_marker": {
+              "type": "boolean"
+            }
+          }
+        },
+        "links": {
+          "type": "object",
+          "required": ["require_text", "check_urls", "allow_external"],
+          "properties": {
+            "require_text": {
+              "type": "boolean"
+            },
+            "check_urls": {
+              "type": "boolean"
+            },
+            "allow_external": {
+              "type": "boolean"
+            }
+          }
+        }
+      }
+    },
+    "code": {
+      "type": "object",
+      "required": ["blocks", "inline"],
+      "properties": {
+        "blocks": {
+          "type": "object",
+          "required": ["require_language", "validate_syntax", "max_length"],
+          "properties": {
+            "require_language": {
+              "type": "boolean"
+            },
+            "validate_syntax": {
+              "type": "boolean"
+            },
+            "max_length": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        },
+        "inline": {
+          "type": "object",
+          "required": ["allow_spaces", "max_length"],
+          "properties": {
+            "allow_spaces": {
+              "type": "boolean"
+            },
+            "max_length": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        }
+      }
+    },
+    "style": {
+      "type": "object",
+      "required": ["formatting", "tables", "images"],
+      "properties": {
+        "formatting": {
+          "type": "object",
+          "required": ["bold", "italic", "strikethrough"],
+          "properties": {
+            "bold": {
+              "type": "boolean"
+            },
+            "italic": {
+              "type": "boolean"
+            },
+            "strikethrough": {
+              "type": "boolean"
+            }
+          }
+        },
+        "tables": {
+          "type": "object",
+          "required": ["require_header", "align_columns"],
+          "properties": {
+            "require_header": {
+              "type": "boolean"
+            },
+            "align_columns": {
+              "type": "boolean"
+            }
+          }
+        },
+        "images": {
+          "type": "object",
+          "required": ["require_alt", "max_size", "formats"],
+          "properties": {
+            "require_alt": {
+              "type": "boolean"
+            },
+            "max_size": {
+              "type": "string",
+              "pattern": "^\\d+[KM]B$"
+            },
+            "formats": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    },
+    "technical": {
+      "type": "object",
+      "required": ["api", "types", "functions"],
+      "properties": {
+        "api": {
+          "type": "object",
+          "required": ["require_params", "require_responses", "require_examples"],
+          "properties": {
+            "require_params": {
+              "type": "boolean"
+            },
+            "require_responses": {
+              "type": "boolean"
+            },
+            "require_examples": {
+              "type": "boolean"
+            }
+          }
+        },
+        "types": {
+          "type": "object",
+          "required": ["require_desc", "require_example"],
+          "properties": {
+            "require_desc": {
+              "type": "boolean"
+            },
+            "require_example": {
+              "type": "boolean"
+            }
+          }
+        },
+        "functions": {
+          "type": "object",
+          "required": ["require_params", "require_return", "require_throws"],
+          "properties": {
+            "require_params": {
+              "type": "boolean"
+            },
+            "require_return": {
+              "type": "boolean"
+            },
+            "require_throws": {
+              "type": "boolean"
+            }
+          }
+        }
+      }
+    },
+    "metadata": {
+      "type": "object",
+      "required": ["required", "optional"],
+      "properties": {
+        "required": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "optional": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "links": {
+      "type": "object",
+      "required": ["validation", "format"],
+      "properties": {
+        "validation": {
+          "type": "object",
+          "required": ["check_internal", "check_external", "ignore_patterns", "timeout"],
+          "properties": {
+            "check_internal": {
+              "type": "boolean"
+            },
+            "check_external": {
+              "type": "boolean"
+            },
+            "ignore_patterns": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "timeout": {
+              "type": "integer",
+              "minimum": 0
+            }
+          }
+        },
+        "format": {
+          "type": "object",
+          "required": ["require_protocol", "allow_fragments", "allow_query"],
+          "properties": {
+            "require_protocol": {
+              "type": "boolean"
+            },
+            "allow_fragments": {
+              "type": "boolean"
+            },
+            "allow_query": {
+              "type": "boolean"
+            }
+          }
+        }
+      }
+    },
+    "files": {
+      "type": "object",
+      "required": ["naming", "structure"],
+      "properties": {
+        "naming": {
+          "type": "object",
+          "required": ["pattern", "max_length", "extensions"],
+          "properties": {
+            "pattern": {
+              "type": "string"
+            },
+            "max_length": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "extensions": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "structure": {
+          "type": "object",
+          "required": ["max_depth", "require_index", "require_readme"],
+          "properties": {
+            "max_depth": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "require_index": {
+              "type": "boolean"
+            },
+            "require_readme": {
+              "type": "boolean"
+            }
+          }
+        }
+      }
+    },
+    "reports": {
+      "type": "object",
+      "required": ["levels", "formats", "output"],
+      "properties": {
+        "levels": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["error", "warning", "info"]
+          }
+        },
+        "formats": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "output": {
+          "type": "object",
+          "required": ["directory", "filename"],
+          "properties": {
+            "directory": {
+              "type": "string"
+            },
+            "filename": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "ignore": {
+      "type": "object",
+      "required": ["files", "rules", "sections"],
+      "properties": {
+        "files": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "rules": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "sections": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "custom": {
+      "type": "object",
+      "required": ["company", "project"],
+      "properties": {
+        "company": {
+          "type": "object",
+          "required": ["product_names", "terminology"],
+          "properties": {
+            "product_names": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "terminology": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "project": {
+          "type": "object",
+          "required": ["required_sections", "code_examples"],
+          "properties": {
+            "required_sections": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "code_examples": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

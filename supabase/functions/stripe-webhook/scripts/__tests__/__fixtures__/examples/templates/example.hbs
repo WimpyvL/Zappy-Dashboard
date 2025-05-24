@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{title}} - Code Examples</title>
+  <meta name="description" content="{{description}}">
+  <meta name="author" content="{{author}}">
+  <meta name="date" content="{{date}}">
+
+  <style>
+    /* Theme Variables */
+    :root {
+      --color-primary: #3ECF8E;
+      --color-text: #1F2937;
+      --color-code-bg: #F8FAFC;
+      --color-border: #E2E8F0;
+      --font-sans: system-ui, -apple-system, sans-serif;
+      --font-mono: 'SF Mono', Menlo, monospace;
+    }
+
+    /* Base Styles */
+    body {
+      font-family: var(--font-sans);
+      line-height: 1.6;
+      color: var(--color-text);
+      max-width: 900px;
+      margin: 2rem auto;
+      padding: 0 1rem;
+    }
+
+    /* Code Examples */
+    .example {
+      margin: 2rem 0;
+      border: 1px solid var(--color-border);
+      border-radius: 0.5rem;
+      overflow: hidden;
+    }
+
+    .example-header {
+      padding: 1rem;
+      background: var(--color-code-bg);
+      border-bottom: 1px solid var(--color-border);
+    }
+
+    .example-title {
+      margin: 0;
+      font-size: 1.2rem;
+      font-weight: 600;
+    }
+
+    .example-description {
+      margin: 0.5rem 0 0;
+      color: #64748B;
+    }
+
+    .example-code {
+      margin: 0;
+      padding: 1rem;
+      background: var(--color-code-bg);
+      overflow-x: auto;
+    }
+
+    .example-code code {
+      font-family: var(--font-mono);
+      font-size: 0.9rem;
+      line-height: 1.5;
+    }
+
+    .example-preview {
+      padding: 1rem;
+    }
+
+    /* Navigation */
+    .nav {
+      display: flex;
+      gap: 1rem;
+      margin-bottom: 2rem;
+      padding-bottom: 1rem;
+      border-bottom: 1px solid var(--color-border);
+    }
+
+    .nav-link {
+      color: var(--color-text);
+      text-decoration: none;
+      padding: 0.5rem 1rem;
+      border-radius: 0.25rem;
+    }
+
+    .nav-link:hover {
+      background: var(--color-code-bg);
+    }
+
+    /* Metadata */
+    .metadata {
+      color: #64748B;
+      font-size: 0.875rem;
+      margin-bottom: 2rem;
+    }
+
+    .metadata-item {
+      display: inline-block;
+      margin-right: 1rem;
+    }
+
+    /* Tags */
+    .tags {
+      margin: 1rem 0;
+    }
+
+    .tag {
+      display: inline-block;
+      padding: 0.25rem 0.5rem;
+      margin-right: 0.5rem;
+      background: var(--color-code-bg);
+      border-radius: 0.25rem;
+      font-size: 0.875rem;
+      color: #64748B;
+    }
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    {{#each navigation}}
+      <a href="{{url}}" class="nav-link">{{title}}</a>
+    {{/each}}
+  </nav>
+
+  <header>
+    <h1>{{title}}</h1>
+    
+    <div class="metadata">
+      <span class="metadata-item">Author: {{author}}</span>
+      <span class="metadata-item">Date: {{formatDate date}}</span>
+      {{#if version}}
+        <span class="metadata-item">Version: {{version}}</span>
+      {{/if}}
+    </div>
+
+    <div class="tags">
+      {{#each tags}}
+        <span class="tag">{{this}}</span>
+      {{/each}}
+    </div>
+  </header>
+
+  <main>
+    {{#each sections}}
+      <section class="example">
+        <div class="example-header">
+          <h2 class="example-title">{{title}}</h2>
+          {{#if description}}
+            <p class="example-description">{{description}}</p>
+          {{/if}}
+        </div>
+
+        {{#if code}}
+          <pre class="example-code"><code class="language-{{language}}">{{code}}</code></pre>
+        {{/if}}
+
+        {{#if preview}}
+          <div class="example-preview">{{{preview}}}</div>
+        {{/if}}
+      </section>
+    {{/each}}
+  </main>
+
+  {{#if content}}
+    <article>
+      {{{markdown content}}}
+    </article>
+  {{/if}}
+
+  <footer>
+    <p>Generated from markdown on {{formatDate now}}</p>
+  </footer>
+
+  {{#if syntax}}
+    <!-- Syntax highlighting -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/prism.min.js"></script>
+    <script>
+      Prism.highlightAll();
+    </script>
+  {{/if}}
+</body>
+</html>

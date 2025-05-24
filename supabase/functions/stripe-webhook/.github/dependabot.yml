@@ -1,0 +1,100 @@
+version: 2
+updates:
+  # NPM dependencies
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "daily"
+      time: "01:00"
+      timezone: "Africa/Johannesburg"
+    labels:
+      - "dependencies"
+      - "npm"
+    commit-message:
+      prefix: "chore"
+      prefix-development: "chore"
+      include: "scope"
+    open-pull-requests-limit: 10
+    pull-request-branch-name:
+      separator: "-"
+    reviewers:
+      - "security-team"
+      - "dev-team"
+    assignees:
+      - "deps-maintainers"
+    target-branch: "main"
+    versioning-strategy: "auto"
+    groups:
+      dev-dependencies:
+        patterns:
+          - "@types/*"
+          - "jest*"
+          - "eslint*"
+      production-dependencies:
+        patterns:
+          - "stripe"
+          - "@supabase/*"
+    ignore:
+      - dependency-name: "stripe"
+        update-types: ["version-update:semver-major"]
+    allow:
+      - dependency-type: "direct"
+      - dependency-type: "production"
+
+  # GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "01:00"
+      timezone: "Africa/Johannesburg"
+    labels:
+      - "dependencies"
+      - "github-actions"
+    commit-message:
+      prefix: "ci"
+      include: "scope"
+    open-pull-requests-limit: 5
+    reviewers:
+      - "devops-team"
+    groups:
+      actions:
+        patterns:
+          - "actions/*"
+    ignore:
+      - dependency-name: "actions/checkout"
+        versions: ["3.x"]
+
+  # Docker images
+  - package-ecosystem: "docker"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "01:00"
+      timezone: "Africa/Johannesburg"
+    labels:
+      - "dependencies"
+      - "docker"
+    commit-message:
+      prefix: "docker"
+      include: "scope"
+    open-pull-requests-limit: 3
+    reviewers:
+      - "devops-team"
+    ignore:
+      - dependency-name: "node"
+        versions: ["19.x", "21.x"]
+
+registries:
+  npm-github:
+    type: npm-registry
+    url: https://npm.pkg.github.com
+    token: ${{secrets.GITHUB_TOKEN}}
+  
+  docker-github:
+    type: docker-registry
+    url: ghcr.io
+    username: ${{github.actor}}
+    password: ${{secrets.GITHUB_TOKEN}}

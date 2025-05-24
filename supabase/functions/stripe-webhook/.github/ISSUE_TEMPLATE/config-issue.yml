@@ -1,0 +1,161 @@
+name: ⚙️ Configuration Issue
+description: Report configuration problems or improvements
+title: "[CONFIG]: "
+labels: ["configuration", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting a configuration issue!
+        Please provide detailed information about the configuration problem.
+
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: What version of the webhook handler are you using?
+      placeholder: e.g., v1.2.3
+    validations:
+      required: true
+
+  - type: dropdown
+    id: config_type
+    attributes:
+      label: Configuration Type
+      description: What type of configuration is affected?
+      options:
+        - Environment Variables
+        - Webhook Settings
+        - Database Configuration
+        - Security Settings
+        - Rate Limiting
+        - Logging Setup
+        - Monitoring Config
+        - Error Handling
+        - Event Processing
+        - Custom Rules
+    validations:
+      required: true
+
+  - type: textarea
+    id: current_config
+    attributes:
+      label: Current Configuration
+      description: Current configuration (remove sensitive data)
+      render: yaml
+      placeholder: |
+        webhook:
+          endpoint: /stripe
+          timeout: 30s
+          retries:
+            maxAttempts: 3
+            backoff: exponential
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected_config
+    attributes:
+      label: Expected Configuration
+      description: What configuration do you expect?
+      render: yaml
+      placeholder: |
+        webhook:
+          endpoint: /stripe
+          timeout: 60s
+          retries:
+            maxAttempts: 5
+            backoff: linear
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem Description
+      description: Describe the configuration issue
+      placeholder: |
+        - What's not working?
+        - What behavior are you seeing?
+        - What impact does it have?
+    validations:
+      required: true
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment Details
+      description: Provide environment information
+      placeholder: |
+        - OS: Linux/Windows/macOS
+        - Node.js: v20.x.x
+        - Database: PostgreSQL x.x
+        - Infrastructure: AWS/GCP/Azure
+    validations:
+      required: true
+
+  - type: dropdown
+    id: impact
+    attributes:
+      label: Impact Level
+      description: How severe is this configuration issue?
+      options:
+        - Critical - Service non-functional
+        - High - Major feature affected
+        - Medium - Limited functionality
+        - Low - Minor inconvenience
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Error Logs
+      description: Include relevant error messages
+      render: shell
+      placeholder: |
+        2025-05-24T09:46:17Z ERROR Invalid configuration...
+
+  - type: textarea
+    id: attempted
+    attributes:
+      label: Attempted Solutions
+      description: What have you tried so far?
+      placeholder: |
+        1. Modified environment variables
+        2. Updated configuration file
+        3. Checked documentation
+
+  - type: textarea
+    id: documentation
+    attributes:
+      label: Documentation Reference
+      description: Relevant documentation links
+      placeholder: |
+        - Configuration Guide: https://...
+        - API Reference: https://...
+        - Related Issues: #123, #456
+
+  - type: checkboxes
+    id: validation
+    attributes:
+      label: Validation
+      description: Please verify these items
+      options:
+        - label: I have checked the documentation
+          required: true
+        - label: I have validated the configuration format
+          required: true
+        - label: I have removed sensitive data
+          required: true
+        - label: I have provided all relevant details
+          required: true
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional Context
+      description: Any other relevant information
+      placeholder: |
+        - Related configurations
+        - System constraints
+        - Special requirements
+        - Migration considerations

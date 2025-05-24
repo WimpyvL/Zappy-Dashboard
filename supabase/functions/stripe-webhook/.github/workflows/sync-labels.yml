@@ -1,0 +1,126 @@
+name: Sync Labels
+
+on:
+  push:
+    paths:
+      - '.github/labels.yml'
+  workflow_dispatch:
+  schedule:
+    - cron: '0 0 * * 0'  # Weekly on Sundays
+
+jobs:
+  sync-labels:
+    name: Sync Repository Labels
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+      pull-requests: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Load label definitions
+        id: load-labels
+        run: |
+          echo "labels<<EOF" >> $GITHUB_ENV
+          cat .github/labels.yml >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
+
+      - name: Sync labels
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const yaml = require('yaml');
+            const labelDefs = yaml.parse(process.env.labels);
+            
+            // Get existing labels
+            const existingLabels = await github.paginate(
+              github.rest.issues.listLabels,
+              {
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                per_page: 100
+              }
+            );
+            
+            // Create/update labels
+            for (const label of labelDefs) {
+              try {
+                const existing = existingLabels.find(l => l.name === label.name);
+                if (existing) {
+                  console.log(`Updating label: ${label.name}`);
+                  await github.rest.issues.updateLabel({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    name: label.name,
+                    description: label.description || '',
+                    color: label.color.replace('#', ''),
+                  });
+                } else {
+                  console.log(`Creating label: ${label.name}`);
+                  await github.rest.issues.createLabel({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    name: label.name,
+                    description: label.description || '',
+                    color: label.color.replace('#', ''),
+                  });
+                }
+              } catch (error) {
+                console.error(`Error processing label ${label.name}:`, error);
+              }
+            }
+            
+            // Remove deprecated labels
+            const definedNames = labelDefs.map(l => l.name);
+            const deprecatedLabels = existingLabels.filter(
+              l => !definedNames.includes(l.name)
+            );
+            
+            for (const label of deprecatedLabels) {
+              try {
+                console.log(`Removing deprecated label: ${label.name}`);
+                await github.rest.issues.deleteLabel({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  name: label.name
+                });
+              } catch (error) {
+                console.error(`Error removing label ${label.name}:`, error);
+              }
+            }
+
+      - name: Generate sync report
+        if: always()
+        run: |
+          echo "# Label Sync Report" > label-sync-report.md
+          echo "## Summary" >> label-sync-report.md
+          echo "Sync completed at: $(date)" >> label-sync-report.md
+          
+          echo "## Current Labels" >> label-sync-report.md
+          gh api repos/:owner/:repo/labels --paginate | \
+            jq -r '.[] | "- \(.name): \(.description) [\(.color)]"' >> label-sync-report.md
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload sync report
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: label-sync-report
+          path: label-sync-report.md
+          retention-days: 7
+
+      - name: Notify on failure
+        if: failure()
+        uses: actions/github-script@v6
+        with:
+          script: |
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: '🏷️ Label Sync Failed',
+              body: 'The label synchronization workflow failed. Please check the workflow logs.',
+              labels: ['automation', 'failed']
+            });

@@ -1,0 +1,70 @@
+# EditorConfig is awesome: https://EditorConfig.org
+
+# Top-most EditorConfig file
+root = true
+
+# Default settings for all files
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+indent_size = 2
+
+# TypeScript and JavaScript files
+[*.{ts,tsx,js,jsx}]
+indent_size = 2
+quote_type = single
+curly_bracket_next_line = false
+spaces_around_operators = true
+spaces_around_brackets = false
+max_line_length = 100
+
+# JSON files
+[*.json]
+indent_size = 2
+
+# YAML files
+[*.{yml,yaml}]
+indent_size = 2
+
+# Markdown files
+[*.md]
+trim_trailing_whitespace = false
+max_line_length = 80
+
+# SQL files
+[*.sql]
+indent_size = 4
+
+# Shell scripts
+[*.sh]
+indent_size = 2
+switch_case_indent = true
+
+# Config files
+[*.{env,env.*}]
+indent_size = 2
+
+# Documentation
+[*.{txt,rst}]
+indent_size = 4
+max_line_length = 80
+
+# Deno specific files
+[deno.{json,jsonc}]
+indent_size = 2
+
+# Test files
+[*{.test.ts,.test.tsx,_test.ts,_test.tsx}]
+indent_size = 2
+
+# Git files
+[.git*]
+indent_style = tab
+
+# Ignore minified files
+[**.min.*]
+indent_style = unset
+indent_size = unset

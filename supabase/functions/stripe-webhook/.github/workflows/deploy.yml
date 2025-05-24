@@ -1,0 +1,180 @@
+name: Deploy Webhook
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*.*.*']
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Deployment Environment'
+        required: true
+        default: 'staging'
+        type: choice
+        options:
+          - staging
+          - production
+      version:
+        description: 'Version to deploy'
+        required: false
+        type: string
+
+jobs:
+  prepare:
+    name: Prepare Deployment
+    runs-on: ubuntu-latest
+    outputs:
+      environment: ${{ steps.set-env.outputs.environment }}
+      version: ${{ steps.set-version.outputs.version }}
+    
+    steps:
+      - name: Set environment
+        id: set-env
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            echo "environment=${{ github.event.inputs.environment }}" >> $GITHUB_OUTPUT
+          elif [[ "${{ github.ref }}" == refs/tags/* ]]; then
+            echo "environment=production" >> $GITHUB_OUTPUT
+          else
+            echo "environment=staging" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Set version
+        id: set-version
+        run: |
+          if [[ "${{ github.event.inputs.version }}" != "" ]]; then
+            echo "version=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
+          elif [[ "${{ github.ref }}" == refs/tags/* ]]; then
+            echo "version=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+          else
+            echo "version=$(date +'%Y%m%d%H%M%S')" >> $GITHUB_OUTPUT
+          fi
+
+  validate:
+    name: Validate Deployment
+    needs: prepare
+    runs-on: ubuntu-latest
+    environment: ${{ needs.prepare.outputs.environment }}
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run tests
+        run: npm test
+
+      - name: Check database migrations
+        run: npm run migrations:check
+
+      - name: Validate configuration
+        run: npm run config:validate
+        env:
+          STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
+          STRIPE_WEBHOOK_SECRET: ${{ secrets.STRIPE_WEBHOOK_SECRET }}
+
+  deploy:
+    name: Deploy to ${{ needs.prepare.outputs.environment }}
+    needs: [prepare, validate]
+    runs-on: ubuntu-latest
+    environment: ${{ needs.prepare.outputs.environment }}
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Login to Supabase
+        run: supabase login
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+
+      - name: Deploy webhook function
+        run: |
+          supabase functions deploy stripe-webhook \
+            --project-ref ${{ secrets.SUPABASE_PROJECT_ID }} \
+            --region ${{ secrets.SUPABASE_REGION }}
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+          STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
+          STRIPE_WEBHOOK_SECRET: ${{ secrets.STRIPE_WEBHOOK_SECRET }}
+
+      - name: Run database migrations
+        run: |
+          supabase db push --project-ref ${{ secrets.SUPABASE_PROJECT_ID }}
+
+      - name: Create deployment tag
+        run: |
+          git tag deploy/${{ needs.prepare.outputs.environment }}/${{ needs.prepare.outputs.version }}
+          git push origin deploy/${{ needs.prepare.outputs.environment }}/${{ needs.prepare.outputs.version }}
+
+  verify:
+    name: Verify Deployment
+    needs: [prepare, deploy]
+    runs-on: ubuntu-latest
+    environment: ${{ needs.prepare.outputs.environment }}
+    
+    steps:
+      - name: Health check
+        run: |
+          curl -f ${{ secrets.WEBHOOK_URL }}/health || exit 1
+
+      - name: Verify metrics
+        run: |
+          curl -f ${{ secrets.WEBHOOK_URL }}/metrics || exit 1
+
+      - name: Create GitHub deployment
+        uses: chrnorm/deployment-action@v2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          environment: ${{ needs.prepare.outputs.environment }}
+          ref: ${{ github.sha }}
+          description: 'Webhook v${{ needs.prepare.outputs.version }}'
+
+  notify:
+    name: Send Notifications
+    needs: [prepare, deploy, verify]
+    if: always()
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Notify Slack
+        uses: slackapi/slack-github-action@v1.25.0
+        with:
+          channel-id: 'deployments'
+          slack-message: |
+            *Webhook Deployment Status*
+            Environment: ${{ needs.prepare.outputs.environment }}
+            Version: ${{ needs.prepare.outputs.version }}
+            Status: ${{ needs.verify.result == 'success' && '✅ Success' || '❌ Failed' }}
+            ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+
+      - name: Update status
+        if: needs.verify.result != 'success'
+        uses: actions/github-script@v6
+        with:
+          script: |
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: '🚨 Deployment Failed',
+              body: `Deployment to ${process.env.ENVIRONMENT} failed.\n\nVersion: ${process.env.VERSION}`,
+              labels: ['deployment', 'failed']
+            });
+        env:
+          ENVIRONMENT: ${{ needs.prepare.outputs.environment }}
+          VERSION: ${{ needs.prepare.outputs.version }}

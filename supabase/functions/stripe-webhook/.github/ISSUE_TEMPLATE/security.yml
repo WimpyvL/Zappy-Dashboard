@@ -1,0 +1,74 @@
+name: 🔒 Security Vulnerability
+description: Report a security vulnerability (privately)
+title: "[SECURITY] DO NOT OPEN - Report via Security Policy"
+labels: ["security", "do-not-merge"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        # ⚠️ STOP! ⚠️
+        
+        Do not report security vulnerabilities through public GitHub issues.
+        
+        Please follow our [Security Policy](../security.md) and report security vulnerabilities through the appropriate private channels:
+        
+        1. **Email**: [security@company.com](mailto:security@company.com)
+        2. **Security Portal**: [https://security.company.com](https://security.company.com)
+        3. **Bug Bounty**: [https://bounty.company.com](https://bounty.company.com)
+        
+        ## Encryption
+        
+        Use our [PGP key](https://security.company.com/pgp-key.txt) for sensitive reports.
+        
+        ## Response Timeline
+        
+        - Initial response: 24 hours
+        - Assessment: 48 hours
+        - Fix timeline: Based on severity
+        
+        ## Disclosure
+        
+        Please allow time for:
+        - Vulnerability verification
+        - Fix development
+        - Security patch release
+        - User notification
+        
+        ## Bug Bounty Program
+        
+        Eligible reports may qualify for our bug bounty program:
+        - Critical: Up to $10,000
+        - High: Up to $5,000
+        - Medium: Up to $2,500
+        - Low: Up to $1,000
+        
+        ## Contact
+        
+        Security Team:
+        - Email: security@company.com
+        - Phone: +1-XXX-XXX-XXXX (emergencies)
+        - Web: https://security.company.com
+
+  - type: checkboxes
+    id: confirmation
+    attributes:
+      label: Confirmation
+      description: Please confirm you understand this policy
+      options:
+        - label: I understand this is NOT the correct channel for security vulnerabilities
+          required: true
+        - label: I will report this through the appropriate private channels
+          required: true
+        - label: I have read and understand the security policy
+          required: true
+
+  - type: markdown
+    attributes:
+      value: |
+        # Next Steps
+        
+        1. Close this issue immediately
+        2. Follow the security reporting procedure
+        3. Await private response from security team
+        
+        Thank you for helping keep our project secure! 🔒

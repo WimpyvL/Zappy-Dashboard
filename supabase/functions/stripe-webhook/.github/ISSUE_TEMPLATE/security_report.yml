@@ -1,0 +1,159 @@
+name: Security Issue
+description: Report a security vulnerability
+title: "[Security]: "
+labels: ["security", "confidential"]
+assignees:
+  - security-team
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ⚠️ **IMPORTANT**: If this is a critical security vulnerability, please report it directly to security@company.com instead of creating a public issue.
+        
+        For other security concerns, please fill out this form with as much detail as possible while being mindful of sensitive information.
+
+  - type: dropdown
+    id: severity
+    attributes:
+      label: Vulnerability Severity
+      description: How severe is this security issue?
+      options:
+        - Critical (System Compromise)
+        - High (Data Exposure)
+        - Medium (Security Control Bypass)
+        - Low (Best Practice Violation)
+    validations:
+      required: true
+
+  - type: dropdown
+    id: category
+    attributes:
+      label: Vulnerability Category
+      description: What type of security issue is this?
+      options:
+        - Authentication/Authorization
+        - Data Validation
+        - Cryptographic Issue
+        - Configuration Error
+        - Input Validation
+        - Information Disclosure
+        - Signature Verification
+        - Rate Limiting
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Vulnerability Description
+      description: Describe the security issue without revealing exploitation details
+      placeholder: |
+        Please include:
+        - Affected components
+        - Security impact
+        - Conditions required
+        - Potential business impact
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to Reproduce
+      description: How can the security team reproduce this issue?
+      placeholder: |
+        1. Configure '...'
+        2. Send request to '...'
+        3. Observe security issue
+        
+        Note: Do not include actual exploitation code or sensitive data
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Affected Version
+      description: Which version(s) of the webhook handler are affected?
+      placeholder: "e.g., 1.0.0 - 1.2.0"
+    validations:
+      required: true
+
+  - type: textarea
+    id: mitigation
+    attributes:
+      label: Suggested Mitigation
+      description: If you have ideas about how to fix this, please share them
+      placeholder: |
+        Consider:
+        - Security controls needed
+        - Configuration changes
+        - Code changes
+        - Implementation approach
+
+  - type: dropdown
+    id: disclosure
+    attributes:
+      label: Disclosure Timeline
+      description: When do you plan to disclose this publicly?
+      options:
+        - No public disclosure planned
+        - After fix is available
+        - After 90 days
+        - Already public
+        - Other (specify in additional info)
+    validations:
+      required: true
+
+  - type: textarea
+    id: impact
+    attributes:
+      label: Business Impact
+      description: What is the potential impact to the business?
+      placeholder: |
+        Consider:
+        - Data compromise
+        - Service availability
+        - Financial impact
+        - Regulatory compliance
+        - Customer trust
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional Information
+      description: Any other relevant security details or context
+      placeholder: |
+        - References to similar issues
+        - Related CVEs
+        - Technical context
+        - Environment details
+
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: Security Report Agreement
+      description: Please confirm the following
+      options:
+        - label: I have checked that this issue hasn't been reported before
+          required: true
+        - label: I have removed any sensitive data from this report
+          required: true
+        - label: I will maintain confidentiality until authorized disclosure
+          required: true
+        - label: I agree to follow coordinated disclosure practices
+          required: true
+
+  - type: markdown
+    attributes:
+      value: |
+        ### Next Steps
+        
+        1. A security team member will be assigned to this issue
+        2. You will receive an acknowledgment within 24 hours
+        3. We will provide regular updates on the mitigation progress
+        4. We will coordinate with you on disclosure timing
+        
+        For urgent issues or questions, contact security@company.com

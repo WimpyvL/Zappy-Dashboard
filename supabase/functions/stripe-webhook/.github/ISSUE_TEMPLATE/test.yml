@@ -1,0 +1,187 @@
+name: 🧪 Testing Issue
+description: Report test failures, gaps, or improvements
+title: "[TEST]: "
+labels: ["testing", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting a testing issue!
+        Please provide detailed information about test-related problems.
+
+  - type: dropdown
+    id: test_type
+    attributes:
+      label: Test Type
+      description: What type of testing is affected?
+      options:
+        - Unit Tests
+        - Integration Tests
+        - E2E Tests
+        - Performance Tests
+        - Security Tests
+        - Load Tests
+        - API Tests
+        - Smoke Tests
+        - Regression Tests
+        - Mock Tests
+    validations:
+      required: true
+
+  - type: textarea
+    id: test_case
+    attributes:
+      label: Test Case
+      description: Share the failing or problematic test
+      render: typescript
+      placeholder: |
+        describe('webhook handler', () => {
+          it('should validate signature', async () => {
+            const event = mockStripeEvent();
+            const result = await validateSignature(event);
+            expect(result).toBe(true);
+          });
+        });
+
+  - type: textarea
+    id: failure_output
+    attributes:
+      label: Test Failure Output
+      description: Include test failure messages
+      render: shell
+      placeholder: |
+        FAIL tests/webhook.test.ts
+        ● webhook handler › should validate signature
+        
+        expect(received).toBe(expected)
+        Expected: true
+        Received: false
+
+  - type: textarea
+    id: test_env
+    attributes:
+      label: Test Environment
+      description: Test environment details
+      placeholder: |
+        - Node.js: v20.x.x
+        - Jest: v29.x.x
+        - Test DB: PostgreSQL x.x
+        - OS: Linux/Windows/macOS
+        - CI Environment: GitHub Actions
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to Reproduce
+      description: How to reproduce the test failure?
+      placeholder: |
+        1. Set up test environment
+        2. Run specific test suite
+        3. Observe failure
+        4. Additional steps...
+    validations:
+      required: true
+
+  - type: textarea
+    id: coverage
+    attributes:
+      label: Coverage Impact
+      description: Test coverage details
+      placeholder: |
+        - Current coverage: xx%
+        - Affected files:
+          - src/webhook.ts: -5%
+          - src/validation.ts: -2%
+        - Uncovered lines: 23-45, 67-89
+
+  - type: dropdown
+    id: frequency
+    attributes:
+      label: Failure Frequency
+      description: How often does this test fail?
+      options:
+        - Always
+        - Intermittent
+        - Race Condition
+        - Environment Specific
+        - Random
+    validations:
+      required: true
+
+  - type: textarea
+    id: mocks
+    attributes:
+      label: Mock Configuration
+      description: Relevant mock settings
+      render: typescript
+      placeholder: |
+        jest.mock('@stripe/stripe-js', () => ({
+          Stripe: jest.fn().mockImplementation(() => ({
+            webhooks: {
+              constructEvent: jest.fn()
+            }
+          }))
+        }));
+
+  - type: textarea
+    id: fixtures
+    attributes:
+      label: Test Fixtures
+      description: Relevant test fixtures
+      render: json
+      placeholder: |
+        {
+          "event": {
+            "type": "charge.succeeded",
+            "data": {
+              "object": {
+                "id": "ch_xxx",
+                "amount": 1000
+              }
+            }
+          }
+        }
+
+  - type: checkboxes
+    id: verification
+    attributes:
+      label: Test Verification
+      description: Please verify these items
+      options:
+        - label: Tests run in isolation
+          required: true
+        - label: Mocks are configured correctly
+          required: true
+        - label: Test data is appropriate
+          required: true
+        - label: Assertions are valid
+          required: true
+        - label: CI pipeline reproduces issue
+          required: true
+
+  - type: dropdown
+    id: impact
+    attributes:
+      label: Testing Impact
+      description: How severe is this testing issue?
+      options:
+        - Critical - Blocks CI/CD
+        - High - Major feature untested
+        - Medium - Partial coverage loss
+        - Low - Minor test improvements
+    validations:
+      required: true
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional Context
+      description: Any other testing context
+      placeholder: |
+        - Related test suites
+        - Testing approach
+        - Known limitations
+        - Performance implications
+        - Security considerations

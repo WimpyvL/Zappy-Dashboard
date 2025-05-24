@@ -1,0 +1,61 @@
+name: Report Issue
+description: Report a problem or request support
+title: "[ISSUE]: "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## Support Channels
+        
+        Before submitting an issue, please check our support channels:
+        
+        - 🔒 Security issues: [Security Portal](https://security.company.com/report)
+        - 📚 Documentation: [Docs](https://docs.company.com/webhook)
+        - 💬 Questions: [Community Forum](https://community.company.com/webhook)
+        - 💼 Enterprise: [Enterprise Support](https://enterprise.company.com/support)
+        - 🌟 Features: [Feature Requests](https://feedback.company.com/webhook)
+
+  - type: dropdown
+    id: issue-type
+    attributes:
+      label: Issue Type
+      description: What kind of issue are you reporting?
+      options:
+        - Bug Report
+        - Feature Request
+        - Documentation Issue
+        - Support Question
+        - Other
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: What version are you using?
+      placeholder: e.g., v1.2.3
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: Briefly describe your issue
+      placeholder: What do you need help with?
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: Confirmation
+      description: Please confirm the following
+      options:
+        - label: I have checked existing issues and documentation
+          required: true
+        - label: I am using the correct support channel for this issue
+          required: true
+        - label: I understand security vulnerabilities should be reported privately
+          required: true

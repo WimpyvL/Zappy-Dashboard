@@ -1,0 +1,143 @@
+{
+  "$schema": "https://typedoc.org/schema.json",
+  "entryPoints": ["../src/index.ts"],
+  "entryPointStrategy": "expand",
+  "out": "../docs/api",
+  "name": "Stripe Webhook Handler",
+  "includeVersion": true,
+  "excludePrivate": true,
+  "excludeInternal": true,
+  "excludeExternals": true,
+  "excludeNotDocumented": false,
+  "disableSources": false,
+  "githubPages": true,
+  "hideGenerator": true,
+  "readme": "../README.md",
+  "theme": "default",
+  "customCss": "./typedoc.css",
+  "plugin": [
+    "typedoc-plugin-markdown",
+    "typedoc-plugin-mermaid"
+  ],
+  "categorizeByGroup": true,
+  "searchInComments": true,
+  "sort": [
+    "source-order",
+    "required-first",
+    "alphabetical"
+  ],
+  "navigationLinks": {
+    "Docs": "https://docs.company.com/webhook",
+    "GitHub": "https://github.com/company/webhook"
+  },
+  "sidebarLinks": {
+    "API Reference": "https://docs.company.com/webhook/api",
+    "Contributing": "../CONTRIBUTING.md",
+    "Support": "../SUPPORT.md"
+  },
+  "categoryOrder": [
+    "Configuration",
+    "Webhooks",
+    "Database",
+    "Validation",
+    "Utilities",
+    "*"
+  ],
+  "visibilityFilters": {
+    "protected": false,
+    "private": false,
+    "inherited": true,
+    "external": false
+  },
+  "validation": {
+    "invalidLink": true,
+    "notDocumented": true
+  },
+  "requiredToBeDocumented": [
+    "class",
+    "interface",
+    "enum",
+    "function",
+    "typeAlias"
+  ],
+  "intentionallyNotDocumented": [
+    "internal",
+    "private",
+    "protected"
+  ],
+  "treatWarningsAsErrors": false,
+  "treatValidationWarningsAsErrors": false,
+  "watch": false,
+  "preserveWatchOutput": false,
+  "emit": "docs",
+  "json": "../docs/api/documentation.json",
+  "gitRevision": "main",
+  "gitRemote": "origin",
+  "gaID": "",
+  "cleanOutputDir": true,
+  "readme": "../README.md",
+  "tsconfig": "../tsconfig.json",
+  "skipErrorChecking": false,
+  "logLevel": "Info",
+  "pretty": true,
+  "titleLink": "https://docs.company.com/webhook",
+  "footerDate": true,
+  "footerTime": true,
+  "outline": [
+    {
+      "Getting Started": {
+        "Installation": "installation",
+        "Configuration": "configuration",
+        "Usage": "usage"
+      }
+    },
+    {
+      "Guides": {
+        "Webhook Setup": "webhook-setup",
+        "Event Handling": "event-handling",
+        "Error Handling": "error-handling",
+        "Security": "security"
+      }
+    },
+    {
+      "Reference": {
+        "API": "api",
+        "Types": "types",
+        "Database": "database",
+        "Configuration": "config"
+      }
+    }
+  ],
+  "pluginOptions": {
+    "typedoc-plugin-markdown": {
+      "outputFolder": "markdown",
+      "hideBreadcrumbs": false,
+      "hideBackTicks": false,
+      "entryDocument": "index.md",
+      "allReflectionsHaveOwnDocument": true
+    },
+    "typedoc-plugin-mermaid": {
+      "theme": "default",
+      "prefix": "mermaid",
+      "darkMode": true
+    }
+  },
+  "groups": {
+    "webhook": {
+      "title": "Webhook Handling",
+      "categories": ["handlers", "validation", "processing"]
+    },
+    "database": {
+      "title": "Database Operations",
+      "categories": ["queries", "migrations", "models"]
+    },
+    "config": {
+      "title": "Configuration",
+      "categories": ["settings", "environment"]
+    },
+    "utils": {
+      "title": "Utilities",
+      "categories": ["helpers", "formatters"]
+    }
+  }
+}

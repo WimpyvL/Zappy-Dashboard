@@ -1,0 +1,220 @@
+name: CI/CD
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:14
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: test_db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Setup Deno
+      uses: denoland/setup-deno@v1
+      with:
+        deno-version: "1.32.3"
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+        cache: 'npm'
+
+    - name: Cache Dependencies
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.deno
+          ~/.cache/deno
+          ~/.npm
+        key: ${{ runner.os }}-deps-${{ hashFiles('**/deno.lock', '**/package-lock.json') }}
+        restore-keys: |
+          ${{ runner.os }}-deps-
+
+    - name: Install Dependencies
+      run: |
+        cd scripts
+        npm ci
+
+    - name: Setup Test Environment
+      run: |
+        cp .env.example .env
+        sed -i 's|your-service-role-key|mock_key|g' .env
+        sed -i 's|your-project.supabase.co|localhost:54321|g' .env
+
+    - name: Run Linter
+      run: deno lint
+
+    - name: Run Type Check
+      run: deno check **/*.ts
+
+    - name: Run Unit Tests
+      run: deno test --allow-env --allow-net unit/
+
+    - name: Run Integration Tests
+      run: |
+        deno test --allow-all integration/
+      env:
+        POSTGRES_URL: postgres://postgres:postgres@localhost:5432/test_db
+
+    - name: Run Security Tests
+      run: deno test --allow-net security/
+
+    - name: Check Test Coverage
+      run: |
+        deno test --coverage=coverage
+        deno coverage coverage --lcov > coverage.lcov
+
+    - name: Upload Coverage
+      uses: codecov/codecov-action@v3
+      with:
+        file: ./coverage.lcov
+        flags: unittests
+
+  deploy:
+    name: Deploy
+    needs: test
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Setup Supabase CLI
+      uses: supabase/setup-cli@v1
+      with:
+        version: latest
+
+    - name: Deploy Edge Function
+      run: supabase functions deploy stripe-webhook
+      env:
+        SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        SUPABASE_PROJECT_ID: ${{ secrets.SUPABASE_PROJECT_ID }}
+
+    - name: Run Database Migrations
+      run: supabase db push
+      env:
+        SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        SUPABASE_PROJECT_ID: ${{ secrets.SUPABASE_PROJECT_ID }}
+
+    - name: Verify Deployment
+      run: |
+        # Wait for function to be ready
+        sleep 30
+
+        # Send test webhook
+        node scripts/test-webhook.js --verify
+      env:
+        STRIPE_WEBHOOK_SECRET: ${{ secrets.STRIPE_WEBHOOK_SECRET }}
+        SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+
+    - name: Send Deployment Notification
+      if: always()
+      uses: slackapi/slack-github-action@v1.24.0
+      with:
+        channel-id: 'deployments'
+        slack-message: |
+          Deployment ${{ job.status }}
+          Repository: ${{ github.repository }}
+          Commit: ${{ github.sha }}
+          Workflow: ${{ github.workflow }}
+      env:
+        SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+
+  security-scan:
+    name: Security Scan
+    needs: test
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Initialize CodeQL
+      uses: github/codeql-action/init@v2
+      with:
+        languages: javascript, typescript
+
+    - name: Run CodeQL Analysis
+      uses: github/codeql-action/analyze@v2
+
+    - name: Run Dependency Scan
+      uses: snyk/actions/node@master
+      env:
+        SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+
+    - name: Run Secret Scanner
+      uses: gitleaks/gitleaks-action@v2
+      env:
+        GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}
+
+    - name: Report Security Issues
+      if: failure()
+      uses: slackapi/slack-github-action@v1.24.0
+      with:
+        channel-id: 'security-alerts'
+        slack-message: |
+          Security scan failed
+          Repository: ${{ github.repository }}
+          Commit: ${{ github.sha }}
+          Workflow: ${{ github.workflow }}
+      env:
+        SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+
+  monitor:
+    name: Monitor Deployment
+    needs: deploy
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Run Health Check
+      run: |
+        # Wait for deployment to stabilize
+        sleep 60
+
+        # Run health checks
+        node scripts/manage.js health
+      env:
+        SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+        SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+
+    - name: Collect Metrics
+      run: |
+        node scripts/monitor-db.js --metrics
+        node scripts/analyze-logs.js --last-hours 1
+
+    - name: Send Monitoring Report
+      if: always()
+      uses: slackapi/slack-github-action@v1.24.0
+      with:
+        channel-id: 'monitoring'
+        slack-message: |
+          Deployment Monitoring Results
+          Status: ${{ job.status }}
+          Repository: ${{ github.repository }}
+          Environment: Production
+      env:
+        SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}

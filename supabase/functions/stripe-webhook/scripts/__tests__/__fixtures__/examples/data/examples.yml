@@ -1,0 +1,140 @@
+# Test Examples Data
+navigation:
+  - title: Getting Started
+    url: /docs/getting-started
+  - title: API Reference
+    url: /docs/api
+  - title: Examples
+    url: /docs/examples
+  - title: Testing
+    url: /docs/testing
+
+examples:
+  - title: Basic Webhook Handler
+    description: Simple example of handling Stripe webhook events
+    language: typescript
+    tags: [webhook, basic, setup]
+    code: |
+      import { WebhookHandler } from './webhook';
+      
+      const handler = new WebhookHandler({
+        secret: process.env.STRIPE_WEBHOOK_SECRET
+      });
+      
+      export async function handleWebhook(event) {
+        await handler.handleEvent(event);
+      }
+
+  - title: Webhook Validation
+    description: Validating webhook signatures and payloads
+    language: typescript
+    tags: [webhook, security, validation]
+    code: |
+      import { validateWebhook } from './validation';
+      
+      const isValid = await validateWebhook({
+        payload: event.body,
+        signature: event.headers['stripe-signature'],
+        secret: process.env.STRIPE_WEBHOOK_SECRET
+      });
+      
+      if (!isValid) {
+        throw new Error('Invalid webhook signature');
+      }
+
+  - title: Event Processing
+    description: Processing different types of webhook events
+    language: typescript
+    tags: [webhook, events, processing]
+    code: |
+      class WebhookProcessor {
+        async processEvent(event) {
+          switch (event.type) {
+            case 'payment_intent.succeeded':
+              return this.handlePaymentSuccess(event.data.object);
+            case 'payment_intent.failed':
+              return this.handlePaymentFailure(event.data.object);
+            default:
+              console.log(`Unhandled event type: ${event.type}`);
+          }
+        }
+        
+        private async handlePaymentSuccess(payment) {
+          await this.db.payments.update({
+            where: { id: payment.id },
+            data: { status: 'succeeded' }
+          });
+        }
+        
+        private async handlePaymentFailure(payment) {
+          await this.db.payments.update({
+            where: { id: payment.id },
+            data: { status: 'failed' }
+          });
+        }
+      }
+
+  - title: Error Handling
+    description: Properly handling webhook errors
+    language: typescript
+    tags: [webhook, errors, handling]
+    code: |
+      try {
+        await handler.handleEvent(event);
+      } catch (error) {
+        if (error instanceof WebhookError) {
+          console.error('Webhook Error:', error.message);
+          return {
+            statusCode: 400,
+            body: JSON.stringify({ error: error.message })
+          };
+        }
+        
+        console.error('Internal Error:', error);
+        return {
+          statusCode: 500,
+          body: JSON.stringify({ error: 'Internal server error' })
+        };
+      }
+
+  - title: Testing Setup
+    description: Setting up webhook testing environment
+    language: typescript
+    tags: [webhook, testing, setup]
+    code: |
+      import { setupWebhookTest } from './test-utils';
+      
+      describe('Webhook Handler', () => {
+        let handler;
+        let testEvent;
+        
+        beforeEach(() => {
+          const { handler: h, event: e } = setupWebhookTest();
+          handler = h;
+          testEvent = e;
+        });
+        
+        test('handles payment success', async () => {
+          const result = await handler.handleEvent(testEvent);
+          expect(result.status).toBe('succeeded');
+        });
+      });
+
+metadata:
+  title: Stripe Webhook Examples
+  description: Code examples for implementing Stripe webhooks
+  author: Supabase
+  version: 1.0.0
+  date: '2025-05-24'
+  tags:
+    - stripe
+    - webhook
+    - examples
+    - testing
+
+settings:
+  syntax: true
+  preview: true
+  lineNumbers: true
+  copyButton: true
+  theme: default

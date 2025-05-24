@@ -1,0 +1,225 @@
+title: "Postmortem: "
+labels: ["postmortem"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        # Incident Postmortem
+        
+        This postmortem analyzes an incident to understand what happened,
+        why it happened, and how to prevent similar issues in the future.
+        
+        ## Guidelines
+        - Focus on facts, not blame
+        - Be specific and detailed
+        - Include data and metrics
+        - Propose actionable improvements
+        - Follow timeline accuracy
+
+  - type: input
+    id: incident_id
+    attributes:
+      label: Incident ID
+      description: Unique identifier for this incident
+      placeholder: "INC-2025-05-24-001"
+    validations:
+      required: true
+
+  - type: input
+    id: date
+    attributes:
+      label: Incident Date
+      description: When did the incident occur?
+      placeholder: "2025-05-24"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: severity
+    attributes:
+      label: Incident Severity
+      description: How severe was the incident?
+      options:
+        - SEV0 - Critical Service Outage
+        - SEV1 - Major Feature Impact
+        - SEV2 - Minor Feature Impact
+        - SEV3 - Minor Issue
+    validations:
+      required: true
+
+  - type: textarea
+    id: summary
+    attributes:
+      label: Executive Summary
+      description: Brief overview of the incident
+      placeholder: |
+        - What happened?
+        - Impact scope
+        - Duration
+        - Resolution
+    validations:
+      required: true
+
+  - type: textarea
+    id: timeline
+    attributes:
+      label: Incident Timeline
+      description: Detailed sequence of events (all times in UTC)
+      placeholder: |
+        09:45 - Initial alert triggered
+        09:47 - Investigation began
+        09:52 - Root cause identified
+        10:05 - Fix deployed
+        10:10 - Service restored
+    validations:
+      required: true
+
+  - type: textarea
+    id: impact
+    attributes:
+      label: Business Impact
+      description: Quantifiable impact of the incident
+      placeholder: |
+        Users Affected:
+        - xxx users impacted
+        - xx% error rate
+        
+        System Impact:
+        - Service availability: xx%
+        - Processing delays: xx minutes
+        
+        Business Impact:
+        - Failed transactions: xxx
+        - Revenue impact: $xxx
+
+  - type: textarea
+    id: root_cause
+    attributes:
+      label: Root Cause Analysis
+      description: What caused the incident?
+      placeholder: |
+        Technical Cause:
+        - Detailed explanation
+        - Contributing factors
+        - System state
+        
+        Trigger:
+        - What initiated the incident
+        - Why it wasn't caught earlier
+        
+        Contributing Factors:
+        - System conditions
+        - Process gaps
+        - Environmental factors
+
+  - type: textarea
+    id: resolution
+    attributes:
+      label: Resolution Details
+      description: How was the incident resolved?
+      placeholder: |
+        Immediate Actions:
+        - Steps taken
+        - Changes made
+        - Verifications performed
+        
+        Code Changes:
+        ```typescript
+        // Fix implementation
+        ```
+        
+        Configuration Changes:
+        ```yaml
+        # Updated configuration
+        ```
+
+  - type: textarea
+    id: detection
+    attributes:
+      label: Detection & Response
+      description: How was the incident detected and handled?
+      placeholder: |
+        Detection:
+        - Alert mechanisms
+        - Response time
+        - Escalation process
+        
+        Monitoring:
+        - Available metrics
+        - Missing indicators
+        - Alert effectiveness
+
+  - type: textarea
+    id: lessons
+    attributes:
+      label: Lessons Learned
+      description: What can we learn from this incident?
+      placeholder: |
+        What Worked Well:
+        - Effective responses
+        - Good practices
+        - Team collaboration
+        
+        What Needs Improvement:
+        - Process gaps
+        - Technical debt
+        - Tool limitations
+
+  - type: textarea
+    id: action_items
+    attributes:
+      label: Action Items
+      description: Tasks to prevent similar incidents
+      placeholder: |
+        Technical Changes:
+        - [ ] Implement monitoring for...
+        - [ ] Add validation for...
+        - [ ] Update configuration to...
+        
+        Process Changes:
+        - [ ] Update runbook for...
+        - [ ] Add documentation for...
+        - [ ] Review alerts for...
+        
+        Follow-up Tasks:
+        - [ ] Schedule review of...
+        - [ ] Plan maintenance for...
+        - [ ] Update training for...
+
+  - type: textarea
+    id: prevention
+    attributes:
+      label: Prevention Strategy
+      description: How will we prevent similar incidents?
+      placeholder: |
+        Immediate Fixes:
+        - Technical changes
+        - Process updates
+        - Configuration adjustments
+        
+        Long-term Improvements:
+        - System changes
+        - Architecture updates
+        - Process enhancements
+        
+        Monitoring Improvements:
+        - New metrics
+        - Updated alerts
+        - Better visibility
+
+  - type: checkboxes
+    id: verification
+    attributes:
+      label: Postmortem Checklist
+      description: Verify postmortem completeness
+      options:
+        - label: Timeline is accurate and complete
+          required: true
+        - label: Root cause is clearly identified
+          required: true
+        - label: Impact is quantified
+          required: true
+        - label: Action items are specific and assignable
+          required: true
+        - label: Prevention strategy is defined
+          required: true

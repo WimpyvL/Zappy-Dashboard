@@ -1,0 +1,43 @@
+[build]
+command = "deno cache index.ts"
+watch = ["*.ts"]
+
+[deploy]
+ignore = ["**/*.test.ts", "**/*.test.tsx"]
+
+[env]
+STRIPE_SECRET_KEY = "sk_test_..."
+STRIPE_WEBHOOK_SECRET = "whsec_..."
+SUPABASE_URL = "https://your-project-id.supabase.co"
+SUPABASE_SERVICE_ROLE_KEY = "your-service-role-key"
+
+[env.staging]
+STRIPE_SECRET_KEY = "sk_test_..."
+STRIPE_WEBHOOK_SECRET = "whsec_..."
+SUPABASE_URL = "https://your-staging-project.supabase.co"
+SUPABASE_SERVICE_ROLE_KEY = "your-staging-service-role-key"
+
+[env.production]
+STRIPE_SECRET_KEY = "sk_live_..."
+STRIPE_WEBHOOK_SECRET = "whsec_..."
+SUPABASE_URL = "https://your-production-project.supabase.co"
+SUPABASE_SERVICE_ROLE_KEY = "your-production-service-role-key"
+
+[http]
+port = 54321
+cors_origins = ["http://localhost:3000"]
+cors_headers = ["Content-Type", "Authorization", "stripe-signature"]
+
+[http.response_headers]
+Access-Control-Allow-Origin = "*"
+Access-Control-Allow-Methods = "POST, OPTIONS"
+Access-Control-Allow-Headers = "Content-Type, stripe-signature"
+Access-Control-Max-Age = "86400"
+
+[runtime]
+name = "deno"
+version = "1.32.3"
+features = ["fetch", "crypto"]
+
+[metrics]
+enabled = true

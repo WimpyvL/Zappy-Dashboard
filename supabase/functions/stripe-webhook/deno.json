@@ -1,0 +1,65 @@
+{
+  "compilerOptions": {
+    "allowJs": false,
+    "strict": true,
+    "noImplicitAny": true,
+    "strictNullChecks": true,
+    "strictFunctionTypes": true,
+    "strictBindCallApply": true,
+    "strictPropertyInitialization": true,
+    "noImplicitThis": true,
+    "alwaysStrict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+    "noPropertyAccessFromIndexSignature": true,
+    "allowUnreachableCode": false,
+    "allowUnusedLabels": false,
+    "lib": ["deno.window"]
+  },
+  "fmt": {
+    "useTabs": false,
+    "lineWidth": 100,
+    "indentWidth": 2,
+    "singleQuote": true,
+    "proseWrap": "preserve",
+    "include": ["**/*.ts", "**/*.tsx", "**/*.js", "**/*.jsx", "**/*.json"],
+    "exclude": ["**/node_modules/**", "**/.git/**"]
+  },
+  "lint": {
+    "rules": {
+      "tags": ["recommended"],
+      "include": ["ban-untagged-todo"],
+      "exclude": ["no-unused-vars"]
+    },
+    "files": {
+      "include": ["**/*.ts", "**/*.tsx"],
+      "exclude": ["**/node_modules/**", "**/.git/**"]
+    }
+  },
+  "test": {
+    "files": {
+      "include": ["**/*_test.ts", "**/*_test.tsx", "**/*.test.ts", "**/*.test.tsx"],
+      "exclude": ["**/node_modules/**", "**/.git/**"]
+    },
+    "sanitizeResources": true,
+    "sanitizeOps": true
+  },
+  "tasks": {
+    "dev": "deno run --allow-net --allow-env --allow-read --watch index.ts",
+    "test": "deno test --allow-net --allow-env --allow-read",
+    "test:watch": "deno test --allow-net --allow-env --allow-read --watch",
+    "test:coverage": "deno test --allow-net --allow-env --allow-read --coverage=coverage",
+    "format": "deno fmt",
+    "lint": "deno lint",
+    "check": "deno check **/*.ts",
+    "cache": "deno cache --reload deps.ts",
+    "build": "deno compile --allow-net --allow-env --allow-read --output webhook-handler index.ts"
+  },
+  "importMap": "import_map.json",
+  "lock": false,
+  "nodeModulesDir": false
+}

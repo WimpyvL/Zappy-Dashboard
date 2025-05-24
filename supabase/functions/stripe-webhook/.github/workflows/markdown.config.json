@@ -1,0 +1,93 @@
+{
+  "baseUrl": "https://github.com/company/webhook",
+  "ignorePatterns": [
+    {
+      "pattern": "^http://localhost"
+    },
+    {
+      "pattern": "^#.*"
+    },
+    {
+      "pattern": "^mailto:.*"
+    }
+  ],
+  "replacementPatterns": [
+    {
+      "pattern": "^/",
+      "replacement": "{{BASEURL}}/"
+    }
+  ],
+  "timeout": "20s",
+  "retryOn429": true,
+  "retryCount": 3,
+  "fallbackRetryDelay": "30s",
+  "aliveStatusCodes": [
+    200,
+    206,
+    403,
+    429
+  ],
+  "httpHeaders": [
+    {
+      "urls": ["https://docs.company.com"],
+      "headers": {
+        "Accept": "text/html",
+        "User-Agent": "GitHub-Actions-Markdown-Link-Check"
+      }
+    }
+  ],
+  "checks": [
+    {
+      "pattern": "^https?://",
+      "method": "head",
+      "followRedirect": true,
+      "timeout": 10000
+    },
+    {
+      "pattern": "^https://github.com/",
+      "method": "get",
+      "timeout": 15000
+    }
+  ],
+  "projectBaseUrl": "https://docs.company.com/webhook",
+  "relativePaths": true,
+  "resultMatch": {
+    "pattern": "broken reference",
+    "flags": "i"
+  },
+  "excludeUrlPatterns": [
+    "^https://internal\\.company\\.com/",
+    "^https://private\\.company\\.com/"
+  ],
+  "excludePathPatterns": [
+    "^node_modules/",
+    "^dist/",
+    "^build/"
+  ],
+  "cacheResponses": true,
+  "cacheMaxAge": 3600,
+  "showProgressBar": true,
+  "markdownExtensions": [
+    "md",
+    "markdown",
+    "mdx"
+  ],
+  "customRules": [
+    {
+      "name": "relative-links",
+      "description": "Ensure relative links are valid",
+      "tags": ["links", "markdown"],
+      "function": "function (params, onError) { /* custom validation */ }"
+    }
+  ],
+  "errorOutput": {
+    "files": ["link-check-results.json"],
+    "format": "json",
+    "summary": true
+  },
+  "successOutput": {
+    "files": ["link-check-success.log"],
+    "format": "text",
+    "summary": true
+  }
+}

@@ -1,0 +1,237 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Documentation Theme Schema",
+  "description": "Schema for documentation theme configuration",
+  "type": "object",
+  "required": [
+    "name",
+    "description",
+    "author",
+    "version",
+    "created",
+    "updated",
+    "variables",
+    "templates",
+    "styles"
+  ],
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Theme name",
+      "pattern": "^[a-z0-9-]+$",
+      "minLength": 1,
+      "maxLength": 50
+    },
+    "description": {
+      "type": "string",
+      "description": "Theme description",
+      "minLength": 10,
+      "maxLength": 200
+    },
+    "author": {
+      "type": "string",
+      "description": "Theme author",
+      "minLength": 1
+    },
+    "version": {
+      "type": "string",
+      "description": "Theme version",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+    },
+    "created": {
+      "type": "string",
+      "description": "Theme creation date",
+      "format": "date-time"
+    },
+    "updated": {
+      "type": "string",
+      "description": "Theme last update date",
+      "format": "date-time"
+    },
+    "variables": {
+      "type": "object",
+      "description": "Theme variables",
+      "required": [
+        "color-primary",
+        "color-text",
+        "color-background",
+        "font-sans",
+        "font-mono",
+        "spacing-base"
+      ],
+      "properties": {
+        "color-primary": {
+          "type": "string",
+          "description": "Primary color",
+          "pattern": "^#[0-9a-fA-F]{6}$"
+        },
+        "color-secondary": {
+          "type": "string",
+          "description": "Secondary color",
+          "pattern": "^#[0-9a-fA-F]{6}$"
+        },
+        "color-text": {
+          "type": "string",
+          "description": "Text color",
+          "pattern": "^#[0-9a-fA-F]{6}$"
+        },
+        "color-text-light": {
+          "type": "string",
+          "description": "Light text color",
+          "pattern": "^#[0-9a-fA-F]{6}$"
+        },
+        "color-background": {
+          "type": "string",
+          "description": "Background color",
+          "pattern": "^#[0-9a-fA-F]{6}$"
+        },
+        "color-border": {
+          "type": "string",
+          "description": "Border color",
+          "pattern": "^#[0-9a-fA-F]{6}$"
+        },
+        "color-code-bg": {
+          "type": "string",
+          "description": "Code background color",
+          "pattern": "^#[0-9a-fA-F]{6}$"
+        },
+        "font-sans": {
+          "type": "string",
+          "description": "Sans-serif font stack"
+        },
+        "font-mono": {
+          "type": "string",
+          "description": "Monospace font stack"
+        },
+        "font-size-base": {
+          "type": "string",
+          "description": "Base font size",
+          "pattern": "^\\d+(\\.\\d+)?(px|rem|em)$"
+        },
+        "font-size-sm": {
+          "type": "string",
+          "description": "Small font size",
+          "pattern": "^\\d+(\\.\\d+)?(px|rem|em)$"
+        },
+        "font-size-lg": {
+          "type": "string",
+          "description": "Large font size",
+          "pattern": "^\\d+(\\.\\d+)?(px|rem|em)$"
+        },
+        "line-height-base": {
+          "type": "string",
+          "description": "Base line height",
+          "pattern": "^\\d+(\\.\\d+)?$"
+        },
+        "line-height-heading": {
+          "type": "string",
+          "description": "Heading line height",
+          "pattern": "^\\d+(\\.\\d+)?$"
+        },
+        "spacing-base": {
+          "type": "string",
+          "description": "Base spacing unit",
+          "pattern": "^\\d+(\\.\\d+)?(px|rem|em)$"
+        },
+        "spacing-sm": {
+          "type": "string",
+          "description": "Small spacing unit",
+          "pattern": "^\\d+(\\.\\d+)?(px|rem|em)$"
+        },
+        "spacing-md": {
+          "type": "string",
+          "description": "Medium spacing unit",
+          "pattern": "^\\d+(\\.\\d+)?(px|rem|em)$"
+        },
+        "spacing-lg": {
+          "type": "string",
+          "description": "Large spacing unit",
+          "pattern": "^\\d+(\\.\\d+)?(px|rem|em)$"
+        },
+        "spacing-xl": {
+          "type": "string",
+          "description": "Extra large spacing unit",
+          "pattern": "^\\d+(\\.\\d+)?(px|rem|em)$"
+        },
+        "max-width": {
+          "type": "string",
+          "description": "Maximum content width",
+          "pattern": "^\\d+(\\.\\d+)?(px|rem|em)$"
+        },
+        "sidebar-width": {
+          "type": "string",
+          "description": "Sidebar width",
+          "pattern": "^\\d+(\\.\\d+)?(px|rem|em)$"
+        },
+        "header-height": {
+          "type": "string",
+          "description": "Header height",
+          "pattern": "^\\d+(\\.\\d+)?(px|rem|em)$"
+        },
+        "border-radius": {
+          "type": "string",
+          "description": "Border radius",
+          "pattern": "^\\d+(\\.\\d+)?(px|rem|em)$"
+        }
+      },
+      "additionalProperties": true
+    },
+    "templates": {
+      "type": "object",
+      "description": "Theme templates",
+      "required": ["html", "pdf", "epub", "docx"],
+      "properties": {
+        "html": {
+          "type": "string",
+          "description": "HTML template"
+        },
+        "pdf": {
+          "type": "string",
+          "description": "PDF template"
+        },
+        "epub": {
+          "type": "string",
+          "description": "EPUB template"
+        },
+        "docx": {
+          "type": "string",
+          "description": "DOCX template"
+        }
+      },
+      "additionalProperties": false
+    },
+    "styles": {
+      "type": "object",
+      "description": "Theme styles",
+      "required": ["layout", "typography", "colors", "components"],
+      "properties": {
+        "layout": {
+          "type": "string",
+          "description": "Layout styles"
+        },
+        "typography": {
+          "type": "string",
+          "description": "Typography styles"
+        },
+        "colors": {
+          "type": "string",
+          "description": "Color styles"
+        },
+        "components": {
+          "type": "string",
+          "description": "Component styles"
+        }
+      },
+      "additionalProperties": false
+    },
+    "print": {
+      "type": "string",
+      "description": "Print styles"
+    },
+    "mobile": {
+      "type": "string",
+      "description": "Mobile styles"
+    }
+  },
+  "additionalProperties": false
+}

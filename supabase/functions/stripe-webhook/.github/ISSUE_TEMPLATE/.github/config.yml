@@ -1,0 +1,25 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 🔒 Security Issues
+    url: https://security.company.com/report
+    about: Report security vulnerabilities through our secure portal
+
+  - name: 📚 Documentation
+    url: https://docs.company.com/webhook
+    about: Check our comprehensive documentation first
+
+  - name: 💬 Community Forum
+    url: https://community.company.com
+    about: Ask questions and discuss with other developers
+
+  - name: 💼 Enterprise Support
+    url: https://support.company.com
+    about: Get dedicated enterprise-level support
+
+  - name: 🎯 Feature Requests
+    url: https://feedback.company.com/webhook
+    about: Submit and vote on feature requests
+
+  - name: 👥 Discord Community
+    url: https://discord.gg/webhookhandler
+    about: Join our developer community on Discord

@@ -1,0 +1,55 @@
+# Default owners for everything in the repo
+* @tech-leads
+
+# Webhook handler core
+/index.ts @payment-team
+/handler.ts @payment-team
+/types.ts @payment-team
+
+# Database operations
+/db.ts @database-team
+/migrations/ @database-team
+
+# Configuration and security
+/config.ts @security-team
+/scripts/install-service.sh @security-team
+/.env.example @security-team
+
+# Testing
+/__tests__/ @qa-team
+/scripts/test*.* @qa-team
+/scripts/load-test.js @qa-team
+
+# Documentation
+/*.md @docs-team
+/docs/ @docs-team
+
+# Maintenance and monitoring
+/scripts/maintain.sh @ops-team
+/scripts/monitor-db.js @ops-team
+/scripts/analyze-logs.js @ops-team
+/scripts/reconcile.js @ops-team
+
+# GitHub workflows
+/.github/workflows/ @devops-team
+
+# Specific expertise requirements
+# Files requiring security review
+/scripts/install-service.sh @security-team
+/config.ts @security-team
+/scripts/setup.sh @security-team
+
+# Files requiring database review
+/migrations/ @database-team
+/scripts/maintain-db.sql @database-team
+/scripts/recover-db.sql @database-team
+
+# Files requiring operations review
+/scripts/monitor-db.js @ops-team
+/scripts/maintain.sh @ops-team
+/scripts/analyze-logs.js @ops-team
+
+# Critical files requiring multiple reviewers
+/handler.ts @payment-team @security-team
+/db.ts @database-team @security-team
+/config.ts @security-team @ops-team

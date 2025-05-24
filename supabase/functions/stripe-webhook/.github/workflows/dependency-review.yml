@@ -1,0 +1,140 @@
+name: Dependency Review
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'package.json'
+      - 'package-lock.json'
+      - 'yarn.lock'
+      - '.github/workflows/**'
+      - 'Dockerfile'
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  dependency-review:
+    name: Review Dependencies
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Dependency Review
+        uses: actions/dependency-review-action@v3
+        id: review
+        continue-on-error: true
+        with:
+          base-ref: ${{ github.event.pull_request.base.sha }}
+          head-ref: ${{ github.event.pull_request.head.sha }}
+          fail-on-severity: critical
+          comment-summary-in-pr: true
+
+      - name: NPM Audit
+        id: npm-audit
+        run: |
+          npm audit --json > npm-audit.json || true
+          echo "high_severity=$(jq '[.advisories[] | select(.severity == "high")] | length' npm-audit.json)" >> $GITHUB_OUTPUT
+          echo "critical_severity=$(jq '[.advisories[] | select(.severity == "critical")] | length' npm-audit.json)" >> $GITHUB_OUTPUT
+
+      - name: SBOM Generation
+        id: sbom
+        uses: anchore/sbom-action@v0
+        with:
+          format: cyclonedx-json
+          output-file: sbom.json
+
+      - name: Vulnerability Scan
+        id: scan
+        uses: anchore/scan-action@v3
+        with:
+          sbom: sbom.json
+          severity-cutoff: high
+          output-format: table
+
+      - name: Generate Report
+        if: always()
+        run: |
+          echo "# Dependency Review Report" > dependency-report.md
+          echo "## Summary" >> dependency-report.md
+          echo "- High Severity Issues: ${{ steps.npm-audit.outputs.high_severity }}" >> dependency-report.md
+          echo "- Critical Severity Issues: ${{ steps.npm-audit.outputs.critical_severity }}" >> dependency-report.md
+          
+          echo "## NPM Audit Results" >> dependency-report.md
+          if [ -f npm-audit.json ]; then
+            echo "\`\`\`json" >> dependency-report.md
+            jq '.advisories' npm-audit.json >> dependency-report.md
+            echo "\`\`\`" >> dependency-report.md
+          fi
+          
+          echo "## SBOM Analysis" >> dependency-report.md
+          if [ -f sbom.json ]; then
+            echo "\`\`\`json" >> dependency-report.md
+            jq '.dependencies' sbom.json >> dependency-report.md
+            echo "\`\`\`" >> dependency-report.md
+          fi
+          
+          echo "## Vulnerability Scan" >> dependency-report.md
+          if [ -f scan-report.txt ]; then
+            echo "\`\`\`" >> dependency-report.md
+            cat scan-report.txt >> dependency-report.md
+            echo "\`\`\`" >> dependency-report.md
+          fi
+
+      - name: Upload Report
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: dependency-review-report
+          path: |
+            dependency-report.md
+            npm-audit.json
+            sbom.json
+            scan-report.txt
+          retention-days: 30
+
+      - name: Comment PR
+        if: always()
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const fs = require('fs');
+            const report = fs.readFileSync('dependency-report.md', 'utf8');
+            
+            const highSeverity = parseInt('${{ steps.npm-audit.outputs.high_severity }}') || 0;
+            const criticalSeverity = parseInt('${{ steps.npm-audit.outputs.critical_severity }}') || 0;
+            
+            const status = criticalSeverity > 0 ? '❌' :
+                          highSeverity > 0 ? '⚠️' : '✅';
+            
+            const summary = `${status} Dependency Review Summary
+            - Critical Issues: ${criticalSeverity}
+            - High Severity Issues: ${highSeverity}
+            
+            <details>
+            <summary>View Full Report</summary>
+            
+            ${report}
+            </details>`;
+            
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: summary
+            });
+
+      - name: Check Status
+        if: always()
+        run: |
+          if [ "${{ steps.npm-audit.outputs.critical_severity }}" -gt 0 ]; then
+            echo "❌ Critical vulnerabilities found"
+            exit 1
+          elif [ "${{ steps.npm-audit.outputs.high_severity }}" -gt 0 ]; then
+            echo "⚠️ High severity vulnerabilities found"
+          else
+            echo "✅ No significant vulnerabilities found"
+          fi

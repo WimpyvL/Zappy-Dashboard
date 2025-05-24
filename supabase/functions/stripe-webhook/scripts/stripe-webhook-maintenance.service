@@ -1,0 +1,49 @@
+[Unit]
+Description=Stripe Webhook Handler Maintenance
+Documentation=https://github.com/your-org/your-repo
+After=network.target postgresql.service
+
+[Service]
+Type=oneshot
+User=supabase
+Group=supabase
+WorkingDirectory=/opt/supabase/functions/stripe-webhook
+Environment=NODE_ENV=production
+
+# Load environment variables
+EnvironmentFile=/opt/supabase/functions/stripe-webhook/.env
+
+# Execute maintenance tasks
+ExecStart=/opt/supabase/functions/stripe-webhook/scripts/manage.js auto
+
+# Configure resource limits
+Nice=10
+IOSchedulingClass=best-effort
+IOSchedulingPriority=7
+CPUSchedulingPolicy=batch
+CPUSchedulingPriority=19
+MemoryHigh=1G
+MemoryMax=2G
+
+# Configure security
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictNamespaces=true
+RestrictRealtime=true
+RestrictSUIDSGID=true
+LockPersonality=true
+
+# Configure error handling
+Restart=on-failure
+RestartSec=30s
+StartLimitInterval=5m
+StartLimitBurst=3
+
+[Install]
+WantedBy=multi-user.target

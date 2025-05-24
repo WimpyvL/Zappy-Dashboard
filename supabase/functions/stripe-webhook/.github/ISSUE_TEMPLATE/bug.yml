@@ -1,0 +1,143 @@
+name: 🐛 Bug Report
+description: Report a bug to help us improve
+title: "[Bug]: "
+labels: ["bug", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to fill out this bug report!
+        Please provide as much detail as possible to help us resolve the issue quickly.
+
+  - type: checkboxes
+    id: prerequisites
+    attributes:
+      label: Prerequisites
+      description: Please ensure you have completed these checks
+      options:
+        - label: I have checked that this issue has not already been reported
+          required: true
+        - label: I am using the latest version of the webhook handler
+          required: true
+        - label: I have read the documentation
+          required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: What version of the webhook handler are you using?
+      placeholder: e.g., v1.2.3
+    validations:
+      required: true
+
+  - type: dropdown
+    id: environment
+    attributes:
+      label: Environment
+      description: Where does this issue occur?
+      options:
+        - Production
+        - Staging
+        - Development
+        - Testing
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Bug Description
+      description: A clear and concise description of the bug
+      placeholder: |
+        When I do X, Y happens instead of Z...
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to Reproduce
+      description: How can we reproduce this issue?
+      placeholder: |
+        1. Configure webhook with '...'
+        2. Send event '...'
+        3. See error
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected Behavior
+      description: What did you expect to happen?
+      placeholder: The webhook should process the event and...
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual Behavior
+      description: What actually happened?
+      placeholder: Instead, the webhook returned an error...
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant Logs
+      description: Please copy and paste any relevant logs
+      render: shell
+      placeholder: |
+        {
+          "timestamp": "2025-05-24T07:42:36Z",
+          "level": "error",
+          "message": "Failed to process webhook",
+          "error": "..."
+        }
+
+  - type: textarea
+    id: config
+    attributes:
+      label: Configuration
+      description: Your webhook configuration (remove sensitive data)
+      render: yaml
+      placeholder: |
+        webhook:
+          endpoint: /stripe
+          timeout: 30s
+          maxRetries: 3
+
+  - type: dropdown
+    id: impact
+    attributes:
+      label: Impact Level
+      description: How severe is this bug?
+      options:
+        - Critical - System unusable
+        - High - Major feature broken
+        - Medium - Feature partially broken
+        - Low - Minor inconvenience
+    validations:
+      required: true
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional Context
+      description: Add any other context about the problem here
+      placeholder: |
+        - Related issues
+        - Environment details
+        - Attempted solutions
+
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: Code of Conduct
+      description: By submitting this issue, you agree to follow our Code of Conduct
+      options:
+        - label: I agree to follow this project's Code of Conduct
+          required: true

@@ -1,0 +1,143 @@
+name: Stale Pull Requests
+
+on:
+  schedule:
+    - cron: '0 0 * * *'  # Run daily at midnight
+  workflow_dispatch:  # Allow manual triggering
+
+jobs:
+  stale:
+    name: Check Stale PRs
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+
+    steps:
+      - name: Handle stale PRs
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const daysBeforeStale = 14;
+            const daysBeforeClose = 7;
+            const staleLabel = 'stale';
+            const exemptLabels = ['keep-open', 'security', 'dependencies'];
+            const now = new Date();
+            
+            // Find PRs that might be stale
+            const { data: pulls } = await github.rest.pulls.list({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              sort: 'updated',
+              direction: 'asc',
+              per_page: 100
+            });
+            
+            for (const pr of pulls) {
+              // Skip if PR has exempt labels
+              if (pr.labels.some(label => exemptLabels.includes(label.name))) {
+                continue;
+              }
+              
+              const lastUpdated = new Date(pr.updated_at);
+              const daysSinceUpdate = Math.floor(
+                (now - lastUpdated) / (1000 * 60 * 60 * 24)
+              );
+              
+              // Check if PR is already marked stale
+              const isStale = pr.labels.some(label => label.name === staleLabel);
+              
+              if (!isStale && daysSinceUpdate >= daysBeforeStale) {
+                // Mark as stale
+                console.log(`Marking PR #${pr.number} as stale`);
+                
+                await github.rest.issues.addLabels({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: pr.number,
+                  labels: [staleLabel]
+                });
+                
+                await github.rest.issues.createComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: pr.number,
+                  body: `⚠️ This PR has been marked as stale because it hasn't seen any activity in ${daysBeforeStale} days.
+
+                  If you're still working on this PR, please:
+                  1. Update the PR with new changes, or
+                  2. Add a comment to indicate it's still being worked on, or
+                  3. Add the \`keep-open\` label
+                  
+                  This PR will be closed in ${daysBeforeClose} days if no activity occurs.`
+                });
+                
+              } else if (isStale && daysSinceUpdate >= (daysBeforeStale + daysBeforeClose)) {
+                // Close stale PR
+                console.log(`Closing stale PR #${pr.number}`);
+                
+                await github.rest.pulls.update({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  pull_number: pr.number,
+                  state: 'closed'
+                });
+                
+                await github.rest.issues.createComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: pr.number,
+                  body: `🔒 This PR has been closed due to inactivity.
+                  
+                  It can be reopened if work is resumed. If reopened, the stale timer will reset.`
+                });
+              }
+            }
+
+      - name: Generate stale report
+        if: always()
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const { data: pulls } = await github.rest.pulls.list({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              labels: 'stale'
+            });
+            
+            let report = '# Stale PRs Report\n\n';
+            report += `Generated: ${new Date().toISOString()}\n\n`;
+            
+            if (pulls.length === 0) {
+              report += 'No stale PRs found.\n';
+            } else {
+              report += '## Currently Stale PRs\n\n';
+              for (const pr of pulls) {
+                report += `- #${pr.number}: ${pr.title}\n`;
+                report += `  Last updated: ${pr.updated_at}\n`;
+                report += `  Author: @${pr.user.login}\n\n`;
+              }
+            }
+            
+            // Save report
+            const fs = require('fs');
+            fs.writeFileSync('stale-report.md', report);
+
+      - name: Upload stale report
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: stale-prs-report
+          path: stale-report.md
+          retention-days: 7
+
+      - name: Check status
+        if: always()
+        run: |
+          if [ "${{ job.status }}" = "success" ]; then
+            echo "✅ Stale PR check completed"
+          else
+            echo "❌ Stale PR check failed"
+            exit 1
+          fi

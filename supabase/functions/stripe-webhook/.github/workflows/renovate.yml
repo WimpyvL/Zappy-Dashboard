@@ -1,0 +1,58 @@
+name: Renovate Dependency Updates
+
+on:
+  schedule:
+    - cron: '0 */6 * * *'  # Run every 6 hours
+  workflow_dispatch:  # Allow manual triggering
+
+jobs:
+  renovate:
+    name: Run Renovate
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Self-hosted Renovate
+        uses: renovatebot/github-action@v39.1.4
+        with:
+          configurationFile: .github/renovate.json
+          token: ${{ secrets.RENOVATE_TOKEN }}
+        env:
+          RENOVATE_REPOSITORIES: ${{ github.repository }}
+          RENOVATE_PLATFORM: 'github'
+          RENOVATE_ONBOARDING: false
+          RENOVATE_REQUIRE_CONFIG: true
+          RENOVATE_IGNORE_PATHS: "docs/"
+          RENOVATE_AUTOMERGE: false
+          RENOVATE_PRUNE_STALE: true
+          RENOVATE_LOG_LEVEL: 'debug'
+
+      - name: Upload Renovate logs
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: renovate-logs
+          path: renovate-debug.log
+          retention-days: 5
+
+  notify:
+    needs: renovate
+    if: failure()
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Notify failure
+        uses: actions/github-script@v6
+        with:
+          script: |
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: '🔄 Renovate Run Failed',
+              body: 'The scheduled Renovate run failed. Please check the logs.',
+              labels: ['dependencies', 'failed']
+            });

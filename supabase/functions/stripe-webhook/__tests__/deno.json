@@ -1,0 +1,18 @@
+{
+  "compilerOptions": {
+    "allowJs": false,
+    "strict": true,
+    "isolatedModules": true
+  },
+  "importMap": "./import_map.test.json",
+  "test": {
+    "files": {
+      "include": ["**/*_test.ts", "**/*.test.ts"],
+      "exclude": ["**/node_modules/**"]
+    }
+  },
+  "tasks": {
+    "test": "deno test --allow-env --allow-net --allow-read --import-map=./import_map.test.json",
+    "test:watch": "deno test --watch --allow-env --allow-net --allow-read --import-map=./import_map.test.json"
+  }
+}

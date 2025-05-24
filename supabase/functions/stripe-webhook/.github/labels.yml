@@ -1,0 +1,122 @@
+# Issue type labels
+- name: bug
+  description: Something isn't working
+  color: '#d73a4a'
+
+- name: enhancement
+  description: New feature or enhancement request
+  color: '#a2eeef'
+
+- name: documentation
+  description: Documentation related issues
+  color: '#0075ca'
+
+- name: security
+  description: Security related issues
+  color: '#d93f0b'
+
+- name: performance
+  description: Performance improvement issues
+  color: '#0e8a16'
+
+# Priority labels
+- name: critical
+  description: Urgent attention required
+  color: '#b60205'
+
+- name: high
+  description: High priority issue
+  color: '#ff9900'
+
+- name: medium
+  description: Medium priority issue
+  color: '#fbca04'
+
+- name: low
+  description: Low priority issue
+  color: '#c2e0c6'
+
+# Status labels
+- name: needs-triage
+  description: Needs initial review
+  color: '#e4e669'
+
+- name: needs-review
+  description: Ready for review
+  color: '#fbca04'
+
+- name: in-progress
+  description: Currently being worked on
+  color: '#0052cc'
+
+- name: blocked
+  description: Blocked by other issues
+  color: '#b60205'
+
+# Component labels
+- name: webhook
+  description: Related to webhook handling
+  color: '#1d76db'
+
+- name: database
+  description: Database related issues
+  color: '#5319e7'
+
+- name: configuration
+  description: Configuration related issues
+  color: '#fef2c0'
+
+- name: monitoring
+  description: Monitoring and observability issues
+  color: '#006b75'
+
+# Technical labels
+- name: dependencies
+  description: Dependencies and version updates
+  color: '#0366d6'
+
+- name: testing
+  description: Testing related issues
+  color: '#d4c5f9'
+
+- name: deployment
+  description: Deployment related issues
+  color: '#c5def5'
+
+- name: infrastructure
+  description: Infrastructure related issues
+  color: '#bfdadc'
+
+# Process labels
+- name: good-first-issue
+  description: Good for newcomers
+  color: '#7057ff'
+
+- name: help-wanted
+  description: Extra attention is needed
+  color: '#008672'
+
+- name: wont-fix
+  description: This will not be worked on
+  color: '#ffffff'
+
+- name: invalid
+  description: This doesn't seem right
+  color: '#e4e669'
+
+- name: duplicate
+  description: This issue already exists
+  color: '#cfd3d7'
+
+# Special labels
+- name: breaking
+  description: Introduces breaking changes
+  color: '#b60205'
+
+- name: keep-open
+  description: Do not auto-close this issue
+  color: '#1d76db'
+
+- name: pinned
+  description: Important reference issue
+  color: '#0052cc'

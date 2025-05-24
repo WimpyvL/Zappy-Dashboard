@@ -1,0 +1,141 @@
+name: Validate Issue Templates
+
+on:
+  push:
+    paths:
+      - '.github/ISSUE_TEMPLATE/**'
+  pull_request:
+    paths:
+      - '.github/ISSUE_TEMPLATE/**'
+  workflow_dispatch:
+
+jobs:
+  validate:
+    name: Validate Templates
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: |
+          npm install -g ajv-cli yaml
+          npm install @octokit/schemas
+
+      - name: Validate YAML syntax
+        run: |
+          for file in .github/ISSUE_TEMPLATE/*.yml; do
+            if [ -f "$file" ]; then
+              echo "Validating $file..."
+              yaml validate "$file" || exit 1
+            fi
+          done
+
+      - name: Convert YAML to JSON
+        run: |
+          mkdir -p temp
+          for file in .github/ISSUE_TEMPLATE/*.yml; do
+            if [ -f "$file" ]; then
+              basename=$(basename "$file" .yml)
+              yaml2json "$file" > "temp/$basename.json"
+            fi
+          done
+
+      - name: Download schema
+        run: |
+          curl -o schema.json https://raw.githubusercontent.com/SchemaStore/schemastore/master/src/schemas/json/github-issue-forms.json
+
+      - name: Validate against schema
+        run: |
+          for file in temp/*.json; do
+            if [ -f "$file" ]; then
+              echo "Validating $file against schema..."
+              ajv validate -s schema.json -d "$file" --all-errors || exit 1
+            fi
+          done
+
+      - name: Check template structure
+        run: |
+          for file in .github/ISSUE_TEMPLATE/*.yml; do
+            if [ -f "$file" ]; then
+              echo "Checking structure of $file..."
+              
+              # Required fields
+              yq e '.name' "$file" > /dev/null || 
+                { echo "Missing required field: name"; exit 1; }
+              yq e '.description' "$file" > /dev/null || 
+                { echo "Missing required field: description"; exit 1; }
+              yq e '.body' "$file" > /dev/null || 
+                { echo "Missing required field: body"; exit 1; }
+              
+              # Body items validation
+              yq e '.body[].type' "$file" | while read -r type; do
+                case $type in
+                  "markdown"|"textarea"|"input"|"dropdown"|"checkboxes")
+                    echo "Valid input type: $type"
+                    ;;
+                  *)
+                    echo "Invalid input type: $type"
+                    exit 1
+                    ;;
+                esac
+              done
+            fi
+          done
+
+      - name: Generate report
+        if: always()
+        run: |
+          echo "# Template Validation Report" > validation-report.md
+          echo "## Summary" >> validation-report.md
+          echo "Validation completed at: $(date)" >> validation-report.md
+          
+          echo "## Results" >> validation-report.md
+          for file in .github/ISSUE_TEMPLATE/*.yml; do
+            if [ -f "$file" ]; then
+              echo "### $(basename "$file")" >> validation-report.md
+              echo "\`\`\`" >> validation-report.md
+              yaml validate "$file" >> validation-report.md 2>&1 || true
+              echo "\`\`\`" >> validation-report.md
+            fi
+          done
+
+      - name: Upload validation report
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: template-validation-report
+          path: validation-report.md
+          retention-days: 7
+
+      - name: Comment on PR
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const fs = require('fs');
+            const report = fs.readFileSync('validation-report.md', 'utf8');
+            
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: '## Template Validation Results\n\n' + report
+            });
+
+      - name: Check status
+        if: always()
+        run: |
+          if [ "${{ job.status }}" = "success" ]; then
+            echo "✅ All templates are valid"
+          else
+            echo "❌ Template validation failed"
+            exit 1
+          fi

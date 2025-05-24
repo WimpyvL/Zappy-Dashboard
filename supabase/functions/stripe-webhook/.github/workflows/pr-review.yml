@@ -1,0 +1,178 @@
+name: PR Review
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    paths-ignore:
+      - '**/*.md'
+      - 'docs/**'
+      - '.github/**'
+
+jobs:
+  review:
+    name: Automated PR Review
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      # Size check
+      - name: Check PR size
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const { data: files } = await github.rest.pulls.listFiles({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.issue.number
+            });
+            
+            const changes = files.reduce((acc, file) => acc + file.changes, 0);
+            const threshold = 500;
+            
+            if (changes > threshold) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: `⚠️ Large PR detected (${changes} changes)\nConsider breaking this into smaller PRs for easier review.`
+              });
+            }
+
+      # Convention check
+      - name: Check commit messages
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const { data: commits } = await github.rest.pulls.listCommits({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.issue.number
+            });
+            
+            const pattern = /^(feat|fix|docs|style|refactor|perf|test|chore)(\(.+\))?: .+/;
+            const invalid = commits.filter(c => !pattern.test(c.commit.message));
+            
+            if (invalid.length > 0) {
+              const messages = invalid.map(c => `- \`${c.commit.message}\``).join('\n');
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: `⚠️ Invalid commit messages found:\n${messages}\n\nPlease follow conventional commits format.`
+              });
+            }
+
+      # Code review
+      - name: Run ESLint
+        run: npm run lint
+        continue-on-error: true
+
+      - name: Run type check
+        run: npm run type-check
+        continue-on-error: true
+
+      - name: Check test coverage
+        run: |
+          npm test -- --coverage --coverageReporters="text" --coverageReporters="json-summary"
+          echo "coverage_pct=$(jq '.total.lines.pct' coverage/coverage-summary.json)" >> $GITHUB_ENV
+        continue-on-error: true
+
+      # Review summary
+      - name: Create review summary
+        uses: actions/github-script@v6
+        if: always()
+        with:
+          script: |
+            const summary = [];
+            const coverageThreshold = 80;
+            
+            // Check coverage
+            const coverage = parseFloat(process.env.coverage_pct || '0');
+            if (coverage < coverageThreshold) {
+              summary.push(`⚠️ Test coverage (${coverage}%) is below ${coverageThreshold}%`);
+            } else {
+              summary.push(`✅ Test coverage: ${coverage}%`);
+            }
+            
+            // Add review comment
+            const body = `## Automated Review Summary
+
+            ${summary.join('\n')}
+            
+            ### Recommendations
+            - Review test coverage for changed files
+            - Check error handling in new code
+            - Verify logging and monitoring
+            - Consider performance implications
+            - Update documentation if needed
+            
+            *This is an automated review. Please ensure human review before merging.*`;
+            
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: body
+            });
+
+      # Label management
+      - name: Update labels
+        uses: actions/github-script@v6
+        if: always()
+        with:
+          script: |
+            const coverage = parseFloat(process.env.coverage_pct || '0');
+            const labels = [];
+            
+            if (coverage < 80) {
+              labels.push('needs-tests');
+            }
+            
+            const { data: files } = await github.rest.pulls.listFiles({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.issue.number
+            });
+            
+            if (files.some(f => f.filename.includes('db.ts'))) {
+              labels.push('database');
+            }
+            
+            if (files.some(f => /test\.(ts|js)x?$/.test(f.filename))) {
+              labels.push('testing');
+            }
+            
+            if (labels.length > 0) {
+              await github.rest.issues.addLabels({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                labels: labels
+              });
+            }
+
+      - name: Check review status
+        if: always()
+        run: |
+          if [ "${{ job.status }}" = "success" ]; then
+            echo "✅ Review checks passed"
+          else
+            echo "❌ Review checks need attention"
+            exit 1
+          fi

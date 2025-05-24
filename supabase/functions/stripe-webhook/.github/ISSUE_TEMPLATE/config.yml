@@ -1,0 +1,37 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 🔒 Security Issues
+    url: https://security.company.com/report
+    about: Report security vulnerabilities through our secure portal
+
+  - name: 📚 Documentation
+    url: https://docs.company.com/webhook
+    about: Check our comprehensive documentation first
+
+  - name: 💬 Community Forum
+    url: https://community.company.com
+    about: Ask questions and discuss with other developers
+
+  - name: 💼 Enterprise Support
+    url: https://support.company.com
+    about: Get dedicated enterprise-level support
+
+  - name: 🎯 Feature Requests
+    url: https://feedback.company.com/webhook
+    about: Submit and vote on feature requests
+
+  - name: 👥 Discord Community
+    url: https://discord.gg/webhookhandler
+    about: Join our developer community on Discord
+
+  - name: 🚨 Bug Reports
+    url: https://github.com/company/webhook/issues/new?template=bug.yml
+    about: Report software defects using our bug report template
+
+  - name: 📊 Performance Issues
+    url: https://github.com/company/webhook/issues/new?template=performance.yml
+    about: Report performance problems using our performance template
+
+  - name: 🗃️ Database Issues
+    url: https://github.com/company/webhook/issues/new?template=database.yml
+    about: Report database-related issues using our database template

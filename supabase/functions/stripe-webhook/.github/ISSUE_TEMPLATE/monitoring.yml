@@ -1,0 +1,181 @@
+name: 📊 Monitoring Issue
+description: Report monitoring, observability, or alerting issues
+title: "[MONITOR]: "
+labels: ["monitoring", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting a monitoring issue!
+        Please provide detailed information about monitoring needs or problems.
+
+  - type: dropdown
+    id: category
+    attributes:
+      label: Monitoring Category
+      description: What aspect of monitoring is affected?
+      options:
+        - Metrics Collection
+        - Alerting Rules
+        - Dashboard Visualization
+        - Log Aggregation
+        - Trace Analysis
+        - Error Tracking
+        - Performance Monitoring
+        - Health Checks
+        - SLO Monitoring
+        - Custom Metrics
+    validations:
+      required: true
+
+  - type: textarea
+    id: current_state
+    attributes:
+      label: Current State
+      description: Describe the current monitoring setup
+      placeholder: |
+        - Current metrics
+        - Alert configurations
+        - Dashboard panels
+        - Log patterns
+        - Trace sampling
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected_state
+    attributes:
+      label: Expected State
+      description: What monitoring capabilities are needed?
+      placeholder: |
+        - Required metrics
+        - Alert thresholds
+        - Visualization needs
+        - Log requirements
+        - Trace details
+
+  - type: textarea
+    id: metrics
+    attributes:
+      label: Relevant Metrics
+      description: Include any relevant metrics or measurements
+      render: shell
+      placeholder: |
+        # Metric samples
+        webhook_requests_total{status="success"} 1234
+        webhook_latency_seconds{quantile="0.95"} 0.123
+        webhook_errors_total{type="validation"} 42
+
+  - type: textarea
+    id: alerts
+    attributes:
+      label: Alert Configuration
+      description: Current or proposed alert rules
+      render: yaml
+      placeholder: |
+        alerts:
+          - name: WebhookHighLatency
+            condition: latency > 1s
+            duration: 5m
+            severity: warning
+
+  - type: textarea
+    id: dashboard
+    attributes:
+      label: Dashboard Details
+      description: Dashboard configuration or requirements
+      render: yaml
+      placeholder: |
+        panels:
+          - title: Webhook Performance
+            type: graph
+            metrics:
+              - webhook_latency
+              - webhook_throughput
+
+  - type: dropdown
+    id: impact
+    attributes:
+      label: Monitoring Impact
+      description: How important is this monitoring issue?
+      options:
+        - Critical - No visibility
+        - High - Limited visibility
+        - Medium - Partial visibility
+        - Low - Minor improvements
+    validations:
+      required: true
+
+  - type: textarea
+    id: infrastructure
+    attributes:
+      label: Infrastructure Details
+      description: Relevant infrastructure information
+      placeholder: |
+        - Monitoring Stack: Prometheus/Grafana/etc
+        - Log Management: ELK/Loki/etc
+        - Tracing: Jaeger/Zipkin/etc
+        - Alert Manager: PagerDuty/OpsGenie/etc
+
+  - type: textarea
+    id: retention
+    attributes:
+      label: Data Retention
+      description: Data retention requirements
+      placeholder: |
+        - Metrics retention: 30 days
+        - Log retention: 90 days
+        - Trace retention: 7 days
+        - Alert history: 180 days
+
+  - type: textarea
+    id: correlation
+    attributes:
+      label: Data Correlation
+      description: How should data be correlated?
+      placeholder: |
+        - Trace ID in logs
+        - Request ID across services
+        - Error correlation
+        - Business context
+
+  - type: checkboxes
+    id: requirements
+    attributes:
+      label: Monitoring Requirements
+      description: Select applicable requirements
+      options:
+        - label: Real-time monitoring needed
+          required: false
+        - label: Historical analysis required
+          required: false
+        - label: Custom dashboards needed
+          required: false
+        - label: Automated alerts required
+          required: false
+        - label: Data export capabilities
+          required: false
+        - label: Access control needed
+          required: false
+
+  - type: textarea
+    id: slos
+    attributes:
+      label: SLOs/SLIs
+      description: Service level objectives and indicators
+      placeholder: |
+        - Availability: 99.9%
+        - Latency (p95): < 500ms
+        - Error rate: < 0.1%
+        - Success rate: > 99.5%
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional Context
+      description: Any other monitoring context
+      placeholder: |
+        - Business requirements
+        - Compliance needs
+        - Integration requirements
+        - Resource constraints

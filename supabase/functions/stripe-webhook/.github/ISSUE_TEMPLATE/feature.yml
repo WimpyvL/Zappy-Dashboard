@@ -1,0 +1,157 @@
+name: ✨ Feature Request
+description: Suggest an idea for this project
+title: "[Feature]: "
+labels: ["enhancement", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to suggest a new feature!
+        Please provide detailed information to help us understand your proposal.
+
+  - type: checkboxes
+    id: prerequisites
+    attributes:
+      label: Prerequisites
+      description: Please ensure you have completed these checks
+      options:
+        - label: I have searched for similar feature requests
+          required: true
+        - label: I have read the documentation
+          required: true
+        - label: This feature would benefit multiple users
+          required: true
+
+  - type: dropdown
+    id: type
+    attributes:
+      label: Feature Type
+      description: What type of feature are you proposing?
+      options:
+        - New Functionality
+        - Enhancement to Existing Feature
+        - Performance Improvement
+        - Developer Experience
+        - Security Enhancement
+        - Monitoring & Observability
+        - Documentation
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem Statement
+      description: What problem does this feature solve?
+      placeholder: |
+        A clear and concise description of the problem or limitation.
+        Example: When processing webhooks, I need to...
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed Solution
+      description: Describe the solution you'd like
+      placeholder: |
+        A clear and concise description of what you want to happen.
+        Consider:
+        - API design
+        - Configuration options
+        - Implementation details
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternative Solutions
+      description: Describe alternatives you've considered
+      placeholder: |
+        What alternative solutions or features have you considered?
+        Why were they not suitable?
+
+  - type: textarea
+    id: code
+    attributes:
+      label: Example Implementation
+      description: Provide example code or configuration
+      render: typescript
+      placeholder: |
+        // Example usage of the proposed feature
+        webhook.on('charge.succeeded', async (event) => {
+          // New feature usage here
+        });
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional Context
+      description: Add any other context about the feature request
+      placeholder: |
+        - Use cases
+        - Related features
+        - Implementation considerations
+        - Performance implications
+
+  - type: dropdown
+    id: impact
+    attributes:
+      label: Impact Level
+      description: How impactful would this feature be?
+      options:
+        - High - Critical functionality
+        - Medium - Significant improvement
+        - Low - Nice to have
+        - Unknown
+    validations:
+      required: true
+
+  - type: dropdown
+    id: effort
+    attributes:
+      label: Implementation Effort
+      description: How complex would this feature be to implement?
+      options:
+        - High - Major changes required
+        - Medium - Moderate changes needed
+        - Low - Simple changes
+        - Unknown
+    validations:
+      required: true
+
+  - type: textarea
+    id: testing
+    attributes:
+      label: Testing Considerations
+      description: How should this feature be tested?
+      placeholder: |
+        Consider:
+        - Unit tests
+        - Integration tests
+        - Performance tests
+        - Security testing
+
+  - type: textarea
+    id: rollout
+    attributes:
+      label: Rollout Strategy
+      description: How should this feature be released?
+      placeholder: |
+        Consider:
+        - Migration needs
+        - Breaking changes
+        - Backward compatibility
+        - Phased rollout
+
+  - type: checkboxes
+    id: contribution
+    attributes:
+      label: Contribution
+      description: Would you be willing to contribute to this feature?
+      options:
+        - label: I would like to implement this feature
+        - label: I would like to help test this feature
+        - label: I would like to document this feature

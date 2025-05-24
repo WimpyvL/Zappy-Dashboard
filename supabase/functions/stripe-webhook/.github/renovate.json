@@ -1,0 +1,74 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:base",
+    ":dependencyDashboard",
+    ":semanticCommits",
+    ":prHourlyLimit4",
+    ":rebaseStalePrs"
+  ],
+  "labels": ["dependencies"],
+  "packageRules": [
+    {
+      "matchUpdateTypes": ["minor", "patch"],
+      "matchCurrentVersion": "!/^0/",
+      "automerge": true,
+      "automergeType": "branch"
+    },
+    {
+      "matchPackagePatterns": ["^@types/"],
+      "groupName": "typescript definitions",
+      "automerge": true
+    },
+    {
+      "matchDepTypes": ["devDependencies"],
+      "groupName": "dev dependencies",
+      "prPriority": -1
+    },
+    {
+      "matchPackageNames": ["stripe"],
+      "stabilityDays": 3,
+      "prCreation": "not-pending"
+    },
+    {
+      "matchPackagePatterns": ["^@supabase/"],
+      "groupName": "supabase packages",
+      "stabilityDays": 3
+    }
+  ],
+  "timezone": "Africa/Johannesburg",
+  "schedule": ["after 10pm and before 5am every weekday", "every weekend"],
+  "prConcurrentLimit": 5,
+  "prHourlyLimit": 2,
+  "separateMajorMinor": true,
+  "separateMultipleMajor": true,
+  "rangeStrategy": "pin",
+  "lockFileMaintenance": {
+    "enabled": true,
+    "schedule": ["before 4am on monday"]
+  },
+  "ignorePaths": [
+    "**/node_modules/**",
+    "**/bower_components/**",
+    "**/vendor/**",
+    "**/examples/**",
+    "**/__tests__/**",
+    "**/test/**",
+    "**/tests/**",
+    "**/__fixtures__/**"
+  ],
+  "vulnerabilityAlerts": {
+    "labels": ["security"],
+    "assignees": ["@security-team"],
+    "stabilityDays": 0,
+    "prCreation": "immediate"
+  },
+  "masterIssue": true,
+  "masterIssueTitle": "Dependencies Dashboard 📦",
+  "dependencyDashboardTitle": "Dependencies Dashboard 📦",
+  "dependencyDashboardHeader": "# Dependencies Dashboard\n\nManaged by [Renovate](https://renovatebot.com)",
+  "major": {
+    "labels": ["dependencies", "breaking"],
+    "stabilityDays": 7
+  }
+}

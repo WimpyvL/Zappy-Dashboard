@@ -1,0 +1,159 @@
+changelog:
+  exclude:
+    labels:
+      - ignore-changelog
+      - dependencies
+    authors:
+      - dependabot
+      - renovate
+  categories:
+    - title: 🚨 Breaking Changes
+      labels:
+        - breaking-change
+        - breaking
+    - title: 🔒 Security Updates
+      labels:
+        - security
+        - vulnerability
+    - title: ✨ New Features
+      labels:
+        - enhancement
+        - feature
+    - title: 🐛 Bug Fixes
+      labels:
+        - bug
+        - fix
+    - title: ⚡ Performance Improvements
+      labels:
+        - performance
+        - optimization
+    - title: 📊 Monitoring Updates
+      labels:
+        - monitoring
+        - metrics
+        - observability
+    - title: 🗃️ Database Changes
+      labels:
+        - database
+        - migration
+    - title: 📚 Documentation
+      labels:
+        - documentation
+        - docs
+    - title: 🔧 Configuration Changes
+      labels:
+        - configuration
+        - setup
+    - title: 🧪 Testing Improvements
+      labels:
+        - testing
+        - test
+    - title: ⬆️ Dependencies
+      labels:
+        - dependencies
+    - title: 🏗️ Build System
+      labels:
+        - build
+        - ci
+    - title: 🔨 Refactoring
+      labels:
+        - refactor
+    - title: 🎨 Style & UI
+      labels:
+        - style
+        - formatting
+    - title: Other Changes
+      labels:
+        - "*"
+
+release:
+  draft: true
+  prerelease: false
+  name-template: "v$RESOLVED_VERSION"
+  tag-template: "v$RESOLVED_VERSION"
+  template: |
+    ## Stripe Webhook Handler v$RESOLVED_VERSION
+    
+    **Release Date:** $RELEASE_DATE
+    
+    ### Pre-deployment Checklist
+    - [ ] Database migrations reviewed
+    - [ ] Configuration changes documented
+    - [ ] Monitoring updates verified
+    - [ ] Security review completed
+    - [ ] Breaking changes communicated
+    
+    ### Changes
+    
+    $CHANGES
+    
+    ### Breaking Changes
+    $BREAKING_CHANGES
+    
+    ### Security Updates
+    $SECURITY_UPDATES
+    
+    ### Database Migrations
+    ```sql
+    -- List any required migrations
+    ```
+    
+    ### Configuration Updates
+    ```yaml
+    # List configuration changes
+    ```
+    
+    ### Monitoring Updates
+    - Metrics added/modified
+    - Dashboard changes
+    - Alert rule updates
+    
+    ### Deployment Instructions
+    1. Review migration scripts
+    2. Update configuration
+    3. Apply database changes
+    4. Deploy new version
+    5. Verify monitoring
+    
+    ### Testing Notes
+    - Load testing results
+    - Performance benchmarks
+    - Integration test coverage
+    
+    ### Rollback Procedure
+    1. Revert to previous version
+    2. Apply rollback migrations
+    3. Restore configuration
+    
+    ### Support Notes
+    - Known issues
+    - Troubleshooting tips
+    - Common problems
+    
+    ### Documentation
+    - Updated documentation links
+    - New guides
+    - API changes
+    
+    ### Contributors
+    $CONTRIBUTORS
+    
+    ### Additional Notes
+    Please report any issues through our issue templates.
+
+version-resolver:
+  major:
+    labels:
+      - breaking
+      - breaking-change
+  minor:
+    labels:
+      - enhancement
+      - feature
+  patch:
+    labels:
+      - bug
+      - fix
+      - security
+      - documentation
+  default: patch

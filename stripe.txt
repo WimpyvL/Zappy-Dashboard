@@ -1,0 +1,74 @@
+curl --location 'https://host67a.lifefile.net:1016/lfapi/v1/order' \
+--header 'X-Vendor-ID: 11437' \
+--header 'X-Location-ID: 110200' \
+--header 'X-API-Network-ID: 1167' \
+--header 'Content-Type: application/json' \
+--header 'Authorization: Bearer Basic YXBpMTE0MzctNTA6SEQ2UFcwRilTWkVWRVcqSFRXVVQ=' \
+--data-raw '{
+  "message": {
+    "id": "baa6babb-743d-4306-84dc-210076d9f0e7",
+    "practiceID": 1192235,
+    "sentTime": "2025-05-23T04:53:45Z"
+  },
+  "order": {
+    "general": {
+      "referenceId": "baa6babb-743d-4306-84dc-210076d9f0e7",
+      "statusId": "New"
+    },
+    "practice": {
+      "id": 1192235
+    },
+    "prescriber": {
+      "firstName": "MICHEL",
+      "lastName": "CHOUEIRI",
+      "npi": "1780991869"
+    },
+    "patient": {
+      "gender": "f",
+      "lastName": "Livers",
+      "firstName": "Kelly",
+      "dateOfBirth": "1970-12-09"
+    },
+    "shipping": {
+      "recipientType": "patient",
+      "recipientLastName": "Livers",
+      "recipientFirstName": "Kelly",
+      "recipientPhone": "4843662038",
+      "recipientEmail": "liversklbt@aol.com",
+      "service": 6230,
+      "addressLine1": "50 orchard court",
+      "addressLine2": "",
+      "city": "Royersford",
+      "state": "PA",
+      "zipCode": "19468",
+      "country": "US"
+    },
+    "billing": {
+      "payorType": "doc"
+    },
+    "rxs": [
+      {
+        "rxType": "new",
+        "drugName": "SEMAGLUTIDE 5ML",
+        "drugStrength": "2.5 MG/ 1 ML",
+        "drugForm": "INJECTABLE",
+        "quantity": 3,
+        "quantityUnits": "VIALS",
+        "directions": "Vial 1: 20.4 mg - Inject 0.68 ml= 1.7mg (68 units on insulin syringe) subcutaneously once weekly",
+        "refills": 0,
+        "daysSupply": 90
+      },
+      {
+        "rxType": "new",
+        "drugName": "SEMA KIT INSULIN SYRINGE 31G 5/16*1ML, ALCOHOL PADS",
+        "drugStrength": "",
+        "drugForm": "SUPPLIES",
+        "quantity": 2,
+        "quantityUnits": "KIT",
+        "directions": "USE WITH MEDICATION.",
+        "refills": 0,
+        "daysSupply": 90
+      }
+    ]
+  }
+}'

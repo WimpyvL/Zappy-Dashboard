@@ -1,0 +1,88 @@
+name: "Stripe Webhook CodeQL Config"
+disable-default-queries: true
+
+queries:
+  - uses: security-extended
+  - uses: security-and-quality
+  - uses: ./custom-queries/*.ql
+
+paths:
+  - src
+  - supabase/functions/stripe-webhook
+paths-ignore:
+  - '**/*.test.ts'
+  - '**/*.test.tsx'
+  - '**/__tests__/**'
+  - '**/node_modules/**'
+  - '**/dist/**'
+  - '**/build/**'
+  - 'docs/**'
+
+query-filters:
+  - exclude:
+      problem.severity:
+        - warning
+      tags:
+        - external/cwe/cwe-561  # Dead Code
+        - external/cwe/cwe-563  # Unused Variable
+  - include:
+      tags:
+        - security
+        - maintainability
+        - correctness
+
+extraction:
+  javascript:
+    index:
+      include:
+        - "**/*.js"
+        - "**/*.ts"
+        - "**/*.tsx"
+      exclude:
+        - "**/jest.config.js"
+        - "**/babel.config.js"
+        - "**/*.d.ts"
+      filters:
+        - exclude: "**/node_modules/**"
+    resolve: true
+    typescript: true
+    dependencies: true
+
+trap:
+  javascript:
+    extractor: javascript
+
+packs:
+  - codeql/javascript-queries
+  - codeql/typescript-queries
+
+output:
+  format: sarif-latest
+  sort: severity
+  max-results: 1000
+
+database:
+  save: true
+  retention-days: 30
+
+diagnostics:
+  debug: false
+  verbosity: normal
+
+threads: 0  # Use all available cores
+
+ram: 6144  # 6GB memory limit
+
+timeout: 1800  # 30 minutes
+
+max-paths-per-function: 1000
+
+max-evaluation-time: 300  # 5 minutes per query
+
+max-db-size: 10240  # 10GB database size limit
+
+additional-packs:
+  - security-extended-pack
+  - maintainability-pack
+
+analyze-builtin-extensions: true

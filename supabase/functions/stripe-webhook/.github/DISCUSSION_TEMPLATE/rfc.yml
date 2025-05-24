@@ -1,0 +1,245 @@
+title: "RFC: "
+labels: ["rfc"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        # Request for Comments (RFC)
+        
+        This RFC proposes a significant change to the webhook handler.
+        Please review thoroughly and provide constructive feedback.
+        
+        ## RFC Guidelines
+        - Be specific and detailed
+        - Consider all stakeholders
+        - Address trade-offs
+        - Include implementation details
+        - Discuss migration paths
+        - Consider backwards compatibility
+
+  - type: input
+    id: champion
+    attributes:
+      label: RFC Champion
+      description: Who is leading this proposal?
+      placeholder: "@username"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: status
+    attributes:
+      label: RFC Status
+      description: Current status of this RFC
+      options:
+        - Draft
+        - Under Discussion
+        - Accepted
+        - Implemented
+        - Withdrawn
+        - Superseded
+    validations:
+      required: true
+
+  - type: textarea
+    id: summary
+    attributes:
+      label: Executive Summary
+      description: Brief overview of the proposal
+      placeholder: |
+        - What is being proposed?
+        - Why is this needed?
+        - Expected impact
+        - Key benefits
+    validations:
+      required: true
+
+  - type: textarea
+    id: motivation
+    attributes:
+      label: Motivation & Goals
+      description: Why are we doing this?
+      placeholder: |
+        Problem Statement:
+        - Current limitations
+        - Pain points
+        - Business needs
+        
+        Goals:
+        - Primary objectives
+        - Success criteria
+        - Measurable outcomes
+    validations:
+      required: true
+
+  - type: textarea
+    id: design
+    attributes:
+      label: Technical Design
+      description: Detailed technical proposal
+      placeholder: |
+        Architecture:
+        - System components
+        - Data flow
+        - Interfaces
+        
+        Implementation:
+        ```typescript
+        // Code examples
+        ```
+        
+        Database Changes:
+        ```sql
+        -- Schema updates
+        ```
+        
+        API Changes:
+        ```typescript
+        // API interfaces
+        ```
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternative Approaches
+      description: What alternatives were considered?
+      placeholder: |
+        Alternative 1:
+        - Approach
+        - Pros/Cons
+        - Why not chosen
+        
+        Alternative 2:
+        - Approach
+        - Pros/Cons
+        - Why not chosen
+
+  - type: textarea
+    id: implementation
+    attributes:
+      label: Implementation Plan
+      description: How will this be implemented?
+      placeholder: |
+        Phases:
+        1. Initial Setup
+           - Tasks
+           - Timeline
+           - Resources
+        
+        2. Development
+           - Components
+           - Dependencies
+           - Testing
+        
+        3. Migration
+           - Strategy
+           - Rollout
+           - Verification
+        
+        4. Release
+           - Deployment
+           - Monitoring
+           - Documentation
+
+  - type: textarea
+    id: risks
+    attributes:
+      label: Risks & Mitigations
+      description: What are the risks and how will they be managed?
+      placeholder: |
+        Technical Risks:
+        - Risk: Description
+          Mitigation: Approach
+        
+        Operational Risks:
+        - Risk: Description
+          Mitigation: Approach
+        
+        Security Risks:
+        - Risk: Description
+          Mitigation: Approach
+
+  - type: textarea
+    id: compatibility
+    attributes:
+      label: Compatibility & Migration
+      description: How will this affect existing systems?
+      placeholder: |
+        Breaking Changes:
+        - Impact areas
+        - Migration steps
+        - Backward compatibility
+        
+        Deprecations:
+        - Features affected
+        - Timeline
+        - Alternatives
+
+  - type: textarea
+    id: metrics
+    attributes:
+      label: Success Metrics
+      description: How will success be measured?
+      placeholder: |
+        Technical Metrics:
+        - Performance
+        - Reliability
+        - Maintainability
+        
+        Business Metrics:
+        - User impact
+        - Cost savings
+        - Efficiency gains
+
+  - type: textarea
+    id: dependencies
+    attributes:
+      label: Dependencies & Requirements
+      description: What dependencies need to be considered?
+      placeholder: |
+        Technical Dependencies:
+        - Systems
+        - Libraries
+        - Services
+        
+        Team Dependencies:
+        - Stakeholders
+        - Reviews
+        - Approvals
+
+  - type: textarea
+    id: timeline
+    attributes:
+      label: Timeline & Milestones
+      description: What is the proposed timeline?
+      placeholder: |
+        Phase 1 (Week 1-2):
+        - Design review
+        - Initial setup
+        
+        Phase 2 (Week 3-4):
+        - Development
+        - Testing
+        
+        Phase 3 (Week 5):
+        - Migration
+        - Release
+
+  - type: checkboxes
+    id: requirements
+    attributes:
+      label: RFC Requirements
+      description: Please verify these items
+      options:
+        - label: Design is technically sound
+          required: true
+        - label: Security implications considered
+          required: true
+        - label: Performance impact analyzed
+          required: true
+        - label: Testing strategy defined
+          required: true
+        - label: Documentation planned
+          required: true
+        - label: Migration path clear
+          required: true

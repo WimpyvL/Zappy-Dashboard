@@ -1,0 +1,173 @@
+name: 🚀 Deployment Issue
+description: Report deployment or infrastructure problems
+title: "[DEPLOY]: "
+labels: ["deployment", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting a deployment issue!
+        Please provide detailed information about deployment problems.
+
+  - type: dropdown
+    id: environment
+    attributes:
+      label: Environment
+      description: Which environment is affected?
+      options:
+        - Production
+        - Staging
+        - Development
+        - QA
+        - DR
+    validations:
+      required: true
+
+  - type: dropdown
+    id: category
+    attributes:
+      label: Deployment Category
+      description: What aspect of deployment is affected?
+      options:
+        - Infrastructure Provisioning
+        - Configuration Management
+        - Service Deployment
+        - Database Migration
+        - Secret Management
+        - SSL/TLS Setup
+        - Network Configuration
+        - Resource Scaling
+        - Monitoring Setup
+        - Backup/Recovery
+    validations:
+      required: true
+
+  - type: textarea
+    id: current_state
+    attributes:
+      label: Current State
+      description: Describe the current deployment state
+      placeholder: |
+        - Deployment version
+        - Infrastructure state
+        - Service status
+        - Configuration settings
+    validations:
+      required: true
+
+  - type: textarea
+    id: error_output
+    attributes:
+      label: Error Output
+      description: Deployment or infrastructure errors
+      render: shell
+      placeholder: |
+        Error: Failed to deploy function
+        Status: 500
+        Details: Configuration validation failed...
+
+  - type: textarea
+    id: infrastructure
+    attributes:
+      label: Infrastructure Details
+      description: Relevant infrastructure information
+      render: yaml
+      placeholder: |
+        provider: supabase
+        region: us-east-1
+        resources:
+          - function:
+              name: stripe-webhook
+              runtime: node20
+              memory: 1024
+              timeout: 30
+
+  - type: textarea
+    id: config_changes
+    attributes:
+      label: Configuration Changes
+      description: Recent configuration changes
+      render: yaml
+      placeholder: |
+        changes:
+          - type: environment
+            key: STRIPE_WEBHOOK_SECRET
+            updated: "2025-05-24"
+          - type: function
+            setting: memory
+            from: 512
+            to: 1024
+
+  - type: dropdown
+    id: impact
+    attributes:
+      label: Deployment Impact
+      description: How severe is this deployment issue?
+      options:
+        - Critical - Service offline
+        - High - Major functionality affected
+        - Medium - Limited impact
+        - Low - Minor issues
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Deployment Logs
+      description: Include relevant deployment logs
+      render: shell
+      placeholder: |
+        2025-05-24T09:48:08Z [INFO] Starting deployment...
+        2025-05-24T09:48:09Z [ERROR] Failed to validate config...
+
+  - type: textarea
+    id: rollback
+    attributes:
+      label: Rollback Status
+      description: Rollback attempt details
+      placeholder: |
+        - Attempted rollback? Yes/No
+        - Previous version
+        - Rollback results
+        - Current status
+
+  - type: textarea
+    id: attempted
+    attributes:
+      label: Attempted Solutions
+      description: What have you tried?
+      placeholder: |
+        1. Validated configurations
+        2. Checked resource limits
+        3. Reviewed access permissions
+        4. Verified network settings
+
+  - type: checkboxes
+    id: verification
+    attributes:
+      label: Verification Checklist
+      description: Please verify these items
+      options:
+        - label: Configurations are correct
+          required: true
+        - label: Resources are sufficient
+          required: true
+        - label: Permissions are set
+          required: true
+        - label: Network is accessible
+          required: true
+        - label: Monitoring is active
+          required: true
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional Context
+      description: Any other deployment context
+      placeholder: |
+        - Related deployments
+        - Dependencies
+        - Timeline constraints
+        - Business impact
+        - Recovery requirements

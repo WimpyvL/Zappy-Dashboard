@@ -1,0 +1,267 @@
+# Database Documentation
+
+## Schema Overview
+
+```mermaid
+erDiagram
+{{{entityRelationshipDiagram}}}
+```
+
+## Tables
+
+{{#each tables}}
+### {{name}}
+
+{{description}}
+
+#### Schema
+
+```sql
+{{{schema}}}
+```
+
+#### Columns
+
+| Column | Type | Nullable | Default | Description |
+|--------|------|----------|---------|-------------|
+{{#each columns}}
+| `{{name}}` | `{{type}}` | {{nullable}} | `{{default}}` | {{description}} |
+{{/each}}
+
+#### Indexes
+
+| Name | Type | Columns | Description |
+|------|------|---------|-------------|
+{{#each indexes}}
+| `{{name}}` | {{type}} | {{columns}} | {{description}} |
+{{/each}}
+
+#### Constraints
+
+| Name | Type | Definition | Description |
+|------|------|------------|-------------|
+{{#each constraints}}
+| `{{name}}` | {{type}} | `{{definition}}` | {{description}} |
+{{/each}}
+
+#### Relationships
+
+{{#each relationships}}
+- {{description}}
+  ```sql
+  {{{definition}}}
+  ```
+{{/each}}
+
+#### Example Queries
+
+{{#each queries}}
+##### {{name}}
+
+{{description}}
+
+```sql
+{{{sql}}}
+```
+
+**Parameters:**
+{{#each parameters}}
+- `{{name}}`: {{description}}
+{{/each}}
+
+**Returns:**
+```typescript
+{{{returns}}}
+```
+{{/each}}
+
+{{/each}}
+
+## Migrations
+
+{{#each migrations}}
+### {{version}} - {{name}}
+
+{{description}}
+
+#### Up Migration
+
+```sql
+{{{upMigration}}}
+```
+
+#### Down Migration
+
+```sql
+{{{downMigration}}}
+```
+
+#### Impact
+
+{{impact}}
+
+{{#if notes}}
+#### Notes
+
+{{#each notes}}
+- {{this}}
+{{/each}}
+{{/if}}
+
+{{/each}}
+
+## Indexes
+
+### Performance Impact
+
+{{#each indexPerformance}}
+#### {{name}}
+
+- Query Time: {{queryTime}}
+- Index Size: {{indexSize}}
+- Usage Frequency: {{usageFrequency}}
+- Recommendations: {{recommendations}}
+
+{{/each}}
+
+## Optimization
+
+### Query Optimization
+
+{{#each queryOptimization}}
+#### {{name}}
+
+Before:
+```sql
+{{{before}}}
+```
+
+After:
+```sql
+{{{after}}}
+```
+
+Performance gain: {{performanceGain}}
+{{/each}}
+
+### Index Recommendations
+
+{{#each indexRecommendations}}
+- {{description}}
+  ```sql
+  {{{sql}}}
+  ```
+{{/each}}
+
+## Maintenance
+
+### Regular Tasks
+
+{{#each maintenanceTasks}}
+#### {{name}}
+
+{{description}}
+
+```sql
+{{{sql}}}
+```
+
+Schedule: {{schedule}}
+{{/each}}
+
+### Monitoring Queries
+
+{{#each monitoringQueries}}
+#### {{name}}
+
+{{description}}
+
+```sql
+{{{sql}}}
+```
+
+Alert Threshold: {{threshold}}
+{{/each}}
+
+## Backup & Recovery
+
+### Backup Strategy
+
+{{#each backupStrategy}}
+#### {{name}}
+
+- Type: {{type}}
+- Schedule: {{schedule}}
+- Retention: {{retention}}
+- Storage: {{storage}}
+{{/each}}
+
+### Recovery Procedures
+
+{{#each recoveryProcedures}}
+#### {{name}}
+
+1. {{#each steps}}
+   {{this}}
+   {{/each}}
+
+```sql
+{{{sql}}}
+```
+{{/each}}
+
+## Security
+
+### Access Control
+
+{{#each accessControl}}
+#### {{role}}
+
+Permissions:
+```sql
+{{{permissions}}}
+```
+{{/each}}
+
+### Audit Logging
+
+```sql
+{{{auditLogging}}}
+```
+
+## Best Practices
+
+{{#each bestPractices}}
+### {{title}}
+
+{{description}}
+
+✅ Do:
+```sql
+{{{goodExample}}}
+```
+
+❌ Don't:
+```sql
+{{{badExample}}}
+```
+{{/each}}
+
+## Troubleshooting
+
+{{#each troubleshooting}}
+### {{problem}}
+
+**Symptoms:**
+{{symptoms}}
+
+**Solution:**
+```sql
+{{{solution}}}
+```
+{{/each}}
+
+---
+
+Last updated: {{lastUpdated}}  
+Database version: {{databaseVersion}}

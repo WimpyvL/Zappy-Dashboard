@@ -1,0 +1,128 @@
+name: Sync Milestones
+
+on:
+  push:
+    paths:
+      - '.github/milestones.yml'
+  workflow_dispatch:
+  schedule:
+    - cron: '0 0 * * 1'  # Weekly on Mondays
+
+jobs:
+  sync-milestones:
+    name: Sync Repository Milestones
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+      pull-requests: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Load milestone definitions
+        id: load-milestones
+        run: |
+          echo "milestones<<EOF" >> $GITHUB_ENV
+          cat .github/milestones.yml >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
+
+      - name: Sync milestones
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const yaml = require('yaml');
+            const milestoneDefs = yaml.parse(process.env.milestones);
+            
+            // Get existing milestones
+            const existingMilestones = await github.paginate(
+              github.rest.issues.listMilestones,
+              {
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                state: 'all',
+                per_page: 100
+              }
+            );
+            
+            // Create/update milestones
+            for (const milestone of milestoneDefs) {
+              try {
+                const existing = existingMilestones.find(
+                  m => m.title === milestone.title
+                );
+                
+                if (existing) {
+                  console.log(`Updating milestone: ${milestone.title}`);
+                  await github.rest.issues.updateMilestone({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    milestone_number: existing.number,
+                    title: milestone.title,
+                    description: milestone.description,
+                    due_on: milestone.due_date,
+                    state: milestone.state || 'open'
+                  });
+                } else {
+                  console.log(`Creating milestone: ${milestone.title}`);
+                  await github.rest.issues.createMilestone({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    title: milestone.title,
+                    description: milestone.description,
+                    due_on: milestone.due_date,
+                    state: milestone.state || 'open'
+                  });
+                }
+              } catch (error) {
+                console.error(
+                  `Error processing milestone ${milestone.title}:`,
+                  error
+                );
+              }
+            }
+
+      - name: Generate milestone report
+        if: always()
+        run: |
+          echo "# Milestone Sync Report" > milestone-report.md
+          echo "## Summary" >> milestone-report.md
+          echo "Sync completed at: $(date)" >> milestone-report.md
+          
+          echo "## Current Milestones" >> milestone-report.md
+          gh api repos/:owner/:repo/milestones --paginate | \
+            jq -r '.[] | "### \(.title)\n- State: \(.state)\n- Due: \(.due_on)\n- \(.description)\n"' \
+            >> milestone-report.md
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload milestone report
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: milestone-report
+          path: milestone-report.md
+          retention-days: 7
+
+      - name: Create issue on failure
+        if: failure()
+        uses: actions/github-script@v6
+        with:
+          script: |
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: '🎯 Milestone Sync Failed',
+              body: 'The milestone synchronization workflow failed. Please check the workflow logs.',
+              labels: ['automation', 'failed']
+            });
+
+      - name: Check sync status
+        if: always()
+        run: |
+          if [ "${{ job.status }}" = "success" ]; then
+            echo "✅ Milestone sync completed successfully"
+          else
+            echo "❌ Milestone sync failed"
+            exit 1
+          fi

@@ -1,4 +1,7 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
+import { toast } from 'react-toastify';
+import { cartApi } from '../../apis/cart';
+import { useAuth } from '../auth/AuthContext';
 
 const CartContext = createContext();
 
@@ -6,17 +9,46 @@ export const useCart = () => useContext(CartContext);
 
 export const CartProvider = ({ children }) => {
   const [cartItems, setCartItems] = useState(() => {
-    // Load cart from local storage if available
     const savedCart = localStorage.getItem('shoppingCart');
     return savedCart ? JSON.parse(savedCart) : [];
   });
+  const [isLoading, setIsLoading] = useState(false);
+  const { user } = useAuth();
 
-  // Save cart to local storage whenever it changes
+  // Load cart from backend when user logs in
+  useEffect(() => {
+    const syncCart = async () => {
+      if (user) {
+        setIsLoading(true);
+        try {
+          const mergedItems = await cartApi.mergeCart(cartItems);
+          setCartItems(mergedItems);
+          toast.success('Cart synchronized successfully');
+        } catch (error) {
+          console.error('Error syncing cart:', error);
+          toast.error('Failed to sync cart with server');
+        } finally {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    syncCart();
+  }, [user]);
+
+  // Save cart to local storage and backend
   useEffect(() => {
     localStorage.setItem('shoppingCart', JSON.stringify(cartItems));
-  }, [cartItems]);
+    
+    if (user) {
+      cartApi.saveCart(cartItems).catch(error => {
+        console.error('Error saving cart to server:', error);
+        toast.error('Failed to save cart changes');
+      });
+    }
+  }, [cartItems, user]);
 
-  const addItem = (product, dose, quantity = 1) => {
+  const addItem = async (product, dose, quantity = 1) => {
     // --- Determine Correct Price and Purchasability ---
     let itemPrice = 0;
     let isPurchasable = false;
@@ -37,17 +69,8 @@ export const CartProvider = ({ children }) => {
 
     // Only proceed if the item is actually purchasable one-time
     if (!isPurchasable) {
-      console.warn(`Product ${product.name} ${dose ? `(${dose.value})` : ''} is not available for one-time purchase.`);
-      // Show a toast notification to the user
-      try {
-        // Try to use toast if available in the current context
-        const { toast } = require('react-toastify');
-        toast.error(`${product.name} ${dose ? `(${dose.value})` : ''} is not available for one-time purchase.`);
-      } catch (error) {
-        // Fallback to alert if toast is not available
-        alert(`${product.name} ${dose ? `(${dose.value})` : ''} is not available for one-time purchase.`);
-      }
-      return; // Exit without modifying cart
+      toast.error(`${product.name} ${dose ? `(${dose.value})` : ''} is not available for one-time purchase.`);
+      return;
     }
     // --- End Price Logic ---
 
@@ -57,44 +80,48 @@ export const CartProvider = ({ children }) => {
         (item) => item.productId === product.id && item.doseId === dose.id
       );
 
+      let updatedItems;
       if (existingItemIndex > -1) {
         // Update quantity if item already exists
-        const updatedItems = [...prevItems];
+        updatedItems = [...prevItems];
         updatedItems[existingItemIndex].quantity += quantity;
-        return updatedItems;
       } else {
         // Add new item
-        return [
+        updatedItems = [
           ...prevItems,
           {
             productId: product.id,
             productName: product.name,
             // Use optional chaining for dose properties as non-medications might not have a dose object passed
-             doseId: dose?.id,
-             doseValue: dose?.value,
-             price: itemPrice, // Use the correctly determined price
-             quantity: quantity,
-             type: product.type, // Store type for potential future use
-             requiresPrescription: product.requiresPrescription || false, // Add requiresPrescription flag
-             // Store relevant Stripe Price IDs
-             stripePriceId: product.type === 'medication' ? product.stripeOneTimePriceId : product.stripePriceId, // One-time purchase Price ID
-             stripeSubscriptionPriceId: dose?.stripePriceId, // Subscription Price ID (from dose)
-             // Add other relevant product details if needed
+            doseId: dose?.id,
+            doseValue: dose?.value,
+            price: itemPrice, // Use the correctly determined price
+            quantity: quantity,
+            type: product.type, // Store type for potential future use
+            requiresPrescription: product.requiresPrescription || false, // Add requiresPrescription flag
+            // Store relevant Stripe Price IDs
+            stripePriceId: product.type === 'medication' ? product.stripeOneTimePriceId : product.stripePriceId, // One-time purchase Price ID
+            stripeSubscriptionPriceId: dose?.stripePriceId, // Subscription Price ID (from dose)
           },
         ];
       }
+
+      toast.success(`${product.name} added to cart`);
+      return updatedItems;
     });
   };
 
   const removeItem = (doseId) => {
-    setCartItems((prevItems) =>
-      prevItems.filter((item) => item.doseId !== doseId)
-    );
+    setCartItems((prevItems) => {
+      const filteredItems = prevItems.filter((item) => item.doseId !== doseId);
+      toast.success('Item removed from cart');
+      return filteredItems;
+    });
   };
 
   const updateQuantity = (doseId, newQuantity) => {
     setCartItems((prevItems) => {
-      return prevItems
+      const updatedItems = prevItems
         .map((item) => {
           if (item.doseId === doseId) {
             // Ensure quantity doesn't go below 1
@@ -102,12 +129,27 @@ export const CartProvider = ({ children }) => {
           }
           return item;
         })
-        .filter((item) => item.quantity > 0); // Remove item if quantity becomes 0 or less (optional)
+        .filter((item) => item.quantity > 0); // Remove item if quantity becomes 0 or less
+
+      if (updatedItems.length !== prevItems.length) {
+        toast.info('Item removed from cart');
+      }
+      
+      return updatedItems;
     });
   };
 
-  const clearCart = () => {
+  const clearCart = async () => {
     setCartItems([]);
+    if (user) {
+      try {
+        await cartApi.clearCart();
+        toast.success('Cart cleared');
+      } catch (error) {
+        console.error('Error clearing cart:', error);
+        toast.error('Failed to clear cart on server');
+      }
+    }
   };
 
   const getCartTotal = () => {
@@ -129,6 +171,7 @@ export const CartProvider = ({ children }) => {
     clearCart,
     getCartTotal,
     getCartItemCount,
+    isLoading,
   };
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;

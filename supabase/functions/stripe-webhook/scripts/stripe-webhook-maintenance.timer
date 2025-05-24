@@ -1,0 +1,16 @@
+[Unit]
+Description=Stripe Webhook Handler Maintenance Timer
+Documentation=https://github.com/your-org/your-repo
+
+[Timer]
+# Run maintenance every 6 hours
+OnCalendar=*-*-* 0/6:00:00
+# Add randomized delay to prevent resource contention
+RandomizedDelaySec=900
+# Keep track of missed runs
+Persistent=true
+# Run immediately if last run was missed
+OnStartupSec=300
+
+[Install]
+WantedBy=timers.target

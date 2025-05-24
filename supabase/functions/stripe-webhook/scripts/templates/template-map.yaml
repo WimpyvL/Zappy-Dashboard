@@ -1,0 +1,166 @@
+# Template to Output Mapping Configuration
+
+# API Documentation
+api:
+  output: api/index.md
+  data: api.yaml
+  helpers: helpers/api.ts
+
+# Error Documentation
+error:
+  output: errors/index.md
+  data: errors.yaml
+  helpers: helpers/errors.ts
+
+# Type Documentation
+type:
+  output: types/index.md
+  data: types.yaml
+  helpers: helpers/types.ts
+
+# Example Documentation
+example:
+  output: examples/index.md
+  data: examples.yaml
+  helpers: helpers/examples.ts
+
+# Database Documentation
+database:
+  output: database/index.md
+  data: database.yaml
+  helpers: helpers/database.ts
+
+# Security Documentation
+security:
+  output: security/index.md
+  data: security.yaml
+  helpers: helpers/security.ts
+
+# Configuration Documentation
+config:
+  output: config/index.md
+  data: config.yaml
+  helpers: helpers/config.ts
+
+# Testing Documentation
+testing:
+  output: testing/index.md
+  data: testing.yaml
+  helpers: helpers/testing.ts
+
+# Monitoring Documentation
+monitoring:
+  output: monitoring/index.md
+  data: monitoring.yaml
+  helpers: helpers/monitoring.ts
+
+# OpenAPI Documentation
+openapi:
+  output: openapi/openapi.json
+  data: openapi.yaml
+  helpers: helpers/openapi.ts
+
+# TypeScript Types
+types:
+  output: types/generated.ts
+  data: types.yaml
+  helpers: helpers/type-generation.ts
+
+# Health Check Documentation
+health:
+  output: health/index.md
+  data: health.yaml
+  helpers: helpers/health.ts
+
+# Contributing Guide
+contributing:
+  output: contributing.md
+  data: contributing.yaml
+  helpers: helpers/contributing.ts
+
+# Change Log
+changelog:
+  output: changelog.md
+  data: changelog.yaml
+  helpers: helpers/changelog.ts
+
+# Development Guide
+development:
+  output: development.md
+  data: development.yaml
+  helpers: helpers/development.ts
+
+# Deployment Guide
+deployment:
+  output: deployment.md
+  data: deployment.yaml
+  helpers: helpers/deployment.ts
+
+# Troubleshooting Guide
+troubleshooting:
+  output: troubleshooting.md
+  data: troubleshooting.yaml
+  helpers: helpers/troubleshooting.ts
+
+# Migration Guide
+migration:
+  output: migration.md
+  data: migration.yaml
+  helpers: helpers/migration.ts
+
+# Performance Guide
+performance:
+  output: performance.md
+  data: performance.yaml
+  helpers: helpers/performance.ts
+
+# Templates
+templates:
+  - name: Database Schema
+    template: schema.hbs
+    output: database/schema.md
+    data: schema.yaml
+    helpers: helpers/schema.ts
+  
+  - name: API Reference
+    template: api-reference.hbs
+    output: api/reference.md
+    data: api-reference.yaml
+    helpers: helpers/api-reference.ts
+  
+  - name: Error Codes
+    template: error-codes.hbs
+    output: errors/codes.md
+    data: error-codes.yaml
+    helpers: helpers/error-codes.ts
+  
+  - name: Configuration Reference
+    template: config-reference.hbs
+    output: config/reference.md
+    data: config-reference.yaml
+    helpers: helpers/config-reference.ts
+
+# Validation Rules
+validation:
+  markdown:
+    - check-links
+    - check-frontmatter
+    - check-spelling
+  
+  openapi:
+    - validate-schema
+    - check-examples
+    - lint-spec
+  
+  typescript:
+    - type-check
+    - lint-types
+    - check-exports
+
+# Output Settings
+settings:
+  baseDir: ../docs
+  clean: true
+  prettify: true
+  validate: true
+  watch: true

@@ -1,0 +1,208 @@
+# Documentation Validation Configuration
+
+# Content Rules
+content:
+  # Word count limits
+  words:
+    min: 50        # Minimum words per document
+    max: 5000      # Maximum words per document
+    optimal: 1000  # Optimal word count
+
+  # Required sections
+  sections:
+    - title
+    - description
+    - usage
+    - examples
+
+  # Readability scores
+  readability:
+    fleschKincaid: 60  # Minimum Flesch-Kincaid score
+    gradeLevel: 10     # Maximum grade level
+    complexity: medium # Allowed complexity levels: low, medium, high
+
+# Structure Rules
+structure:
+  # Heading levels
+  headings:
+    max_depth: 4       # Maximum heading depth
+    require_order: true # Require sequential ordering
+    spacing: true      # Require space after #
+
+  # Lists
+  lists:
+    max_depth: 3       # Maximum nesting depth
+    require_marker: true # Require consistent markers
+
+  # Links
+  links:
+    require_text: true  # Require link text
+    check_urls: true   # Validate URLs
+    allow_external: true # Allow external links
+
+# Code Rules
+code:
+  # Code blocks
+  blocks:
+    require_language: true  # Require language specification
+    validate_syntax: true   # Check code syntax
+    max_length: 100        # Maximum line length
+
+  # Inline code
+  inline:
+    allow_spaces: false    # Allow spaces in inline code
+    max_length: 50         # Maximum inline code length
+
+# Style Rules
+style:
+  # Text formatting
+  formatting:
+    bold: true      # Allow bold text
+    italic: true    # Allow italic text
+    strikethrough: false # Allow strikethrough
+
+  # Tables
+  tables:
+    require_header: true  # Require table headers
+    align_columns: true  # Require column alignment
+
+  # Images
+  images:
+    require_alt: true    # Require alt text
+    max_size: "500KB"    # Maximum image size
+    formats:             # Allowed formats
+      - png
+      - jpg
+      - svg
+
+# Technical Rules
+technical:
+  # API documentation
+  api:
+    require_params: true     # Require parameter docs
+    require_responses: true  # Require response docs
+    require_examples: true   # Require examples
+
+  # Type documentation
+  types:
+    require_desc: true       # Require type descriptions
+    require_example: true    # Require type examples
+
+  # Function documentation
+  functions:
+    require_params: true     # Require parameter docs
+    require_return: true     # Require return docs
+    require_throws: true     # Require error docs
+
+# Metadata Rules
+metadata:
+  # Required fields
+  required:
+    - title
+    - description
+    - author
+    - date
+    - version
+
+  # Optional fields
+  optional:
+    - category
+    - tags
+    - status
+    - review_date
+
+# Link Rules
+links:
+  # Link validation
+  validation:
+    check_internal: true    # Validate internal links
+    check_external: true    # Validate external links
+    ignore_patterns:        # URL patterns to ignore
+      - "http://localhost"
+      - "https://example.com"
+    timeout: 5000           # Request timeout (ms)
+
+  # Link formatting
+  format:
+    require_protocol: true  # Require http/https
+    allow_fragments: true   # Allow URL fragments
+    allow_query: true       # Allow query parameters
+
+# File Rules
+files:
+  # File naming
+  naming:
+    pattern: "^[a-z0-9-]+$"  # File name pattern
+    max_length: 50          # Maximum file name length
+    extensions:             # Allowed extensions
+      - md
+      - mdx
+
+  # File structure
+  structure:
+    max_depth: 5            # Maximum directory depth
+    require_index: true     # Require index files
+    require_readme: true    # Require README files
+
+# Report Rules
+reports:
+  # Error levels
+  levels:
+    - error    # Break build
+    - warning  # Show warning
+    - info     # Information only
+
+  # Output formats
+  formats:
+    - json    # JSON report
+    - html    # HTML report
+    - text    # Text report
+
+  # Report location
+  output:
+    directory: "reports"   # Report directory
+    filename: "validation" # Base filename
+
+# Ignore Rules
+ignore:
+  # Files to ignore
+  files:
+    - "node_modules/**"
+    - "dist/**"
+    - "**/*.test.md"
+
+  # Rules to ignore
+  rules:
+    - "MD013"  # Line length
+    - "MD033"  # Inline HTML
+
+  # Sections to ignore
+  sections:
+    - "license"
+    - "changelog"
+
+# Custom Rules
+custom:
+  # Company specific
+  company:
+    product_names:        # Product name formatting
+      - "Supabase"
+      - "PostgreSQL"
+      - "TypeScript"
+
+    terminology:         # Approved terms
+      database: "PostgreSQL"
+      function: "Edge Function"
+      api: "REST API"
+
+  # Project specific
+  project:
+    required_sections:    # Project-specific sections
+      - "security"
+      - "monitoring"
+      - "troubleshooting"
+
+    code_examples:       # Required examples
+      - "typescript"
+      - "javascript"
+      - "python"

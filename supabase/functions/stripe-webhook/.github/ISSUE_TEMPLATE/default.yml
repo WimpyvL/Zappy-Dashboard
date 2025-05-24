@@ -1,0 +1,50 @@
+name: Issue Router
+description: Choose the appropriate template for your issue
+title: "[ISSUE]: "
+labels: ["needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        # Welcome to Issue Creation
+        
+        Please use our specialized templates for better support:
+        
+        ## Available Templates
+        
+        - 🐛 [Bug Report](bug.yml) - Report software defects
+        - ✨ [Feature Request](feature.yml) - Suggest new features
+        - 📚 [Documentation](docs.yml) - Report docs issues
+        - ⚡ [Performance](performance.yml) - Report performance issues
+        - 🔒 [Security](security.yml) - Report non-critical security issues
+
+        ## Support Resources
+        
+        - [Documentation](https://docs.company.com/webhook)
+        - [Community Forum](https://community.company.com/webhook)
+        - [Enterprise Support](https://enterprise.company.com/support)
+        - [Security Portal](https://security.company.com/report)
+
+  - type: dropdown
+    id: issue-type
+    attributes:
+      label: Issue Type
+      description: What kind of issue would you like to report?
+      options:
+        - Bug Report
+        - Feature Request
+        - Documentation Issue
+        - Performance Issue
+        - Security Issue
+        - Other
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: confirmation
+    attributes:
+      label: Before Proceeding
+      description: Please confirm
+      options:
+        - label: I will use the appropriate specialized template for my issue
+          required: true

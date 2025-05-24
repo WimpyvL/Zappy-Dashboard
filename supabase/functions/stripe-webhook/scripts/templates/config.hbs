@@ -1,0 +1,296 @@
+# Configuration Guide
+
+## Overview
+
+This document describes all configuration options for the webhook handler.
+
+## Environment Variables
+
+### Required Variables
+
+| Variable | Description | Example | Validation |
+|----------|-------------|---------|------------|
+{{#each requiredEnvVars}}
+| `{{name}}` | {{description}} | `{{example}}` | `{{validation}}` |
+{{/each}}
+
+### Optional Variables
+
+| Variable | Description | Default | Example |
+|----------|-------------|---------|----------|
+{{#each optionalEnvVars}}
+| `{{name}}` | {{description}} | `{{default}}` | `{{example}}` |
+{{/each}}
+
+## Configuration File
+
+### Location
+
+```bash
+{{{configPath}}}
+```
+
+### Format
+
+```typescript
+{{{configInterface}}}
+```
+
+### Default Values
+
+```typescript
+{{{defaultConfig}}}
+```
+
+## Feature Flags
+
+| Flag | Description | Default | Impact |
+|------|-------------|---------|---------|
+{{#each featureFlags}}
+| `{{name}}` | {{description}} | {{default}} | {{impact}} |
+{{/each}}
+
+## Database Configuration
+
+### Connection
+
+```typescript
+{{{databaseConfig}}}
+```
+
+### Pool Settings
+
+| Setting | Description | Default | Min | Max |
+|---------|-------------|---------|-----|-----|
+{{#each poolSettings}}
+| `{{name}}` | {{description}} | {{default}} | {{min}} | {{max}} |
+{{/each}}
+
+## Security Settings
+
+### Rate Limiting
+
+```typescript
+{{{rateLimitConfig}}}
+```
+
+### Authentication
+
+```typescript
+{{{authConfig}}}
+```
+
+## Logging Configuration
+
+### Log Levels
+
+| Level | Description | Example |
+|-------|-------------|---------|
+{{#each logLevels}}
+| `{{level}}` | {{description}} | `{{example}}` |
+{{/each}}
+
+### Output Formats
+
+```typescript
+{{{logFormats}}}
+```
+
+## Monitoring Setup
+
+### Metrics
+
+```typescript
+{{{metricsConfig}}}
+```
+
+### Health Checks
+
+```typescript
+{{{healthConfig}}}
+```
+
+## Webhook Settings
+
+### Endpoint Configuration
+
+```typescript
+{{{webhookConfig}}}
+```
+
+### Event Types
+
+| Event | Description | Handler |
+|-------|-------------|---------|
+{{#each eventTypes}}
+| `{{type}}` | {{description}} | `{{handler}}` |
+{{/each}}
+
+## Performance Tuning
+
+### Memory Settings
+
+```typescript
+{{{memoryConfig}}}
+```
+
+### Concurrency
+
+```typescript
+{{{concurrencyConfig}}}
+```
+
+## Error Handling
+
+### Retry Configuration
+
+```typescript
+{{{retryConfig}}}
+```
+
+### Error Responses
+
+```typescript
+{{{errorConfig}}}
+```
+
+## Development Options
+
+### Debug Mode
+
+```typescript
+{{{debugConfig}}}
+```
+
+### Test Environment
+
+```typescript
+{{{testConfig}}}
+```
+
+## Validation Rules
+
+### Input Validation
+
+```typescript
+{{{inputValidation}}}
+```
+
+### Schema Validation
+
+```typescript
+{{{schemaValidation}}}
+```
+
+## Integration Settings
+
+### External Services
+
+{{#each externalServices}}
+#### {{name}}
+
+```typescript
+{{{config}}}
+```
+{{/each}}
+
+## Environment-Specific Settings
+
+{{#each environments}}
+### {{name}}
+
+```typescript
+{{{config}}}
+```
+
+#### Overrides
+
+```typescript
+{{{overrides}}}
+```
+{{/each}}
+
+## Configuration Examples
+
+### Basic Setup
+
+```typescript
+{{{basicExample}}}
+```
+
+### Production Setup
+
+```typescript
+{{{productionExample}}}
+```
+
+### High-Performance Setup
+
+```typescript
+{{{performanceExample}}}
+```
+
+## Validation
+
+### Config Validation
+
+```typescript
+{{{configValidation}}}
+```
+
+### Environment Validation
+
+```typescript
+{{{envValidation}}}
+```
+
+## Best Practices
+
+{{#each bestPractices}}
+### {{title}}
+
+{{description}}
+
+✅ Do:
+```typescript
+{{{goodExample}}}
+```
+
+❌ Don't:
+```typescript
+{{{badExample}}}
+```
+{{/each}}
+
+## Troubleshooting
+
+{{#each troubleshooting}}
+### {{problem}}
+
+**Symptoms:**
+{{symptoms}}
+
+**Solution:**
+```typescript
+{{{solution}}}
+```
+{{/each}}
+
+## Migration Guide
+
+{{#each migrations}}
+### {{version}}
+
+**Changes:**
+{{changes}}
+
+**Migration Steps:**
+```typescript
+{{{steps}}}
+```
+{{/each}}
+
+---
+
+Last updated: {{lastUpdated}}  
+Configuration version: {{configVersion}}

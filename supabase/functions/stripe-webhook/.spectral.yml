@@ -1,0 +1,185 @@
+formats:
+  - oas3
+  - openapi
+
+extends:
+  - spectral:oas
+  - spectral:asyncapi
+
+rules:
+  # Operation rules
+  operation-tags:
+    description: Operations must have at least one tag
+    given: $.paths.[*].[*]
+    severity: error
+    then:
+      field: tags
+      function: truthy
+
+  operation-success-response:
+    description: Operations must have at least one 2xx response
+    given: $.paths.[*].[*].responses
+    severity: error
+    then:
+      field: "@key"
+      function: pattern
+      functionOptions:
+        match: "^2[0-9][0-9]$"
+
+  # Security rules
+  security-defined:
+    description: Security schemes must be defined
+    given: $.security.[*]
+    severity: error
+    then:
+      field: "@key"
+      function: truthy
+
+  require-auth:
+    description: All operations must have security defined
+    given: $.paths.[*].[*]
+    severity: warn
+    then:
+      field: security
+      function: truthy
+
+  # Schema rules
+  schema-properties-type:
+    description: Schema properties must have type defined
+    given: $.components.schemas.[*].properties.[*]
+    severity: error
+    then:
+      field: type
+      function: truthy
+
+  schema-required-properties:
+    description: Required properties must exist in properties
+    given: $.components.schemas.[*]
+    severity: error
+    then:
+      field: required
+      function: schema
+      functionOptions:
+        schema:
+          type: array
+          items:
+            type: string
+            enum:
+              - $expected: "@key"
+
+  # Parameter rules
+  parameter-description:
+    description: Parameters must have description
+    given: $.paths.[*].[*].parameters.[*]
+    severity: warn
+    then:
+      field: description
+      function: truthy
+
+  parameter-type:
+    description: Parameters must have type defined
+    given: $.paths.[*].[*].parameters.[*].schema
+    severity: error
+    then:
+      field: type
+      function: truthy
+
+  # Response rules
+  response-description:
+    description: Responses must have description
+    given: $.paths.[*].[*].responses.[*]
+    severity: warn
+    then:
+      field: description
+      function: truthy
+
+  error-response-schema:
+    description: Error responses must have schema defined
+    given: $.paths.[*].[*].responses.[?(@property >= 400)]
+    severity: error
+    then:
+      field: content.application/json.schema
+      function: truthy
+
+  # Webhook rules
+  webhook-security:
+    description: Webhooks must have security defined
+    given: $.webhooks.[*]
+    severity: error
+    then:
+      field: security
+      function: truthy
+
+  webhook-operation-id:
+    description: Webhooks must have operationId
+    given: $.webhooks.[*].[*]
+    severity: error
+    then:
+      field: operationId
+      function: truthy
+
+  # Documentation rules
+  component-description:
+    description: Components must have description
+    given: $.components.schemas.[*]
+    severity: warn
+    then:
+      field: description
+      function: truthy
+
+  example-value:
+    description: Schema properties should have examples
+    given: $.components.schemas.[*].properties.[*]
+    severity: info
+    then:
+      field: example
+      function: truthy
+
+functions:
+  - validateWebhookResponses:
+      message: Webhook responses must use specific status codes
+      given: $.webhooks.[*].[*].responses
+      severity: error
+      then:
+        function: enumeration
+        functionOptions:
+          values: [200, 201, 202, 204, 400, 401, 403, 404, 409, 422, 429, 500]
+
+  - validateVersioning:
+      message: API version must be in correct format
+      given: $.info.version
+      severity: error
+      then:
+        function: pattern
+        functionOptions:
+          match: "^\\d+\\.\\d+\\.\\d+$"
+
+aliases:
+  PaymentWebhookSchema:
+    description: Payment webhook event schema
+    type: object
+    required:
+      - id
+      - type
+      - data
+    properties:
+      id:
+        type: string
+        format: uuid
+      type:
+        type: string
+        enum: [payment.succeeded, payment.failed]
+      data:
+        type: object
+
+  WebhookError:
+    description: Webhook error response
+    type: object
+    required:
+      - code
+      - message
+    properties:
+      code:
+        type: string
+      message:
+        type: string

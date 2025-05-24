@@ -1,0 +1,197 @@
+# {{name}}
+
+{{description}}
+
+## Definition
+
+```typescript
+{{{definition}}}
+```
+
+## Properties
+
+{{#if properties}}
+| Property | Type | Required | Description | Default |
+|----------|------|----------|-------------|---------|
+{{#each properties}}
+| `{{name}}` | `{{type}}` | {{required}} | {{description}} | {{default}} |
+{{/each}}
+{{else}}
+This type has no properties.
+{{/if}}
+
+## Type Parameters
+
+{{#if typeParameters}}
+| Parameter | Constraint | Default | Description |
+|-----------|------------|---------|-------------|
+{{#each typeParameters}}
+| `{{name}}` | `{{constraint}}` | `{{default}}` | {{description}} |
+{{/each}}
+{{else}}
+This type has no type parameters.
+{{/if}}
+
+## Examples
+
+{{#each examples}}
+### {{name}}
+
+```typescript
+{{{code}}}
+```
+
+{{description}}
+{{/each}}
+
+## Validation
+
+{{#if validation}}
+### Rules
+
+{{#each validation.rules}}
+#### {{name}}
+
+{{description}}
+
+```typescript
+{{{example}}}
+```
+{{/each}}
+
+### Schema
+
+```typescript
+{{{validation.schema}}}
+```
+{{else}}
+No validation rules defined for this type.
+{{/if}}
+
+## Usage
+
+### Constructor
+
+{{#if constructor}}
+```typescript
+{{{constructor.signature}}}
+```
+
+#### Parameters
+
+{{#each constructor.parameters}}
+- `{{name}}`: `{{type}}` - {{description}}
+{{/each}}
+
+#### Example
+
+```typescript
+{{{constructor.example}}}
+```
+{{else}}
+This type has no constructor.
+{{/if}}
+
+### Methods
+
+{{#each methods}}
+#### {{name}}
+
+```typescript
+{{{signature}}}
+```
+
+{{description}}
+
+##### Parameters
+
+{{#if parameters}}
+{{#each parameters}}
+- `{{name}}`: `{{type}}` - {{description}}
+{{/each}}
+{{else}}
+No parameters.
+{{/if}}
+
+##### Returns
+
+`{{returns.type}}` - {{returns.description}}
+
+##### Example
+
+```typescript
+{{{example}}}
+```
+
+{{/each}}
+
+## Type Hierarchy
+
+{{#if hierarchy}}
+```mermaid
+classDiagram
+{{{hierarchy}}}
+```
+{{else}}
+This type has no inheritance hierarchy.
+{{/if}}
+
+## Related Types
+
+{{#if relatedTypes}}
+{{#each relatedTypes}}
+- [`{{name}}`]({{url}}) - {{description}}
+{{/each}}
+{{else}}
+No related types.
+{{/if}}
+
+## Unit Tests
+
+{{#if tests}}
+```typescript
+{{{tests}}}
+```
+{{else}}
+No unit tests available.
+{{/if}}
+
+## See Also
+
+{{#if seeAlso}}
+{{#each seeAlso}}
+- [{{name}}]({{url}}) - {{description}}
+{{/each}}
+{{else}}
+No related documentation.
+{{/if}}
+
+## Changelog
+
+{{#if changelog}}
+{{#each changelog}}
+### {{version}}
+
+{{#each changes}}
+- {{this}}
+{{/each}}
+{{/each}}
+{{else}}
+No changelog entries.
+{{/if}}
+
+## Notes
+
+{{#if notes}}
+{{#each notes}}
+- {{this}}
+{{/each}}
+{{else}}
+No additional notes.
+{{/if}}
+
+---
+
+**Package:** {{package}}  
+**Source:** [{{sourcePath}}]({{sourceUrl}})  
+**Generated:** {{generatedDate}}

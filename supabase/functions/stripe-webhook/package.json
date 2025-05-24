@@ -1,0 +1,11 @@
+{
+  "name": "stripe-webhook",
+  "version": "1.0.0",
+  "type": "module",
+  "imports": {
+    "#src/*": "./src/*.ts",
+    "#types": "./types.ts",
+    "#logger": "./logger.ts",
+    "#handler": "./handler.ts"
+  }
+}

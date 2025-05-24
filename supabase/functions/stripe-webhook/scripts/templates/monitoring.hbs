@@ -1,0 +1,280 @@
+# Monitoring Guide
+
+## Overview
+
+This document describes the monitoring setup for the webhook handler.
+
+## Metrics
+
+{{#each metrics}}
+### {{name}}
+
+**Type:** {{type}}  
+**Description:** {{description}}
+
+```typescript
+{{{implementation}}}
+```
+
+#### Labels
+
+| Label | Description | Example |
+|-------|-------------|---------|
+{{#each labels}}
+| `{{name}}` | {{description}} | `{{example}}` |
+{{/each}}
+
+#### Thresholds
+
+| Level | Value | Description |
+|-------|-------|-------------|
+{{#each thresholds}}
+| {{level}} | {{value}} | {{description}} |
+{{/each}}
+
+#### Query Examples
+
+```promql
+{{{queries}}}
+```
+
+{{/each}}
+
+## Alerts
+
+{{#each alerts}}
+### {{name}}
+
+**Severity:** {{severity}}  
+**Description:** {{description}}
+
+#### Condition
+
+```promql
+{{{condition}}}
+```
+
+#### Runbook
+
+1. {{#each runbook}}
+   {{this}}
+   {{/each}}
+
+#### Response Actions
+
+{{#each actions}}
+- {{this}}
+{{/each}}
+
+#### Silence Conditions
+
+{{#each silenceConditions}}
+- {{this}}
+{{/each}}
+
+{{/each}}
+
+## Dashboards
+
+{{#each dashboards}}
+### {{name}}
+
+{{description}}
+
+#### Panels
+
+{{#each panels}}
+##### {{name}}
+
+```promql
+{{{query}}}
+```
+
+**Visualization:** {{visualization}}  
+**Refresh:** {{refresh}}  
+**Description:** {{description}}
+
+{{/each}}
+
+#### Variables
+
+| Variable | Type | Query | Description |
+|----------|------|-------|-------------|
+{{#each variables}}
+| `{{name}}` | {{type}} | `{{query}}` | {{description}} |
+{{/each}}
+
+{{/each}}
+
+## Logging
+
+### Log Levels
+
+| Level | Usage | Example |
+|-------|-------|---------|
+{{#each logLevels}}
+| {{level}} | {{usage}} | `{{example}}` |
+{{/each}}
+
+### Log Format
+
+```typescript
+{{{logFormat}}}
+```
+
+### Structured Logging
+
+```typescript
+{{{structuredLogging}}}
+```
+
+### Log Aggregation
+
+{{#each logAggregation}}
+#### {{name}}
+
+```typescript
+{{{configuration}}}
+```
+{{/each}}
+
+## Tracing
+
+### Trace Points
+
+{{#each tracePoints}}
+#### {{name}}
+
+```typescript
+{{{implementation}}}
+```
+{{/each}}
+
+### Sampling
+
+{{#each sampling}}
+#### {{name}}
+
+- Rate: {{rate}}
+- Condition: {{condition}}
+- Implementation:
+  ```typescript
+  {{{implementation}}}
+  ```
+{{/each}}
+
+## Health Checks
+
+{{#each healthChecks}}
+### {{name}}
+
+**Endpoint:** `{{endpoint}}`  
+**Interval:** {{interval}}  
+**Timeout:** {{timeout}}
+
+#### Check Logic
+
+```typescript
+{{{implementation}}}
+```
+
+#### Success Response
+
+```json
+{{{successResponse}}}
+```
+
+#### Error Response
+
+```json
+{{{errorResponse}}}
+```
+{{/each}}
+
+## Performance Monitoring
+
+### Key Metrics
+
+{{#each performanceMetrics}}
+#### {{name}}
+
+- Target: {{target}}
+- Warning: {{warning}}
+- Critical: {{critical}}
+- Query:
+  ```promql
+  {{{query}}}
+  ```
+{{/each}}
+
+### Resource Usage
+
+{{#each resources}}
+#### {{name}}
+
+- Limits: {{limits}}
+- Alerts:
+  ```promql
+  {{{alerts}}}
+  ```
+{{/each}}
+
+## Incident Response
+
+### Severity Levels
+
+{{#each severityLevels}}
+#### {{level}}
+
+- Criteria: {{criteria}}
+- Response Time: {{responseTime}}
+- Escalation: {{escalation}}
+{{/each}}
+
+### Playbooks
+
+{{#each playbooks}}
+#### {{name}}
+
+1. {{#each steps}}
+   {{this}}
+   {{/each}}
+{{/each}}
+
+## Cost Monitoring
+
+### Resource Costs
+
+{{#each costs}}
+#### {{resource}}
+
+- Metric: {{metric}}
+- Budget: {{budget}}
+- Alert:
+  ```promql
+  {{{alert}}}
+  ```
+{{/each}}
+
+## Best Practices
+
+{{#each bestPractices}}
+### {{title}}
+
+{{description}}
+
+✅ Do:
+```typescript
+{{{goodExample}}}
+```
+
+❌ Don't:
+```typescript
+{{{badExample}}}
+```
+{{/each}}
+
+---
+
+Last updated: {{lastUpdated}}  
+Contact: {{contact}}

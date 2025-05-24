@@ -1,0 +1,98 @@
+# Configuration for GitHub repository features and settings
+
+# Issue template configuration
+blank_issues_enabled: false
+contact_links:
+  - name: Security Vulnerabilities
+    url: https://security.company.com/report
+    about: Please report critical security vulnerabilities through our secure reporting platform.
+
+  - name: Documentation
+    url: https://docs.company.com/webhook-handler
+    about: Check out our documentation for guides, API references, and best practices.
+
+  - name: Support
+    url: https://support.company.com/webhook-handler
+    about: Need help? Contact our support team for assistance with implementation or issues.
+
+  - name: Discussion Forum
+    url: https://github.com/company/webhook-handler/discussions
+    about: Have a question or want to discuss ideas? Start a discussion in our forum.
+
+  - name: Slack Community
+    url: https://company.slack.com/webhook-handler
+    about: Join our Slack community for real-time discussions and support.
+
+  - name: Contributing Guidelines
+    url: https://github.com/company/webhook-handler/blob/main/CONTRIBUTING.md
+    about: Please read our contributing guidelines before submitting changes.
+
+  - name: Code of Conduct
+    url: https://github.com/company/webhook-handler/blob/main/CODE_OF_CONDUCT.md
+    about: Please follow our code of conduct in all interactions.
+
+  - name: Release Schedule
+    url: https://github.com/company/webhook-handler/releases
+    about: Check our release schedule and version history.
+
+  - name: Status Page
+    url: https://status.company.com
+    about: Check our system status and incident history.
+
+# Repository settings
+repository:
+  # Repository features
+  has_issues: true
+  has_projects: true
+  has_wiki: true
+  has_downloads: true
+
+  # Branch protection rules
+  default_branch: main
+  allow_squash_merge: true
+  allow_merge_commit: false
+  allow_rebase_merge: true
+  delete_branch_on_merge: true
+
+  # Labels
+  labels:
+    - name: bug
+      color: d73a4a
+      description: Something isn't working
+    - name: enhancement
+      color: a2eeef
+      description: New feature or request
+    - name: security
+      color: ee0701
+      description: Security-related issue
+    - name: documentation
+      color: 0075ca
+      description: Documentation improvements
+    - name: help wanted
+      color: 008672
+      description: Extra attention is needed
+
+  # Project boards
+  projects:
+    - name: Webhook Handler Development
+      columns:
+        - To Do
+        - In Progress
+        - Review
+        - Done
+
+# Branch protection
+branches:
+  - name: main
+    protection:
+      required_pull_request_reviews:
+        required_approving_review_count: 2
+        dismiss_stale_reviews: true
+        require_code_owner_reviews: true
+      required_status_checks:
+        strict: true
+        contexts:
+          - tests
+          - security-scan
+      enforce_admins: true
+      restrictions: null

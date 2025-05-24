@@ -1,0 +1,169 @@
+name: 🗃️ Database Issue
+description: Report database problems or improvements
+title: "[DB]: "
+labels: ["database", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting a database issue!
+        Please provide detailed information about database-related problems.
+
+  - type: dropdown
+    id: category
+    attributes:
+      label: Database Category
+      description: What aspect of the database is affected?
+      options:
+        - Schema Design
+        - Migration Issue
+        - Query Performance
+        - Connection Management
+        - Data Integrity
+        - Indexing
+        - Transaction Handling
+        - Replication
+        - Backup/Recovery
+        - Resource Usage
+    validations:
+      required: true
+
+  - type: textarea
+    id: schema
+    attributes:
+      label: Database Schema
+      description: Relevant database schema
+      render: sql
+      placeholder: |
+        CREATE TABLE webhooks (
+          id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+          event_id TEXT NOT NULL,
+          created_at TIMESTAMPTZ DEFAULT NOW(),
+          -- other columns...
+        );
+
+  - type: textarea
+    id: query
+    attributes:
+      label: Problem Query
+      description: Problematic query or operation
+      render: sql
+      placeholder: |
+        SELECT w.*, e.type
+        FROM webhooks w
+        JOIN events e ON e.id = w.event_id
+        WHERE ...
+
+  - type: textarea
+    id: explain
+    attributes:
+      label: Query Plan
+      description: EXPLAIN ANALYZE output
+      render: text
+      placeholder: |
+        QUERY PLAN
+        -------------------------------------
+        Seq Scan on webhooks  (cost=0.00..1.10 rows=10 width=40)
+          Filter: ...
+
+  - type: textarea
+    id: current_metrics
+    attributes:
+      label: Current Metrics
+      description: Current database metrics
+      placeholder: |
+        - Query time: xxx ms
+        - Rows affected: xxx
+        - Index usage: xx%
+        - Cache hit ratio: xx%
+        - Connection count: xx
+
+  - type: textarea
+    id: migration
+    attributes:
+      label: Migration Details
+      description: Migration script if relevant
+      render: sql
+      placeholder: |
+        -- Up Migration
+        ALTER TABLE webhooks ADD COLUMN processed BOOLEAN DEFAULT FALSE;
+        CREATE INDEX idx_webhook_processed ON webhooks(processed);
+        
+        -- Down Migration
+        DROP INDEX idx_webhook_processed;
+        ALTER TABLE webhooks DROP COLUMN processed;
+
+  - type: dropdown
+    id: impact
+    attributes:
+      label: Impact Level
+      description: How severe is this database issue?
+      options:
+        - Critical - Data loss/corruption
+        - High - Performance degradation
+        - Medium - Limited functionality
+        - Low - Minor issue
+    validations:
+      required: true
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Database Environment
+      description: Database environment details
+      placeholder: |
+        - Database: PostgreSQL 15.x
+        - Instance Type: xxx
+        - Connection Pool: xxx
+        - Extensions: xxx
+        - Data Size: xxx GB
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Error Logs
+      description: Relevant database logs
+      render: text
+      placeholder: |
+        2025-05-24 09:47:31 UTC [xxx] ERROR: deadlock detected
+        2025-05-24 09:47:31 UTC [xxx] DETAIL: Process xxx waiting for ShareLock
+
+  - type: textarea
+    id: attempted
+    attributes:
+      label: Attempted Solutions
+      description: What have you tried?
+      placeholder: |
+        - Added indexes
+        - Optimized queries
+        - Adjusted configuration
+        - Analyzed execution plans
+
+  - type: checkboxes
+    id: validation
+    attributes:
+      label: Validation
+      description: Please verify these items
+      options:
+        - label: I have run ANALYZE on affected tables
+          required: true
+        - label: I have checked for blocking queries
+          required: true
+        - label: I have reviewed execution plans
+          required: true
+        - label: I have checked database logs
+          required: true
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional Context
+      description: Any other database context
+      placeholder: |
+        - Related tables
+        - Data volumes
+        - Access patterns
+        - Backup schedule
+        - Maintenance windows

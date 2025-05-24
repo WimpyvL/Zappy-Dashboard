@@ -1,0 +1,153 @@
+name: 📚 Documentation
+description: Report missing, incorrect, or unclear documentation
+title: "[DOCS]: "
+labels: ["documentation", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for helping improve our documentation!
+        Please provide detailed information about what needs to be documented or clarified.
+
+  - type: dropdown
+    id: type
+    attributes:
+      label: Documentation Type
+      description: What type of documentation issue is this?
+      options:
+        - Missing Documentation
+        - Incorrect Information
+        - Unclear Explanation
+        - Outdated Content
+        - Example Needed
+        - API Reference
+        - Tutorial Required
+        - Configuration Guide
+        - Best Practices
+        - Migration Guide
+    validations:
+      required: true
+
+  - type: input
+    id: location
+    attributes:
+      label: Documentation Location
+      description: Where is the documentation that needs attention?
+      placeholder: e.g., API Reference, README.md, Configuration Guide
+    validations:
+      required: true
+
+  - type: textarea
+    id: current
+    attributes:
+      label: Current Documentation
+      description: What does the current documentation say?
+      placeholder: |
+        Paste the current content here (if it exists)
+        ```markdown
+        Current documentation text...
+        ```
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected Documentation
+      description: What should the documentation include?
+      placeholder: |
+        Describe what you expect to see:
+        - Key concepts to cover
+        - Examples needed
+        - Clarifications required
+        - Missing information
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed Changes
+      description: If you have specific suggestions, provide them here
+      placeholder: |
+        ```markdown
+        # Proposed documentation
+        
+        ## Overview
+        Description of the feature/concept...
+        
+        ## Example
+        Code or configuration example...
+        
+        ## Notes
+        Additional details...
+        ```
+
+  - type: dropdown
+    id: impact
+    attributes:
+      label: Documentation Impact
+      description: How important is this documentation update?
+      options:
+        - Critical - Blocks usage
+        - High - Major functionality unclear
+        - Medium - Important details missing
+        - Low - Minor improvements needed
+    validations:
+      required: true
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional Context
+      description: Any other context that might help?
+      placeholder: |
+        - Use cases affected
+        - Related documentation
+        - User feedback
+        - Error scenarios
+
+  - type: checkboxes
+    id: contribution
+    attributes:
+      label: Contribution
+      description: Documentation contributions
+      options:
+        - label: I would like to help write this documentation
+        - label: I can provide examples for this documentation
+        - label: I can review the documentation changes
+
+  - type: textarea
+    id: examples
+    attributes:
+      label: Example Code/Configuration
+      description: Include any relevant examples
+      render: typescript
+      placeholder: |
+        // Example code or configuration that needs documentation
+        webhook.on('event', async (event) => {
+          // Usage example...
+        });
+
+  - type: textarea
+    id: resources
+    attributes:
+      label: Additional Resources
+      description: Links to related resources or references
+      placeholder: |
+        - Related PR: #123
+        - API Documentation: http://...
+        - External Resources: http://...
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Documentation Checklist
+      description: Please verify these items
+      options:
+        - label: This is not a duplicate documentation request
+          required: true
+        - label: I have checked the existing documentation
+          required: true
+        - label: This would benefit multiple users
+          required: true
+        - label: I have included specific examples where relevant
+          required: true

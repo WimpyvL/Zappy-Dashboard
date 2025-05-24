@@ -1,0 +1,195 @@
+openapi: 3.1.0
+info:
+  title: Stripe Webhook Handler API
+  description: API documentation for the Stripe webhook handler
+  version: 1.0.0
+  contact:
+    name: Development Team
+    email: dev@company.com
+    url: https://docs.company.com/webhook-handler
+
+servers:
+  - url: https://your-project.supabase.co/functions/v1/stripe-webhook
+    description: Production server
+  - url: http://localhost:54321/functions/v1/stripe-webhook
+    description: Development server
+
+paths:
+  /:
+    post:
+      summary: Handle Stripe webhook events
+      description: Processes incoming Stripe webhook events and updates the system accordingly
+      operationId: handleWebhook
+      security:
+        - stripeSignature: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WebhookEvent'
+      responses:
+        '200':
+          description: Event processed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          description: Invalid request or payload
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Invalid signature or authentication
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  schemas:
+    WebhookEvent:
+      type: object
+      required:
+        - id
+        - type
+        - data
+      properties:
+        id:
+          type: string
+          description: Unique identifier for the event
+          example: evt_1234567890
+        type:
+          type: string
+          description: Type of Stripe event
+          example: payment_intent.succeeded
+        data:
+          type: object
+          description: Event payload data
+          properties:
+            object:
+              type: object
+              description: The object that triggered the event
+
+    SuccessResponse:
+      type: object
+      required:
+        - success
+        - eventId
+      properties:
+        success:
+          type: boolean
+          example: true
+        eventId:
+          type: string
+          description: ID of the processed event
+          example: evt_1234567890
+        processedAt:
+          type: string
+          format: date-time
+          description: When the event was processed
+
+    ErrorResponse:
+      type: object
+      required:
+        - success
+        - error
+      properties:
+        success:
+          type: boolean
+          example: false
+        error:
+          type: object
+          required:
+            - code
+            - message
+          properties:
+            code:
+              type: string
+              description: Error code
+              example: invalid_signature
+            message:
+              type: string
+              description: Error message
+              example: Invalid webhook signature
+            requestId:
+              type: string
+              description: Request ID for tracking
+              example: req_1234567890
+
+  securitySchemes:
+    stripeSignature:
+      type: apiKey
+      name: stripe-signature
+      in: header
+      description: Stripe webhook signature for event verification
+
+tags:
+  - name: Webhooks
+    description: Webhook event handling endpoints
+
+x-webhooks:
+  payment_intent.succeeded:
+    post:
+      summary: Payment succeeded webhook
+      description: Triggered when a payment is successful
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WebhookEvent'
+            example:
+              id: evt_1234567890
+              type: payment_intent.succeeded
+              data:
+                object:
+                  id: pi_1234567890
+                  status: succeeded
+                  amount: 1000
+                  currency: usd
+
+  payment_intent.payment_failed:
+    post:
+      summary: Payment failed webhook
+      description: Triggered when a payment fails
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WebhookEvent'
+            example:
+              id: evt_1234567890
+              type: payment_intent.payment_failed
+              data:
+                object:
+                  id: pi_1234567890
+                  status: failed
+                  error:
+                    code: card_declined
+                    message: Card declined
+
+  customer.subscription.updated:
+    post:
+      summary: Subscription updated webhook
+      description: Triggered when a subscription is updated
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WebhookEvent'
+            example:
+              id: evt_1234567890
+              type: customer.subscription.updated
+              data:
+                object:
+                  id: sub_1234567890
+                  status: active
+                  current_period_end: 1735689600

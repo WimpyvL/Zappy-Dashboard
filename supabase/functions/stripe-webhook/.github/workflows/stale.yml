@@ -1,0 +1,81 @@
+name: Mark stale issues and pull requests
+
+on:
+  schedule:
+    - cron: '0 0 * * *'  # Run daily at midnight
+
+jobs:
+  stale:
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+      pull-requests: write
+
+    steps:
+      - uses: actions/stale@v9
+        with:
+          # Issue specific settings
+          days-before-issue-stale: 60
+          days-before-issue-close: 14
+          stale-issue-message: |
+            This issue has been automatically marked as stale because it has not had recent activity.
+            
+            Please take one of these actions:
+            1. Comment or update the issue if it's still relevant
+            2. Close the issue if it's no longer needed
+            3. Add the `keep-open` label to prevent auto-closure
+            
+            This issue will be closed in 14 days if no further activity occurs.
+          close-issue-message: |
+            This issue has been automatically closed due to inactivity.
+            Please feel free to reopen if the issue still needs attention.
+          stale-issue-label: 'stale'
+          exempt-issue-labels: 'keep-open,security,bug,pinned'
+
+          # PR specific settings
+          days-before-pr-stale: 30
+          days-before-pr-close: 14
+          stale-pr-message: |
+            This pull request has been automatically marked as stale because it has not had recent activity.
+            
+            Please take one of these actions:
+            1. Update the PR and address any review comments
+            2. Close the PR if it's no longer needed
+            3. Add the `keep-open` label to prevent auto-closure
+            
+            This PR will be closed in 14 days if no further activity occurs.
+          close-pr-message: |
+            This pull request has been automatically closed due to inactivity.
+            Please feel free to reopen if the changes are still needed.
+          stale-pr-label: 'stale'
+          exempt-pr-labels: 'keep-open,security,dependencies'
+          
+          # General settings
+          exempt-all-assignees: true
+          operations-per-run: 100
+          enable-statistics: true
+          remove-stale-when-updated: true
+          delete-branch: true
+          
+          # Process settings
+          ascending: true
+          
+          # Labels configuration
+          labels-to-add-when-unstale: 'active'
+          labels-to-remove-when-unstale: 'stale'
+          
+          # Repository token
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          
+          # Additional exemptions
+          exempt-draft-pr: true
+          exempt-all-milestones: true
+          
+          # Debug configuration
+          debug-only: false
+
+      - name: Output Statistics
+        if: always()
+        run: |
+          echo "Stale workflow completed"
+          echo "Check the Actions tab for detailed statistics"

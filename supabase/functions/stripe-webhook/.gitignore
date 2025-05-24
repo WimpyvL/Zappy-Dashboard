@@ -1,0 +1,123 @@
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Logs and temp files
+.logs/
+.temp/
+*.log
+
+# Cache and metrics
+.cache/
+.metrics/
+
+# Backups and archives
+.backups/
+.archive/
+*.backup
+*.bak
+*.gz
+*.zip
+*.tar
+*.tgz
+
+# Security
+.security/
+*.pem
+*.key
+*.crt
+*.cert
+*.csr
+*.gpg
+
+# Test files
+.test_env/
+test_results/
+coverage/
+
+# Local development
+.local/
+node_modules/
+dist/
+
+# Database
+*.sqlite
+*.db
+
+# Generated files
+.generated/
+*.generated.*
+
+# IDE and editor files
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Debug files
+*.debug
+debug.log
+nohup.out
+
+# Configuration backups
+*.config.backup
+*.conf.backup
+
+# Temporary webhook test files
+webhook_test_*.json
+webhook_payload_*.json
+
+# Stripe CLI local files
+.stripe/
+
+# Local certificates
+certs/
+certificates/
+*.crt
+*.key
+*.pem
+
+# Docker volumes
+.docker/
+docker-volumes/
+
+# Scripts generated files
+scripts/**/*.tmp
+scripts/**/*.temp
+scripts/**/*.log
+scripts/crontab.txt
+scripts/crontab.backup
+
+# Tool specific files
+.deno/
+.npm/
+.yarn/
+.cargo/
+
+# Monitoring and metrics
+grafana/
+prometheus/
+*.prom
+
+# Documentation
+docs/_build/
+docs/_site/
+docs/.jekyll-cache/
+
+# Local testing
+test/fixtures/
+test/snapshots/
+test/results/
+
+# Example files
+*.example
+!.env.example
+
+# Don't ignore scripts
+!scripts/*.sh

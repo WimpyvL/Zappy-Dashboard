@@ -1,0 +1,31 @@
+# GitHub Funding Configuration
+
+# GitHub Sponsors
+github: [maintainer1, maintainer2, org-name]
+
+# Open Collective
+open_collective: webhook-handler
+
+# Patreon
+patreon: webhook_project
+
+# Ko-fi
+ko_fi: webhookhandler
+
+# Tidelift
+tidelift: npm/@company/webhook-handler
+
+# Custom Sponsorship URLs
+custom:
+  - https://company.com/sponsor
+  - https://opencollective.com/webhook/sponsor
+  - https://liberapay.com/webhook
+
+# Support Options
+community_bridge: webhook-project
+issuehunt: company/webhook
+otechie: webhook-support
+
+# Documentation
+# For more information about funding configuration:
+# https://docs.github.com/en/repositories/managing-your-repository-settings-and-features/customizing-your-repository/displaying-a-sponsor-button-in-your-repository

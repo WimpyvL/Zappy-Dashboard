@@ -1,0 +1,170 @@
+name: Documentation
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/**/*.ts'
+      - 'src/**/*.tsx'
+      - 'docs/**'
+      - '*.md'
+      - 'scripts/**'
+  pull_request:
+    types: [opened, synchronize, reopened]
+    paths:
+      - 'src/**/*.ts'
+      - 'src/**/*.tsx'
+      - 'docs/**'
+      - '*.md'
+      - 'scripts/**'
+  workflow_dispatch:
+    inputs:
+      deploy:
+        description: 'Deploy documentation'
+        required: false
+        default: false
+        type: boolean
+
+jobs:
+  docs:
+    name: Documentation
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: |
+          cd scripts
+          npm ci
+
+      - name: Initialize documentation
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          cd scripts
+          npm run docs:init
+
+      - name: Generate documentation
+        run: |
+          cd scripts
+          npm run docs:generate
+
+      - name: Validate documentation
+        run: |
+          cd scripts
+          npm run docs:validate
+
+      - name: Check for changes
+        id: check
+        run: |
+          if [[ -n "$(git status --porcelain docs/)" ]]; then
+            echo "changes=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create Pull Request
+        if: steps.check.outputs.changes == 'true' && github.event_name != 'pull_request'
+        uses: peter-evans/create-pull-request@v5
+        with:
+          commit-message: "docs: update documentation"
+          title: "📚 Update Documentation"
+          body: |
+            Automated documentation update
+            
+            - Generated from source code changes
+            - Updated API documentation
+            - Validated content
+            
+            Please review the changes and ensure accuracy.
+          branch: docs/update
+          labels: documentation
+          reviewers: ${{ github.actor }}
+          draft: false
+
+      - name: Comment PR
+        if: github.event_name == 'pull_request' && steps.check.outputs.changes == 'true'
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const body = '## Documentation Changes\n\n' +
+              'Documentation has been updated for this PR.\n\n' +
+              'Please review the changes in the `docs/` directory.\n\n' +
+              '- [API Reference](docs/api/index.md)\n' +
+              '- [Types](docs/types/index.md)\n' +
+              '- [Examples](docs/examples/index.md)\n';
+            
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: body
+            });
+
+      - name: Upload Documentation Artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: documentation
+          path: docs/
+          retention-days: 30
+
+      - name: Deploy Documentation
+        if: |
+          github.ref == 'refs/heads/main' &&
+          (github.event_name == 'workflow_dispatch' && inputs.deploy == true)
+        env:
+          SUPABASE_PROJECT_ID: ${{ secrets.SUPABASE_PROJECT_ID }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          cd scripts
+          npm run docs:deploy -- \
+            --project $SUPABASE_PROJECT_ID \
+            --key $SUPABASE_SERVICE_ROLE_KEY \
+            --bucket docs \
+            --public
+
+      - name: Archive Documentation
+        uses: actions/upload-artifact@v3
+        with:
+          name: documentation-archive
+          path: |
+            docs/
+            scripts/
+            .spectral.yml
+            tsconfig.json
+          retention-days: 7
+
+  notify:
+    name: Notifications
+    needs: docs
+    if: always() && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Notify Success
+        if: needs.docs.result == 'success'
+        uses: slackapi/slack-github-action@v1
+        with:
+          channel-id: 'docs-updates'
+          slack-message: "✅ Documentation updated successfully!\nView changes: ${{ github.server_url }}/${{ github.repository }}/tree/main/docs"
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+
+      - name: Notify Failure
+        if: needs.docs.result == 'failure'
+        uses: slackapi/slack-github-action@v1
+        with:
+          channel-id: 'docs-updates'
+          slack-message: "❌ Documentation update failed!\nView workflow: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}

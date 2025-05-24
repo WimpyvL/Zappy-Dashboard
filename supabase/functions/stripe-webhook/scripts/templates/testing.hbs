@@ -1,0 +1,323 @@
+# Testing Guide
+
+## Overview
+
+This document describes the testing strategy and implementation for the webhook handler.
+
+## Test Structure
+
+```
+tests/
+├── unit/
+├── integration/
+├── e2e/
+├── performance/
+└── security/
+```
+
+## Test Types
+
+### Unit Tests
+
+{{#each unitTests}}
+#### {{name}}
+
+```typescript
+{{{implementation}}}
+```
+
+**Test Cases:**
+{{#each cases}}
+- {{description}}
+{{/each}}
+
+**Mocks:**
+```typescript
+{{{mocks}}}
+```
+{{/each}}
+
+### Integration Tests
+
+{{#each integrationTests}}
+#### {{name}}
+
+```typescript
+{{{implementation}}}
+```
+
+**Dependencies:**
+{{#each dependencies}}
+- {{this}}
+{{/each}}
+
+**Test Data:**
+```typescript
+{{{testData}}}
+```
+{{/each}}
+
+### End-to-End Tests
+
+{{#each e2eTests}}
+#### {{name}}
+
+```typescript
+{{{implementation}}}
+```
+
+**Flow:**
+1. {{#each flow}}
+   {{this}}
+   {{/each}}
+
+**Environment:**
+```yaml
+{{{environment}}}
+```
+{{/each}}
+
+### Performance Tests
+
+{{#each performanceTests}}
+#### {{name}}
+
+```typescript
+{{{implementation}}}
+```
+
+**Metrics:**
+| Metric | Target | Warning | Critical |
+|--------|--------|---------|-----------|
+{{#each metrics}}
+| {{name}} | {{target}} | {{warning}} | {{critical}} |
+{{/each}}
+
+**Load Profile:**
+```yaml
+{{{loadProfile}}}
+```
+{{/each}}
+
+### Security Tests
+
+{{#each securityTests}}
+#### {{name}}
+
+```typescript
+{{{implementation}}}
+```
+
+**Vulnerabilities Tested:**
+{{#each vulnerabilities}}
+- {{this}}
+{{/each}}
+
+**Tools:**
+{{#each tools}}
+- {{name}}: {{purpose}}
+{{/each}}
+{{/each}}
+
+## Test Data
+
+### Fixtures
+
+{{#each fixtures}}
+#### {{name}}
+
+```typescript
+{{{data}}}
+```
+
+**Usage:**
+```typescript
+{{{usage}}}
+```
+{{/each}}
+
+### Mocks
+
+{{#each mocks}}
+#### {{name}}
+
+```typescript
+{{{implementation}}}
+```
+
+**Usage:**
+```typescript
+{{{usage}}}
+```
+{{/each}}
+
+## Test Configuration
+
+### Jest Configuration
+
+```javascript
+{{{jestConfig}}}
+```
+
+### Test Environment
+
+```typescript
+{{{testEnvironment}}}
+```
+
+## Coverage Requirements
+
+### Coverage Thresholds
+
+```javascript
+{{{coverageConfig}}}
+```
+
+### Exclusions
+
+```javascript
+{{{coverageExclusions}}}
+```
+
+## Continuous Integration
+
+### Test Workflow
+
+```yaml
+{{{ciWorkflow}}}
+```
+
+### Matrix Testing
+
+```yaml
+{{{testMatrix}}}
+```
+
+## Test Commands
+
+### Running Tests
+
+```bash
+# Run all tests
+npm test
+
+# Run specific test types
+npm run test:unit
+npm run test:integration
+npm run test:e2e
+npm run test:performance
+npm run test:security
+
+# Run with coverage
+npm run test:coverage
+```
+
+### Debug Tests
+
+```bash
+# Debug specific test
+npm run test:debug
+
+# Debug with IDE
+{{{debugInstructions}}}
+```
+
+## Best Practices
+
+{{#each testPractices}}
+### {{title}}
+
+{{description}}
+
+✅ Do:
+```typescript
+{{{goodExample}}}
+```
+
+❌ Don't:
+```typescript
+{{{badExample}}}
+```
+{{/each}}
+
+## Test Patterns
+
+{{#each testPatterns}}
+### {{name}}
+
+{{description}}
+
+```typescript
+{{{example}}}
+```
+{{/each}}
+
+## Common Issues
+
+{{#each testIssues}}
+### {{problem}}
+
+**Symptoms:**
+{{symptoms}}
+
+**Solution:**
+```typescript
+{{{solution}}}
+```
+{{/each}}
+
+## Testing Tools
+
+{{#each testTools}}
+### {{name}}
+
+**Purpose:** {{purpose}}
+
+**Installation:**
+```bash
+{{{installation}}}
+```
+
+**Configuration:**
+```typescript
+{{{configuration}}}
+```
+
+**Usage:**
+```typescript
+{{{usage}}}
+```
+{{/each}}
+
+## Code Quality
+
+### Linting
+
+```javascript
+{{{lintConfig}}}
+```
+
+### Type Checking
+
+```typescript
+{{{typeConfig}}}
+```
+
+## Performance Monitoring
+
+### Metrics Collection
+
+```typescript
+{{{metricsCollection}}}
+```
+
+### Benchmarking
+
+```typescript
+{{{benchmarkConfig}}}
+```
+
+---
+
+Last updated: {{lastUpdated}}  
+Test coverage: {{coverage}}%

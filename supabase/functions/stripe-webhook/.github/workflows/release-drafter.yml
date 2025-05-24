@@ -1,0 +1,174 @@
+name: Release Drafter
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    types: [opened, reopened, synchronize]
+  pull_request_target:
+    types: [closed]
+
+jobs:
+  update_release_draft:
+    name: Update Release Draft
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' || (github.event_name == 'pull_request_target' && github.event.pull_request.merged == true)
+    permissions:
+      contents: write
+      pull-requests: read
+
+    steps:
+      - name: Draft Release
+        uses: release-drafter/release-drafter@v5
+        with:
+          config-name: release-drafter.yml
+          disable-autolabeler: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  update_pr_draft:
+    name: Update PR Draft
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    permissions:
+      pull-requests: write
+
+    steps:
+      - name: Get PR Labels
+        id: labels
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const labels = context.payload.pull_request.labels.map(l => l.name);
+            core.setOutput('type', 
+              labels.find(l => ['feature', 'fix', 'docs', 'chore'].includes(l)) || 'other'
+            );
+
+      - name: Draft PR Notes
+        uses: actions/github-script@v6
+        env:
+          PR_TYPE: ${{ steps.labels.outputs.type }}
+        with:
+          script: |
+            const type = process.env.PR_TYPE;
+            const title = context.payload.pull_request.title;
+            const body = context.payload.pull_request.body || '';
+            const author = context.payload.pull_request.user.login;
+            const number = context.payload.pull_request.number;
+            
+            let section = '### 🔄 Other Changes';
+            switch (type) {
+              case 'feature':
+                section = '### ✨ New Features';
+                break;
+              case 'fix':
+                section = '### 🐛 Bug Fixes';
+                break;
+              case 'docs':
+                section = '### 📚 Documentation';
+                break;
+              case 'chore':
+                section = '### 🛠️ Maintenance';
+                break;
+            }
+            
+            let details = `${title} (#${number})`;
+            if (body) {
+              const breakingMatch = body.match(/BREAKING CHANGE:\s*([^\n]+)/);
+              if (breakingMatch) {
+                details = `⚠️ ${details}\n  Breaking: ${breakingMatch[1]}`;
+              }
+            }
+            
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: `Draft Release Notes Entry:
+            
+            ${section}
+            - ${details} (@${author})`
+            });
+
+  verify_version:
+    name: Verify Version
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request_target' && github.event.pull_request.merged == true
+    permissions:
+      contents: read
+      pull-requests: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Check version bump
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const packageJson = require('./package.json');
+            const version = packageJson.version;
+            
+            const { data: releases } = await github.rest.repos.listReleases({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              per_page: 1
+            });
+            
+            if (releases.length > 0) {
+              const lastVersion = releases[0].tag_name.replace('v', '');
+              if (version <= lastVersion) {
+                await github.rest.issues.createComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: context.issue.number,
+                  body: `⚠️ Version ${version} is not greater than latest release ${lastVersion}`
+                });
+                core.setFailed('Version must be bumped for release');
+              }
+            }
+
+  notify_release:
+    name: Notify Release
+    needs: [update_release_draft]
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push'
+
+    steps:
+      - name: Get latest draft
+        id: draft
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const { data: releases } = await github.rest.repos.listReleases({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              per_page: 1
+            });
+            if (releases.length > 0 && releases[0].draft) {
+              core.setOutput('url', releases[0].html_url);
+              core.setOutput('version', releases[0].tag_name);
+            }
+
+      - name: Post notification
+        if: steps.draft.outputs.url
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const body = `🎉 New release draft available
+            
+            Version: ${process.env.VERSION}
+            Preview: ${process.env.URL}
+            
+            Please review the release notes and publish when ready.`;
+            
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `Release ${process.env.VERSION} Ready for Review`,
+              body: body,
+              labels: ['release']
+            });
+        env:
+          URL: ${{ steps.draft.outputs.url }}
+          VERSION: ${{ steps.draft.outputs.version }}

@@ -1,0 +1,184 @@
+name: Version Management
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    types: [opened, reopened, synchronize]
+    branches: [main]
+
+jobs:
+  version:
+    name: Update Version
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Get commit messages
+        id: commits
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            echo "messages<<EOF" >> $GITHUB_OUTPUT
+            git log --format=%B ${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }} >> $GITHUB_OUTPUT
+            echo "EOF" >> $GITHUB_OUTPUT
+          else
+            echo "messages<<EOF" >> $GITHUB_OUTPUT
+            git log -1 --format=%B >> $GITHUB_OUTPUT
+            echo "EOF" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Determine version bump
+        id: version
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const messages = process.env.COMMITS.split('\n');
+            let bump = 'patch';
+            
+            const patterns = {
+              major: /BREAKING CHANGE:|feat!:/i,
+              minor: /feat:/i,
+              patch: /fix:|docs:|style:|refactor:|perf:|test:|chore:/i
+            };
+            
+            for (const msg of messages) {
+              if (patterns.major.test(msg)) {
+                bump = 'major';
+                break;
+              } else if (patterns.minor.test(msg) && bump !== 'major') {
+                bump = 'minor';
+              } else if (patterns.patch.test(msg) && bump === 'none') {
+                bump = 'patch';
+              }
+            }
+            
+            core.setOutput('bump', bump);
+        env:
+          COMMITS: ${{ steps.commits.outputs.messages }}
+
+      - name: Update version
+        if: github.event_name == 'push'
+        run: |
+          CURRENT_VERSION=$(node -p "require('./package.json').version")
+          
+          case "${{ steps.version.outputs.bump }}" in
+            "major")
+              npm version major -m "chore(release): %s [skip ci]"
+              ;;
+            "minor")
+              npm version minor -m "chore(release): %s [skip ci]"
+              ;;
+            "patch")
+              npm version patch -m "chore(release): %s [skip ci]"
+              ;;
+          esac
+          
+          NEW_VERSION=$(node -p "require('./package.json').version")
+          echo "::set-output name=version::${NEW_VERSION}"
+          echo "::set-output name=previous_version::${CURRENT_VERSION}"
+
+      - name: Generate changelog
+        if: github.event_name == 'push'
+        id: changelog
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const { execSync } = require('child_process');
+            const previousTag = process.env.PREVIOUS_VERSION;
+            const currentTag = process.env.NEW_VERSION;
+            
+            const changes = execSync(
+              `git log ${previousTag}..${currentTag} --pretty=format:"- %s (%h)"`
+            ).toString();
+            
+            const sections = {
+              'BREAKING CHANGE': [],
+              'Features': [],
+              'Bug Fixes': [],
+              'Documentation': [],
+              'Performance': [],
+              'Other': []
+            };
+            
+            changes.split('\n').forEach(line => {
+              if (line.includes('BREAKING CHANGE')) {
+                sections['BREAKING CHANGE'].push(line);
+              } else if (line.match(/^feat:/)) {
+                sections['Features'].push(line.replace(/^feat:/, ''));
+              } else if (line.match(/^fix:/)) {
+                sections['Bug Fixes'].push(line.replace(/^fix:/, ''));
+              } else if (line.match(/^docs:/)) {
+                sections['Documentation'].push(line.replace(/^docs:/, ''));
+              } else if (line.match(/^perf:/)) {
+                sections['Performance'].push(line.replace(/^perf:/, ''));
+              } else {
+                sections['Other'].push(line);
+              }
+            });
+            
+            let changelog = `# ${currentTag}\n\n`;
+            
+            Object.entries(sections).forEach(([section, items]) => {
+              if (items.length > 0) {
+                changelog += `## ${section}\n\n`;
+                items.forEach(item => changelog += `${item}\n`);
+                changelog += '\n';
+              }
+            });
+            
+            core.setOutput('content', changelog);
+        env:
+          PREVIOUS_VERSION: v${{ steps.version.outputs.previous_version }}
+          NEW_VERSION: v${{ steps.version.outputs.version }}
+
+      - name: Update CHANGELOG.md
+        if: github.event_name == 'push'
+        run: |
+          echo "${{ steps.changelog.outputs.content }}" | cat - CHANGELOG.md > temp && mv temp CHANGELOG.md
+
+      - name: Commit changes
+        if: github.event_name == 'push'
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add CHANGELOG.md package.json package-lock.json
+          git commit -m "chore(release): ${{ steps.version.outputs.version }} [skip ci]"
+          git push
+
+      - name: Comment PR
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const body = `## Version Impact
+            
+            This PR will trigger a ${steps.version.outputs.bump} version bump based on conventional commits.
+            
+            Current version: ${process.env.CURRENT_VERSION}
+            Next version: ${process.env.NEXT_VERSION}`;
+            
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: body
+            });
+        env:
+          CURRENT_VERSION: ${{ steps.version.outputs.previous_version }}
+          NEXT_VERSION: ${{ steps.version.outputs.version }}

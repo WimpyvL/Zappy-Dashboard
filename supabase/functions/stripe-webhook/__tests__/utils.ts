@@ -12,34 +12,52 @@ import type {
 } from "../types.ts";
 
 /**
- * Extended database interface for testing purposes.
- * Combines the core DatabaseClient interface with additional methods
- * for test verification and state inspection.
+ * Extended database interface for testing that combines the core DatabaseClient
+ * interface with additional test helper methods. This allows us to both interact
+ * with the database through its standard interface while also providing ways to
+ * inspect the state for test assertions.
+ * 
+ * @interface MockDatabase
+ * @extends {DatabaseClient}
  */
-export interface MockDatabase {
-  // Internal storage
+export interface MockDatabase extends DatabaseClient {
+  /** Storage map for processed webhook events, keyed by event ID */
   readonly events: Map<string, StripeEvent>;
+  
+  /** Storage map for payment status updates, keyed by payment intent ID */
   readonly paymentStatuses: Map<string, string>;
+  
+  /** Storage map for subscription status changes, keyed by subscription ID */
   readonly subscriptionStatuses: Map<string, string>;
+  
+  /** Storage map for processed refunds, keyed by refund ID */
   readonly refunds: Map<string, Refund>;
+  
+  /** Storage map for handled disputes, keyed by dispute ID */
   readonly disputes: Map<string, Dispute>;
+  
+  /** Storage map for created support tickets, keyed by ticket ID */
   readonly supportTickets: Map<string, SupportTicket>;
 
-  /** Core DatabaseClient methods */
-  insertEvent(event: StripeEvent): Promise<void>;
-  updatePaymentStatus(paymentId: string, status: string): Promise<void>;
-  updateSubscriptionStatus(subscriptionId: string, status: string): Promise<void>;
-  insertRefund(refund: Refund): Promise<void>;
-  insertDispute(dispute: Dispute): Promise<void>;
-  updateDispute(dispute: Dispute): Promise<void>;
-  createSupportTicket(ticket: SupportTicket): Promise<string>;
+  // Core DatabaseClient methods are inherited
 
-  /** Test helper methods for state inspection */
+  /** Methods for inspecting mock database state during tests */
+  /** Returns the stored webhook events for test assertions */
   getEvents(): Map<string, StripeEvent>;
+  
+  /** Retrieves the current payment status map for test assertions */
   getPaymentStatuses(): Map<string, string>;
+  
+  /** Retrieves the current subscription status map for test assertions */
   getSubscriptionStatuses(): Map<string, string>;
+  
+  /** Retrieves all processed refunds for test assertions */
   getRefunds(): Map<string, Refund>;
+  
+  /** Retrieves all handled disputes for test assertions */
   getDisputes(): Map<string, Dispute>;
+  
+  /** Retrieves all created support tickets for test assertions */
   getSupportTickets(): Map<string, SupportTicket>;
 }
 
@@ -77,8 +95,16 @@ export function createMockStripe(): Stripe {
  * Creates a mock database client for testing
  * Implements both DatabaseClient interface and test helper methods
  * @returns A mock database client that can be used to verify test outcomes
+ * @example
+ * ```ts
+ * const mockDb = createMockDb();
+ * await mockDb.insertEvent(event);
+ * const events = mockDb.getEvents();
+ * assertEquals(events.has(event.id), true);
+ * ```
  */
 export function createMockDb(): DatabaseClient & MockDatabase {
+  // Initialize storage maps for each data type
   const events = new Map<string, StripeEvent>();
   const paymentStatuses = new Map<string, string>();
   const subscriptionStatuses = new Map<string, string>();
@@ -86,6 +112,7 @@ export function createMockDb(): DatabaseClient & MockDatabase {
   const disputes = new Map<string, Dispute>();
   const supportTickets = new Map<string, SupportTicket>();
 
+  // Create the mock database implementation
   return {
     events,
     paymentStatuses,

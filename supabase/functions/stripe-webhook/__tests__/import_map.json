@@ -1,0 +1,20 @@
+{
+  "imports": {
+    "asserts": "https://deno.land/std@0.177.0/testing/asserts.ts",
+    "bdd": "https://deno.land/std@0.177.0/testing/bdd.ts",
+    "stripe": "https://esm.sh/stripe@13.4.0",
+    "@supabase/supabase-js": "https://esm.sh/@supabase/supabase-js@2.38.4",
+
+    "@types": "../types.ts",
+    "@logger": "../logger.ts",
+    "@handler": "../handler.ts",
+    "@config": "../config.ts",
+    "@utils": "../utils.ts",
+    "@test/": "./"
+  },
+  "scopes": {
+    "./__tests__/": {
+      "@test/*": "./*"
+    }
+  }
+}

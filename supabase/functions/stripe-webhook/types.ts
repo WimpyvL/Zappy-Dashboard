@@ -2,6 +2,9 @@
  * Shared types for the Stripe webhook handler
  */
 
+import type { Stripe } from 'stripe';
+import type { Logger } from './logger.ts';
+
 export interface PaymentIntent {
   id: string;
   invoice?: string;
@@ -95,6 +98,12 @@ export interface DatabaseClient {
   insertDispute(dispute: Dispute): Promise<void>;
   updateDispute(dispute: Dispute): Promise<void>;
   createSupportTicket(ticket: SupportTicket): Promise<string>;
+}
+
+export interface HandlerContext {
+  db: DatabaseClient;
+  stripe: Stripe;
+  logger: Logger;
 }
 
 export interface WebhookHandlerConfig {

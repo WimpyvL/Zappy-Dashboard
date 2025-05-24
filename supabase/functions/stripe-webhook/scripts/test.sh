@@ -1,122 +1,68 @@
-#!/bin/bash
+#!/usr/bin/env bash
+set -e
 
-# Colors for output
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-NC='\033[0m' # No Color
+# Directory of this script
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+# Project root directory (parent of script directory)
+PROJECT_ROOT="$( cd "$SCRIPT_DIR/.." && pwd )"
 
-# Test configuration
-MIN_COVERAGE=80
-TIMEOUT=30000
+# Load environment variables from .env file if it exists
+if [ -f "$PROJECT_ROOT/.env" ]; then
+  echo "Loading environment variables from .env file..."
+  export $(cat "$PROJECT_ROOT/.env" | grep -v '^#' | xargs)
+fi
 
-# Helper functions
-print_header() {
-    echo -e "\n${GREEN}=== $1 ===${NC}\n"
-}
+# Ensure required env variables are set
+required_vars=("STRIPE_SECRET_KEY" "WEBHOOK_SECRET")
+missing_vars=()
 
-print_warning() {
-    echo -e "${YELLOW}WARNING: $1${NC}"
-}
+for var in "${required_vars[@]}"; do
+  if [ -z "${!var}" ]; then
+    missing_vars+=("$var")
+  fi
+done
 
-print_error() {
-    echo -e "${RED}ERROR: $1${NC}"
-}
+if [ ${#missing_vars[@]} -ne 0 ]; then
+  echo "Error: Missing required environment variables:"
+  printf '%s\n' "${missing_vars[@]}"
+  echo "Please set them in .env file or export them before running tests"
+  exit 1
+fi
 
-# Run linting
-run_lint() {
-    print_header "Running linter"
-    
-    deno lint
-    
-    if [ $? -ne 0 ]; then
-        print_error "Linting failed"
-        exit 1
-    fi
-    
-    echo "Linting passed"
-}
+# Default test mode
+MODE=${1:-"test"}
 
-# Run type checking
-run_type_check() {
-    print_header "Running type check"
-    
-    deno check *.ts **/*.ts
-    
-    if [ $? -ne 0 ]; then
-        print_error "Type checking failed"
-        exit 1
-    fi
-    
-    echo "Type checking passed"
-}
+cd "$PROJECT_ROOT"
 
-# Run tests with coverage
-run_tests() {
-    print_header "Running tests"
+case $MODE in
+  "test")
+    echo "Running tests..."
+    deno test --allow-net --allow-env --allow-read
+    ;;
     
-    # Create coverage directory if it doesn't exist
-    mkdir -p coverage
+  "watch")
+    echo "Running tests in watch mode..."
+    deno test --watch --allow-net --allow-env --allow-read
+    ;;
     
-    # Run tests with coverage
-    deno test \
-        --allow-env \
-        --allow-net \
-        --allow-read \
-        --coverage=coverage \
-        --timeout=$TIMEOUT
-    
-    if [ $? -ne 0 ]; then
-        print_error "Tests failed"
-        exit 1
-    fi
-    
-    echo "All tests passed"
-}
-
-# Generate and check coverage report
-check_coverage() {
-    print_header "Checking test coverage"
-    
-    # Generate coverage report
+  "coverage")
+    echo "Running tests with coverage..."
+    deno test --coverage=coverage --allow-net --allow-env --allow-read
     deno coverage coverage
+    ;;
     
-    # Extract coverage percentage
-    coverage=$(deno coverage coverage | grep "cover:" | awk '{print $2}' | sed 's/%//')
+  "ci")
+    echo "Running CI test sequence..."
+    deno fmt --check
+    deno lint
+    deno check **/*.ts
+    deno test --allow-net --allow-env --allow-read --coverage=coverage
+    deno coverage coverage --lcov > coverage.lcov
+    ;;
     
-    echo "Coverage: $coverage%"
-    
-    # Check if coverage meets minimum requirement
-    if (( $(echo "$coverage < $MIN_COVERAGE" | bc -l) )); then
-        print_error "Coverage ($coverage%) is below minimum required ($MIN_COVERAGE%)"
-        exit 1
-    fi
-    
-    echo "Coverage check passed"
-}
-
-# Clean up previous coverage data
-cleanup() {
-    print_header "Cleaning up"
-    
-    rm -rf coverage
-    
-    echo "Cleanup complete"
-}
-
-# Main script
-main() {
-    # Clean up first
-    cleanup
-    
-    # Run all checks
-    run_lint
-    run_type_check
-    run_tests
-    check_coverage
-    
-    print_header "All checks passed! 🎉"
-}
-
-# Run main function
-main
+  *)
+    echo "Unknown test mode: $MODE"
+    echo "Available modes: test, watch, coverage, ci"
+    exit 1
+    ;;
+esac

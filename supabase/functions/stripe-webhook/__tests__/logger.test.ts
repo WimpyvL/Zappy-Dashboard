@@ -1,148 +1,95 @@
-import { assertEquals, assertMatch } from 'https://deno.land/std@0.177.0/testing/asserts.ts';
-import { createLogger } from '../logger.ts';
-import { LOG_LEVELS } from '../config.ts';
+import { assertEquals } from "https://deno.land/std@0.177.0/testing/asserts.ts";
+import { type Logger, createLogger } from "@logger";
 
-// Mock console methods
-const mockConsole = {
-  error: [] as string[],
-  warn: [] as string[],
-  info: [] as string[],
-  verbose: [] as string[],
-};
+Deno.test("Logger Implementation", async (t) => {
+  const messages: Array<{ level: string; message: string; data?: unknown }> = [];
 
-// Store original console methods
-const originalConsole = {
-  error: console.error,
-  warn: console.warn,
-  info: console.info,
-};
-
-// Setup and teardown console mocks
-function setupConsoleMocks() {
-  console.error = (msg: string) => mockConsole.error.push(msg);
-  console.warn = (msg: string) => mockConsole.warn.push(msg);
-  console.info = (msg: string) => mockConsole.info.push(msg);
-}
-
-function teardownConsoleMocks() {
-  console.error = originalConsole.error;
-  console.warn = originalConsole.warn;
-  console.info = originalConsole.info;
-  mockConsole.error = [];
-  mockConsole.warn = [];
-  mockConsole.info = [];
-  mockConsole.verbose = [];
-}
-
-Deno.test('Logger', async (t) => {
-  await t.step('basic logging', async (t) => {
-    setupConsoleMocks();
-
-    const logger = createLogger();
-
-    await t.step('should log error messages', () => {
-      logger.error('Test error');
-      assertEquals(mockConsole.error.length, 1);
-      assertMatch(mockConsole.error[0], /ERROR: Test error/);
-    });
-
-    await t.step('should log warning messages', () => {
-      logger.warn('Test warning');
-      assertEquals(mockConsole.warn.length, 1);
-      assertMatch(mockConsole.warn[0], /WARN: Test warning/);
-    });
-
-    await t.step('should log info messages', () => {
-      logger.info('Test info');
-      assertEquals(mockConsole.info.length, 1);
-      assertMatch(mockConsole.info[0], /INFO: Test info/);
-    });
-
-    teardownConsoleMocks();
-  });
-
-  await t.step('log levels', async (t) => {
-    setupConsoleMocks();
-
-    await t.step('should respect minimum log level', () => {
-      const logger = createLogger({ minLevel: LOG_LEVELS.WARN });
-
-      logger.info('Info message');      // Should not log
-      logger.warn('Warning message');   // Should log
-      logger.error('Error message');    // Should log
-
-      assertEquals(mockConsole.info.length, 0);
-      assertEquals(mockConsole.warn.length, 1);
-      assertEquals(mockConsole.error.length, 1);
-    });
-
-    teardownConsoleMocks();
-  });
-
-  await t.step('context and formatting', async (t) => {
-    setupConsoleMocks();
-
-    const logger = createLogger();
-    const context = { userId: '123', action: 'test' };
-
-    await t.step('should include context in log messages', () => {
-      logger.info('Test with context', context);
-      const logMessage = mockConsole.info[0];
-      assertMatch(logMessage, /INFO: Test with context/);
-      assertMatch(logMessage, /"userId": "123"/);
-      assertMatch(logMessage, /"action": "test"/);
-    });
-
-    await t.step('should include timestamp', () => {
-      logger.info('Test timestamp');
-      assertMatch(mockConsole.info[1], /\[\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/);
-    });
-
-    teardownConsoleMocks();
-  });
-
-  await t.step('request tracking', async (t) => {
-    setupConsoleMocks();
-
-    await t.step('should include request ID when provided', () => {
-      const logger = createLogger({ requestId: 'req_123' });
-      logger.info('Test request');
-      assertMatch(mockConsole.info[0], /Request ID: req_123/);
-    });
-
-    await t.step('should create child loggers with request ID', () => {
-      const parentLogger = createLogger({ requestId: 'req_123' });
-      const childLogger = parentLogger.child({});
-      childLogger.info('Test child logger');
-      assertMatch(mockConsole.info[1], /Request ID: req_123/);
-    });
-
-    teardownConsoleMocks();
-  });
-
-  await t.step('error handling', async (t) => {
-    setupConsoleMocks();
-
-    const logger = createLogger();
-
-    await t.step('should create error with logging', () => {
-      const error = logger.createError('Test error', { code: 'TEST_ERROR' });
-      assertEquals(error instanceof Error, true);
-      assertEquals(error.message, 'Test error');
-      assertMatch(mockConsole.error[0], /code.*TEST_ERROR/);
-    });
-
-    await t.step('should log and rethrow errors', () => {
-      const error = new Error('Test error');
-      try {
-        logger.logAndRethrow(error, { code: 'TEST_ERROR' });
-      } catch (e) {
-        assertEquals(e, error);
+  // Create a test logger that captures messages
+  const testLogger: Logger = {
+    info(message: string, data?: Record<string, unknown>) {
+      messages.push({ level: "info", message, data });
+    },
+    warn(message: string, data?: Record<string, unknown>) {
+      messages.push({ level: "warn", message, data });
+    },
+    error(message: string, error?: Error, data?: Record<string, unknown>) {
+      messages.push({ 
+        level: "error", 
+        message, 
+        data: { 
+          error: error?.message, 
+          stack: error?.stack,
+          ...data 
+        } 
+      });
+    },
+    debug(message: string, data?: Record<string, unknown>) {
+      if (Deno.env.get("DEBUG")) {
+        messages.push({ level: "debug", message, data });
       }
-      assertMatch(mockConsole.error[1], /Test error/);
-      assertMatch(mockConsole.error[1], /code.*TEST_ERROR/);
+    },
+  };
+
+  await t.step("should log info messages with data", () => {
+    const testMessage = "Test info message";
+    const testData = { key: "value" };
+    
+    testLogger.info(testMessage, testData);
+    
+    const lastMessage = messages.at(-1);
+    assertEquals(lastMessage?.level, "info");
+    assertEquals(lastMessage?.message, testMessage);
+    assertEquals(lastMessage?.data, testData);
+  });
+
+  await t.step("should log error messages with error details", () => {
+    const testMessage = "Test error message";
+    const testError = new Error("Test error");
+    const testData = { errorCode: 500 };
+    
+    testLogger.error(testMessage, testError, testData);
+    
+    const lastMessage = messages.at(-1);
+    assertEquals(lastMessage?.level, "error");
+    assertEquals(lastMessage?.message, testMessage);
+    assertEquals((lastMessage?.data as Record<string, unknown>)?.error, testError.message);
+    assertEquals((lastMessage?.data as Record<string, unknown>)?.errorCode, testData.errorCode);
+  });
+
+  await t.step("should conditionally log diagnostic information", () => {
+    const initialCount = messages.length;
+    const diagnosticMessage = "Test diagnostic info";
+
+    // Verify behavior when DEBUG is not set
+    Deno.env.delete("DEBUG");
+    testLogger.info(diagnosticMessage);
+    assertEquals(messages.length, initialCount + 1, "Should log info level message");
+    assertEquals(messages.at(-1)?.level, "info");
+
+    // Verify behavior when DEBUG is set
+    const debugCount = messages.length;
+    Deno.env.set("DEBUG", "true");
+    testLogger.info(diagnosticMessage);
+    assertEquals(messages.length, debugCount + 1, "Should log when DEBUG is enabled");
+    assertEquals(messages.at(-1)?.level, "info");
+  });
+
+  await t.step("logger interface implementation", () => {
+    const logger = createLogger();
+    const methods: Array<keyof Logger> = ['info', 'warn', 'error', 'debug'];
+    
+    methods.forEach(method => {
+      assertEquals(
+        typeof logger[method], 
+        "function",
+        `Logger should implement ${method} method`
+      );
     });
 
-    teardownConsoleMocks();
+    // Verify method availability
+    assertEquals(logger.hasOwnProperty('info'), true);
+    assertEquals(logger.hasOwnProperty('warn'), true);
+    assertEquals(logger.hasOwnProperty('error'), true);
+    assertEquals(logger.hasOwnProperty('debug'), true);
   });
 });

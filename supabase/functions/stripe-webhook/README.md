@@ -1,230 +1,120 @@
 # Stripe Webhook Handler
 
-A secure and maintainable webhook handler for Stripe events using Supabase Edge Functions.
+Edge function for processing Stripe webhook events.
 
-## Quick Start
+## Features
 
-1. Install dependencies and setup environment:
-```bash
-./scripts/setup.sh
-```
+- Handles various Stripe webhook events (payments, subscriptions, refunds)
+- Secure webhook signature verification
+- Robust error handling and logging
+- TypeScript for type safety
+- Comprehensive test coverage
 
-2. Configure environment variables:
-```bash
-cp .env.example .env
-# Edit .env with your settings
-```
+## Setup
 
-3. Start development server:
-```bash
-deno task dev
-```
-
-## Project Structure
-
-```
-├── __tests__/          # Test files
-├── scripts/            # Maintenance scripts
-├── .env               # Environment variables
-├── deno.json         # Deno configuration
-├── deps.ts           # Dependencies
-├── import_map.json   # Import map
-├── index.ts          # Main webhook handler
-└── README.md         # This file
-```
-
-## Maintenance Scripts
-
-Collection of scripts for managing and maintaining the webhook handler.
-
-### Core Operations
-
-| Script | Purpose | Usage |
-|--------|---------|-------|
-| `setup.sh` | Complete system setup | `./scripts/setup.sh [--quick]` |
-| `manage.sh` | Central management interface | `./scripts/manage.sh [command]` |
-| `uninstall.sh` | Clean system removal | `./scripts/uninstall.sh [--no-backup]` |
-
-### Development
-
-| Script | Purpose | Usage |
-|--------|---------|-------|
-| `install.sh` | Install dependencies | `./scripts/install.sh [--no-dev-tools]` |
-| `setup-dev.sh` | Setup development environment | `./scripts/setup-dev.sh [--no-database]` |
-| `test-webhook.sh` | Test webhook functionality | `./scripts/test-webhook.sh [--basic]` |
-
-### Deployment
-
-| Script | Purpose | Usage |
-|--------|---------|-------|
-| `deploy.sh` | Deploy webhook handler | `./scripts/deploy.sh [environment]` |
-| `validate.sh` | Validate configuration | `./scripts/validate.sh [--quick]` |
-
-### Maintenance
-
-| Script | Purpose | Usage |
-|--------|---------|-------|
-| `backup.sh` | System backup | `./scripts/backup.sh [--no-encrypt]` |
-| `cleanup.sh` | System cleanup | `./scripts/cleanup.sh [--logs-only]` |
-| `maintain-db.sh` | Database maintenance | `./scripts/maintain-db.sh [--vacuum]` |
-
-### Monitoring
-
-| Script | Purpose | Usage |
-|--------|---------|-------|
-| `monitor.sh` | System monitoring | `./scripts/monitor.sh [--dashboard]` |
-| `health-check.sh` | Health monitoring | `./scripts/health-check.sh [--once]` |
-| `analyze-logs.sh` | Log analysis | `./scripts/analyze-logs.sh [--report]` |
-
-### Security
-
-| Script | Purpose | Usage |
-|--------|---------|-------|
-| `security.sh` | Security checks and fixes | `./scripts/security.sh [--audit]` |
-| `rotate-logs.sh` | Log rotation | `./scripts/rotate-logs.sh [--force]` |
-
-## Configuration
-
-### Environment Variables
-
-Required variables:
-- `STRIPE_SECRET_KEY`: Stripe API secret key
-- `STRIPE_WEBHOOK_SECRET`: Webhook signing secret
-- `SUPABASE_URL`: Supabase project URL
-- `SUPABASE_SERVICE_ROLE_KEY`: Supabase service role key
-
-Optional variables:
-- `LOG_LEVEL`: Logging level (default: "info")
-- `METRICS_PORT`: Monitoring port (default: 9090)
-- `BACKUP_RETENTION_DAYS`: Days to keep backups (default: 30)
-
-### Database
-
-The webhook handler requires a PostgreSQL database with the following tables:
-- `stripe_events`: Stores processed webhook events
-- `stripe_metrics`: Stores performance metrics
-
-Run migrations:
-```bash
-supabase db push
-```
+1. Clone the repository
+2. Install Deno (v1.x)
+3. Copy `.env.example` to `.env` and configure variables
+4. Install dependencies:
+   ```bash
+   deno cache --reload import_map.json
+   ```
 
 ## Development
 
-1. Setup development environment:
 ```bash
-./scripts/setup-dev.sh
-```
-
-2. Start development server:
-```bash
+# Start development server
 deno task dev
+
+# Run linter
+deno task lint
+
+# Format code
+deno task fmt
 ```
 
-3. Run tests:
+## Testing
+
+This project uses Deno's built-in testing framework with a comprehensive test suite.
+
+### Running Tests
+
 ```bash
-deno test
+# Run test script (handles env and runs tests)
+./scripts/test.sh
+
+# Run tests in watch mode
+./scripts/test.sh watch
+
+# Run tests with coverage
+./scripts/test.sh coverage
+
+# Run CI test sequence
+./scripts/test.sh ci
 ```
+
+For detailed testing information, see:
+- [Testing Guide](./TESTING.md) - Complete testing documentation
+- [.env.example](./.env.example) - Environment variable setup
+- [test.yml](./.github/workflows/test.yml) - CI/CD configuration
+
+### Test Structure
+
+```
+__tests__/
+├── utils.ts           # Shared test utilities
+├── handler.test.ts    # Webhook handler tests
+├── logger.test.ts     # Logger implementation tests
+└── import_map.json    # Test-specific imports
+```
+
+## Configuration
+
+Configuration is handled through environment variables:
+
+```bash
+# Required
+STRIPE_SECRET_KEY=sk_test_...
+WEBHOOK_SECRET=whsec_...
+
+# Optional
+DEBUG=false
+MAX_RETRY_ATTEMPTS=3
+WEBHOOK_TIMEOUT_MS=30000
+```
+
+See [.env.example](./.env.example) for all available options.
 
 ## Deployment
 
-1. Validate configuration:
+Deploy using Supabase CLI:
+
 ```bash
-./scripts/validate.sh
+supabase functions deploy stripe-webhook
 ```
 
-2. Deploy to environment:
-```bash
-./scripts/deploy.sh production
-```
+## Type Safety
 
-3. Verify deployment:
-```bash
-./scripts/deploy.sh --verify
-```
-
-## Monitoring
-
-1. Start monitoring dashboard:
-```bash
-./scripts/monitor.sh --dashboard
-```
-
-2. Check system health:
-```bash
-./scripts/health-check.sh
-```
-
-3. Analyze logs:
-```bash
-./scripts/analyze-logs.sh --report
-```
-
-## Maintenance
-
-1. Backup system:
-```bash
-./scripts/backup.sh
-```
-
-2. Clean up system:
-```bash
-./scripts/cleanup.sh
-```
-
-3. Maintain database:
-```bash
-./scripts/maintain-db.sh
-```
-
-## Security
-
-1. Run security audit:
-```bash
-./scripts/security.sh --audit
-```
-
-2. Fix security issues:
-```bash
-./scripts/security.sh --fix
-```
-
-## Troubleshooting
-
-1. Check system health:
-```bash
-./scripts/health-check.sh --verbose
-```
-
-2. View logs:
-```bash
-./scripts/analyze-logs.sh --tail
-```
-
-3. Validate configuration:
-```bash
-./scripts/validate.sh --fix
-```
+The project uses TypeScript with:
+- Strict type checking
+- ESLint configuration
+- Import maps for module resolution
+- Shared type definitions
 
 ## Contributing
 
-1. Setup development environment:
-```bash
-./scripts/setup-dev.sh
-```
-
-2. Create feature branch:
-```bash
-git checkout -b feature/your-feature
-```
-
-3. Run tests:
-```bash
-deno test
-```
-
-4. Submit pull request
+1. Create feature branch (`git checkout -b feature/xyz`)
+2. Make changes
+3. Add tests
+4. Run test suite (`./scripts/test.sh ci`)
+5. Create Pull Request
 
 ## License
 
-MIT License - See [LICENSE](LICENSE) for details.
+MIT License - see [LICENSE](LICENSE)
+
+## Support
+
+- [Issue Tracker](https://github.com/org/repo/issues)
+- [Documentation](./docs)
+- [Security Policy](./SECURITY.md)

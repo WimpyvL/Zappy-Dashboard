@@ -2,9 +2,22 @@
   "compilerOptions": {
     "allowJs": false,
     "strict": true,
-    "isolatedModules": true
+    "noImplicitAny": true,
+    "strictNullChecks": true,
+    "strictFunctionTypes": true,
+    "noImplicitThis": true,
+    "alwaysStrict": true,
+    "isolatedModules": true,
+    "lib": ["deno.window"]
   },
-  "importMap": "./import_map.test.json",
+  "importMap": "./import_map.json",
+  "fmt": {
+    "useTabs": false,
+    "lineWidth": 100,
+    "indentWidth": 2,
+    "singleQuote": true,
+    "proseWrap": "preserve"
+  },
   "test": {
     "files": {
       "include": ["**/*_test.ts", "**/*.test.ts"],
@@ -12,7 +25,8 @@
     }
   },
   "tasks": {
-    "test": "deno test --allow-env --allow-net --allow-read --import-map=./import_map.test.json",
-    "test:watch": "deno test --watch --allow-env --allow-net --allow-read --import-map=./import_map.test.json"
+    "test": "deno test --allow-net --allow-env --allow-read --import-map=./import_map.json",
+    "test:watch": "deno test --watch --allow-net --allow-env --allow-read --import-map=./import_map.json",
+    "test:coverage": "deno test --coverage=coverage --allow-net --allow-env --allow-read --import-map=./import_map.json"
   }
 }

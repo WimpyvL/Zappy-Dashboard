@@ -113,8 +113,8 @@ const AppRoutes = () => {
 
   return (
     <Routes future={future}>
-      {/* Landing page as root - redirects to patient home page */}
-      <Route path="/" element={<Navigate to="/patient-home-v2" replace />} />
+      {/* Landing page as root - redirects to admin dashboard */}
+      <Route path="/" element={<Navigate to="/dashboard" replace />} />
       {/* Public routes */}
       <Route path={paths.login} element={<Login />} />
       <Route path={paths.signup} element={<Signup />} />

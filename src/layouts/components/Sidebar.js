@@ -22,9 +22,25 @@ const Sidebar = () => {
     navigate('/login');
   };
 
-  // Determine sections based on viewMode
-  const currentSidebarSections = viewMode === 'admin' ? adminSidebarSections : patientSidebarSections;
-  const sidebarKeyPrefix = viewMode === 'admin' ? 'admin' : 'patient';
+  // Determine if current page is a provider/admin route (EMR interface)
+  const isProviderRoute = () => {
+    const providerRoutes = [
+      '/dashboard', '/patients', '/orders', '/invoices', '/sessions', '/consultations',
+      '/tasks', '/insurance', '/pharmacies', '/providers', '/services', '/discounts',
+      '/tags', '/settings', '/reports', '/admin', '/notes', '/system-map'
+    ];
+    
+    return providerRoutes.some(route => location.pathname.startsWith(route));
+  };
+
+  // Provider routes always show EMR interface (admin sidebar)
+  // Patient routes show customer-friendly interface (patient sidebar)
+  // Toggle allows switching interface style on any route
+  const shouldShowProviderSidebar = isProviderRoute() || viewMode === 'admin';
+
+  // Determine sections based on interface type
+  const currentSidebarSections = shouldShowProviderSidebar ? adminSidebarSections : patientSidebarSections;
+  const sidebarKeyPrefix = shouldShowProviderSidebar ? 'admin' : 'patient';
 
   // Effect to restore scroll position on mount
   useEffect(() => {
@@ -61,7 +77,7 @@ const Sidebar = () => {
     <div className="bg-white w-64 flex flex-col h-full border-r border-gray-200">
       <div className="p-5 border-b border-gray-200">
         <h1 className="text-2xl font-bold text-primary">Zappy Health</h1>
-        {viewMode === 'patient' && (
+        {!shouldShowProviderSidebar && (
           <p className="text-sm text-text-medium font-handwritten mt-1">Your health journey</p>
         )}
       </div>

@@ -43,6 +43,22 @@ const MainLayout = ({ children }) => {
   // Check if current page is one of the mobile-focused pages
   const isMobilePage = ['/', '/home', '/health', '/learn', '/shop'].includes(location.pathname);
   
+  // Determine if current page is a provider/admin route (EMR interface)
+  const isProviderRoute = () => {
+    const providerRoutes = [
+      '/dashboard', '/patients', '/orders', '/invoices', '/sessions', '/consultations',
+      '/tasks', '/insurance', '/pharmacies', '/providers', '/services', '/discounts',
+      '/tags', '/settings', '/reports', '/admin', '/notes', '/system-map'
+    ];
+    
+    return providerRoutes.some(route => location.pathname.startsWith(route));
+  };
+
+  // Provider routes always show EMR interface (sidebar + admin header)
+  // Patient routes show customer-friendly interface (top nav)
+  // Toggle allows switching interface style on any route
+  const shouldShowProviderInterface = isProviderRoute() || viewMode === 'admin';
+  
   // Determine which navigation page is active
   const getActivePage = () => {
     if (location.pathname === '/' || location.pathname === '/home') return 'home';
@@ -54,20 +70,20 @@ const MainLayout = ({ children }) => {
 
   return (
     <div className="flex flex-col md:flex-row h-screen overflow-hidden bg-slate-50">
-      {/* Sidebar - only visible in admin view and on desktop */}
-      {viewMode === 'admin' && !isMobile && (
+      {/* Provider Sidebar - visible for provider interface and on desktop */}
+      {shouldShowProviderInterface && !isMobile && (
         <Sidebar />
       )}
       
       {/* Main content area */}
       <div className="flex flex-col flex-1 overflow-hidden">
-        {/* Admin Header - only visible in admin view */}
-        {viewMode === 'admin' && (
+        {/* Provider Header - visible for provider interface */}
+        {shouldShowProviderInterface && (
           <Header onToggleCart={toggleCart} />
         )}
         
-        {/* Top Navigation - only visible in patient view or mobile */}
-        {(viewMode === 'patient' || isMobile) && (
+        {/* Patient Top Navigation - only visible in patient interface or mobile */}
+        {(!shouldShowProviderInterface || isMobile) && (
           <TopNavigation activePage={getActivePage()} />
         )}
 
@@ -144,7 +160,7 @@ const MainLayout = ({ children }) => {
       )}
       
       {/* Bottom Navigation for non-mobile pages on mobile devices */}
-      {!isMobilePage && isMobile && viewMode === 'patient' && (
+      {!isMobilePage && isMobile && !shouldShowProviderInterface && (
         <BottomNavigation activePage={location.pathname.split('/')[1] || 'home'} />
       )}
     </div>

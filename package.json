@@ -27,6 +27,8 @@
     "react-router-dom": "^6.25.1",
     "react-scripts": "5.0.1",
     "react-toastify": "^11.0.5",
+    "react-virtualized-auto-sizer": "^1.0.26",
+    "react-window": "^1.8.11",
     "reactflow": "^11.11.4",
     "stripe": "^18.1.1",
     "typescript": "4.9.5",
